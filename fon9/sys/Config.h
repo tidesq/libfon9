@@ -70,6 +70,8 @@ extern "C" {
          4710 /* 'name' : function not inlined */ \
          4711 /* function 'name' selected for automatic inline expansion */ \
       )
+      /// 強迫 MSVC 輸出使用 utf8 編碼.
+      #pragma execution_character_set("UTF-8")
    #else
       #define fon9_MSC_WARN_DISABLE_NO_PUSH(warnlist)
       #define fon9_MSC_WARN_DISABLE(warnlist)

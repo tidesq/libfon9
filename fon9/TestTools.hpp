@@ -6,9 +6,12 @@
 #ifndef __fon9_TestTools_hpp__
 #define __fon9_TestTools_hpp__
 #include "fon9/Utility.hpp"
+
+fon9_BEFORE_INCLUDE_STD;
 #include <iostream>
 #include <iomanip>
 #include <chrono>
+fon9_AFTER_INCLUDE_STD;
 
 namespace fon9 {
 

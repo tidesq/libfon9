@@ -12,7 +12,7 @@ develpath="${fon9path%/*}"
 set -x
 
 SOURCE_DIR=${fon9path}
-BUILD_DIR=${BUILD_DIR:-${develpath}/output}
+BUILD_DIR=${BUILD_DIR:-${develpath}/output/fon9}
 BUILD_TYPE=${BUILD_TYPE:-release}
 INSTALL_DIR=${INSTALL_DIR:-${develpath}/${BUILD_TYPE}}
 

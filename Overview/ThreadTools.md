@@ -1,7 +1,7 @@
 ﻿# fon9 library - Thread Tools
 
 ## `fon9::MustLock`
-<fon9/MustLock.hpp>
+[fon9/MustLock.hpp](../fon9/MustLock.hpp)
 * 當某個物件需要提供 thread safe 特性時，一般而言都需要用 mutex 來保護，通常寫法如下，
   但這樣的缺點非常明顯：每次要使用 `obj_` 時，都要「記得」使用 lock，一旦有地方遺漏了，就會造成難以發現的 bug。
   * 宣告:
@@ -30,5 +30,5 @@
     * 可以避免誤用「容易有錯誤認知的 member」，例如： `std::string::empty() const` 是 thread safe 嗎?
   
 ## `fon9::DummyMutex`
-<fon9/DummyMutex.hpp>
+[fon9/DummyMutex.hpp](../fon9/DummyMutex.hpp)
 * 提供 mutex 相容的介面，但沒有鎖住任何東西。

@@ -11,6 +11,8 @@
 * 跨平台，但不支援老舊的OS
 * 僅考慮 64 位元平台
 * 字串僅考慮 UTF8，source file 也使用 UTF8 編碼。
+  * MSVC: 已在 [fon9/sys/Config.h](fon9/sys/Config.h) 裡面設定: `#pragma execution_character_set("UTF-8")`
+  * GCC: 預設值已是 UTF-8, 或可強制使用: `-fexec-charset=UTF-8` 參數，
 
 在眾多 open source 的情況下，為何還要寫？
 * 追求速度
@@ -29,14 +31,14 @@
 ---------------------------------------
 ## 一般工具/演算法/容器
 ### [Signal/Slot (Observer, Subject/Subscriber, Event, Callback...)](Overview/Subr.md)
-### SortedVector
+### [SortedVector](fon9/SortedVector.hpp)
 ### Log
 ### [Trie](https://zh.wikipedia.org/wiki/Trie)
 ---------------------------------------
 ## [Thread 工具](Overview/ThreadTools.md)
 ---------------------------------------
 ## 文字/數字/基礎型別
-### StrView
+### [StrView](fon9/StrView.hpp)
   * 雖然 C++17 已納入 std::string_view，但不符合我的需求。例如，沒有提供最常用的建構：  
     `template <size_t sz> StrView(const char (&cstr)[sz])`
 ### Decimal：使用「整數 + 小數長度」的型式來表達浮點數

@@ -8,3 +8,6 @@
 # unit tests
 add_executable(Subr_UT Subr_UT.cpp)
 target_link_libraries(Subr_UT pthread)
+
+add_executable(StrView_UT StrView_UT.cpp)
+target_link_libraries(StrView_UT)

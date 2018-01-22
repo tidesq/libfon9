@@ -1,5 +1,5 @@
 ﻿# fon9 library - 事件通知機制: Subr
-<fon9/Subr.hpp>
+[fon9/Subr.hpp](../fon9/Subr.hpp)
 ---------------------------------------
 ## 命名、相同的概念(不同的名稱)
 libfon9 採用 Subject 的概念來設計、命名。  
