@@ -15,7 +15,8 @@
 fon9_BEFORE_INCLUDE_STD;
    // 預先 include 一些必要的 header
    #if defined(fon9_WINDOWS)
-      #define _WINSOCKAPI_// stops Windows.h including winsock.h
+      #define _WINSOCKAPI_ // stops Windows.h including winsock.h
+      #define NOMINMAX     // stops Windows.h #define max()
       #include <Windows.h>
    #else//#if fon9_WINDOWS #else...
       #include <unistd.h>

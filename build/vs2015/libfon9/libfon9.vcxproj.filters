@@ -1,0 +1,98 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Header Files\_base">
+      <UniqueIdentifier>{cdf7434c-f135-4dd0-8ff6-0b3205bbd826}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\_base">
+      <UniqueIdentifier>{016fb02a-faaa-4966-ab04-14e30a6f6392}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\_base\_AlNum">
+      <UniqueIdentifier>{cdd83642-c039-4ca9-be18-76a8466e3630}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\_base\sys">
+      <UniqueIdentifier>{c908c407-3f03-4a91-b3fb-f1c523af280d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\_base\_Thread">
+      <UniqueIdentifier>{0ffe68c3-6b72-4b7c-abfb-ee05812deeb8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\_base\_Container">
+      <UniqueIdentifier>{9b5dba1d-1923-4969-93b8-ffd29cc644a8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\_base\_Tools / Utility">
+      <UniqueIdentifier>{d383662f-b2dc-45ff-812d-940aa90a100e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\_base\_AlNum / StrTools">
+      <UniqueIdentifier>{20606a7c-e09c-463c-ad6d-309d42e1b7b3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\fon9\sys\Config.h">
+      <Filter>Header Files\_base\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\sys\Config.hpp">
+      <Filter>Header Files\_base\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\DecBase.hpp">
+      <Filter>Header Files\_base\_AlNum / StrTools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\StrTo.hpp">
+      <Filter>Header Files\_base\_AlNum / StrTools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\StrTools.hpp">
+      <Filter>Header Files\_base\_AlNum / StrTools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\StrView.hpp">
+      <Filter>Header Files\_base\_AlNum / StrTools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\TypeName.hpp">
+      <Filter>Header Files\_base\_AlNum / StrTools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\DummyMutex.hpp">
+      <Filter>Header Files\_base\_Thread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\MustLock.hpp">
+      <Filter>Header Files\_base\_Thread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\SortedVector.hpp">
+      <Filter>Header Files\_base\_Container</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\Utility.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\TestTools.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\Subr.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\Comparable.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\..\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\fon9\DecBase.cpp">
+      <Filter>Source Files\_base\_AlNum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\StrTo.cpp">
+      <Filter>Source Files\_base\_AlNum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\StrTools.cpp">
+      <Filter>Source Files\_base\_AlNum</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

@@ -12,6 +12,15 @@
     <Filter Include="Header Files\sys">
       <UniqueIdentifier>{69f3ce44-a67a-4e8d-ab51-c8d9e24ca512}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\_Thread">
+      <UniqueIdentifier>{0f24c702-5f2b-4133-934e-3844b54e17d3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\_Container">
+      <UniqueIdentifier>{7a257e65-2a67-4aaa-9b36-67f912d3794f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\_Tools / Utility">
+      <UniqueIdentifier>{b8d4f92f-5e6a-47cc-94f7-d3cfcec6f62c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\fon9\Subr_UT.cpp">
@@ -19,29 +28,29 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\fon9\DummyMutex.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\MustLock.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\SortedVector.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\Subr.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\fon9\sys\Config.h">
       <Filter>Header Files\sys</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\sys\Config.hpp">
       <Filter>Header Files\sys</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\TestTools.hpp">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\..\..\fon9\DummyMutex.hpp">
+      <Filter>Header Files\_Thread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\MustLock.hpp">
+      <Filter>Header Files\_Thread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\SortedVector.hpp">
+      <Filter>Header Files\_Container</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\Utility.hpp">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\_Tools / Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\TestTools.hpp">
+      <Filter>Header Files\_Tools / Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\Subr.hpp">
+      <Filter>Header Files\_Tools / Utility</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

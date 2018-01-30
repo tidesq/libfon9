@@ -21,7 +21,7 @@ namespace fon9 {
 /// \ingroup Misc
 /// 傳回陣列元素數量 arysz.
 template<class T, size_t arysz>
-inline constexpr size_t numofele(T(&/*array*/)[arysz]) {
+constexpr size_t numofele(T(&/*array*/)[arysz]) {
    return arysz;
 }
 
@@ -46,7 +46,7 @@ struct HasBitOpT {
 /// 檢查 EnumT 是否支援 bitwise 操作元(enum 可用 fon9_ENABLE_ENUM_BITWISE_OP(EnumT) 定義).
 /// HasBitOp<T>() == true or false;
 template <typename EnumT>
-inline constexpr bool HasBitOp() {
+constexpr bool HasBitOp() {
    return HasBitOpT<EnumT>::value;
 }
 
@@ -60,9 +60,14 @@ using ToImax_t = conditional_t<std::is_signed<IntType>::value, intmax_t, uintmax
 /// \ingroup Misc
 /// 強制轉型為無正負整數.
 template <typename T>
-inline constexpr typename std::make_unsigned<T>::type unsigned_cast(T value) {
+constexpr typename std::make_unsigned<T>::type unsigned_cast(T value) {
    return static_cast<typename std::make_unsigned<T>::type>(value);
 }
+
+/// \ingroup Misc
+/// 同 C++14 的 std::enable_if_t<>
+template<bool B, class T = void>
+using enable_if_t = typename std::enable_if<B, T>::type;
 
 /// \ingroup Misc
 /// 將陣列值內容全部清為0.
@@ -144,7 +149,7 @@ inline T* InplaceNew(void* p, ArgsT&&... args) {
 /// - IsEnumContains(a,b): 傳回 ((a & b) == b)
 /// - IsEnumContainsAny(a,b): 傳回 ((a & b) != 0)
 #define fon9_ENABLE_ENUM_BITWISE_OP(enum_t)        \
-inline constexpr enum_t operator| (enum_t a, enum_t b) { \
+constexpr enum_t operator| (enum_t a, enum_t b) { \
    return static_cast<enum_t>( static_cast<std::underlying_type<enum_t>::type>(a)   \
                               | static_cast<std::underlying_type<enum_t>::type>(b)); \
 } \
@@ -152,7 +157,7 @@ inline enum_t& operator|= (enum_t& a, enum_t b) { \
    return a = static_cast<enum_t>( static_cast<std::underlying_type<enum_t>::type>(a)   \
                                  | static_cast<std::underlying_type<enum_t>::type>(b)); \
 } \
-inline constexpr enum_t operator- (enum_t a, enum_t b) { \
+constexpr enum_t operator- (enum_t a, enum_t b) { \
    return static_cast<enum_t>(  static_cast<std::underlying_type<enum_t>::type>(a)   \
                               & ~static_cast<std::underlying_type<enum_t>::type>(b)); \
 } \
@@ -160,7 +165,7 @@ inline enum_t& operator-= (enum_t& a, enum_t b) { \
    return a = static_cast<enum_t>(  static_cast<std::underlying_type<enum_t>::type>(a)   \
                                  & ~static_cast<std::underlying_type<enum_t>::type>(b)); \
 } \
-inline constexpr enum_t operator& (enum_t a, enum_t b) { \
+constexpr enum_t operator& (enum_t a, enum_t b) { \
    return static_cast<enum_t>( static_cast<std::underlying_type<enum_t>::type>(a)   \
                               & static_cast<std::underlying_type<enum_t>::type>(b)); \
 } \
@@ -168,12 +173,12 @@ inline enum_t& operator&= (enum_t& a, enum_t b) { \
    return a = static_cast<enum_t>( static_cast<std::underlying_type<enum_t>::type>(a)   \
                                  & static_cast<std::underlying_type<enum_t>::type>(b)); \
 } \
-inline constexpr bool IsEnumContains(enum_t a, enum_t b) { \
+constexpr bool IsEnumContains(enum_t a, enum_t b) { \
    return static_cast<enum_t>(static_cast<std::underlying_type<enum_t>::type>(a)   \
                               & static_cast<std::underlying_type<enum_t>::type>(b))  \
          == b; \
 } \
-inline constexpr bool IsEnumContainsAny(enum_t a, enum_t b) { \
+constexpr bool IsEnumContainsAny(enum_t a, enum_t b) { \
    return (static_cast<std::underlying_type<enum_t>::type>(a)    \
          & static_cast<std::underlying_type<enum_t>::type>(b))   \
             != 0; \

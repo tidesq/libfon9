@@ -77,6 +77,28 @@ public:
    StrView(const std::string* stdstr) : StrView{stdstr->c_str(), stdstr->size()} {
    }
 
+   /// 設定開始位置: ibegin 必定 <= this->end();
+   /// 您必須自行確定 ibegin 是有效的.
+   void SetBegin(const char* ibegin) {
+      assert(ibegin <= this->end());
+      this->Begin_ = ibegin;
+   }
+
+   /// 設定結束位置: iend 必定 >= this->begin();
+   /// 您必須自行確定 iend 是有效的.
+   void SetEnd(const char* iend) {
+      assert(this->begin() <= iend);
+      this->End_ = iend;
+   }
+
+   /// 重設 [開始、結束) 位置: ibegin 必定 <= iend;
+   void Reset(const char* ibegin, const char* iend) {
+      assert(ibegin <= iend);
+      this->Begin_  = ibegin;
+      this->End_ = iend;
+   }
+   
+
    /// 可與 std 配合使用的 iterator 及相關 methods.
    using const_iterator = const char*;
    /// 與 const_iterator 完全相同, StrView 不能改變內容, 所以 iterator 也不能改變內容.
@@ -153,7 +175,7 @@ public:
 
 /// \ingroup AlNum
 /// 使用一般 C 字串, 包含EOS, 長度需要使用strlen()取得的字串建構, cstr 可以是 nullptr.
-inline constexpr StrView StrView_cstr(const char* cstr) {
+constexpr StrView StrView_cstr(const char* cstr) {
    return cstr ? StrView{cstr, StrView::traits_type::length(cstr)} : StrView{};
 }
 inline StrView ToStrView(const char* cstr) {

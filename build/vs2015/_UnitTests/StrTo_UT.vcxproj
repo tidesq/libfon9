@@ -10,9 +10,21 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\fon9\StrTo_UT.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\fon9\StrTo.hpp" />
+    <ClInclude Include="..\..\..\fon9\StrTools.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\libfon9\libfon9.vcxproj">
+      <Project>{6b9031a7-02e1-4171-8ca5-9f780be21806}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{CD24C069-0EB0-4029-83A8-D363C47405F6}</ProjectGuid>
-    <RootNamespace>StrArg_UT</RootNamespace>
+    <ProjectGuid>{3525DE32-E2DD-4198-A8F4-D064100364BB}</ProjectGuid>
+    <RootNamespace>StrTo_UT</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -73,15 +85,6 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\..\fon9\StrView_UT.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\fon9\Comparable.hpp" />
-    <ClInclude Include="..\..\..\fon9\StrView.hpp" />
-    <ClInclude Include="..\..\..\fon9\sys\Config.h" />
-    <ClInclude Include="..\..\..\fon9\sys\Config.hpp" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

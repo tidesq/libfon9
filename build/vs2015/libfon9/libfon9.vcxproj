@@ -11,19 +11,19 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{CD24C069-0EB0-4029-83A8-D363C47405F6}</ProjectGuid>
-    <RootNamespace>StrArg_UT</RootNamespace>
+    <ProjectGuid>{6B9031A7-02E1-4171-8CA5-9F780BE21806}</ProjectGuid>
+    <RootNamespace>libfonix</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -55,7 +55,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\..\..\..\fon9</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_DEBUG</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;fon9_EXPORT</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -66,7 +66,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\..\..\..\fon9</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;fon9_EXPORT</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -74,13 +74,31 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\fon9\StrView_UT.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="..\..\..\fon9\Comparable.hpp" />
+    <ClInclude Include="..\..\..\fon9\DecBase.hpp" />
+    <ClInclude Include="..\..\..\fon9\DummyMutex.hpp" />
+    <ClInclude Include="..\..\..\fon9\MustLock.hpp" />
+    <ClInclude Include="..\..\..\fon9\SortedVector.hpp" />
+    <ClInclude Include="..\..\..\fon9\StrTo.hpp" />
+    <ClInclude Include="..\..\..\fon9\StrTools.hpp" />
     <ClInclude Include="..\..\..\fon9\StrView.hpp" />
+    <ClInclude Include="..\..\..\fon9\Subr.hpp" />
     <ClInclude Include="..\..\..\fon9\sys\Config.h" />
     <ClInclude Include="..\..\..\fon9\sys\Config.hpp" />
+    <ClInclude Include="..\..\..\fon9\TestTools.hpp" />
+    <ClInclude Include="..\..\..\fon9\TypeName.hpp" />
+    <ClInclude Include="..\..\..\fon9\Utility.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\..\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\fon9\DecBase.cpp" />
+    <ClCompile Include="..\..\..\fon9\StrTo.cpp" />
+    <ClCompile Include="..\..\..\fon9\StrTools.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
