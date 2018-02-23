@@ -35,11 +35,9 @@
 ### Log
 ### [Trie](https://zh.wikipedia.org/wiki/Trie)
 ---------------------------------------
-## [Thread 工具](Overview/ThreadTools.md)
----------------------------------------
 ## 文字/數字/基礎型別
 ### [StrView](fon9/StrView.hpp)
-  * 雖然 C++17 已納入 std::string_view，但不符合我的需求。例如，沒有提供最常用的建構：  
+  * 雖然 C++17 已納入 `std::string_view`，但不符合我的需求。例如，沒有提供最常用的建構：  
     `template <size_t sz> StrView(const char (&cstr)[sz])`
 ### [StrTo](fon9/StrTo.hpp) 字串轉數字
   * 額外提供 `fon9::isspace()`, `fon9::isalpha()`... [StrTools.hpp](fon9/StrTools.hpp)，因為標準函式庫的速度太慢。  
@@ -69,13 +67,29 @@ StrToNum(int64)  : 0.014731447 secs / 1,000,000 times = 14.731447000  ns
 strtoimax()      : 0.039363580 secs / 1,000,000 times = 39.363580000  ns
 ```
 ### [ToStr](fon9/ToStr.hpp) 數字轉字串
-
+  * 底下是使用 [fon9/ToStr_UT.cpp](fon9/ToStr_UT.cpp) 測試的部分結果
+  * Hardware: HP ProLiant DL380p Gen8 / E5-2680 v2 @ 2.80GHz
+  * OS: ESXi 6.5.0 Update 1 (Build 5969303) / VM: Windows server 2016(1607)
+```
+IntToStrRev()    : 0.007495415 secs / 1,000,000 times =   7.495415000 ns
+_ltoa(long)      : 0.021559124 secs / 1,000,000 times =  21.559124000 ns
+to_string(long)  : 0.027775487 secs / 1,000,000 times =  27.775487000 ns
+sprintf(long)    : 0.180548727 secs / 1,000,000 times = 180.548727000 ns
+```
+  * OS: ESXi 6.5.0 Update 1 (Build 5969303) / VM: ubuntu16 4.4.0-62-generic
+```
+IntToStrRev()    : 0.005793344 secs / 1,000,000 times =   5.793344000 ns
+to_string(long)  : 0.090456824 secs / 1,000,000 times =  90.456824000 ns
+sprintf(long)    : 0.076487578 secs / 1,000,000 times =  76.487578000 ns
+```
 ### Decimal：使用「整數 + 小數長度」的型式來表達浮點數
   * 因交易系統對小數精確度的要求，無法使用 double，即使 long double 仍有精確度問題，
     所以必須自行設計一個「可確定精確度」的型別。
 ### TimeStamp
 ### Format / RevBuffer / Buffer 機制
   * 類似的 lib: [{fmt} library](http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html)
+---------------------------------------
+## [Thread 工具](Overview/ThreadTools.md)
 ---------------------------------------
 ## 檔案/儲存/載入
 ### File/Path tools

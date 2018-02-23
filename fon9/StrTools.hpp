@@ -67,6 +67,16 @@ inline int8_t Alpha2Hex(char ch) {
       ? -1 : Alpha2HexMap128[static_cast<unsigned char>(ch)];
 }
 
+/// \ingroup AlNum
+// "00010203" ... "99"
+extern fon9_API const char Digs0099[100 * 2 + 1];
+inline char* Put2Digs(char* pout, uint8_t i00_99) {
+   const char* const dig2 = Digs0099 + (i00_99 << 1);
+   *--pout = dig2[1];
+   *--pout = dig2[0];
+   return pout;
+}
+
 //--------------------------------------------------------------------------//
 
 constexpr bool iscntrl(int ch) { return static_cast<unsigned>(ch) <= '\x1f' || ch == '\x7f'; }

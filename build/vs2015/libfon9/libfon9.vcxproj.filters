@@ -77,6 +77,9 @@
     <ClInclude Include="..\..\..\fon9\Comparable.hpp">
       <Filter>Header Files\_base\_Tools / Utility</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\ToStr.hpp">
+      <Filter>Header Files\_base\_AlNum / StrTools</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -92,6 +95,9 @@
       <Filter>Source Files\_base\_AlNum</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\StrTools.cpp">
+      <Filter>Source Files\_base\_AlNum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\ToStr.cpp">
       <Filter>Source Files\_base\_AlNum</Filter>
     </ClCompile>
   </ItemGroup>
