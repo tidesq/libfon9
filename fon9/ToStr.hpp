@@ -118,12 +118,12 @@ inline char* SIntToStrRev(char* pout, intmax_t value) {
 }
 
 template <typename IntT>
-inline auto IntToStrRev(char* pout, IntT value) -> enable_if_t<std::is_signed<IntT>::value, char*> {
+inline auto ToStrRev(char* pout, IntT value) -> enable_if_t<std::is_signed<IntT>::value, char*> {
    return SIntToStrRev(pout, static_cast<intmax_t>(value));
 }
 
 template <typename IntT>
-inline auto IntToStrRev(char* pout, IntT value) -> enable_if_t<std::is_unsigned<IntT>::value, char*> {
+inline auto ToStrRev(char* pout, IntT value) -> enable_if_t<std::is_unsigned<IntT>::value, char*> {
    return UIntToStrRev(pout, static_cast<uintmax_t>(value));
 }
 
@@ -155,6 +155,44 @@ inline auto DecToStrRev(char* pout, IntT value, DecScaleT scale) -> enable_if_t<
 template <typename IntT>
 inline auto DecToStrRev(char* pout, IntT value, DecScaleT scale) -> enable_if_t<std::is_unsigned<IntT>::value, char*> {
    return UDecToStrRev(pout, static_cast<uintmax_t>(value), scale);
+}
+
+//--------------------------------------------------------------------------//
+
+namespace impl {
+template <typename IntT, size_t Width>
+struct AuxPic9ToStr {
+   static void ToStr(char* pout, IntT value) noexcept {
+      Put2Digs(pout, static_cast<uint8_t>(value % 100));
+      using prev = AuxPic9ToStr<IntT, Width - 2>;
+      prev::ToStr(pout - 2, static_cast<IntT>(value / 100));
+   }
+};
+template <typename IntT>
+struct AuxPic9ToStr<IntT, 1> {
+   static void ToStr(char* pout, IntT value) noexcept {
+      assert(value <= 9);
+      *(pout - 1) = static_cast<char>(value + '0');
+   }
+};
+template <typename IntT>
+struct AuxPic9ToStr<IntT, 2> {
+   static void ToStr(char* pout, IntT value) noexcept {
+      assert(value <= 99);
+      Put2Digs(pout, static_cast<uint8_t>(value));
+   }
+};
+} // namespace impl
+
+/// \ingroup AlNum
+/// 將數字轉固定寬度輸出.
+/// 例: `Pic9ToStrRev<3>(pout, 123u);`
+template <unsigned Width, typename IntT>
+inline char* Pic9ToStrRev(char* pout, IntT value) {
+   static_assert(std::is_unsigned<IntT>::value, "Pic9ToStrRev() only support unsigned.");
+   static_assert(Width > 0, "Pic9ToStrRev() Width must > 0.");
+   impl::AuxPic9ToStr<IntT, Width>::ToStr(pout, value);
+   return pout - Width;
 }
 
 } // namespace fon9

@@ -82,10 +82,10 @@ IntToStrRev()    : 0.005793344 secs / 1,000,000 times =   5.793344000 ns
 to_string(long)  : 0.090456824 secs / 1,000,000 times =  90.456824000 ns
 sprintf(long)    : 0.076487578 secs / 1,000,000 times =  76.487578000 ns
 ```
-### Decimal：使用「整數 + 小數長度」的型式來表達浮點數
+### [Decimal](fon9/Decimal.hpp)：使用「整數 + 小數長度」的型式來表達浮點數
   * 因交易系統對小數精確度的要求，無法使用 double，即使 long double 仍有精確度問題，
     所以必須自行設計一個「可確定精確度」的型別。
-### TimeStamp
+### TimeInterval / TimeStamp
 ### Format / RevBuffer / Buffer 機制
   * 類似的 lib: [{fmt} library](http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html)
 ---------------------------------------

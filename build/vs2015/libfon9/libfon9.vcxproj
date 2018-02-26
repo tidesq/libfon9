@@ -76,6 +76,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\Comparable.hpp" />
     <ClInclude Include="..\..\..\fon9\DecBase.hpp" />
+    <ClInclude Include="..\..\..\fon9\Decimal.hpp" />
     <ClInclude Include="..\..\..\fon9\DummyMutex.hpp" />
     <ClInclude Include="..\..\..\fon9\MustLock.hpp" />
     <ClInclude Include="..\..\..\fon9\SortedVector.hpp" />

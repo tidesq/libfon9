@@ -1,83 +1,29 @@
 ﻿// \file fon9/StrTo_UT.cpp
 // \author fonwinz@gmail.com
 #define _CRT_SECURE_NO_WARNINGS
-#include "fon9/StrTo.hpp"
+#include "fon9/Decimal.hpp"
 #include "fon9/TestTools.hpp"
 #include "fon9/TypeName.hpp"
 #include <inttypes.h>//strtoimax()
 #include <vector>
 #include <cctype>
 
-// 在 fon9::Decimal<> 尚未 release 之前, 先提供部分功能, 用來測試 str => Decimal.
-template <typename IntTypeT, int ScaleN>
-class Decimal : public fon9::Comparable<Decimal<IntTypeT, ScaleN>> {
-   using base = fon9::DecDivisor<IntTypeT, ScaleN>;
-   IntTypeT  Value_;
-   static_assert(std::is_integral<IntTypeT>::value, "Decimal<IntTypeT,ScaleN> IntTypeT必須是整數型別");
-protected:
-   /// 直接用原始整數建構, 您必須自行確定 value 的 小數位數=this->Scale.
-   constexpr explicit Decimal(IntTypeT value) : Value_(value) {
-   }
-public:
-   using OrigType = IntTypeT;
-   enum : fon9::DecScaleT {
-      /// 小數位數.
-      Scale = ScaleN
-   };
-   enum : OrigType {
-      /// 小數位數為 Scale 時的除數.
-      Divisor = base::Divisor,
-   };
-
-   constexpr Decimal() : Value_{} {
-   }
-
-   template <typename SrcT, class AdjustDecScaleEx = fon9::AdjustDecScaleExDefault>
-   constexpr Decimal(SrcT src, fon9::DecScaleT srcScale, AdjustDecScaleEx ex = AdjustDecScaleEx{})
-      : Value_{fon9::AdjustDecScale<SrcT, OrigType>(src, srcScale, ScaleN, ex)} {
-   }
-
-   template <fon9::DecScaleT srcScale, typename SrcT, class AdjustDecScaleEx = fon9::AdjustDecScaleExDefault>
-   static constexpr Decimal Make(SrcT src, AdjustDecScaleEx ex = AdjustDecScaleEx{}) {
-      return Decimal{fon9::AdjustDecScale<srcScale, ScaleN, SrcT, OrigType>(src, ex)};
-   }
-   static constexpr Decimal min() {
-      return Decimal{std::numeric_limits<int32_t>::min()};
-   }
-   static constexpr Decimal max() {
-      return Decimal{std::numeric_limits<int32_t>::max()};
-   }
-
-   /// 轉成 F(float,double,long double...).
-   /// 請注意: 可能遺失精確度, 也可能超過 F 的最大、最小值!
-   template <typename F>
-   constexpr F To() const {
-      static_assert(std::is_floating_point<F>::value, "To<F>(), F必須是浮點數型別");
-      return static_cast<F>(this->Value_) / this->Divisor;
-   }
-   constexpr OrigType GetOrigValue() const {
-      return this->Value_;
-   }
-
-   constexpr friend bool operator==(const Decimal& lhs, const Decimal& rhs) {
-      return lhs.Value_ == rhs.Value_;
-   }
-   friend std::ostream& operator<<(std::ostream& os, const Decimal& v) {
-      return(os << v.To<double>());
-   }
-};
+template <class I, fon9::DecScaleT S>
+std::ostream& operator<<(std::ostream& os, const fon9::Decimal<I,S>& v) {
+   return(os << fon9::To<double>(v));
+}
 
 using AuxToInt64 = fon9::StrToIntAux<int64_t>;
 using AuxToInt64U = fon9::StrToIntAux<uint64_t>;
 using AuxToInt32 = fon9::StrToIntAux<int32_t>;
 
-using Fd64d5 = Decimal<int64_t, 5>;
+using Fd64d5 = fon9::Decimal<int64_t, 5>;
 using AuxToFd64d5 = fon9::StrToDecimalAux<Fd64d5>;
 
-using Fd64d5U = Decimal<uint64_t, 5>;
+using Fd64d5U = fon9::Decimal<uint64_t, 5>;
 using AuxToFd64d5U = fon9::StrToDecimalAux<Fd64d5U>;
 
-using Fd32d5 = Decimal<int32_t, 5>;
+using Fd32d5 = fon9::Decimal<int32_t, 5>;
 using AuxToFd32d5 = fon9::StrToDecimalAux<Fd32d5>;
 
 template <class AuxT>
@@ -330,7 +276,7 @@ void StrTo_Benchmark() {
 
    std::cout << "--- decimal/double ---" << std::endl;
    // double.
-   using TestDecT = Decimal<int64_t, 5>;
+   using TestDecT = fon9::Decimal<int64_t, 5>;
    static const char cstrIntDec[] = "123456.7890000";
    TestDecT          decValue{fon9::StrTo(cstrIntDec, TestDecT{})};
    if (decValue.GetOrigValue() != 12345678900) {

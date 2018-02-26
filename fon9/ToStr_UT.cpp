@@ -1,8 +1,7 @@
 ﻿// \file fon9/ToStr_UT.cpp
 // \author fonwinz@gmail.com
 #define _CRT_SECURE_NO_WARNINGS
-#include "fon9/ToStr.hpp"
-#include "fon9/StrTo.hpp"
+#include "fon9/Decimal.hpp"
 #include "fon9/TestTools.hpp"
 
 void CheckToStrRevResult(const char* pstr, int base, const char* fnName, long expectResult) {
@@ -16,6 +15,25 @@ void CheckToStrRevResult(const char* pstr, int base, const char* fnName, long ex
    abort();
 }
 
+template <size_t Width>
+void TestPic9ToStrRev() {
+   fon9::NumOutBuf   nbuf;
+   nbuf.SetEOS();
+   const char fmt[] = {'%', '0', static_cast<char>(Width + '0'), 'u', 0};
+   for (unsigned L = 0; L < 1234567; ++L) {
+      char* pout = fon9::Pic9ToStrRev<Width>(nbuf.end(), L);
+      fon9_MSC_WARN_DISABLE(4774);//'sprintf' : format string expected in argument 2 is not a string literal
+      sprintf(nbuf.Buffer_, fmt, L);
+      fon9_MSC_WARN_POP;
+      if (strcmp(nbuf.Buffer_, pout) != 0) {
+         std::cout << "[ERROR] Pic9ToStrRev<" << Width << ">(" << L << ") output is '" << pout << "'" <<
+            ", but expect result is " << nbuf.Buffer_ << std::endl;
+         abort();
+      }
+   }
+   std::cout << "[OK   ] " << "Pic9ToStrRev<" << Width << ">();\n";
+}
+
 void ToStr_benchmark() {
    const long        kTimes = 1000 * 1000;
    fon9::StopWatch   stopWatch;
@@ -25,8 +43,8 @@ void ToStr_benchmark() {
 
    stopWatch.ResetTimer();
    for (long L = -kTimes / 2; L < kTimes / 2; L++)
-      fon9::IntToStrRev(nbuf.end(), L);
-   stopWatch.PrintResult("IntToStrRev()    ", kTimes);
+      fon9::ToStrRev(nbuf.end(), L);
+   stopWatch.PrintResult("ToStrRev(long)   ", kTimes);
 
 #ifdef _MSC_VER
    stopWatch.ResetTimer();
@@ -44,6 +62,17 @@ void ToStr_benchmark() {
    for (long L = -kTimes / 2; L < kTimes / 2; L++)
       sprintf(nbuf.Buffer_, "%ld", L);
    stopWatch.PrintResult("sprintf(long)    ", kTimes);
+
+   std::cout << "----- Pic9ToStrRev()/%09u -----\n";
+   stopWatch.ResetTimer();
+   for (unsigned L = 0; L < kTimes; L++)
+      fon9::Pic9ToStrRev<9>(nbuf.end(), L);
+   stopWatch.PrintResult("Pic9ToStrRev()   ", kTimes);
+
+   stopWatch.ResetTimer();
+   for (unsigned L = 0; L < kTimes; L++)
+      sprintf(nbuf.Buffer_, "%09u", L);
+   stopWatch.PrintResult("sprintf(%09u)    ", kTimes);
 }
 
 int main() {
@@ -58,7 +87,7 @@ int main() {
    fon9::NumOutBuf nbuf;
    nbuf.SetEOS();
    for (long L = -1234567; L < 1234567; ++L) {
-      CheckToStrRevResult(fon9::IntToStrRev(nbuf.end(), L), 10, "IntToStrRev", L);
+      CheckToStrRevResult(fon9::ToStrRev(nbuf.end(), L), 10, "ToStrRev", L);
       CheckToStrRevResult(fon9::HexToStrRev(nbuf.end(), L), 16, "HexToStrRev", L);
       CheckToStrRevResult(fon9::BinToStrRev(nbuf.end(), L), 2, "BinToStrRev", L);
    }
@@ -75,6 +104,23 @@ int main() {
       }
    }
    std::cout << "[OK   ] " << "DecToStrRev();\n";
+
+   using NumT = fon9::Decimal<long, kDecScale>;
+   NumT  num;
+   for (long L = -1234567; L < 1234567; ++L) {
+      num.Assign<kDecScale>(L);
+      char* pout = fon9::ToStrRev(nbuf.end(), num);
+      NumT  res = fon9::StrTo(fon9::StrView{pout, nbuf.end()}, NumT::Null());
+      if (num != res) {
+         std::cout << "[ERROR] ToStrRev(" << num.To<double>() << ") output is '" << pout << "'"
+            ", but StrTo() result is " << res.To<double>() << std::endl;
+         abort();
+      }
+   }
+   std::cout << "[OK   ] " << "Decimal: ToStrRev(); StrTo();\n";
+
+   TestPic9ToStrRev<7>();
+   TestPic9ToStrRev<8>();
 
    std::cout << "-----------------------------------------------------" << std::endl;
    ToStr_benchmark();
