@@ -265,18 +265,11 @@ void StressSubr() {
 int main(int argc, char* argv[])
 {
    (void)argc; (void)argv;
-   std::cout <<
-      "#####################################################\n"
-      "fon9 Subr test\n"
-      "====================================================="
-      << std::endl
-      << std::fixed
-      << std::setprecision(9);
-   std::cout.imbue(std::locale(""));
+   fon9::AutoPrintTestInfo utinfo{"Subr"};
 
    StressSubr();
 
-   std::cout << "-----------------------------------------------------" << std::endl;
+   utinfo.PrintSplitter();
 
    using FnObjSubr = std::function<void(const SubrMsg&)>;
    BenchmarkFnPtr                                    ("function pointer                           ");
@@ -289,12 +282,6 @@ int main(int argc, char* argv[])
    BenchmarkSubrFnPtr<fon9::Subject<FnObjSubr>>      ("Subject<std::function(FnPtr)>              ");
    BenchmarkSubrClass<fon9::Subject<Subr>>           ("Subject<struct Subr>                       ");
    BenchmarkSubrClass<fon9::Subject<FnObjSubr>>      ("Subject<std::function(struct Subr)>        ");
-
-   std::cout <<
-      "=====================================================\n"
-      "fon9 Subr test # END #\n"
-      "#####################################################\n"
-      << std::endl;
 }
 
 #ifdef __GNUC__

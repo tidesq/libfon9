@@ -76,12 +76,43 @@ public:
       return span.count();
    }
 
-   void PrintResult(const char* msg, uint64_t timesRun) {
+   std::ostream& PrintResultNoEOL(const char* msg, uint64_t timesRun) {
       double span = this->StopTimer();
-      std::cout << msg << ": "
+      return std::cout << msg << ": "
          << span << " secs / " << timesRun << " times = "
-         << AutoTimeUnit{span / static_cast<double>(timesRun)} << std::endl;
+         << AutoTimeUnit{span / static_cast<double>(timesRun)};
+   }
+   std::ostream& PrintResult(const char* msg, uint64_t timesRun) {
+      PrintResultNoEOL(msg, timesRun);
+      return std::cout << std::endl;
    }
 };
+
+struct AutoPrintTestInfo {
+   const char* TestName_;
+
+   AutoPrintTestInfo(const char* testName) : TestName_(testName) {
+      std::cout <<
+         "#####################################################\n"
+         "fon9 [" << testName << "] test\n"
+         "====================================================="
+         << std::endl;
+      std::cout << std::fixed << std::setprecision(9);
+      std::cout.imbue(std::locale(""));
+   }
+
+   ~AutoPrintTestInfo() {
+      std::cout <<
+         "=====================================================\n"
+         "fon9 [" << this->TestName_ << "] test # END #\n"
+         "#####################################################\n"
+         << std::endl;
+   }
+
+   void PrintSplitter() {
+      std::cout << "-----------------------------------------------------" << std::endl;
+   }
+};
+
 } // namespace
 #endif//__fon9_TestTools_hpp__

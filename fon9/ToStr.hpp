@@ -164,22 +164,27 @@ template <typename IntT, size_t Width>
 struct AuxPic9ToStr {
    static void ToStr(char* pout, IntT value) noexcept {
       Put2Digs(pout, static_cast<uint8_t>(value % 100));
-      using prev = AuxPic9ToStr<IntT, Width - 2>;
-      prev::ToStr(pout - 2, static_cast<IntT>(value / 100));
+      using leftchars = AuxPic9ToStr<IntT, Width - 2>;
+      leftchars::ToStr(pout - 2, static_cast<IntT>(value / 100));
    }
 };
 template <typename IntT>
 struct AuxPic9ToStr<IntT, 1> {
    static void ToStr(char* pout, IntT value) noexcept {
       assert(value <= 9);
-      *(pout - 1) = static_cast<char>(value + '0');
+      *(pout - 1) = fon9_LIKELY(value <= 9) ? static_cast<char>(value + '0') : '#';
    }
 };
 template <typename IntT>
 struct AuxPic9ToStr<IntT, 2> {
    static void ToStr(char* pout, IntT value) noexcept {
       assert(value <= 99);
-      Put2Digs(pout, static_cast<uint8_t>(value));
+      if (fon9_LIKELY(value <= 99))
+         Put2Digs(pout, static_cast<uint8_t>(value));
+      else {
+         *(pout - 1) = '#';
+         *(pout - 2) = '#';
+      }
    }
 };
 } // namespace impl
@@ -193,6 +198,13 @@ inline char* Pic9ToStrRev(char* pout, IntT value) {
    static_assert(Width > 0, "Pic9ToStrRev() Width must > 0.");
    impl::AuxPic9ToStr<IntT, Width>::ToStr(pout, value);
    return pout - Width;
+}
+template <unsigned Width, typename IntT>
+inline char* SPic9ToStrRev(char* pout, IntT value) {
+   using UIntT = typename std::make_unsigned<IntT>::type;
+   impl::AuxPic9ToStr<UIntT, Width>::ToStr(pout, static_cast<UIntT>(value < 0 ? -value : value));
+   *(pout -= (Width + 1)) = (value < 0 ? '-' : '+');
+   return pout;
 }
 
 } // namespace fon9

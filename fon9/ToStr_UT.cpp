@@ -76,13 +76,7 @@ void ToStr_benchmark() {
 }
 
 int main() {
-   std::cout <<
-      "#####################################################\n"
-      "fon9 ToStr test\n"
-      "====================================================="
-      << std::endl;
-   std::cout << std::fixed << std::setprecision(9);
-   std::cout.imbue(std::locale(""));
+   fon9::AutoPrintTestInfo utinfo{"ToStr"};
 
    fon9::NumOutBuf nbuf;
    nbuf.SetEOS();
@@ -122,12 +116,7 @@ int main() {
    TestPic9ToStrRev<7>();
    TestPic9ToStrRev<8>();
 
-   std::cout << "-----------------------------------------------------" << std::endl;
-   ToStr_benchmark();
+   utinfo.PrintSplitter();
 
-   std::cout <<
-      "=====================================================\n"
-      "fon9 ToStr test # END #\n"
-      "#####################################################\n"
-      << std::endl;
+   ToStr_benchmark();
 }

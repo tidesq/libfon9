@@ -39,11 +39,7 @@ void TestStrViewCompare(const fon9::StrView s1, const fon9::StrView s2, int expe
 }
 
 int main() {
-   std::cout <<
-      "#####################################################\n"
-      "fon9 StrView test\n"
-      "====================================================="
-      << std::endl;
+   fon9::AutoPrintTestInfo utinfo{"StrView"};
 
    // 測試建構: 長度是否正確.
    #define  cstr_Normal_C_Style_String   "Normal C-Style string."
@@ -71,7 +67,7 @@ int main() {
    const char  cstrUTF8[] = "正體中文(許功蓋), 简体中文";
    TestStrViewSize("utf8 '%*s' 可能無法對齊", strlen(cstrUTF8), cstrUTF8);
 
-   std::cout << "-----------------------------------------------------" << std::endl;
+   utinfo.PrintSplitter();
    // 測試字串比較.
    const char     cstrAryABC[] = {'a', 'b', 'c'};
    fon9::StrView  sABC3{cstrAryABC};
@@ -91,10 +87,4 @@ int main() {
    TestStrViewCompare(sABC1,  sEmpty, 1);
    TestStrViewCompare(sEmpty, sNull,  0);
    TestStrViewCompare(sNull,  sEmpty, 0);
-
-   std::cout <<
-      "=====================================================\n"
-      "fon9 StrView test # END #\n"
-      "#####################################################\n"
-      << std::endl;
 }

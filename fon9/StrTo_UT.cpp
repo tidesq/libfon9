@@ -319,25 +319,15 @@ void StrTo_Benchmark() {
 
 int main()
 {
-   std::cout <<
-      "#####################################################\n"
-      "fon9 StrTo test\n"
-      "====================================================="
-      << std::endl;
-   std::cout << std::fixed << std::setprecision(9);
-   std::cout.imbue(std::locale(""));
+   fon9::AutoPrintTestInfo utinfo{"StrTo"};
 
    StrTo_Test();
-   std::cout << "-----------------------------------------------------" << std::endl;
+
+   utinfo.PrintSplitter();
    StrTo_Benchmark_isfunc();
+
 #ifndef _DEBUG
-   std::cout << "-----------------------------------------------------" << std::endl;
+   utinfo.PrintSplitter();
    StrTo_Benchmark();
 #endif
-
-   std::cout <<
-      "=====================================================\n"
-      "fon9 StrTo test # END #\n"
-      "#####################################################\n"
-      << std::endl;
 }
