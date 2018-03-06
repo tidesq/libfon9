@@ -76,15 +76,21 @@ public:
       return span.count();
    }
 
-   std::ostream& PrintResultNoEOL(const char* msg, uint64_t timesRun) {
-      double span = this->StopTimer();
+   static std::ostream& PrintResultNoEOL(double span, const char* msg, uint64_t timesRun) {
       return std::cout << msg << ": "
          << span << " secs / " << timesRun << " times = "
          << AutoTimeUnit{span / static_cast<double>(timesRun)};
    }
-   std::ostream& PrintResult(const char* msg, uint64_t timesRun) {
-      PrintResultNoEOL(msg, timesRun);
+   static std::ostream& PrintResult(double span, const char* msg, uint64_t timesRun) {
+      PrintResultNoEOL(span, msg, timesRun);
       return std::cout << std::endl;
+   }
+
+   std::ostream& PrintResultNoEOL(const char* msg, uint64_t timesRun) {
+      return this->PrintResultNoEOL(this->StopTimer(), msg, timesRun);
+   }
+   std::ostream& PrintResult(const char* msg, uint64_t timesRun) {
+      return this->PrintResult(this->StopTimer(), msg, timesRun);
    }
 };
 

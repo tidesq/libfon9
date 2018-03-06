@@ -148,6 +148,10 @@ inline void StrTrimHead(StrView& str) {
    const char* pbeg = StrFindIf(str, isnotspace);
    str.SetBegin(pbeg ? pbeg : str.end());
 }
+inline void StrTrimHead(StrView& str, const char* pbegin) {
+   const char* pbeg = StrFindIf(pbegin, str.end(), isnotspace);
+   str.SetBegin(pbeg ? pbeg : str.end());
+}
 
 /// \ingroup AlNum
 /// 移除 str 尾端的空白字元: `isspace()==true` 的字元.

@@ -3,6 +3,8 @@ set(fon9src
  StrTools.cpp
  StrTo.cpp
  ToStr.cpp
+ TimeInterval.cpp
+ TimeStamp.cpp
 )
 add_library(fon9_s STATIC ${fon9src})
 target_link_libraries(fon9_s pthread rt)
@@ -21,3 +23,6 @@ target_link_libraries(StrTo_UT fon9_s)
 
 add_executable(ToStr_UT ToStr_UT.cpp)
 target_link_libraries(ToStr_UT fon9_s)
+
+add_executable(TimeStamp_UT TimeStamp_UT.cpp)
+target_link_libraries(TimeStamp_UT fon9_s)

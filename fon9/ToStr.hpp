@@ -182,7 +182,7 @@ struct AuxPic9ToStr<IntT, 2> {
       if (fon9_LIKELY(value <= 99))
          Put2Digs(pout, static_cast<uint8_t>(value));
       else {
-         *(pout - 1) = '#';
+         *(pout - 1) = static_cast<char>((value % 10) + '0');
          *(pout - 2) = '#';
       }
    }

@@ -83,6 +83,12 @@
     <ClInclude Include="..\..\..\fon9\Decimal.hpp">
       <Filter>Header Files\_base\_AlNum / StrTools</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\TimeStamp.hpp">
+      <Filter>Header Files\_base\_AlNum / StrTools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\TimeInterval.hpp">
+      <Filter>Header Files\_base\_AlNum / StrTools</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -101,6 +107,12 @@
       <Filter>Source Files\_base\_AlNum</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\ToStr.cpp">
+      <Filter>Source Files\_base\_AlNum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\TimeStamp.cpp">
+      <Filter>Source Files\_base\_AlNum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\TimeInterval.cpp">
       <Filter>Source Files\_base\_AlNum</Filter>
     </ClCompile>
   </ItemGroup>

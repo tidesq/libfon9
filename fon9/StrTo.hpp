@@ -14,7 +14,7 @@ struct StrToNumCursor {
    fon9_NON_COPY_NON_MOVE(StrToNumCursor);
 
    /// 移除「開頭正負號前後空白 & 正負號」之後的第一個字元位置.
-   const char* const OrigBegin_;
+   const char*       OrigBegin_;
    /// 原始 SetToNum(str) 的 str.end();
    const char* const OrigEnd_;
    /// 預期的結束位置.
@@ -28,6 +28,18 @@ struct StrToNumCursor {
       , OrigEnd_{origEnd}
       , ExpectEnd_{origEnd}
       , Current_{origBegin} {
+   }
+   /// 當在 AuxT::IsValidChar() 裡面呼叫 cur.Rollbacl() 並返回 false:
+   /// - 中斷 StrToNum(), 並且在 StrToNum() 返回前 **不呼叫** AuxT.MakeResult(res, cur); 不改變 out 的值
+   /// - 且 endptr = 移除開頭正負號及空白之後的位置.
+   void Rollback() {
+      this->Current_ = this->OrigBegin_;
+   }
+   /// 當在 AuxT::IsValidChar() 裡面呼叫 cur.FormatErrorAtCurrent() 並返回 false:
+   /// - 中斷 StrToNum(), 並且在 StrToNum() 返回前 **不呼叫** AuxT.MakeResult(res, cur); 不改變 out 的值
+   /// - 且 endptr = cur.Current_
+   void FormatErrorAtCurrent() {
+      this->OrigBegin_ = this->Current_;
    }
 };
 
@@ -398,10 +410,9 @@ using AutoStrToAux = conditional_t<std::numeric_limits<NumT>::is_integer, StrToI
 fon9_WARN_POP;
 
 // 把 輔助類別 放進 libfon9.dll, 減少程式碼的大小.
+// StrToUIntAux 裡面的 member functions 很單純, 直接 inline 呼叫會比較快, 所以不需要放到 dll.
 template class fon9_API StrToSIntAux<int32_t>;
-template class fon9_API StrToUIntAux<uint32_t>;
 template class fon9_API StrToSIntAux<int64_t>;
-template class fon9_API StrToUIntAux<uint64_t>;
 
 template class fon9_API StrToDecIntAux<int32_t>;
 template class fon9_API StrToDecIntAux<uint32_t>;
@@ -418,6 +429,7 @@ inline NumT StrTo(const StrView& str, NumT value = NumT{}, const char** endptr =
       *endptr = pend;
    return value;
 }
+
 template <typename NumT, class AuxT = StrToDecIntAux<NumT>>
 inline NumT StrToDec(const StrView& str, DecScaleT decScale, NumT value = NumT{}, const char** endptr = nullptr) {
    AuxT        aux{decScale};

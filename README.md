@@ -85,8 +85,11 @@ sprintf(long)    : 0.076487578 secs / 1,000,000 times =  76.487578000 ns
 ### [Decimal](fon9/Decimal.hpp)：使用「整數 + 小數長度」的型式來表達浮點數
   * 因交易系統對小數精確度的要求，無法使用 double，即使 long double 仍有精確度問題，
     所以必須自行設計一個「可確定精確度」的型別。
-### TimeInterval / TimeStamp
-### Format / RevBuffer / Buffer 機制
+### [TimeInterval](fon9/TimeInterval.hpp) / [TimeStamp / TimeZoneOffset](fon9/TimeStamp.hpp)：時間處理機制
+  * 取得現在 UTC 時間：`fon9::UtcNow();`
+  * 取得現在 本地時間：`fon9::TimeStamp lo = fon9::UtcNow() + fon9::GetLocalTimeZoneOffset();`
+### Buffer 機制
+### Format 機制
   * 類似的 lib: [{fmt} library](http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html)
 ---------------------------------------
 ## [Thread 工具](Overview/ThreadTools.md)
