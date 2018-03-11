@@ -6,8 +6,8 @@
 #ifndef __fon9_DecBase_hpp__
 #define __fon9_DecBase_hpp__
 #include "fon9/Utility.hpp"
+#include "fon9/Exception.hpp"
 #include <limits>
-#include <stdexcept>
 
 namespace fon9 {
 
@@ -100,15 +100,15 @@ struct AdjustDecScaleExIgnore {
 struct AdjustDecScaleExThrow {
    template <typename ResultT, typename SrcT>
    static constexpr ResultT OnAfterRound(SrcT src) {
-      return fon9_UNLIKELY(src < std::numeric_limits<ResultT>::min()) ? throw std::underflow_error("AdjustDecScale:Round.Underflow")
-         : fon9_UNLIKELY(src > std::numeric_limits<ResultT>::max()) ? throw std::overflow_error("AdjustDecScale:Round.Overflow")
+      return fon9_UNLIKELY(src < std::numeric_limits<ResultT>::min()) ? Raise<ResultT, std::underflow_error>("AdjustDecScale:Round.Underflow")
+         : fon9_UNLIKELY(src > std::numeric_limits<ResultT>::max()) ? Raise<ResultT, std::overflow_error>("AdjustDecScale:Round.Overflow")
          : static_cast<ResultT>(src);
    }
    template <typename ResultT, typename SrcT, typename MulT>
    static ResultT OnMultipleDivisor(SrcT src, MulT m) {
       ResultT res = static_cast<ResultT>(static_cast<ToImax_t<SrcT>>(src) * m);
       if (fon9_UNLIKELY(src != static_cast<SrcT>(res / static_cast<ToImax_t<SrcT>>(m))))
-         src < 0 ? throw std::underflow_error("AdjustDecScale:Underflow") : throw std::overflow_error("AdjustDecScale:Overflow");
+         src < 0 ? Raise<std::underflow_error>("AdjustDecScale:Underflow") : Raise<std::overflow_error>("AdjustDecScale:Overflow");
       return res;
    }
 };

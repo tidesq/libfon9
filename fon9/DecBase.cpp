@@ -1,6 +1,7 @@
 ﻿// \file fon9/DecBase.cpp
 // \author fonwinz@gmail.com
 #include "fon9/DecBase.hpp"
+
 namespace fon9 {
 
 fon9_API uintmax_t GetDecDivisor(DecScaleT scale) {
@@ -28,7 +29,7 @@ fon9_API uintmax_t GetDecDivisor(DecScaleT scale) {
    };
    if (fon9_LIKELY(scale < numofele(dmap)))
       return static_cast<uintmax_t>(dmap[scale]);
-   throw std::range_error("GetDecDivisor(scale > DecScaleMax)");
+   Raise<std::range_error>("GetDecDivisor(scale > DecScaleMax)");
 }
 
 } // namespaces
