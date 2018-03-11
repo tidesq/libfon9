@@ -30,8 +30,14 @@
     <Filter Include="Header Files\_base\_AlNum / StrTools">
       <UniqueIdentifier>{20606a7c-e09c-463c-ad6d-309d42e1b7b3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\buffer">
+      <UniqueIdentifier>{dac7356e-0c50-41b4-9a56-323c3bd33f97}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Header Files\sys">
       <UniqueIdentifier>{c908c407-3f03-4a91-b3fb-f1c523af280d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\buffer">
+      <UniqueIdentifier>{4871a9a2-6838-4582-8958-d6f768b77bf3}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -92,8 +98,17 @@
     <ClInclude Include="..\..\..\fon9\Exception.hpp">
       <Filter>Header Files\_base\_Tools / Utility</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\buffer\RevBuffer.hpp">
+      <Filter>Header Files\buffer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\buffer\RevPut.hpp">
+      <Filter>Header Files\buffer</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\fon9\FmtDef.hpp">
       <Filter>Header Files\_base\_AlNum / StrTools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\buffer\RevPrint.hpp">
+      <Filter>Header Files\buffer</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\ToStrFmt.hpp">
       <Filter>Header Files\_base\_AlNum / StrTools</Filter>
@@ -101,6 +116,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
+    <None Include="..\..\..\fon9\buffer\README.md">
+      <Filter>Header Files\buffer</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\..\CMakeLists.txt" />
