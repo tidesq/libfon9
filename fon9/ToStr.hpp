@@ -107,11 +107,23 @@ inline char* UIntToStrRev(char* pout, uintmax_t value) {
 }
 
 /// \ingroup AlNum
+/// 建立 value 的 10 進位字串: 加上千位分隔, 分隔符號、分隔位數由 NumPunct 控制.
+/// - 從 (*--pout) 往前填入.
+/// - 傳回最後一次 pout 位置: 字串開始位置.
+fon9_API char* UIntToStrRev_IntSep(char* pout, uintmax_t value);
+inline char* SIntToStrRev_IntSep(char* pout, intmax_t value) {
+   pout = UIntToStrRev_IntSep(pout, abs_cast(value));
+   if (value < 0)
+      *(--pout) = '-';
+   return pout;
+}
+
+/// \ingroup AlNum
 /// 建立 value 的 10 進位字串.
 /// - 從 (*--pout) 往前填入.
 /// - 傳回最後一次 pout 位置: 字串開始位置.
 inline char* SIntToStrRev(char* pout, intmax_t value) {
-   pout = UIntToStrRev(pout, (value < 0) ? static_cast<uintmax_t>(-value) : static_cast<uintmax_t>(value));
+   pout = UIntToStrRev(pout, abs_cast(value));
    if (value < 0)
       *(--pout) = '-';
    return pout;
@@ -133,6 +145,7 @@ inline auto ToStrRev(char* pout, IntT value) -> enable_if_t<std::is_unsigned<Int
 /// 自動小數位數: 移除小數點後無用的0, 若小數部分為0, 則一併移除小數點.
 /// - 從 (*--pout) 往前填入.
 /// - 傳回最後一次 pout 位置: 字串開始位置.
+/// - 返回時 value = 移除小數位之後的整數部分.
 fon9_API char* PutAutoPrecision(char* pout, uintmax_t& value, DecScaleT scale);
 
 inline char* UDecToStrRev(char* pout, uintmax_t value, DecScaleT scale) {
@@ -199,6 +212,7 @@ inline char* Pic9ToStrRev(char* pout, IntT value) {
    impl::AuxPic9ToStr<IntT, Width>::ToStr(pout, value);
    return pout - Width;
 }
+
 template <unsigned Width, typename IntT>
 inline char* SPic9ToStrRev(char* pout, IntT value) {
    using UIntT = typename std::make_unsigned<IntT>::type;

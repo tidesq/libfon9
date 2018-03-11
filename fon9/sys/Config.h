@@ -89,7 +89,7 @@ extern "C" {
       #define fon9_WARN_DISABLE_PADDING                  fon9_GCC_MAKE_DIAG(GCC diagnostic push)
       #define fon9_WARN_POP                              fon9_GCC_WARN_POP
    #endif
-   #define fon9_WARN_DISABLE_SWITCH                      fon9_MSC_WARN_DISABLE(4061); fon9_GCC_WARN_DISABLE("-Wswitch")
+   #define fon9_WARN_DISABLE_SWITCH                      fon9_MSC_WARN_DISABLE(4061 4062); fon9_GCC_WARN_DISABLE("-Wswitch")
 
    #ifdef _MSC_VER
       /// 讓 compiler 可以最佳化分支路徑.
@@ -106,6 +106,19 @@ extern "C" {
    #else
       #define fon9_ENUM_underlying(type)
    #endif
+
+   /// \ingroup AlNum
+   /// 強迫把 x 變成字串, 例如: fon9_TOCSTR(xyz) 可得到 "xyz"; 不論 xyz 的內容為何!
+   /// fon9_TOCSTR("ABC") 則會得到 "\"ABC\\"" 這樣的字串!
+   // 上面寫成 "\"ABC\\"" 是因為配合 doxygen 的關係, 實際 C 的表示法是: "\"ABC\"".
+   #define fon9_TOCSTR(x)       #x
+
+   /// \ingroup AlNum
+   /// `fon9_CTXTOCSTR(123)` 可得到 "123";
+   /// 若有 \#`define xxx CTX` 則: `fon9_CTXTOCSTR(xxx)` 可得到 "CTX".
+   /// 其餘則不論 x 為 enum 或 const; 都不會取出內容, 只會將 x 變成字串,
+   /// 例如: `fon9_CTXTOCSTR(EnumValue1)` 只會得到 "EnumValue1".
+   #define fon9_CTXTOCSTR(x)    fon9_TOCSTR(x)
 
 #ifdef __cplusplus
 }//extern "C"

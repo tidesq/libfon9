@@ -52,4 +52,30 @@ const char Digs0099[] =
 "6061626364656667686970717273747576777879"
 "8081828384858687888990919293949596979899";
 
+//--------------------------------------------------------------------------//
+
+fon9_API StrView StrView_TruncUTF8(StrView utf8str, size_t expectLen) {
+   if (utf8str.size() <= expectLen)
+      return utf8str;
+   // 根據 wiki 的說明: https://en.wikipedia.org/wiki/UTF-8
+   // Bits of    | First       | Last         | Bytes in |
+   // code point | code point  | code point   | sequence | Byte 1   | Byte 2   | Byte 3   | Byte 4   | Byte 5   | Byte 6
+   //     7      | U + 0000    | U + 007F     | 1        | 0xxxxxxx |
+   //    11      | U + 0080    | U + 07FF     | 2        | 110xxxxx | 10xxxxxx |
+   //    16      | U + 0800    | U + FFFF     | 3        | 1110xxxx | 10xxxxxx | 10xxxxxx |
+   //    21      | U + 10000   | U + 1FFFFF   | 4        | 11110xxx | 10xxxxxx | 10xxxxxx | 10xxxxxx |
+   //    26      | U + 200000  | U + 3FFFFFF  | 5        | 111110xx | 10xxxxxx | 10xxxxxx | 10xxxxxx | 10xxxxxx |
+   //    31      | U + 4000000 | U + 7FFFFFFF | 6        | 1111110x | 10xxxxxx | 10xxxxxx | 10xxxxxx | 10xxxxxx | 10xxxxxx
+   // 所以根據被截斷的地方來判斷即可!
+   static const char chHead = '\x80' | 0x40;
+   const char* const pbegin = utf8str.begin();
+   const char* ptrunc = pbegin + expectLen;
+   // 依上表來看, 此處最多走6步就可完成!
+   while (ptrunc != pbegin && (*ptrunc & chHead) != chHead) {
+      if ((*ptrunc & 0x80) == 0)
+         break;
+      --ptrunc;
+   }
+   return StrView{pbegin, ptrunc};
+}
 } // namespace fon9

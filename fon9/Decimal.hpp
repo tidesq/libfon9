@@ -5,7 +5,7 @@
 /// \author fonwinz@gmail.com
 #ifndef __fon9_Decimal_hpp__
 #define __fon9_Decimal_hpp__
-#include "fon9/ToStr.hpp"
+#include "fon9/ToStrFmt.hpp"
 #include "fon9/StrTo.hpp"
 
 namespace fon9 {
@@ -161,6 +161,10 @@ public:
    constexpr OrigType GetIntPart() const {
       return this->Value_ / this->Divisor;
    }
+   constexpr OrigType GetDecPart() const {
+      return DecimalAux<IntTypeT>::RemoveIntPart(this->Value_, Divisor);
+   }
+
    constexpr friend Decimal RemoveIntPart (Decimal value) {
       return Decimal{DecimalAux<IntTypeT>::RemoveIntPart(value.Value_, Divisor)};
    }
@@ -253,6 +257,11 @@ constexpr F To(const Decimal<IntTypeT, ScaleN>& value) {
 template <typename IntTypeT, DecScaleT ScaleN>
 inline char* ToStrRev(char* pout, const Decimal<IntTypeT, ScaleN>& value) {
    return DecToStrRev(pout, value.GetOrigValue(), ScaleN);
+}
+
+template <typename IntTypeT, DecScaleT ScaleN>
+inline char* ToStrRev(char* pout, const Decimal<IntTypeT, ScaleN>& value, const FmtDef& fmt) {
+   return DecToStrRev(pout, abs_cast(value.GetOrigValue()), value.GetOrigValue() < 0, ScaleN, fmt);
 }
 
 template <typename IntTypeT, DecScaleT ScaleN, class AuxT = StrToDecIntAux<IntTypeT>, class ResultT = Decimal<IntTypeT, ScaleN>>

@@ -171,5 +171,12 @@ inline void StrTrim(StrView& str) {
       str.SetBegin(str.end());
 }
 
+//--------------------------------------------------------------------------//
+
+/// \ingroup AlNum
+/// 如果 utf8str 長度超過 expectLen 則切除超過的部分,
+/// 如果切除的位置剛好是一個 [utf8字] 的一部份, 則長度會再縮減, 避免有被切斷的 [utf8字].
+fon9_API StrView StrView_TruncUTF8(StrView utf8str, size_t expectLen);
+
 } // namespace fon9
 #endif//__fon9_StrTools_hpp__

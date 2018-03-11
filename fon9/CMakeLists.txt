@@ -3,6 +3,8 @@ set(fon9src
  StrTools.cpp
  StrTo.cpp
  ToStr.cpp
+ FmtDef.cpp
+ ToStrFmt.cpp
  TimeInterval.cpp
  TimeStamp.cpp
 )

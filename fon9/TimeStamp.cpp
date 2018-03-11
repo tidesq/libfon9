@@ -171,6 +171,135 @@ fon9_API char* ToStrRev_FIXMS(char* pout, TimeStamp ts) {
 
 //--------------------------------------------------------------------------//
 
+FmtTS::FmtTS(StrView fmtstr) {
+   TsFmtItem item;
+   for (const char& chItem : fmtstr) {
+      fon9_WARN_DISABLE_SWITCH;
+      fon9_MSC_WARN_DISABLE_NO_PUSH(4063);//C4063: case '43' is not a valid value for switch of enum 'fon9::TsFmtItemChar'
+      switch (static_cast<TsFmtItemChar>(chItem)) {
+      #define case_FmtChar_FmtFlag(itemName) \
+         case TsFmtItemChar::itemName: item = TsFmtItem::itemName; break;
+      case_FmtChar_FmtFlag(YYYYMMDDHHMMSS);
+      case_FmtChar_FmtFlag(YYYYMMDD);
+      case_FmtChar_FmtFlag(YYYY_MM_DD);
+      case_FmtChar_FmtFlag(YYYYsMMsDD);
+      case_FmtChar_FmtFlag(Year4);
+      case_FmtChar_FmtFlag(Month02);
+      case_FmtChar_FmtFlag(Day02);
+      case_FmtChar_FmtFlag(HHMMSS);
+      case_FmtChar_FmtFlag(HH_MM_SS);
+      case_FmtChar_FmtFlag(Hour02);
+      case_FmtChar_FmtFlag(Minute02);
+      case_FmtChar_FmtFlag(Second02);
+      default:
+         if (static_cast<char>(chItem) == '.' || isdigit(static_cast<unsigned char>(chItem))) {
+            this->ParseWidth(&chItem, fmtstr.end());
+            return;
+         }
+         item = static_cast<TsFmtItem>(chItem);
+         break;
+      case static_cast<TsFmtItemChar>('+') :
+      case static_cast<TsFmtItemChar>('-') :
+         const char* pcur = &chItem + 1;
+         if (pcur != fmtstr.end() && (*pcur=='\'' || isdigit(static_cast<unsigned char>(*pcur)))) {
+            this->TimeZoneOffset_ = StrTo(StrView{&chItem, fmtstr.end()}, this->TimeZoneOffset_, &pcur);
+            if ((pcur = StrFindIf(pcur, fmtstr.end(), isnotspace)) != nullptr)
+               this->ParseWidth(pcur, fmtstr.end());
+            return;
+         }
+         item = static_cast<TsFmtItem>(chItem);
+         break;
+      }
+      fon9_MSC_WARN_POP;
+
+      if (this->ItemsCount_ >= numofele(this->FmtItems_))
+         return;
+      this->FmtItems_[this->ItemsCount_++] = item;
+   }
+}
+
+fon9_API char* ToStrRev(char* const pstart, TimeStamp ts, const FmtTS& fmt) {
+   uintmax_t value = abs_cast(ts.GetOrigValue());
+   if (ts.IsNull() || (value == 0 && IsEnumContains(fmt.Flags_, FmtFlag::Hide0))) {
+      if (fmt.Width_ > 0)
+         return reinterpret_cast<char*>(memset(pstart - fmt.Width_, ' ', fmt.Width_));
+      return pstart;
+   }
+
+   value += fmt.TimeZoneOffset_.ToTimeInterval().GetOrigValue();
+   char*       pout = ToStrRev_TimeIntervalDec(pstart, value, fmt);
+   DateTime14T yyyymmddHHMMSS = EpochSecondsToYYYYMMDDHHMMSS(static_cast<intmax_t>(value));
+   uint8_t     itemIndex = fmt.ItemsCount_;
+   if (itemIndex == 0)
+      pout = Pic9ToStrRev<14>(pout, abs_cast(yyyymmddHHMMSS));
+   else {
+      NumOutBuf   nbuf;
+      char*       pstrYMDHMS = Pic9ToStrRev<14>(nbuf.end(), abs_cast(yyyymmddHHMMSS));
+      for (;;) {
+         switch (TsFmtItem item = fmt.FmtItems_[--itemIndex]) {
+         case TsFmtItem::YYYYMMDDHHMMSS:
+            memcpy(pout -= 14, pstrYMDHMS, 14);
+            break;
+         case TsFmtItem::YYYYMMDD:
+            memcpy(pout -= 8, pstrYMDHMS, 8);
+            break;
+         case TsFmtItem::YYYY_MM_DD:
+            memcpy(pout -= 2, pstrYMDHMS + 6, 2);
+            *--pout = '-';
+            memcpy(pout -= 2, pstrYMDHMS + 4, 2);
+            *--pout = '-';
+            memcpy(pout -= 4, pstrYMDHMS, 4);
+            break;
+         case TsFmtItem::YYYYsMMsDD:
+            memcpy(pout -= 2, pstrYMDHMS + 6, 2);
+            *--pout = '/';
+            memcpy(pout -= 2, pstrYMDHMS + 4, 2);
+            *--pout = '/';
+            memcpy(pout -= 4, pstrYMDHMS, 4);
+            break;
+         case TsFmtItem::Year4:
+            memcpy(pout -= 4, pstrYMDHMS, 4);
+            break;
+         case TsFmtItem::Month02:
+            memcpy(pout -= 2, pstrYMDHMS + 4, 2);
+            break;
+         case TsFmtItem::Day02:
+            memcpy(pout -= 2, pstrYMDHMS + 6, 2);
+            break;
+         case TsFmtItem::HHMMSS:
+            memcpy(pout -= 6, pstrYMDHMS + 8, 6);
+            break;
+         case TsFmtItem::HH_MM_SS:
+            memcpy(pout -= 2, pstrYMDHMS + 12, 2);
+            *--pout = ':';
+            memcpy(pout -= 2, pstrYMDHMS + 10, 2);
+            *--pout = ':';
+            memcpy(pout -= 2, pstrYMDHMS + 8, 2);
+            break;
+         case TsFmtItem::Hour02:
+            memcpy(pout -= 2, pstrYMDHMS + 8, 2);
+            break;
+         case TsFmtItem::Minute02:
+            memcpy(pout -= 2, pstrYMDHMS + 10, 2);
+            break;
+         case TsFmtItem::Second02:
+            memcpy(pout -= 2, pstrYMDHMS + 12, 2);
+            break;
+         default:
+            *--pout = static_cast<char>(item);
+            break;
+         }
+         if (itemIndex <= 0)
+            break;
+         if (static_cast<size_t>(pstart - pout) >= sizeof(NumOutBuf) - 14) // 避免 buffer overflow!
+            break;
+      }
+   }
+   return ToStrRev_LastJustify(pout, static_cast<unsigned>(pstart - pout), fmt);
+}
+
+//--------------------------------------------------------------------------//
+
 fon9_WARN_DISABLE_PADDING;
 class StrToTimeStampAux : public StrToDecimalAux<TimeStamp> {
    fon9_NON_COPY_NON_MOVE(StrToTimeStampAux);
@@ -367,7 +496,7 @@ bool StrToTimeStampAux::IsValidChar(TempResultT& res, StrToNumCursor& cur) {
 StrToTimeStampAux::ResultT StrToTimeStampAux::MakeResult(TempResultT res, StrToNumCursor& cur) {
    if (this->PointPos_ == nullptr)
       res = this->ResultYYYYMMDD_ToEpochSeconds(res);
-   return base::MakeResult(res,cur);
+   return base::MakeResult(res, cur);
 }
 
 fon9_API TimeStamp StrTo(const StrView& str, TimeStamp value, const char** endptr) {
@@ -418,6 +547,11 @@ fon9_API char* ToStrRev(char* pout, TimeZoneOffset tzofs) {
    pout = ToStrRev(pout, unsigned_cast(ofs / 60));
    *--pout = (isNeg ? '-' : '+');
    return pout;
+}
+
+fon9_API char* ToStrRev(char* pstart, TimeZoneOffset tzofs, FmtDef fmt) {
+   char* pout = ToStrRev(pstart, tzofs);
+   return ToStrRev_LastJustify(pout, static_cast<unsigned>(pstart - pout), fmt);
 }
 
 //--------------------------------------------------------------------------//
@@ -486,8 +620,12 @@ bool TimeZoneOffset::StrToAux::IsValidChar(TempResultT& res, StrToNumCursor& cur
    return false;
 }
 TimeZoneOffset::StrToAux::ResultT TimeZoneOffset::StrToAux::MakeResult(TempResultT res, StrToNumCursor& cur) {
-   if (!this->HasSplitter_ && cur.Current_ - cur.OrigBegin_ >= 3) // hhmm or hmm
-      res = (res / 100) * 60 + (res % 100);
+   if (!this->HasSplitter_) {
+      if (fon9_LIKELY(cur.Current_ - cur.OrigBegin_ <= 2)) // hh
+         res = res * 60;
+      else // hhmm or hmm
+         res = (res / 100) * 60 + (res % 100);
+   }
    return base::MakeResult(res, cur);
 }
 

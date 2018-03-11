@@ -72,6 +72,16 @@ constexpr TimeInterval TimeInterval_HHMMSS(unsigned hh, unsigned mm, unsigned ss
 fon9_API char* ToStrRev(char* pout, TimeInterval ti);
 
 /// \ingroup AlNum
+/// - value.IsNull() 則一律填入空白, 由 fmt.Width_ 指定空白數量(可為0).
+/// - FmtFlag::IntPad0 會用在 days 上面, 預設: days==0 時, 不顯示 `days-`
+/// - fmt.Precision_ 可指定小數位數
+/// - 使用 fmt 就不考慮 ms、us 表示法。
+fon9_API char* ToStrRev(char* pout, TimeInterval value, FmtDef fmt);
+
+/// 顯示 TimeInterval 的小數部分.
+fon9_API char* ToStrRev_TimeIntervalDec(char* pout, uintmax_t& value, FmtDef fmt);
+
+/// \ingroup AlNum
 /// 字串轉成 TimeInterval, 支援的格式參考 \ref char* ToStrRev(char* pout, TimeInterval ti);
 fon9_API TimeInterval StrTo(const StrView& str, TimeInterval value = TimeInterval::Null(), const char** endptr = nullptr);
 

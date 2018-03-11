@@ -78,6 +78,8 @@
     <ClInclude Include="..\..\..\fon9\DecBase.hpp" />
     <ClInclude Include="..\..\..\fon9\Decimal.hpp" />
     <ClInclude Include="..\..\..\fon9\DummyMutex.hpp" />
+    <ClInclude Include="..\..\..\fon9\Exception.hpp" />
+    <ClInclude Include="..\..\..\fon9\FmtDef.hpp" />
     <ClInclude Include="..\..\..\fon9\MustLock.hpp" />
     <ClInclude Include="..\..\..\fon9\SortedVector.hpp" />
     <ClInclude Include="..\..\..\fon9\StrTo.hpp" />
@@ -90,6 +92,7 @@
     <ClInclude Include="..\..\..\fon9\TimeInterval.hpp" />
     <ClInclude Include="..\..\..\fon9\TimeStamp.hpp" />
     <ClInclude Include="..\..\..\fon9\ToStr.hpp" />
+    <ClInclude Include="..\..\..\fon9\ToStrFmt.hpp" />
     <ClInclude Include="..\..\..\fon9\TypeName.hpp" />
     <ClInclude Include="..\..\..\fon9\Utility.hpp" />
   </ItemGroup>
@@ -101,11 +104,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\fon9\DecBase.cpp" />
+    <ClCompile Include="..\..\..\fon9\FmtDef.cpp" />
     <ClCompile Include="..\..\..\fon9\StrTo.cpp" />
     <ClCompile Include="..\..\..\fon9\StrTools.cpp" />
     <ClCompile Include="..\..\..\fon9\TimeInterval.cpp" />
     <ClCompile Include="..\..\..\fon9\TimeStamp.cpp" />
     <ClCompile Include="..\..\..\fon9\ToStr.cpp" />
+    <ClCompile Include="..\..\..\fon9\ToStrFmt.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -139,6 +139,16 @@ constexpr TimeStamp EpochSecondsToTimeStamp(TimeStamp::OrigType epochSeconds) {
 
 //--------------------------------------------------------------------------//
 
+/// \ingroup AlNum
+/// 字串轉成 TimeStamp.
+/// - 主要分成 2 部分: `yyyymmdd HHMMSS`; 中間分隔可用「'-' or SPC」或沒有分隔「yyyyymmddHHMMSS」
+/// - yyyymmdd 可用 yyyy/mm/dd 或 yyyy-mm-dd 或 yyyymmdd
+/// - HHMMSS 可用 HH:MM:SS 或 HHMMSS 或 MM:SS(此時HH為0);
+///   - 若沒提供 HHMMSS 則使用 000000
+///   - HHMMSS 之後可包含小數位 `.uuuuuu`
+/// - 分隔符號前後允許任意空白.
+fon9_API TimeStamp StrTo(const StrView& str, TimeStamp value = TimeStamp::Null(), const char** endptr = nullptr);
+
 enum {
    /// YYYYMMDDHHMMSS.uuuuuu 字串緩衝區大小(不含EOS).
    kDateTimeStrWidth = sizeof("YYYYMMDDHHMMSS.uuuuuu") - 1,
@@ -159,16 +169,6 @@ fon9_API char* ToStrRev_FIX(char* pout, TimeStamp ts);
 /// \ingroup AlNum
 /// 輸出時間的 YYYYMMDD-HH:MM:SS.sss 字串 (FIX時間格式,包含ms).
 fon9_API char* ToStrRev_FIXMS(char* pout, TimeStamp ts);
-
-/// \ingroup AlNum
-/// 字串轉成 TimeStamp.
-/// - 主要分成 2 部分: `yyyymmdd HHMMSS`; 中間分隔可用「'-' or SPC」或沒有分隔「yyyyymmddHHMMSS」
-/// - yyyymmdd 可用 yyyy/mm/dd 或 yyyy-mm-dd 或 yyyymmdd
-/// - HHMMSS 可用 HH:MM:SS 或 HHMMSS 或 MM:SS(此時HH為0);
-///   - 若沒提供 HHMMSS 則使用 000000
-///   - HHMMSS 之後可包含小數位 `.uuuuuu`
-/// - 分隔符號前後允許任意空白.
-fon9_API TimeStamp StrTo(const StrView& str, TimeStamp value = TimeStamp::Null(), const char** endptr = nullptr);
 
 //--------------------------------------------------------------------------//
 
@@ -214,6 +214,10 @@ fon9_WARN_POP;
 inline TimeStamp operator+(TimeStamp ts, TimeZoneOffset tz) {
    return TimeStamp{ts + tz.ToTimeInterval()};
 }
+inline TimeStamp& operator+=(TimeStamp& ts, TimeZoneOffset tz) {
+   ts += tz.ToTimeInterval();
+   return ts;
+}
 
 /// \ingroup AlNum
 /// 取得系統目前本地時區調整.
@@ -239,6 +243,77 @@ fon9_API TimeZoneOffset StrTo(const StrView& str, TimeZoneOffset value = TimeZon
 /// \ingroup AlNum
 /// 輸出 TimeZoneOffset 時間調整字串: "+h" or "+h:mm" or "-h" or "-h:mm"
 fon9_API char* ToStrRev(char* pout, TimeZoneOffset tzofs);
+/// 僅支援 fmt.Width_ 及 FmtFlag::LeftJustify.
+fon9_API char* ToStrRev(char* pout, TimeZoneOffset tzofs, FmtDef fmt);
+
+//--------------------------------------------------------------------------//
+
+enum class TsFmtItem : char {
+   YYYYMMDDHHMMSS,
+
+   YYYYMMDD,
+   /// YYYY-MM-DD
+   YYYY_MM_DD,
+   /// YYYY/MM/DD
+   YYYYsMMsDD,
+
+   Year4,
+   /// Month as a decimal number (01-12)
+   Month02,
+   /// Day of the month, zero-padded (01-31)
+   Day02,
+
+   // HHMMSS
+   HHMMSS,
+   /// ISO 8601 time format (HH:MM:SS).
+   HH_MM_SS,
+
+   Hour02,
+   Minute02,
+   Second02,
+};
+
+enum class TsFmtItemChar : char {
+   YYYYMMDDHHMMSS = 'L',
+
+   YYYYMMDD = 'f',
+   YYYY_MM_DD = 'F',
+   YYYYsMMsDD = 'K',
+   HHMMSS = 't',
+   HH_MM_SS = 'T',
+
+   Year4 = 'Y',
+   Month02 = 'm',
+   Day02 = 'd',
+
+   Hour02 = 'H',
+   Minute02 = 'M',
+   Second02 = 'S',
+};
+
+fon9_MSC_WARN_DISABLE(4251);//C4251: 'fon9::FmtTS::TimeZoneOffset_': class 'fon9::TimeZoneOffset' needs to have dll-interface to be used by clients of struct 'fon9::FmtTS'
+/// \ingroup AlNum
+/// TimeStamp 的格式化定義.
+struct fon9_API FmtTS : public FmtDef {
+   uint8_t        ItemsCount_{0};
+   TsFmtItem      FmtItems_[15];
+   TimeZoneOffset TimeZoneOffset_;
+
+   FmtTS() = default;
+
+   /// [ItemChars[char]][[+-TimeZoneOffset(spc)][width][.precision]]
+   /// - TimeZoneOffset 若使用 TimeZoneName 則必須加上「'」單引號ˇ.
+   /// - 如果尾端有 "." 或 ".0" 則自動小數位.
+   /// - 如果尾端沒有 ".precision" 則不顯示小數位.
+   FmtTS(StrView fmtstr);
+};
+fon9_MSC_WARN_POP;
+
+template <> struct FmtSelector<TimeStamp> {
+   using FmtType = FmtTS;
+};
+
+fon9_API char* ToStrRev(char* pout, TimeStamp ts, const FmtTS& fmt);
 
 } // namespaces
 #endif//__fon9_TimeStamp_hpp__

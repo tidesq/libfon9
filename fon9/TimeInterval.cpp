@@ -4,6 +4,22 @@
 
 namespace fon9 {
 
+static char* ToStrRev_TimeInterval_HHMM(char* pout, uint32_t daySeconds) {
+   unsigned mm = (static_cast<unsigned>(daySeconds) / 60u) % 60u;
+   unsigned hh = (static_cast<unsigned>(daySeconds) / (60u * 60u)) % 24;
+   if (hh || mm) {
+      if ((static_cast<unsigned>(daySeconds) % 60u) < 10)
+         *--pout = '0';
+      *--pout = ':';
+      pout = Pic9ToStrRev<2>(pout, mm);
+      if (hh) {
+         *--pout = ':';
+         pout = Pic9ToStrRev<2>(pout, hh);
+      }
+   }
+   return pout;
+}
+
 fon9_API char* ToStrRev(char* pout, TimeInterval ti) {
    bool isNeg = (ti.GetOrigValue() < 0);
    if (fon9_UNLIKELY(isNeg)) {
@@ -23,22 +39,10 @@ fon9_API char* ToStrRev(char* pout, TimeInterval ti) {
       pout = ToStrRev(pout, ti.ToDecimal());
 
       TiUnsigned days = unsigned_cast(daySeconds / kOneDaySeconds);
-      daySeconds %= kOneDaySeconds;
-      unsigned mm = (static_cast<unsigned>(daySeconds) / 60u) % 60u;
-      unsigned hh = (static_cast<unsigned>(daySeconds) / (60u * 60u));
-      if (hh || mm) {
-         if ((static_cast<unsigned>(daySeconds) % 60u) < 10)
-            *--pout = '0';
-         *--pout = ':';
-         pout = Pic9ToStrRev<2>(pout, mm);
-         if (hh) {
-            *--pout = ':';
-            pout = Pic9ToStrRev<2>(pout, hh);
-         }
-      }
+      pout = ToStrRev_TimeInterval_HHMM(pout, static_cast<uint32_t>(daySeconds));
       if (days > 0) {
          *--pout = '-';
-         pout = ToStrRev(pout, days);
+         pout = UIntToStrRev(pout, days);
       }
    }
    else {
@@ -55,7 +59,7 @@ fon9_API char* ToStrRev(char* pout, TimeInterval ti) {
          else { // us
             *--pout = 'u';
             *--pout = ' ';
-            pout = ToStrRev(pout, us);
+            pout = UIntToStrRev(pout, us);
          }
       }
       else
@@ -64,6 +68,48 @@ fon9_API char* ToStrRev(char* pout, TimeInterval ti) {
    if (isNeg)
       *--pout = '-';
    return pout;
+}
+
+fon9_API char* ToStrRev_TimeIntervalDec(char* pout, uintmax_t& value, FmtDef fmt) {
+   if (fon9_LIKELY(!IsEnumContains(fmt.Flags_, FmtFlag::HasPrecision)))
+      value /= TimeInterval::Divisor;
+   else {
+      if (fon9_LIKELY(fmt.Precision_ == 0))
+         pout = PutAutoPrecision(pout, value, TimeInterval::Scale);
+      else {
+         pout = ToStrRev_DecScalePrecision(pout, value, TimeInterval::Scale, fmt.Precision_, [](uintmax_t val, uintmax_t div) {
+            // 無條件捨去.
+            return val / div;
+         });
+         *--pout = NumPunct_Current.DecPoint_;
+      }
+   }
+   return pout;
+}
+
+fon9_API char* ToStrRev(char* const pstart, TimeInterval ti, FmtDef fmt) {
+   uintmax_t value = abs_cast(ti.GetOrigValue());
+   if (ti.IsNull() || (value == 0 && IsEnumContains(fmt.Flags_, FmtFlag::Hide0))) {
+      if (fmt.Width_ > 0)
+         return reinterpret_cast<char*>(memset(pstart - fmt.Width_, ' ', fmt.Width_));
+      return pstart;
+   }
+   char*    pout = ToStrRev_TimeIntervalDec(pstart, value, fmt);
+   unsigned ss = (static_cast<unsigned>(value) % 60u);
+   if (ss < 10)
+      *--pout = static_cast<char>(ss + '0');
+   else
+      pout = Pic9ToStrRev<2>(pout, ss);
+
+   uintmax_t   days = unsigned_cast(value / kOneDaySeconds);
+   pout = ToStrRev_TimeInterval_HHMM(pout, static_cast<uint32_t>(value));
+   fmt.Precision_ = 0;
+   fmt.Flags_ -= FmtFlag::Hide0 | FmtFlag::HasPrecision;
+   if (days > 0 || IsEnumContains(fmt.Flags_, FmtFlag::IntPad0)) {
+      *--pout = '-';
+      pout = UIntToStrRev(pout, days);
+   }
+   return IntToStrRev_LastJustify(pout, static_cast<unsigned>(pstart - pout), ti.GetOrigValue() < 0, fmt);
 }
 
 //--------------------------------------------------------------------------//

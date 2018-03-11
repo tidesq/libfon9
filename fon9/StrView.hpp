@@ -178,7 +178,7 @@ public:
 constexpr StrView StrView_cstr(const char* cstr) {
    return cstr ? StrView{cstr, StrView::traits_type::length(cstr)} : StrView{};
 }
-inline StrView ToStrView(const char* cstr) {
+constexpr StrView ToStrView(const char* cstr) {
    return StrView_cstr(cstr);
 }
 inline StrView ToStrView(const std::string& str) {

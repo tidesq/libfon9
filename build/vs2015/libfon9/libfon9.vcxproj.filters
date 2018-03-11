@@ -18,9 +18,6 @@
     <Filter Include="Source Files\_base\_AlNum">
       <UniqueIdentifier>{cdd83642-c039-4ca9-be18-76a8466e3630}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\_base\sys">
-      <UniqueIdentifier>{c908c407-3f03-4a91-b3fb-f1c523af280d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\_base\_Thread">
       <UniqueIdentifier>{0ffe68c3-6b72-4b7c-abfb-ee05812deeb8}</UniqueIdentifier>
     </Filter>
@@ -33,13 +30,16 @@
     <Filter Include="Header Files\_base\_AlNum / StrTools">
       <UniqueIdentifier>{20606a7c-e09c-463c-ad6d-309d42e1b7b3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\sys">
+      <UniqueIdentifier>{c908c407-3f03-4a91-b3fb-f1c523af280d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\sys\Config.h">
-      <Filter>Header Files\_base\sys</Filter>
+      <Filter>Header Files\sys</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\sys\Config.hpp">
-      <Filter>Header Files\_base\sys</Filter>
+      <Filter>Header Files\sys</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\DecBase.hpp">
       <Filter>Header Files\_base\_AlNum / StrTools</Filter>
@@ -89,6 +89,15 @@
     <ClInclude Include="..\..\..\fon9\TimeInterval.hpp">
       <Filter>Header Files\_base\_AlNum / StrTools</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\Exception.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\FmtDef.hpp">
+      <Filter>Header Files\_base\_AlNum / StrTools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\ToStrFmt.hpp">
+      <Filter>Header Files\_base\_AlNum / StrTools</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -113,6 +122,12 @@
       <Filter>Source Files\_base\_AlNum</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\TimeInterval.cpp">
+      <Filter>Source Files\_base\_AlNum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\FmtDef.cpp">
+      <Filter>Source Files\_base\_AlNum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\ToStrFmt.cpp">
       <Filter>Source Files\_base\_AlNum</Filter>
     </ClCompile>
   </ItemGroup>

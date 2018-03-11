@@ -37,7 +37,7 @@ using conditional_t = typename std::conditional<cond, TrueT, FalseT>::type;
 template <typename EnumT>
 struct HasBitOpT {
    template <typename T>
-   static auto HasBitOpChecker(T)->decltype(EnumIsContains(T{}, T{}));
+   static auto HasBitOpChecker(T)->decltype(IsEnumContains(T{}, T{}));
    struct No { bool _[16]; };
    static No HasBitOpChecker(...);
    enum { value = (sizeof(HasBitOpChecker(typename std::remove_reference<EnumT>::type{})) != sizeof(No)) };
@@ -58,16 +58,30 @@ template <typename IntType>
 using ToImax_t = conditional_t<std::is_signed<IntType>::value, intmax_t, uintmax_t>;
 
 /// \ingroup Misc
-/// 強制轉型為無正負整數.
-template <typename T>
-constexpr typename std::make_unsigned<T>::type unsigned_cast(T value) {
-   return static_cast<typename std::make_unsigned<T>::type>(value);
-}
-
-/// \ingroup Misc
 /// 同 C++14 的 std::enable_if_t<>
 template<bool B, class T = void>
 using enable_if_t = typename std::enable_if<B, T>::type;
+
+/// \ingroup Misc
+/// 同 C++14 的 std::enable_if_t<>
+template<typename T>
+using make_unsigned_t = typename std::make_unsigned<T>::type;
+
+/// \ingroup Misc
+/// 強制轉型為無正負整數.
+template <typename T>
+constexpr make_unsigned_t<T> unsigned_cast(T value) {
+   return static_cast<make_unsigned_t<T>>(value);
+}
+
+template <typename T>
+constexpr enable_if_t<std::is_signed<T>::value, make_unsigned_t<T>> abs_cast(T value) {
+   return unsigned_cast(value < 0 ? -value : value);
+}
+template <typename T>
+constexpr enable_if_t<std::is_unsigned<T>::value, make_unsigned_t<T>> abs_cast(T value) {
+   return value;
+}
 
 /// \ingroup Misc
 /// 將陣列值內容全部清為0.

@@ -52,17 +52,52 @@ void TimeInterval_TestToStrRev() {
    CheckToStrRev(ti, &fon9::ToStrRev, "ToStrRev(TimeInterval)", "0");
 
    ti += fon9::TimeInterval_Microsecond(456);
-   CheckToStrRev(ti, &fon9::ToStrRev, "ToStrRev              ", "456 us");
+   CheckToStrRev(ti, &fon9::ToStrRev, "                      ", "456 us");
    ti += fon9::TimeInterval_Millisecond(123);
-   CheckToStrRev(ti, &fon9::ToStrRev, "ToStrRev              ", "123.456 ms");
+   CheckToStrRev(ti, &fon9::ToStrRev, "                      ", "123.456 ms");
    ti += fon9::TimeInterval_Second(7);
-   CheckToStrRev(ti, &fon9::ToStrRev, "ToStrRev              ", "7.123456");
+   CheckToStrRev(ti, &fon9::ToStrRev, "                      ", "7.123456");
    ti += fon9::TimeInterval_Minute(8);
-   CheckToStrRev(ti, &fon9::ToStrRev, "ToStrRev              ", "08:07.123456");
+   CheckToStrRev(ti, &fon9::ToStrRev, "                      ", "08:07.123456");
    ti += fon9::TimeInterval_Hour(9);
-   CheckToStrRev(ti, &fon9::ToStrRev, "ToStrRev              ", "09:08:07.123456");
+   CheckToStrRev(ti, &fon9::ToStrRev, "                      ", "09:08:07.123456");
    ti += fon9::TimeInterval_Day(3);
-   CheckToStrRev(ti, &fon9::ToStrRev, "ToStrRev              ", "3-09:08:07.123456");
+   CheckToStrRev(ti, &fon9::ToStrRev, "                      ", "3-09:08:07.123456");
+
+   typedef char* (*FnToStrRev)(char*, fon9::TimeInterval);
+   FnToStrRev fnToStrRevFmt = [](char* pout, fon9::TimeInterval t) {
+      return fon9::ToStrRev(pout, t, fon9::FmtDef{"+020."});
+   };
+   ti = fon9::TimeInterval{};
+   ti += fon9::TimeInterval_Microsecond(456);
+   CheckToStrRev(ti, fnToStrRevFmt, "(TimeInterval,FmtDef) ", "+0000000000-0.000456");
+   ti += fon9::TimeInterval_Millisecond(123);
+   CheckToStrRev(ti, fnToStrRevFmt, "                      ", "+0000000000-0.123456");
+   ti += fon9::TimeInterval_Second(7);
+   CheckToStrRev(ti, fnToStrRevFmt, "                      ", "+0000000000-7.123456");
+   ti += fon9::TimeInterval_Minute(8);
+   CheckToStrRev(ti, fnToStrRevFmt, "                      ", "+000000-08:07.123456");
+   ti += fon9::TimeInterval_Hour(9);
+   CheckToStrRev(ti, fnToStrRevFmt, "                      ", "+000-09:08:07.123456");
+   ti += fon9::TimeInterval_Day(3);
+   CheckToStrRev(ti, fnToStrRevFmt, "                      ", "+003-09:08:07.123456");
+
+   fnToStrRevFmt = [](char* pout, fon9::TimeInterval t) {
+      return fon9::ToStrRev(pout, t, fon9::FmtDef{"-+020."});
+   };
+   ti = fon9::TimeInterval{};
+   ti += fon9::TimeInterval_Microsecond(456);
+   CheckToStrRev(ti, fnToStrRevFmt, "(TimeInterval,FmtDef-)", "+0-0.000456         ");
+   ti += fon9::TimeInterval_Millisecond(123);
+   CheckToStrRev(ti, fnToStrRevFmt, "                      ", "+0-0.123456         ");
+   ti += fon9::TimeInterval_Second(7);
+   CheckToStrRev(ti, fnToStrRevFmt, "                      ", "+0-7.123456         ");
+   ti += fon9::TimeInterval_Minute(8);
+   CheckToStrRev(ti, fnToStrRevFmt, "                      ", "+0-08:07.123456     ");
+   ti += fon9::TimeInterval_Hour(9);
+   CheckToStrRev(ti, fnToStrRevFmt, "                      ", "+0-09:08:07.123456  ");
+   ti += fon9::TimeInterval_Day(3);
+   CheckToStrRev(ti, fnToStrRevFmt, "                      ", "+3-09:08:07.123456  ");
 }
 void TimeStamp_TestToStrRev() {
    fon9::TimeStamp ts{fon9::TimeInterval_Second(fon9::YYYYMMDDHHMMSS_ToEpochSeconds(20180301102030))};
@@ -75,13 +110,23 @@ void TimeStamp_TestToStrRev() {
    CheckToStrRev(ts, &fon9::ToStrRev_FIXMS, "ToStrRev_FIXMS     ", "20180301-10:20:30.123");
 }
 void TimeZoneOffset_TestToStrRev() {
-   fon9::TimeZoneOffset tz;
    CheckToStrRev(fon9::TimeZoneOffset{},                        &fon9::ToStrRev, "ToStrRev(TimeZoneOffset)", "+0");
-   CheckToStrRev(fon9::TimeZoneOffset::FromOffsetMinutes(30),   &fon9::ToStrRev, "ToStrRev                ", "+0:30");
-   CheckToStrRev(fon9::TimeZoneOffset::FromOffsetMinutes(-30),  &fon9::ToStrRev, "ToStrRev                ", "-0:30");
-   CheckToStrRev(fon9::TimeZoneOffset::FromOffsetHHMM(8, 0),    &fon9::ToStrRev, "ToStrRev                ", "+8");
-   CheckToStrRev(fon9::TimeZoneOffset::FromOffsetHHMM(8, 30),   &fon9::ToStrRev, "ToStrRev                ", "+8:30");
-   CheckToStrRev(fon9::TimeZoneOffset::FromOffsetHHMM(-8, -30), &fon9::ToStrRev, "ToStrRev                ", "-8:30");
+   CheckToStrRev(fon9::TimeZoneOffset::FromOffsetMinutes(30),   &fon9::ToStrRev, "                        ", "+0:30");
+   CheckToStrRev(fon9::TimeZoneOffset::FromOffsetMinutes(-30),  &fon9::ToStrRev, "                        ", "-0:30");
+   CheckToStrRev(fon9::TimeZoneOffset::FromOffsetHHMM(8, 0),    &fon9::ToStrRev, "                        ", "+8");
+   CheckToStrRev(fon9::TimeZoneOffset::FromOffsetHHMM(8, 30),   &fon9::ToStrRev, "                        ", "+8:30");
+   CheckToStrRev(fon9::TimeZoneOffset::FromOffsetHHMM(-8, -30), &fon9::ToStrRev, "                        ", "-8:30");
+
+   typedef char* (*FnToStrRev)(char*, fon9::TimeZoneOffset);
+   FnToStrRev fnToStrRevFmt = [](char* pout, fon9::TimeZoneOffset tzofs) {
+      return fon9::ToStrRev(pout, tzofs, fon9::FmtDef{"-05."});
+   };
+   CheckToStrRev(fon9::TimeZoneOffset{},                        fnToStrRevFmt, "(TimeZoneOffset,FmtDef) ", "+0   ");
+   CheckToStrRev(fon9::TimeZoneOffset::FromOffsetMinutes(30),   fnToStrRevFmt, "                        ", "+0:30");
+   CheckToStrRev(fon9::TimeZoneOffset::FromOffsetMinutes(-30),  fnToStrRevFmt, "                        ", "-0:30");
+   CheckToStrRev(fon9::TimeZoneOffset::FromOffsetHHMM(8, 0),    fnToStrRevFmt, "                        ", "+8   ");
+   CheckToStrRev(fon9::TimeZoneOffset::FromOffsetHHMM(8, 30),   fnToStrRevFmt, "                        ", "+8:30");
+   CheckToStrRev(fon9::TimeZoneOffset::FromOffsetHHMM(-8, -30), fnToStrRevFmt, "                        ", "-8:30");
 }
 
 //--------------------------------------------------------------------------//
@@ -306,8 +351,125 @@ void TimeStamp_StrConv_Benchmark() {
    for (unsigned L = 0; L < kTimes; L++) {
       ToStrRev_FIX(nbuf.end(), fon9::EpochSecondsToTimeStamp(utctime + L));
    }
-   stopWatch.PrintResultNoEOL(stopWatch.StopTimer() - spanAdj, "ToStrRev        ", kTimes)
+   stopWatch.PrintResultNoEOL(stopWatch.StopTimer() - spanAdj, "ToStrRev_FIX    ", kTimes)
       << "|last=" << (nbuf.end() - fon9::kDateTimeStrWidth_FIX) << std::endl;
+
+   stopWatch.ResetTimer();
+   for (unsigned L = 0; L < kTimes; L++) {
+      ToStrRev(nbuf.end(), fon9::EpochSecondsToTimeStamp(utctime + L), fon9::FmtTS{"Ymd-T"});
+   }
+   stopWatch.PrintResultNoEOL(stopWatch.StopTimer() - spanAdj, "ToStrRev(FmtTS) ", kTimes)
+      << "|last=" << (nbuf.end() - fon9::kDateTimeStrWidth_FIX) << std::endl;
+}
+
+//--------------------------------------------------------------------------//
+
+void Test_FmtTS() {
+#define TEST_YYYYMMDDHHMMSS      20180311054530
+#define TEST_Year                2018
+#define TEST_Month               03
+#define TEST_Day                 11
+#define TEST_Hour                05
+#define TEST_Minute              45
+#define TEST_Second              30
+#define TEST_us                  987654
+#define TEST_cstr_MAKE_YMD(s)    fon9_CTXTOCSTR(TEST_Year) s fon9_CTXTOCSTR(TEST_Month) s fon9_CTXTOCSTR(TEST_Day)
+#define TEST_cstr_MAKE_HMS(s)    fon9_CTXTOCSTR(TEST_Hour) s fon9_CTXTOCSTR(TEST_Minute) s fon9_CTXTOCSTR(TEST_Second)
+#define TEST_cstr_us             "." fon9_CTXTOCSTR(TEST_us)
+#define ADD_US(s)                s TEST_cstr_us
+#define TEST_cstr_YMDHMS         fon9_CTXTOCSTR(TEST_YYYYMMDDHHMMSS)
+#define TEST_cstr_YsMsD_H_M_S    TEST_cstr_MAKE_YMD("/") "-" TEST_cstr_MAKE_HMS(":")
+#define TEST_cstr_Y_M_D_H_M_S    TEST_cstr_MAKE_YMD("-") "-" TEST_cstr_MAKE_HMS(":")
+#define TEST_cstr_YsMsD_HMS      TEST_cstr_MAKE_YMD("/") "-" TEST_cstr_MAKE_HMS("")
+#define TEST_cstr_YMD_H_M_S      TEST_cstr_MAKE_YMD("") "-" TEST_cstr_MAKE_HMS(":")
+#define TEST_cstr_YMD_HMS        TEST_cstr_MAKE_YMD("") "-" TEST_cstr_MAKE_HMS("")
+
+   struct Aux {
+      fon9_NON_COPY_NON_MOVE(Aux);
+      const fon9::TimeStamp TS_{fon9::YYYYMMDDHHMMSS_ToTimeStamp(TEST_YYYYMMDDHHMMSS) + fon9::TimeInterval_Microsecond(TEST_us)};
+      Aux() = default;
+
+      static void CheckTS(fon9::StrView str, const fon9::FmtTS& fmt, fon9::TimeStamp expected) {
+         fon9::TimeStamp strts = StrTo(str, fon9::TimeStamp::Null());
+         if (fon9::IsEnumContains(fmt.Flags_, fon9::FmtFlag::HasPrecision)) {
+            if (strts == expected)
+               return;
+         }
+         else {
+            if (strts.GetIntPart() == expected.GetIntPart())
+               return;
+         }
+         fon9::NumOutBuf nbuf;
+         nbuf.SetEOS();
+         std::cout //<< "StrTo.TimeStamp(", fon9::ToStrRev(nbuf.end(), ts) << ")"
+            << "\r[ERROR]" << std::endl;
+         abort();
+      }
+      void CheckFmtTS(const char* cstrfmt, fon9::TimeZoneOffset tzofs = fon9::TimeZoneOffset{}, const char* expected = nullptr) {
+         fon9::StrView fmtstr = fon9::StrView_cstr(cstrfmt);
+         std::cout << "[TEST ] fmt=\"" << cstrfmt << "\"" << std::setw(static_cast<int>(16 - fmtstr.size())) << "";
+
+         fon9::FmtTS     fmt{fmtstr};
+         fon9::NumOutBuf nbuf;
+         nbuf.SetEOS();
+         char*  pout = ToStrRev(nbuf.end(), this->TS_, fmt);
+         std::cout << "|result=\"" << pout << "\"";
+         if (expected && strcmp(expected, pout) != 0) {
+            std::cout << "|expect=\"" << expected << "\"";
+            abort();
+         }
+         this->CheckTS(fon9::StrView(pout, nbuf.end()), fmt, this->TS_ + tzofs);
+         std::cout << std::endl;
+      }
+      void CheckFmtTS(const char* cstrfmt, const char* expected) {
+         this->CheckFmtTS(cstrfmt, fon9::TimeZoneOffset{}, expected);
+      }
+   };
+   Aux aux;
+   aux.CheckFmtTS("",   TEST_cstr_YMDHMS);               //yyyymmddHHMMSS
+   aux.CheckFmtTS("L",  TEST_cstr_YMDHMS);               //yyyymmddHHMMSS
+   aux.CheckFmtTS(".",  ADD_US(TEST_cstr_YMDHMS));       //yyyymmddHHMMSS.uuuuuu
+   aux.CheckFmtTS("L.", ADD_US(TEST_cstr_YMDHMS));       //yyyymmddHHMMSS.uuuuuu
+
+   aux.CheckFmtTS("K-T",  TEST_cstr_YsMsD_H_M_S);        //YYYY/MM/DD-HH:MM:SS
+   aux.CheckFmtTS("K-T.", ADD_US(TEST_cstr_YsMsD_H_M_S));//YYYY/MM/DD-HH:MM:SS.uuuuuu
+   aux.CheckFmtTS("K-t",  TEST_cstr_YsMsD_HMS);          //YYYY/MM/DD-HHMMSS
+   aux.CheckFmtTS("K-t.", ADD_US(TEST_cstr_YsMsD_HMS));  //YYYY/MM/DD-HHMMSS.uuuuuu
+
+   aux.CheckFmtTS("f-T",  TEST_cstr_YMD_H_M_S);          //YYYYMMDD-HH:MM:SS
+   aux.CheckFmtTS("f-T.", ADD_US(TEST_cstr_YMD_H_M_S));  //YYYYMMDD-HH:MM:SS.uuuuuu
+   aux.CheckFmtTS("f-t",  TEST_cstr_YMD_HMS);            //YYYYMMDD-HHMMSS
+   aux.CheckFmtTS("f-t.", ADD_US(TEST_cstr_YMD_HMS));    //YYYYMMDD-HHMMSS.uuuuuu
+
+   aux.CheckFmtTS("F-T",    TEST_cstr_Y_M_D_H_M_S);      //YYYY-MM-DD-HH:MM:SS
+   aux.CheckFmtTS("Y-m-d H:M:S",
+                  fon9_CTXTOCSTR(TEST_Year)
+                  "-" fon9_CTXTOCSTR(TEST_Month)
+                  "-" fon9_CTXTOCSTR(TEST_Day)
+                  " " fon9_CTXTOCSTR(TEST_Hour)
+                  ":" fon9_CTXTOCSTR(TEST_Minute)
+                  ":" fon9_CTXTOCSTR(TEST_Second));
+
+   aux.CheckFmtTS("K-T+8",     fon9::TimeZoneOffset::FromOffsetHHMM(8, 0));
+   aux.CheckFmtTS("K-T+'TW'",  fon9::TimeZoneOffset::FromOffsetHHMM(8, 0));
+   aux.CheckFmtTS("K-T+'L'",   fon9::GetLocalTimeZoneOffset());
+   aux.CheckFmtTS("K-T+800",   fon9::TimeZoneOffset::FromOffsetHHMM(8, 0));
+   aux.CheckFmtTS("K-T+0800",  fon9::TimeZoneOffset::FromOffsetHHMM(8, 0));
+   aux.CheckFmtTS("K-T+8:00",  fon9::TimeZoneOffset::FromOffsetHHMM(8, 0));
+   aux.CheckFmtTS("K-T+08:00", fon9::TimeZoneOffset::FromOffsetHHMM(8, 0));
+   aux.CheckFmtTS("K-T-8",     fon9::TimeZoneOffset::FromOffsetHHMM(-8, 0));
+   aux.CheckFmtTS("K-T-800",   fon9::TimeZoneOffset::FromOffsetHHMM(-8, 0));
+   aux.CheckFmtTS("K-T-0800",  fon9::TimeZoneOffset::FromOffsetHHMM(-8, 0));
+   aux.CheckFmtTS("K-T-8:00",  fon9::TimeZoneOffset::FromOffsetHHMM(-8, 0));
+   aux.CheckFmtTS("K-T-08:00", fon9::TimeZoneOffset::FromOffsetHHMM(-8, 0));
+   aux.CheckFmtTS("K-T+830",   fon9::TimeZoneOffset::FromOffsetHHMM(8, 30));
+   aux.CheckFmtTS("K-T+0830",  fon9::TimeZoneOffset::FromOffsetHHMM(8, 30));
+   aux.CheckFmtTS("K-T+8:30",  fon9::TimeZoneOffset::FromOffsetHHMM(8, 30));
+   aux.CheckFmtTS("K-T+08:30", fon9::TimeZoneOffset::FromOffsetHHMM(8, 30));
+   aux.CheckFmtTS("K-T-830",   fon9::TimeZoneOffset::FromOffsetHHMM(-8, -30));
+   aux.CheckFmtTS("K-T-0830",  fon9::TimeZoneOffset::FromOffsetHHMM(-8, -30));
+   aux.CheckFmtTS("K-T-8:30",  fon9::TimeZoneOffset::FromOffsetHHMM(-8, -30));
+   aux.CheckFmtTS("K-T-08:30", fon9::TimeZoneOffset::FromOffsetHHMM(-8, -30));
 }
 
 //--------------------------------------------------------------------------//
@@ -341,6 +503,9 @@ int main() {
    utinfo.PrintSplitter();
    TimeStamp_TestToStrRev();
    TimeStamp_TestStrTo();
+
+   utinfo.PrintSplitter();
+   Test_FmtTS();
 
    utinfo.PrintSplitter();
    TimeStamp_GetNow_Benchmark();
