@@ -53,5 +53,47 @@ fon9_API char* ToStrRev_DecScale(char* pout, uintmax_t& value, DecScaleT scale, 
 
 fon9_API char* DecToStrRev(char* pout, uintmax_t value, bool isNeg, DecScaleT scale, FmtDef fmt);
 
+//--------------------------------------------------------------------------//
+
+struct BaseFmt {
+   uintmax_t Value_;
+   BaseFmt() = delete;
+   template <typename T, typename = enable_if_t<std::is_integral<T>::value, T>>
+   explicit BaseFmt(T v) : Value_{unsigned_cast(v)} {
+   }
+   template <typename T>
+   explicit BaseFmt(const T* v) : Value_{reinterpret_cast<uintmax_t>(v)} {
+   }
+};
+inline char* ToStrRev(char* pout, BaseFmt value, FmtDef fmt) {
+   return IntToStrRev(pout, value.Value_, false, fmt);
+}
+
+template <FmtFlag baseFlag, char* (*FnToStrRev)(char* pout, uintmax_t value)>
+struct BaseDefine : public BaseFmt {
+   BaseDefine() = delete;
+   using BaseFmt::BaseFmt;
+   static constexpr FmtFlag BaseFlag() { return baseFlag; }
+   static char* ToStrRev(char* pout, uintmax_t value) {
+      return FnToStrRev(pout, value);
+   }
+};
+using ToHEX = BaseDefine<FmtFlag::BaseHEX, HEXToStrRev>;
+using ToHex = BaseDefine<FmtFlag::BaseHex, HexToStrRev>;
+using ToPtr = BaseDefine<FmtFlag::BaseHex, HexToStrRev>;
+using ToOct = BaseDefine<FmtFlag::BaseOct, OctToStrRev>;
+using ToBin = BaseDefine<FmtFlag::BaseBin, BinToStrRev>;
+
+template <class BaseT>
+inline enable_if_t<std::is_base_of<BaseFmt, BaseT>::value, char*> ToStrRev(char* pout, BaseT value) {
+   return BaseT::ToStrRev(pout, value.Value_);
+}
+
+template <class BaseT>
+inline enable_if_t<std::is_base_of<BaseFmt, BaseT>::value, char*> ToStrRev(char* pout, BaseT value, FmtDef fmt) {
+   fmt.Flags_ = (fmt.Flags_ - FmtFlag::MaskBase) | BaseT::BaseFlag();
+   return IntToStrRev(pout, value.Value_, false, fmt);
+}
+
 } // namespace
 #endif//__fon9_ToStrFmt_hpp__

@@ -4,17 +4,17 @@
 
 namespace fon9 {
 
-fon9_API char* HexToStrRev(char* pout, uintmax_t value) {
-   static const char map2Hchar[] = "0123456789abcdef";
-   #define TO_HEX_CHAR(v)  
+static inline char* HexToStrRev(char* pout, uintmax_t value, const char map2Hchar[]) {
    do {
-      *--pout = map2Hchar[static_cast<uint8_t>(value & 0x0f)];
-      if ((value >>= 4) == 0)
-         break;
       *--pout = map2Hchar[static_cast<uint8_t>(value & 0x0f)];
    } while ((value >>= 4) != 0);
    return pout;
-   #undef TO_HEX_CHAR
+}
+fon9_API char* HexToStrRev(char* pout, uintmax_t value) {
+   return HexToStrRev(pout, value, "0123456789abcdef");
+}
+fon9_API char* HEXToStrRev(char* pout, uintmax_t value) {
+   return HexToStrRev(pout, value, "0123456789ABCDEF");
 }
 
 fon9_API char* UIntToStrRev_IntSep(char* pout, uintmax_t value) {

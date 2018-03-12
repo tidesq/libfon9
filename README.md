@@ -88,9 +88,14 @@ sprintf(long)    : 0.076487578 secs / 1,000,000 times =  76.487578000 ns
 ### [TimeInterval](fon9/TimeInterval.hpp) / [TimeStamp / TimeZoneOffset](fon9/TimeStamp.hpp)：時間處理機制
   * 取得現在 UTC 時間：`fon9::UtcNow();`
   * 取得現在 本地時間：`fon9::TimeStamp lo = fon9::UtcNow() + fon9::GetLocalTimeZoneOffset();`
-### Buffer 機制
+### [Buffer 機制](fon9/buffer/README.md)
 ### Format 機制
   * 類似的 lib: [{fmt} library](http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html)
+  * 基本格式化輸出
+    * `ToStrRev(pout, value, fmt);`
+    * `RevPrint(RevBuffer& rbuf, value1, value2, fmt2, ...);`
+      * value1 無格式化, 轉呼叫 `ToStrRev(pout, value1);`
+      * value2 使用 fmt2 格式化, 轉呼叫 `ToStrRev(pout, value2, fmt2);`
 ---------------------------------------
 ## [Thread 工具](Overview/ThreadTools.md)
 ---------------------------------------

@@ -65,20 +65,37 @@ inline auto BinToStrRev(char* pout, IntT value) -> decltype(BinToStrRev(pout, st
    return BinToStrRev(pout, static_cast<uintmax_t>(unsigned_cast(value)));
 }
 
+inline char* OctToStrRev(char* pout, uintmax_t value) {
+   do {
+      *--pout = static_cast<char>(static_cast<char>(value & 0x07) + '0');
+   } while ((value >>= 3) != 0);
+   return pout;
+}
+
+template <typename IntT>
+inline auto OctToStrRev(char* pout, IntT value) -> decltype(OctToStrRev(pout, static_cast<uintmax_t>(unsigned_cast(value)))) {
+   return OctToStrRev(pout, static_cast<uintmax_t>(unsigned_cast(value)));
+}
+
 //--------------------------------------------------------------------------//
 
 /// \ingroup AlNum
-/// 建立 value 的 16 進位字串.
+/// 建立 value 的 16 進位字串(小寫).
 /// - 從 (*--pout) 往前填入.
 /// - 傳回最後一次 pout 位置: 字串開始位置.
 fon9_API char* HexToStrRev(char* pout, uintmax_t value);
+fon9_API char* HEXToStrRev(char* pout, uintmax_t value);
 
 template <typename IntT>
 inline auto HexToStrRev(char* pout, IntT value) -> decltype(HexToStrRev(pout, static_cast<uintmax_t>(unsigned_cast(value)))) {
    return HexToStrRev(pout, static_cast<uintmax_t>(unsigned_cast(value)));
 }
+template <typename IntT>
+inline auto HEXToStrRev(char* pout, IntT value) -> decltype(HEXToStrRev(pout, static_cast<uintmax_t>(unsigned_cast(value)))) {
+   return HEXToStrRev(pout, static_cast<uintmax_t>(unsigned_cast(value)));
+}
 
-inline char* PtrToStrRev(char* pout, void* value) {
+inline char* PtrToStrRev(char* pout, const void* value) {
    return HexToStrRev(pout, reinterpret_cast<uintmax_t>(value));
 }
 

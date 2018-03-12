@@ -63,6 +63,11 @@ void ToStr_benchmark() {
       sprintf(nbuf.Buffer_, "%ld", L);
    stopWatch.PrintResult("sprintf(long)    ", kTimes);
 
+   stopWatch.ResetTimer();
+   for (long L = -kTimes / 2; L < kTimes / 2; L++)
+      fon9::ToStrRev(nbuf.end(), L, fon9::FmtDef{""});
+   stopWatch.PrintResult("ToStrRev(Fmt)    ", kTimes);
+
    std::cout << "----- Pic9ToStrRev()/%09u -----\n";
    stopWatch.ResetTimer();
    for (unsigned L = 0; L < kTimes; L++)
@@ -81,9 +86,11 @@ int main() {
    fon9::NumOutBuf nbuf;
    nbuf.SetEOS();
    for (long L = -1234567; L < 1234567; ++L) {
-      CheckToStrRevResult(fon9::ToStrRev(nbuf.end(), L), 10, "ToStrRev", L);
+      CheckToStrRevResult(fon9::ToStrRev(nbuf.end(), L),    10, "ToStrRev",    L);
       CheckToStrRevResult(fon9::HexToStrRev(nbuf.end(), L), 16, "HexToStrRev", L);
-      CheckToStrRevResult(fon9::BinToStrRev(nbuf.end(), L), 2, "BinToStrRev", L);
+      CheckToStrRevResult(fon9::HEXToStrRev(nbuf.end(), L), 16, "HEXToStrRev", L);
+      CheckToStrRevResult(fon9::OctToStrRev(nbuf.end(), L),  8, "OctToStrRev", L);
+      CheckToStrRevResult(fon9::BinToStrRev(nbuf.end(), L),  2, "BinToStrRev", L);
    }
    std::cout << "[OK   ] " << "IntToStrRev(); HexToStrRev(); BinToStrRev();\n";
 

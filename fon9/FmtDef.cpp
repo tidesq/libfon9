@@ -38,9 +38,13 @@ void FmtDef::ParseWidth(const char* pcur, const char* pend) {
          this->Precision_ = 0;
       else
          this->Precision_ = static_cast<WidthType>(NaiveStrToUInt(pcur, pend));
-      return;
+      break;
+   case 'p': // pointer = 使用16進位輸出.
+   case 'x': this->Flags_ |= FmtFlag::BaseHex; break;
+   case 'X': this->Flags_ |= FmtFlag::BaseHEX; break;
+   case 'o': this->Flags_ |= FmtFlag::BaseOct; break;
+   case 'b': this->Flags_ |= FmtFlag::BaseBin; break;
    }
-   return;
 }
 
 } // namespace

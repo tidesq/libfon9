@@ -34,7 +34,10 @@ enum class FmtFlag : uint32_t {
    /// [正負號] 固定占用一位: 若 >=0 顯示「+」, <0 顯示「-」.
    ShowPlus0 = 0x0040,
 
-   /// 16 進位輸出時, 前方加上 "0x";
+   /// 指定進位基底時(BaseHex,BaseOct), 如果輸出的數字非0, 則加上前綴:
+   /// - BaseHex: "0x"
+   /// - BaseHEX: "0X"
+   /// - BaseOct: "0"
    ShowPrefix = 0x0100,
    /// 浮點數(fon9::Decimal) 輸出時, 若小數部分為0, 強制加上小數點.
    /// 若有設定 (FmtFlag::NoDecimalPoint 及 FmtFlag::HasPrecision), 則不理會此旗標.
@@ -51,6 +54,16 @@ enum class FmtFlag : uint32_t {
    /// 有些國家地區, 小數不是「.」, 千位分隔不是「,」, 也不一定是[每1千]分隔!
    /// 這些由 NumPunct 來控制.
    ShowIntSep = 0x0800,
+
+   MaskBase = 0x7000,
+   /// 當使用整數輸出時, 使用16進位(0123456789abcdef)
+   BaseHex = 0x1000,
+   /// 當使用整數輸出時, 使用16進位(uppercase: 0123456789ABCDEF)
+   BaseHEX = 0x2000,
+   /// 當使用整數輸出時, 使用8進位.
+   BaseOct = 0x3000,
+   /// 當使用整數輸出時, 使用2進位.
+   BaseBin = 0x4000,
 };
 fon9_ENABLE_ENUM_BITWISE_OP(FmtFlag);
 

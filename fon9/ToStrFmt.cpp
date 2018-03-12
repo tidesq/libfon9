@@ -5,7 +5,7 @@
 namespace fon9 {
 
 fon9_API char* ToStrRev_Hide0(char* pout, FmtDef fmt) {
-   if (fon9_LIKELY(!IsEnumContainsAny(fmt.Flags_, FmtFlag::MaskSign))) {
+   if (fon9_LIKELY(!IsEnumContainsAny(fmt.Flags_, FmtFlag::MaskSign) || IsEnumContainsAny(fmt.Flags_, FmtFlag::MaskBase))) {
       if (fmt.Width_ > 0)
          return reinterpret_cast<char*>(memset(pout - fmt.Width_, ' ', fmt.Width_));
       return pout;
@@ -34,51 +34,103 @@ static char* LeftJustify(char* pout, unsigned szout, size_t szfill) {
    return pout;
 }
 
-fon9_API char* IntToStrRev_LastJustify(char* pout, unsigned szout, bool isNeg, FmtDef fmt) {
+template <class FnPrefix>
+static char* IntToStrRev_LastJustify(char* pout, unsigned szout, FmtDef fmt, FnPrefix fnPrefix) {
    int szfill = static_cast<int>(fmt.Precision_ - szout);
    if (fon9_UNLIKELY(szfill > 0)) {
       memset(pout -= szfill, '0', static_cast<size_t>(szfill));
       szout += szfill;
    }
-   char chSign;
-   if (isNeg)
-      chSign = '-';
-   else {
-      fon9_WARN_DISABLE_SWITCH;
-      switch (fmt.Flags_ & FmtFlag::MaskSign) {
-      case FmtFlag::ShowPlus0: chSign = '+';    break;
-      case FmtFlag::ShowSign:  chSign = ' ';    break;
-      default:                 chSign = '\0';   break;
-      }
-      fon9_WARN_POP;
-   }
-   szfill = static_cast<int>(fmt.Width_ - szout - (chSign != '\0'));
+   const unsigned szPrefix = fnPrefix.PrefixSize();
+   szfill = static_cast<int>(fmt.Width_ - szout - szPrefix);
    if (szfill <= 0) {
-      if (chSign)
-         *--pout = chSign;
+      if (szPrefix)
+         pout = fnPrefix.ShowPrefix(pout);
    }
    else {
       if (IsEnumContains(fmt.Flags_, FmtFlag::LeftJustify)) {
-         if (chSign) {
-            ++szout;
-            *--pout = chSign;
+         if (szPrefix) {
+            szout += szPrefix;
+            pout = fnPrefix.ShowPrefix(pout);
          }
          return LeftJustify(pout, szout, static_cast<size_t>(szfill));
       }
       char chfill = (IsEnumContains(fmt.Flags_, FmtFlag::HasPrecision) ? ' '
                      : IsEnumContains(fmt.Flags_, FmtFlag::IntPad0) ? '0'
                      : ' ');
-      if (chfill == '0' || chSign == '\0') {
+      if (chfill == '0' || szPrefix == 0) {
          memset(pout -= szfill, chfill, static_cast<size_t>(szfill));
-         if (chSign)
-            *--pout = chSign;
+         if (szPrefix)
+            pout = fnPrefix.ShowPrefix(pout);
       }
       else {
-         *--pout = chSign;
+         pout = fnPrefix.ShowPrefix(pout);
          memset(pout -= szfill, chfill, static_cast<size_t>(szfill));
       }
    }
    return pout;
+}
+
+fon9_API char* IntToStrRev_LastJustify(char* pout, unsigned szout, bool isNeg, FmtDef fmt) {
+   struct FnPrefix {
+      char SignChar_;
+      FnPrefix(bool isNeg, FmtFlag fmtflags) {
+         if (isNeg)
+            this->SignChar_ = '-';
+         else {
+            fon9_WARN_DISABLE_SWITCH;
+            switch (fmtflags & FmtFlag::MaskSign) {
+            case FmtFlag::ShowPlus0: this->SignChar_ = '+';    break;
+            case FmtFlag::ShowSign:  this->SignChar_ = ' ';    break;
+            default:                 this->SignChar_ = '\0';   break;
+            }
+            fon9_WARN_POP;
+         }
+      }
+      unsigned PrefixSize() const {
+         return static_cast<unsigned>(this->SignChar_ != '\0');
+      }
+      char* ShowPrefix(char* pout) const {
+         *--pout = this->SignChar_;
+         return pout;
+      }
+   };
+   return IntToStrRev_LastJustify(pout, szout, fmt, FnPrefix{isNeg, fmt.Flags_});
+}
+
+static char* IntToStrRev_Base(char* pout, uintmax_t value, FmtDef fmt) {
+   struct FnPrefix {
+      FmtFlag  BaseFlag_;
+      unsigned PrefixSize_;
+      unsigned PrefixSize() const {
+         return this->PrefixSize_;
+      }
+      char* ShowPrefix(char* pout) const {
+         fon9_WARN_DISABLE_SWITCH;
+         switch (this->BaseFlag_) {
+         case FmtFlag::BaseHex: *--pout = 'x'; *--pout = '0'; break;
+         case FmtFlag::BaseHEX: *--pout = 'X'; *--pout = '0'; break;
+         case FmtFlag::BaseOct: *--pout = '0'; break;
+         case FmtFlag::BaseBin: break;
+         }
+         fon9_MSC_WARN_POP;
+         return pout;
+      }
+   };
+   char* const pstart = pout;
+   FnPrefix fnPrefix;
+   fon9_WARN_DISABLE_SWITCH;
+   switch (fnPrefix.BaseFlag_ = fmt.Flags_ & FmtFlag::MaskBase) {
+   default: return nullptr;
+   case FmtFlag::BaseHex: fnPrefix.PrefixSize_ = 2; pout = HexToStrRev(pout, value); break;
+   case FmtFlag::BaseHEX: fnPrefix.PrefixSize_ = 2; pout = HEXToStrRev(pout, value); break;
+   case FmtFlag::BaseOct: fnPrefix.PrefixSize_ = 1; pout = OctToStrRev(pout, value); break;
+   case FmtFlag::BaseBin: fnPrefix.PrefixSize_ = 0; pout = BinToStrRev(pout, value); break;
+   }
+   fon9_MSC_WARN_POP;
+   if (value == 0 || !IsEnumContains(fmt.Flags_, FmtFlag::ShowPrefix))
+      fnPrefix.PrefixSize_ = 0;
+   return IntToStrRev_LastJustify(pout, static_cast<unsigned>(pstart - pout), fmt, fnPrefix);
 }
 
 fon9_API char* IntToStrRev(char* pout, uintmax_t value, bool isNeg, FmtDef fmt) {
@@ -88,6 +140,10 @@ fon9_API char* IntToStrRev(char* pout, uintmax_t value, bool isNeg, FmtDef fmt) 
           || (IsEnumContains(fmt.Flags_, FmtFlag::HasPrecision) && fmt.Precision_ == 0)) {
          return ToStrRev_Hide0(pout, fmt);
       }
+   }
+   if (fon9_UNLIKELY(IsEnumContainsAny(fmt.Flags_, FmtFlag::MaskBase))) {
+      if (char* res = IntToStrRev_Base(pout, isNeg ? static_cast<uintmax_t>(-static_cast<intmax_t>(value)) : value, fmt))
+         return res;
    }
    char* const pstart = pout;
    pout = UIntToStrRev_CheckIntSep(pstart, value, fmt.Flags_);

@@ -17,10 +17,10 @@ producer --> | buffer | --> | DxQueue | --> consumer
 * 例如：從 input device 讀入訊息。
 
 ### 根據資料的填入方向分成 2 類：
-#### 由後往前填入：[RevBuffer](fon9/buffer/RevBuffer.hpp)
+#### 由後往前填入：[RevBuffer](RevBuffer.hpp)
 * 大部分的情況下，資料從後往前填，才是建立輸出資料最有效率的方式。
 
-#### 由前往後填入：[FwdBuffer](fon9/buffer/FwdBuffer.hpp)
+#### 由前往後填入：[FwdBuffer](FwdBuffer.hpp)
 * 在某些無法立即取得全部資料，但必須依序填入的情況，例：
   * 一次收到 n 筆下單要求，必須依序處理下單要求，然後一次ACK處理結果。
   * 接收資料時的緩衝。

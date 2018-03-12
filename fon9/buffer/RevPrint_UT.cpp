@@ -3,19 +3,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include "fon9/TestTools.hpp"
 #include "fon9/buffer/RevPrint.hpp"
-
-#include "fon9/TimeStamp.hpp"
-#include <array>
-namespace fon9 {
-
-template <class RevBuffer>
-inline void _RevPutStr(RevBuffer& rbuf, TimeStamp ts, const FmtTS& fmt) {
-   char* pout = rbuf.AllocPrefix(std::max(static_cast<unsigned>(sizeof(NumOutBuf) + fmt.Precision_), static_cast<unsigned>(fmt.Width_)));
-   pout = ToStrRev(pout, ts, fmt);
-   rbuf.SetPrefixUsed(pout);
-}
-
-} // namespace fon9
+#include "fon9/Decimal.hpp"
 
 //--------------------------------------------------------------------------//
 
@@ -67,6 +55,11 @@ void RevPutStr(RevBuffer& rbuf, double value, FmtDef fmt) {
 }
 } // namespace fon9
 
+std::ostream& operator<<(std::ostream& os, fon9::BaseFmt b) {
+   return os << b.Value_;
+}
+
+// 測試單一格式: fmt = "%..."; 測試 sprintf(fmt) 與 fon9::RevPutStr(fmt+1) 的結果是否相同.
 template <typename ValueT>
 void CheckFormat(const char* fmt, ValueT value) {
    std::cout << "[TEST ] fmt=\"" << fmt << "\"" << std::setw(static_cast<int>(10 - strlen(fmt))) << "";
@@ -122,6 +115,8 @@ void CheckFormat(const strlist& fmtlist, const char* spec, ValueT value) {
 }
 
 void TestFormatOutput() {
+   // CheckFormat("% #.0x", fon9::ToHex{0});
+
    std::cout << "fon9::RevPutStr(FmtDef)|sprintf()\n" << std::endl;
    // flags: ("-" or "") * ("+" or " " or "") * ("#" or "") * ("0" or "")
    strlist fmtlist = strlist{"-", ""} *strlist{"+", " "} *strlist{"#"} *strlist{"0"};
@@ -129,6 +124,10 @@ void TestFormatOutput() {
    CheckFormat(fmtlist, "d", 0);
    CheckFormat(fmtlist, "d", 123);
    CheckFormat(fmtlist, "d", -123);
+
+   CheckFormat(fmtlist, "x", fon9::ToHex{0});
+   CheckFormat(fmtlist, "x", fon9::ToHex{123});
+   CheckFormat(fmtlist, "x", fon9::ToHex{-123});
 
    // 為了 [精確度] 及 [四捨五入] 問題, 所以請謹慎選擇測試用的數字.
    // * 例如: 123.456 => "% #.15lf" => " 123.456000000000003"
@@ -179,6 +178,13 @@ int main() {
    const char cstrWorld[]{"World"};
    CHECK_RevPrint("Hello World!", fon9::RevPrint(rbuf, strHello, ' ', cstrWorld, "!"));
    CHECK_RevPrint("1|2|3",        fon9::RevPrint(rbuf, 1, '|', 2, '|', 3));
+   
+   CHECK_RevPrint("ffff",     fon9::RevPrint(rbuf, fon9::ToHex{static_cast<int16_t>(-1)}));
+   CHECK_RevPrint("0xffff",   fon9::RevPrint(rbuf, fon9::ToHex{static_cast<int16_t>(-1)}, fon9::FmtDef{"#"}));
+   CHECK_RevPrint("0x001234", fon9::RevPrint(rbuf, fon9::ToHex{0x1234}, fon9::FmtDef{"#08x"}));
+   CHECK_RevPrint("00001234", fon9::RevPrint(rbuf, fon9::ToHex{0x1234}, fon9::FmtDef{"08x"}));
+   CHECK_RevPrint("  0x5678", fon9::RevPrint(rbuf, fon9::ToPtr{reinterpret_cast<char*>(0x5678)}, fon9::FmtDef{"#8x"}));
+   CHECK_RevPrint("    5678", fon9::RevPrint(rbuf, fon9::ToPtr{reinterpret_cast<char*>(0x5678)}, fon9::FmtDef{"8x"}));
 
    using Dec = fon9::Decimal<int64_t, 6>;
    CHECK_RevPrint("   +9,876,543.210000", fon9::RevPrint(rbuf, Dec{9876543210,3}, fon9::FmtDef{",+20.6"}));
