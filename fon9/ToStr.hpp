@@ -47,6 +47,16 @@ struct NumOutBuf {
    }
 };
 
+/// \ingroup AlNum
+/// 一般數字型別, 使用 `ToStr...(char* pout)` 函式時, pout 需要多少緩衝?
+/// - 預設為 sizeof(NumOutBuf);
+/// - 如果您有自訂的 `ToStr...(char* pout, const MyObj& value);` 則應自訂此函式:
+///   - `constexpr size_t ToStrMaxWidth(const MyObj&);`
+template <typename ValueT>
+constexpr size_t ToStrMaxWidth(const ValueT&) {
+   return sizeof(NumOutBuf);
+}
+
 //--------------------------------------------------------------------------//
 
 /// \ingroup AlNum

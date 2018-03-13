@@ -14,13 +14,17 @@ template <class RevBuffer> inline void RevPutChar(RevBuffer& rbuf, char ch) {
 }
 
 template <class RevBuffer> inline void RevPutFill(RevBuffer& rbuf, size_t sz, char ch) {
-   char* pout = rbuf.AllocPrefix(sz);
-   rbuf.SetPrefixUsed(reinterpret_cast<char*>(memset(pout - sz, ch, sz)));
+   if (fon9_LIKELY(sz > 0)) {
+      char* pout = rbuf.AllocPrefix(sz);
+      rbuf.SetPrefixUsed(reinterpret_cast<char*>(memset(pout - sz, ch, sz)));
+   }
 }
 
 template <class RevBuffer> inline void RevPutMem(RevBuffer& rbuf, const void* mem, size_t sz) {
-   char* pout = rbuf.AllocPrefix(sz);
-   rbuf.SetPrefixUsed(reinterpret_cast<char*>(memcpy(pout - sz, mem, sz)));
+   if (fon9_LIKELY(sz > 0)) {
+      char* pout = rbuf.AllocPrefix(sz);
+      rbuf.SetPrefixUsed(reinterpret_cast<char*>(memcpy(pout - sz, mem, sz)));
+   }
 }
 
 template <class RevBuffer> inline void RevPutMem(RevBuffer& rbuf, const void* beg, const void* end) {

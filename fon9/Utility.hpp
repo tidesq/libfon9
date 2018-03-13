@@ -31,6 +31,32 @@ constexpr size_t numofele(T(&/*array*/)[arysz]) {
 template <bool cond, typename TrueT, typename FalseT>
 using conditional_t = typename std::conditional<cond, TrueT, FalseT>::type;
 
+template <typename T>
+using decay_t = typename std::decay<T>::type;
+
+// 類似 C++14 的 integer_sequence<size_t, ...>
+template<size_t... Indices>
+struct integer_sequence {
+   template<size_t N>
+   using append = integer_sequence<Indices..., N>;
+};
+
+template<size_t N>
+struct make_integer_sequence {
+   using type = typename make_integer_sequence<N - 1>::type::template append<N - 1>;
+};
+
+template<>
+struct make_integer_sequence<0u> {
+   using type = integer_sequence<>;
+};
+
+template<size_t... Ints>
+using index_sequence = integer_sequence<Ints...>;
+
+template<size_t N>
+using make_index_sequence = typename make_integer_sequence<N>::type;
+
 /// \ingroup Misc
 /// 檢查 EnumT 是否支援 bitwise 操作元(enum 可用 fon9_ENABLE_ENUM_BITWISE_OP(EnumT) 定義).
 /// HasBitOp<T>::value == true or false;

@@ -113,6 +113,9 @@
     <ClInclude Include="..\..\..\fon9\ToStrFmt.hpp">
       <Filter>Header Files\_base\_AlNum / StrTools</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\buffer\RevFormat.hpp">
+      <Filter>Header Files\buffer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -147,6 +150,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\ToStrFmt.cpp">
       <Filter>Source Files\_base\_AlNum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\buffer\RevFormat.cpp">
+      <Filter>Source Files\buffer</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

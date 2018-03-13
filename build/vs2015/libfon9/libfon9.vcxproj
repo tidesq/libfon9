@@ -75,6 +75,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\buffer\RevBuffer.hpp" />
+    <ClInclude Include="..\..\..\fon9\buffer\RevFormat.hpp" />
     <ClInclude Include="..\..\..\fon9\buffer\RevPrint.hpp" />
     <ClInclude Include="..\..\..\fon9\buffer\RevPut.hpp" />
     <ClInclude Include="..\..\..\fon9\Comparable.hpp" />
@@ -107,6 +108,7 @@
     <Text Include="..\..\..\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\fon9\buffer\RevFormat.cpp" />
     <ClCompile Include="..\..\..\fon9\DecBase.cpp" />
     <ClCompile Include="..\..\..\fon9\FmtDef.cpp" />
     <ClCompile Include="..\..\..\fon9\StrTo.cpp" />

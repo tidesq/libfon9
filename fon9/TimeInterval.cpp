@@ -109,7 +109,7 @@ fon9_API char* ToStrRev(char* const pstart, TimeInterval ti, FmtDef fmt) {
       *--pout = '-';
       pout = UIntToStrRev(pout, days);
    }
-   return IntToStrRev_LastJustify(pout, static_cast<unsigned>(pstart - pout), ti.GetOrigValue() < 0, fmt);
+   return IntToStrRev_LastJustify(pout, pstart, ti.GetOrigValue() < 0, fmt);
 }
 
 //--------------------------------------------------------------------------//

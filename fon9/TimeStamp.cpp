@@ -295,7 +295,7 @@ fon9_API char* ToStrRev(char* const pstart, TimeStamp ts, const FmtTS& fmt) {
             break;
       }
    }
-   return ToStrRev_LastJustify(pout, static_cast<unsigned>(pstart - pout), fmt);
+   return ToStrRev_LastJustify(pout, pstart, fmt);
 }
 
 //--------------------------------------------------------------------------//
@@ -551,7 +551,7 @@ fon9_API char* ToStrRev(char* pout, TimeZoneOffset tzofs) {
 
 fon9_API char* ToStrRev(char* pstart, TimeZoneOffset tzofs, FmtDef fmt) {
    char* pout = ToStrRev(pstart, tzofs);
-   return ToStrRev_LastJustify(pout, static_cast<unsigned>(pstart - pout), fmt);
+   return ToStrRev_LastJustify(pout, pstart, fmt);
 }
 
 //--------------------------------------------------------------------------//

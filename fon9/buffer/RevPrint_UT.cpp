@@ -1,9 +1,10 @@
 ﻿// \file fon9/buffer/RevPrint_UT.cpp
 // \author fonwinz@gmail.com
 #define _CRT_SECURE_NO_WARNINGS
+#include "fon9/buffer/RevFormat.hpp"
 #include "fon9/TestTools.hpp"
-#include "fon9/buffer/RevPrint.hpp"
-#include "fon9/Decimal.hpp"
+#include "fon9/TimeStamp.hpp"
+#include <map>
 
 //--------------------------------------------------------------------------//
 
@@ -43,7 +44,7 @@ void AddWidthPrecision(strlist& fmtlist) {
 
 namespace fon9 {
 template <class RevBuffer>
-void RevPutStr(RevBuffer& rbuf, double value, FmtDef fmt) {
+void RevPrint(RevBuffer& rbuf, double value, FmtDef fmt) {
    using Dec = fon9::Decimal<int64_t, 6>;
    if (!IsEnumContains(fmt.Flags_, FmtFlag::HasPrecision)) {
       // %lf 的預設為 ".6"，fon9 預設沒有 FmtDef::Precision_
@@ -51,7 +52,7 @@ void RevPutStr(RevBuffer& rbuf, double value, FmtDef fmt) {
       fmt.Flags_ |= FmtFlag::HasPrecision;
       fmt.Precision_ = 6;
    }
-   RevPutStr(rbuf, Dec{value}, fmt);
+   RevPrint(rbuf, Dec{value}, fmt);
 }
 } // namespace fon9
 
@@ -59,14 +60,14 @@ std::ostream& operator<<(std::ostream& os, fon9::BaseFmt b) {
    return os << b.Value_;
 }
 
-// 測試單一格式: fmt = "%..."; 測試 sprintf(fmt) 與 fon9::RevPutStr(fmt+1) 的結果是否相同.
+// 測試單一格式: fmt = "%..."; 測試 sprintf(fmt) 與 fon9::RevPrint(fmt+1) 的結果是否相同.
 template <typename ValueT>
 void CheckFormat(const char* fmt, ValueT value) {
    std::cout << "[TEST ] fmt=\"" << fmt << "\"" << std::setw(static_cast<int>(10 - strlen(fmt))) << "";
 
    fon9::RevBufferFixedSize<1024> rbuf;
    rbuf.RewindEOS();
-   fon9::RevPutStr(rbuf, value, fon9::FmtDef{fon9::ToStrView(fmt + 1)});
+   fon9::RevPrint(rbuf, value, fon9::FmtDef{fon9::ToStrView(fmt + 1)});
    std::cout << "|result=\"" << rbuf.GetCurrent() << "\"";
 
    char  sbuf[1024];
@@ -91,7 +92,7 @@ void CheckFormat(const strlist& fmtlist, const char* spec, ValueT value) {
    for (const std::string& f : fmtlist) {
       rbuf.RewindEOS();
       fon9::FmtDef fmtdef{fon9::ToStrView(f)};
-      fon9::RevPutStr(rbuf, value, fmtdef);
+      fon9::RevPrint(rbuf, value, fmtdef);
 
       fmt.assign(1, '%');
       fmt += f;
@@ -117,7 +118,7 @@ void CheckFormat(const strlist& fmtlist, const char* spec, ValueT value) {
 void TestFormatOutput() {
    // CheckFormat("% #.0x", fon9::ToHex{0});
 
-   std::cout << "fon9::RevPutStr(FmtDef)|sprintf()\n" << std::endl;
+   std::cout << "fon9::RevPrint(FmtDef)|sprintf()\n" << std::endl;
    // flags: ("-" or "") * ("+" or " " or "") * ("#" or "") * ("0" or "")
    strlist fmtlist = strlist{"-", ""} *strlist{"+", " "} *strlist{"#"} *strlist{"0"};
    AddWidthPrecision(fmtlist);
@@ -155,6 +156,29 @@ void TestFormatOutput() {
 
 //--------------------------------------------------------------------------//
 
+struct UserType {
+   std::string v1_;
+   std::string v2_;
+   UserType(std::string v1, std::string v2) : v1_{std::move(v1)}, v2_{std::move(v2)} {
+   }
+};
+size_t ToStrMaxWidth(const UserType& value) {
+   return value.v1_.size() + value.v2_.size() + 2;
+}
+char* ToStrRev(char* pout, const UserType& value) {
+   *--pout = '!';
+   memcpy(pout -= value.v2_.size(), value.v2_.data(), value.v2_.size());
+   *--pout = ' ';
+   memcpy(pout -= value.v1_.size(), value.v1_.data(), value.v1_.size());
+   return pout;
+}
+char* ToStrRev(char* const pstart, const UserType& value, fon9::FmtDef fmt) {
+   char* pout = ToStrRev(pstart, value);
+   return fon9::ToStrRev_LastJustify(pout, pstart, fmt);
+}
+
+//--------------------------------------------------------------------------//
+
 int main() {
    fon9::AutoPrintTestInfo utinfo{"StrTo"};
    TestFormatOutput();
@@ -178,7 +202,7 @@ int main() {
    const char cstrWorld[]{"World"};
    CHECK_RevPrint("Hello World!", fon9::RevPrint(rbuf, strHello, ' ', cstrWorld, "!"));
    CHECK_RevPrint("1|2|3",        fon9::RevPrint(rbuf, 1, '|', 2, '|', 3));
-   
+
    CHECK_RevPrint("ffff",     fon9::RevPrint(rbuf, fon9::ToHex{static_cast<int16_t>(-1)}));
    CHECK_RevPrint("0xffff",   fon9::RevPrint(rbuf, fon9::ToHex{static_cast<int16_t>(-1)}, fon9::FmtDef{"#"}));
    CHECK_RevPrint("0x001234", fon9::RevPrint(rbuf, fon9::ToHex{0x1234}, fon9::FmtDef{"#08x"}));
@@ -187,11 +211,11 @@ int main() {
    CHECK_RevPrint("    5678", fon9::RevPrint(rbuf, fon9::ToPtr{reinterpret_cast<char*>(0x5678)}, fon9::FmtDef{"8x"}));
 
    using Dec = fon9::Decimal<int64_t, 6>;
-   CHECK_RevPrint("   +9,876,543.210000", fon9::RevPrint(rbuf, Dec{9876543210,3}, fon9::FmtDef{",+20.6"}));
-   CHECK_RevPrint("    9,876,543.210000", fon9::RevPrint(rbuf, Dec{9876543210,3}, fon9::FmtDef{", 20.6"}));
+   CHECK_RevPrint("   +9,876,543.210000", fon9::RevPrint(rbuf, Dec{9876543210,3},  fon9::FmtDef{",+20.6"}));
+   CHECK_RevPrint("    9,876,543.210000", fon9::RevPrint(rbuf, Dec{9876543210,3},  fon9::FmtDef{", 20.6"}));
    CHECK_RevPrint("-9,876,543.21",        fon9::RevPrint(rbuf, Dec{-9876543210,3}, fon9::FmtDef{","}));
-   CHECK_RevPrint("    +9,876,543210000", fon9::RevPrint(rbuf, Dec{9876543210,3}, fon9::FmtDef{",+20_6"}));
-   CHECK_RevPrint("     9,876,543210000", fon9::RevPrint(rbuf, Dec{9876543210,3}, fon9::FmtDef{", 20_6"}));
+   CHECK_RevPrint("    +9,876,543210000", fon9::RevPrint(rbuf, Dec{9876543210,3},  fon9::FmtDef{",+20_6"}));
+   CHECK_RevPrint("     9,876,543210000", fon9::RevPrint(rbuf, Dec{9876543210,3},  fon9::FmtDef{", 20_6"}));
 
    std::cout << "\n" "UTF8-Trunc:" "\n";
    CHECK_RevPrint("Hello ",      fon9::RevPrint(rbuf, "Hello 您好!", fon9::FmtDef{".8"}));
@@ -203,4 +227,21 @@ int main() {
 
    CHECK_RevPrint("Hello 您           ", fon9::RevPrint(rbuf, "Hello 您好!", fon9::FmtDef{"-20.10"}));
    CHECK_RevPrint("           Hello 您", fon9::RevPrint(rbuf, "Hello 您好!", fon9::FmtDef{"20.10"}));
+
+   utinfo.PrintSplitter();
+   CHECK_RevPrint("/123/'{' {Test}/123/'}' {Test}/",     fon9::RevPrint(rbuf, '/', 123, fon9::InplaceFmt{}, "/'{' {{Test}}/{0}/'}' {{Test}}/", 123));
+   CHECK_RevPrint("/'{' {Test}/123/'}' {Test}/",         fon9::RevFormat(rbuf, "/'{' {{Test}}/{0}/'}' {{Test}}/", 123));
+   CHECK_RevPrint("/{ {Test}/    123,456,789/{Test} }/", fon9::RevFormat(rbuf, "/{ {{Test}}/{0:,15}/{{Test}} }/", 123456789));
+   CHECK_RevPrint("/Hello World!/{2}/",                  fon9::RevFormat(rbuf, "/{0} {1}!/{2}/", strHello, cstrWorld));
+   CHECK_RevPrint("/abc/def/",                           fon9::RevFormat(rbuf, "/{0:x}/{1}/", 0xabc, fon9::ToHex{0xdef}));
+   CHECK_RevPrint("{2018-03-13 054623}",                 fon9::RevFormat(rbuf, "{{{0:Y-m-d HMS}}}", fon9::YYYYMMDDHHMMSS_ToTimeStamp(20180313054623)));
+   CHECK_RevPrint("Hello World!",                        fon9::RevFormat(rbuf, "{0}", UserType("Hello", "World")));
+   CHECK_RevPrint("        Hello World!",                fon9::RevFormat(rbuf, "{0:20}", UserType("Hello", "World")));
+   CHECK_RevPrint("Hello World!        ",                fon9::RevFormat(rbuf, "{0:-20}", UserType("Hello", "World")));
+
+   std::map<std::string, std::string> map123;
+   map123["k1"] = "v1";
+   map123["k2"] = "v2";
+   map123["k3"] = "v3";
+   CHECK_RevPrint("k1=v1|k2=v2|k3=v3", fon9::RevPutMapToStr(rbuf, map123, '=', '|'));
 }

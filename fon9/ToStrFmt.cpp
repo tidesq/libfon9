@@ -35,7 +35,8 @@ static char* LeftJustify(char* pout, unsigned szout, size_t szfill) {
 }
 
 template <class FnPrefix>
-static char* IntToStrRev_LastJustify(char* pout, unsigned szout, FmtDef fmt, FnPrefix fnPrefix) {
+static char* IntToStrRev_LastJustify(char* pout, char* const pstart, FmtDef fmt, FnPrefix fnPrefix) {
+   unsigned szout = static_cast<unsigned>(pstart - pout);
    int szfill = static_cast<int>(fmt.Precision_ - szout);
    if (fon9_UNLIKELY(szfill > 0)) {
       memset(pout -= szfill, '0', static_cast<size_t>(szfill));
@@ -71,7 +72,7 @@ static char* IntToStrRev_LastJustify(char* pout, unsigned szout, FmtDef fmt, FnP
    return pout;
 }
 
-fon9_API char* IntToStrRev_LastJustify(char* pout, unsigned szout, bool isNeg, FmtDef fmt) {
+fon9_API char* IntToStrRev_LastJustify(char* pout, char* const pstart, bool isNeg, FmtDef fmt) {
    struct FnPrefix {
       char SignChar_;
       FnPrefix(bool isNeg, FmtFlag fmtflags) {
@@ -95,7 +96,7 @@ fon9_API char* IntToStrRev_LastJustify(char* pout, unsigned szout, bool isNeg, F
          return pout;
       }
    };
-   return IntToStrRev_LastJustify(pout, szout, fmt, FnPrefix{isNeg, fmt.Flags_});
+   return IntToStrRev_LastJustify(pout, pstart, fmt, FnPrefix{isNeg, fmt.Flags_});
 }
 
 static char* IntToStrRev_Base(char* pout, uintmax_t value, FmtDef fmt) {
@@ -130,7 +131,7 @@ static char* IntToStrRev_Base(char* pout, uintmax_t value, FmtDef fmt) {
    fon9_MSC_WARN_POP;
    if (value == 0 || !IsEnumContains(fmt.Flags_, FmtFlag::ShowPrefix))
       fnPrefix.PrefixSize_ = 0;
-   return IntToStrRev_LastJustify(pout, static_cast<unsigned>(pstart - pout), fmt, fnPrefix);
+   return IntToStrRev_LastJustify(pout, pstart, fmt, fnPrefix);
 }
 
 fon9_API char* IntToStrRev(char* pout, uintmax_t value, bool isNeg, FmtDef fmt) {
@@ -147,7 +148,7 @@ fon9_API char* IntToStrRev(char* pout, uintmax_t value, bool isNeg, FmtDef fmt) 
    }
    char* const pstart = pout;
    pout = UIntToStrRev_CheckIntSep(pstart, value, fmt.Flags_);
-   return IntToStrRev_LastJustify(pout, static_cast<unsigned>(pstart - pout), isNeg, fmt);
+   return IntToStrRev_LastJustify(pout, pstart, isNeg, fmt);
 }
 
 //--------------------------------------------------------------------------//
@@ -203,12 +204,13 @@ fon9_API char* DecToStrRev(char* pout, uintmax_t value, bool isNeg, DecScaleT sc
    fmt.Flags_ -= (FmtFlag::Hide0 | FmtFlag::HasPrecision);
    if (fon9_LIKELY(value != 0 || !IsEnumContains(fmt.Flags_, FmtFlag::IntHide0)))
       pout = UIntToStrRev_CheckIntSep(pout, value, fmt.Flags_);
-   return IntToStrRev_LastJustify(pout, static_cast<unsigned>(pstart - pout), isNeg, fmt);
+   return IntToStrRev_LastJustify(pout, pstart, isNeg, fmt);
 }
 
 //--------------------------------------------------------------------------//
 
-fon9_API char* ToStrRev_LastJustify(char* pout, unsigned szout, FmtDef fmt) {
+fon9_API char* ToStrRev_LastJustify(char* pout, char* const pstart, FmtDef fmt) {
+   unsigned szout = static_cast<unsigned>(pstart - pout);
    int szfill = static_cast<int>(fmt.Width_ - szout);
    if (szfill > 0) {
       if (IsEnumContains(fmt.Flags_, FmtFlag::LeftJustify))

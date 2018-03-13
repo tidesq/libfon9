@@ -2,8 +2,8 @@
 /// \author fonwinz@gmail.com
 #ifndef __fon9_FmtDef_hpp__
 #define __fon9_FmtDef_hpp__
-#include "fon9/StrView.hpp"
-#include "fon9/Utility.hpp"
+#include "fon9/ToStr.hpp"
+#include <algorithm> // std::max()
 
 namespace fon9 {
 
@@ -127,7 +127,17 @@ struct FmtSelector {
 };
 
 template <typename ValueT>
-using AutoFmt = typename FmtSelector<ValueT>::FmtType;
+using AutoFmt = typename FmtSelector<decay_t<ValueT>>::FmtType;
+
+/// \ingroup AlNum
+/// 一般數字型別, 使用 `ToStr...(char* pout, value, FmtDef)` 函式時, pout 需要多少緩衝?
+/// - 預設為 `std::max(static_cast<size_t>(ToStrMaxWidth(value) + fmt.Precision_), static_cast<size_t>(fmt.Width_));`
+/// - 如果您有自訂的 `ToStr...(char* pout, const MyObj& value, const FmtT&);` 則應自訂此函式:
+///   - `constexpr size_t ToStrMaxWidth(const MyObj&, const FmtT&);`
+template <typename ValueT>
+constexpr size_t ToStrMaxWidth(const ValueT& value, const FmtDef& fmt) {
+   return std::max(static_cast<size_t>(ToStrMaxWidth(value) + fmt.Precision_), static_cast<size_t>(fmt.Width_));
+}
 
 } // namespace
 #endif//__fon9_FmtDef_hpp__

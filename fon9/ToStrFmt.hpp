@@ -10,7 +10,7 @@ namespace fon9 {
 fon9_API char* ToStrRev(char* pout, StrView str, FmtDef fmt);
 
 /// 若有指定 fmt.Width_ 則處理 [靠右、靠左] 調整.
-fon9_API char* ToStrRev_LastJustify(char* pout, unsigned szout, FmtDef fmt);
+fon9_API char* ToStrRev_LastJustify(char* pout, char* pstart, FmtDef fmt);
 
 //--------------------------------------------------------------------------//
 
@@ -21,7 +21,7 @@ fon9_API char* ToStrRev_Hide0(char* pout, FmtDef fmt);
 
 /// 根據 [已輸出的資料] 及 [fmt] 做最後的調整.
 /// szout = 已輸出的資料量.
-fon9_API char* IntToStrRev_LastJustify(char* pout, unsigned szout, bool isNeg, FmtDef fmt);
+fon9_API char* IntToStrRev_LastJustify(char* pout, char* pstart, bool isNeg, FmtDef fmt);
 
 inline char* UIntToStrRev_CheckIntSep(char* pout, uintmax_t value, FmtFlag fmtflags) {
    return fon9_UNLIKELY(IsEnumContains(fmtflags, FmtFlag::ShowIntSep))

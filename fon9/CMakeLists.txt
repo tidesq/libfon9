@@ -7,6 +7,8 @@ set(fon9src
  ToStrFmt.cpp
  TimeInterval.cpp
  TimeStamp.cpp
+ 
+ buffer/RevFormat.cpp
 )
 add_library(fon9_s STATIC ${fon9src})
 target_link_libraries(fon9_s pthread rt)

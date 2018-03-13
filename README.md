@@ -71,31 +71,49 @@ strtoimax()      : 0.039363580 secs / 1,000,000 times = 39.363580000  ns
   * Hardware: HP ProLiant DL380p Gen8 / E5-2680 v2 @ 2.80GHz
   * OS: ESXi 6.5.0 Update 1 (Build 5969303) / VM: Windows server 2016(1607)
 ```
-IntToStrRev()    : 0.007495415 secs / 1,000,000 times =   7.495415000 ns
-_ltoa(long)      : 0.021559124 secs / 1,000,000 times =  21.559124000 ns
-to_string(long)  : 0.027775487 secs / 1,000,000 times =  27.775487000 ns
-sprintf(long)    : 0.180548727 secs / 1,000,000 times = 180.548727000 ns
+ToStrRev(long)   : 0.006805115 secs / 1,000,000 times =   6.805115000 ns
+_ltoa(long)      : 0.020169359 secs / 1,000,000 times =  20.169359000 ns
+to_string(long)  : 0.023836049 secs / 1,000,000 times =  23.836049000 ns
+sprintf(long)    : 0.159748090 secs / 1,000,000 times = 159.748090000 ns
+RevFormat()      : 0.031855329 secs / 1,000,000 times =  31.855329000 ns
+ToStrRev(Fmt)    : 0.016562426 secs / 1,000,000 times =  16.562426000 ns
 ```
   * OS: ESXi 6.5.0 Update 1 (Build 5969303) / VM: ubuntu16 4.4.0-62-generic
 ```
-IntToStrRev()    : 0.005793344 secs / 1,000,000 times =   5.793344000 ns
-to_string(long)  : 0.090456824 secs / 1,000,000 times =  90.456824000 ns
-sprintf(long)    : 0.076487578 secs / 1,000,000 times =  76.487578000 ns
+ToStrRev(long)   : 0.005728993 secs / 1,000,000 times =   5.728993000 ns
+to_string(long)  : 0.086369344 secs / 1,000,000 times =  86.369344000 ns
+sprintf(long)    : 0.075958616 secs / 1,000,000 times =  75.958616000 ns
+RevFormat()      : 0.026977021 secs / 1,000,000 times =  26.977021000 ns
+ToStrRev(Fmt)    : 0.015506810 secs / 1,000,000 times =  15.506810000 ns
 ```
 ### [Decimal](fon9/Decimal.hpp)：使用「整數 + 小數長度」的型式來表達浮點數
   * 因交易系統對小數精確度的要求，無法使用 double，即使 long double 仍有精確度問題，
     所以必須自行設計一個「可確定精確度」的型別。
+  * 例: `Decimal<int64_t, 6> v;` 使用 int64_t 儲存數值，小數 6 位。
+    * 如果 `v.GetOrigValue() == 987654321` 則表示的數字是: `987.654321`
 ### [TimeInterval](fon9/TimeInterval.hpp) / [TimeStamp / TimeZoneOffset](fon9/TimeStamp.hpp)：時間處理機制
   * 取得現在 UTC 時間：`fon9::UtcNow();`
   * 取得現在 本地時間：`fon9::TimeStamp lo = fon9::UtcNow() + fon9::GetLocalTimeZoneOffset();`
-### [Buffer 機制](fon9/buffer/README.md)
+### [Buffer 機制](fon9/buffer)
 ### Format 機制
   * 類似的 lib: [{fmt} library](http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html)
   * 基本格式化輸出
     * `ToStrRev(pout, value, fmt);`
     * `RevPrint(RevBuffer& rbuf, value1, value2, fmt2, ...);`
+      * [buffer/RevPrint.hpp](fon9/buffer/RevPrint.hpp)
       * value1 無格式化, 轉呼叫 `ToStrRev(pout, value1);`
       * value2 使用 fmt2 格式化, 轉呼叫 `ToStrRev(pout, value2, fmt2);`
+  * 格式化輸出, 類似 `sprintf();`, `fmt::format()`
+      * `RevFormat(rbuf, format, value...);`
+        * [buffer/RevFormat.hpp](fon9/buffer/RevFormat.hpp)
+      * 例如:
+      ```c++
+      // output: "/abc/def/123"
+      void test(fon9::RevBuffer& rbuf) {
+         fon9::RevFormat(rbuf, "{0}", 123);
+         fon9::RevFormat(rbuf, "/{0:x}/{1}/", 0xabc, fon9::ToHex{0xdef});
+      }
+      ```
 ---------------------------------------
 ## [Thread 工具](Overview/ThreadTools.md)
 ---------------------------------------
