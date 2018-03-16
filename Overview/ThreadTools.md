@@ -63,3 +63,69 @@
 
 ## Timer 計時器
 [fon9/Timer.hpp](../fon9/Timer.hpp)
+### 必須先建立一個 `fon9::TimerThread` 讓 Timer 觸發的 thread。
+### 允許 MyObject 在觸發前死亡
+使用 `std::shared_ptr<MyObject>` + `fon9::TimerEntry_OwnerWP<MyObject, &MyObject::OnTimer>`
+觸發 `MyObject::OnTimer()` 事件
+```c++
+class MyObject : public std::enable_shared_from_this<MyObject> {
+   void OnTimer(fon9::TimerEntry* timer, fon9::TimeStamp now) {
+      // ... timer 觸發後, 執行這裡.
+   }
+   using Timer = fon9::TimerEntry_OwnerWP<MyObject, &MyObject::OnTimer>;
+public:
+   void RunAfter(fon9::TimerThread& timerThread, fon9::TimeInterval ti) {
+      (new Timer{timerThread, this->shared_from_this()})->RunAfter(ti);
+   }
+};
+```
+### 在 MyObject 裡面包含一個 timer 物件, 然後觸發 static member function
+```c++
+class MyObject {
+   fon9_NON_COPY_NON_MOVE(MyObject);
+   static void EmitOnTimer(fon9::TimerEntry* timer, fon9::TimeStamp now) {
+      MyObject* pthis = fon9::ContainerOf(*static_cast<decltype(MyObject::Timer_)*>(timer), &MyObject::Timer_);
+      // 處理 Timer 事件...
+   }
+   fon9::DataMemberEmitOnTimer<&MyObject::EmitOnTimer> Timer_;
+public:
+   MyObject(fon9::TimerThread& timerThread) : Timer_(timerThread) {
+   }
+   ~MyObject() {
+      // 必須在 MyObject 死亡前，確定 Timer_ 已不會再觸發，否則可能會 crash!
+      this->Timer_.DisposeAndWait();
+   }
+   void RunAfter(fon9::TimeInterval delaySecs) {
+      this->Timer_.RunAfter(delaySecs);
+   }
+};
+```
+### 在 MyObject 裡面包含一個 timer 物件
+* 繼承 `fon9::DataMemberTimer`
+* 覆寫 `virtual void EmitOnTimer(fon9::TimeStamp now) override;`
+```c++
+class MyObject {
+   fon9_NON_COPY_NON_MOVE(MyObject);
+   class Timer : public fon9::DataMemberTimer {
+      fon9_NON_COPY_NON_MOVE(Timer);
+      using base = fon9::DataMemberTimer;
+      virtual void EmitOnTimer(fon9::TimeStamp now) override {
+         MyObject* owner = fon9::ContainerOf(*this, &MyObject::Timer_);
+         // ... Timer_ 觸發後, 執行這裡.
+      }
+   public:
+      using base::base;
+   };
+   Timer   Timer_;
+public:
+   MyObject(fon9::TimerThread& timerThread) : Timer_(timerThread) {
+   }
+   ~MyObject() {
+      // 必須在 MyObject 死亡前，確定 Timer_ 已不會再觸發，否則可能會 crash!
+      this->Timer_.DisposeAndWait();
+   }
+   void RunAfter(fon9::TimeInterval delaySecs) {
+      this->Timer_.RunAfter(delaySecs);
+   }
+};
+```

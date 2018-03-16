@@ -7,6 +7,10 @@ set(fon9src
  ToStrFmt.cpp
  TimeInterval.cpp
  TimeStamp.cpp
+
+ CountDownLatch.cpp
+ CyclicBarrier.cpp
+ Timer.cpp
  
  buffer/RevFormat.cpp
 )
@@ -36,3 +40,6 @@ target_link_libraries(RevPrint_UT fon9_s)
 
 add_executable(ThreadController_UT ThreadController_UT.cpp)
 target_link_libraries(ThreadController_UT fon9_s)
+
+add_executable(Timer_UT Timer_UT.cpp)
+target_link_libraries(Timer_UT fon9_s)

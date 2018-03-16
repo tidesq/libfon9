@@ -137,6 +137,15 @@
     <ClInclude Include="..\..\..\fon9\CyclicBarrier.hpp">
       <Filter>Header Files\_base\_Thread</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\intrusive_ptr.hpp">
+      <Filter>Header Files\_base\_Container / Algorithm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\intrusive_ref_counter.hpp">
+      <Filter>Header Files\_base\_Container / Algorithm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\Timer.hpp">
+      <Filter>Header Files\_base\_Thread</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -179,6 +188,9 @@
       <Filter>Source Files\_base\_Thread</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\CyclicBarrier.cpp">
+      <Filter>Source Files\_base\_Thread</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\Timer.cpp">
       <Filter>Source Files\_base\_Thread</Filter>
     </ClCompile>
   </ItemGroup>

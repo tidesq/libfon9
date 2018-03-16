@@ -88,6 +88,9 @@ using ToImax_t = conditional_t<std::is_signed<IntType>::value, intmax_t, uintmax
 template<bool B, class T = void>
 using enable_if_t = typename std::enable_if<B, T>::type;
 
+template<typename EnumT>
+using underlying_type_t = typename std::underlying_type<EnumT>::type;
+
 /// \ingroup Misc
 /// 同 C++14 的 std::enable_if_t<>
 template<typename T>
@@ -190,37 +193,37 @@ inline T* InplaceNew(void* p, ArgsT&&... args) {
 /// - IsEnumContainsAny(a,b): 傳回 ((a & b) != 0)
 #define fon9_ENABLE_ENUM_BITWISE_OP(enum_t)        \
 constexpr enum_t operator| (enum_t a, enum_t b) { \
-   return static_cast<enum_t>( static_cast<std::underlying_type<enum_t>::type>(a)   \
-                              | static_cast<std::underlying_type<enum_t>::type>(b)); \
+   return static_cast<enum_t>( static_cast<fon9::underlying_type_t<enum_t>>(a)   \
+                              | static_cast<fon9::underlying_type_t<enum_t>>(b)); \
 } \
 inline enum_t& operator|= (enum_t& a, enum_t b) { \
-   return a = static_cast<enum_t>( static_cast<std::underlying_type<enum_t>::type>(a)   \
-                                 | static_cast<std::underlying_type<enum_t>::type>(b)); \
+   return a = static_cast<enum_t>( static_cast<fon9::underlying_type_t<enum_t>>(a)   \
+                                 | static_cast<fon9::underlying_type_t<enum_t>>(b)); \
 } \
 constexpr enum_t operator- (enum_t a, enum_t b) { \
-   return static_cast<enum_t>(  static_cast<std::underlying_type<enum_t>::type>(a)   \
-                              & ~static_cast<std::underlying_type<enum_t>::type>(b)); \
+   return static_cast<enum_t>(  static_cast<fon9::underlying_type_t<enum_t>>(a)   \
+                              & ~static_cast<fon9::underlying_type_t<enum_t>>(b)); \
 } \
 inline enum_t& operator-= (enum_t& a, enum_t b) { \
-   return a = static_cast<enum_t>(  static_cast<std::underlying_type<enum_t>::type>(a)   \
-                                 & ~static_cast<std::underlying_type<enum_t>::type>(b)); \
+   return a = static_cast<enum_t>(  static_cast<fon9::underlying_type_t<enum_t>>(a)   \
+                                 & ~static_cast<fon9::underlying_type_t<enum_t>>(b)); \
 } \
 constexpr enum_t operator& (enum_t a, enum_t b) { \
-   return static_cast<enum_t>( static_cast<std::underlying_type<enum_t>::type>(a)   \
-                              & static_cast<std::underlying_type<enum_t>::type>(b)); \
+   return static_cast<enum_t>( static_cast<fon9::underlying_type_t<enum_t>>(a)   \
+                              & static_cast<fon9::underlying_type_t<enum_t>>(b)); \
 } \
 inline enum_t& operator&= (enum_t& a, enum_t b) { \
-   return a = static_cast<enum_t>( static_cast<std::underlying_type<enum_t>::type>(a)   \
-                                 & static_cast<std::underlying_type<enum_t>::type>(b)); \
+   return a = static_cast<enum_t>( static_cast<fon9::underlying_type_t<enum_t>>(a)   \
+                                 & static_cast<fon9::underlying_type_t<enum_t>>(b)); \
 } \
 constexpr bool IsEnumContains(enum_t a, enum_t b) { \
-   return static_cast<enum_t>(static_cast<std::underlying_type<enum_t>::type>(a)   \
-                              & static_cast<std::underlying_type<enum_t>::type>(b))  \
+   return static_cast<enum_t>(static_cast<fon9::underlying_type_t<enum_t>>(a)   \
+                              & static_cast<fon9::underlying_type_t<enum_t>>(b))  \
          == b; \
 } \
 constexpr bool IsEnumContainsAny(enum_t a, enum_t b) { \
-   return (static_cast<std::underlying_type<enum_t>::type>(a)    \
-         & static_cast<std::underlying_type<enum_t>::type>(b))   \
+   return (static_cast<fon9::underlying_type_t<enum_t>>(a)    \
+         & static_cast<fon9::underlying_type_t<enum_t>>(b))   \
             != 0; \
 } \
 //----- fon9_ENABLE_ENUM_BITWISE_OP();

@@ -86,6 +86,8 @@
     <ClInclude Include="..\..\..\fon9\DummyMutex.hpp" />
     <ClInclude Include="..\..\..\fon9\Exception.hpp" />
     <ClInclude Include="..\..\..\fon9\FmtDef.hpp" />
+    <ClInclude Include="..\..\..\fon9\intrusive_ptr.hpp" />
+    <ClInclude Include="..\..\..\fon9\intrusive_ref_counter.hpp" />
     <ClInclude Include="..\..\..\fon9\MustLock.hpp" />
     <ClInclude Include="..\..\..\fon9\SleepPolicy.hpp" />
     <ClInclude Include="..\..\..\fon9\SortedVector.hpp" />
@@ -99,6 +101,7 @@
     <ClInclude Include="..\..\..\fon9\TestTools.hpp" />
     <ClInclude Include="..\..\..\fon9\ThreadController.hpp" />
     <ClInclude Include="..\..\..\fon9\TimeInterval.hpp" />
+    <ClInclude Include="..\..\..\fon9\Timer.hpp" />
     <ClInclude Include="..\..\..\fon9\TimeStamp.hpp" />
     <ClInclude Include="..\..\..\fon9\ToStr.hpp" />
     <ClInclude Include="..\..\..\fon9\ToStrFmt.hpp" />
@@ -122,6 +125,7 @@
     <ClCompile Include="..\..\..\fon9\StrTo.cpp" />
     <ClCompile Include="..\..\..\fon9\StrTools.cpp" />
     <ClCompile Include="..\..\..\fon9\TimeInterval.cpp" />
+    <ClCompile Include="..\..\..\fon9\Timer.cpp" />
     <ClCompile Include="..\..\..\fon9\TimeStamp.cpp" />
     <ClCompile Include="..\..\..\fon9\ToStr.cpp" />
     <ClCompile Include="..\..\..\fon9\ToStrFmt.cpp" />

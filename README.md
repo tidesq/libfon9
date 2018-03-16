@@ -36,6 +36,27 @@
 ---------------------------------------
 ## 一般工具
 ### [Signal/Slot (Observer, Subject/Subscriber, Event, Callback...)](Overview/Subr.md)
+### intrusive_ptr<>、intrusive_ref_counter<>
+* [fon9/intrusive_ptr.hpp](fon9/intrusive_ptr.hpp)
+  * [參考 boost 的文件](http://www.boost.org/doc/libs/1_60_0/libs/smart_ptr/intrusive_ptr.html)
+  * fon9 的額外調整: 在 intrusive_ptr_release() 時, 如果需要刪除, 則會呼叫 intrusive_ptr_deleter();
+    * 如此一來就可以自訂某型別在 intrusive_ptr<> 的刪除行為
+    * 預設直接呼叫 delete
+    * 例:
+      ```c++
+      class MyClass : public fon9::intrusive_ref_counter<MyClass> {
+         virtual void OnBeforeDestroy() const {
+         }
+         // 自訂 intrusive_ptr<> 刪除 MyClass 的方法.
+         inline friend void intrusive_ptr_deleter(const MyClass* p) {
+            p->OnBeforeDestroy();
+            delete p;
+         }
+      };
+      ```
+* [fon9/intrusive_ref_counter.hpp](fon9/intrusive_ref_counter.hpp)
+  * [參考 boost 的文件](http://www.boost.org/doc/libs/1_60_0/libs/smart_ptr/intrusive_ref_counter.html)
+### [Buffer 機制](fon9/buffer)
 ### Log
 ---------------------------------------
 ## 文字/數字/基礎型別
@@ -97,7 +118,6 @@ ToStrRev(Fmt)    : 0.015506810 secs / 1,000,000 times =  15.506810000 ns
 ### [TimeInterval](fon9/TimeInterval.hpp) / [TimeStamp / TimeZoneOffset](fon9/TimeStamp.hpp)：時間處理機制
   * 取得現在 UTC 時間：`fon9::UtcNow();`
   * 取得現在 本地時間：`fon9::TimeStamp lo = fon9::UtcNow() + fon9::GetLocalTimeZoneOffset();`
-### [Buffer 機制](fon9/buffer)
 ### Format 機制
   * 類似的 lib: [{fmt} library](http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html)
   * 基本格式化輸出
@@ -119,12 +139,12 @@ ToStrRev(Fmt)    : 0.015506810 secs / 1,000,000 times =  15.506810000 ns
       ```
 ---------------------------------------
 ## [Thread 工具](Overview/ThreadTools.md)
-### [MustLock](fon9/MustLock.hpp)
-### [DummyMutex](fon9/DummyMutex.hpp)
-### [CountDownLatch](fon9/CountDownLatch.hpp)
-### [CyclicBarrierLatch](fon9/CyclicBarrier.hpp)
-### [ThreadController](fon9/ThreadController.hpp)
-### [Timer 計時器](fon9/Timer.hpp)
+### [MustLock](Overview/ThreadTools.md#fon9mustlock)
+### [DummyMutex](Overview/ThreadTools.md#fon9dummymutex)
+### [CountDownLatch](Overview/ThreadTools.md#fon9countdownlatch)
+### [CyclicBarrierLatch](Overview/ThreadTools.md#fon9cyclicbarrier)
+### [ThreadController](Overview/ThreadTools.md#fon9threadcontrollerprotectedt-waitpolicy)
+### [Timer 計時器](Overview/ThreadTools.md#timer-計時器)
 ---------------------------------------
 ## 檔案/儲存/載入
 ### File/Path tools

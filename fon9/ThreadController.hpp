@@ -27,7 +27,7 @@ fon9_WARN_DISABLE_PADDING;
 ///
 ///   // thread 執行的進入點.
 ///   void ThrRun(std::string thrName, MyQueueController& myQueueController) {
-///      fon9_LOG_ThrRun("MyQueueThread.ThrRun:|name=", thrName);
+///      fon9_LOG_ThrRun("MyQueueThread.ThrRun|name=", thrName);
 ///      for (;;) {
 ///         MyQueueController::Locker  myQueue{myQueueController};
 ///         if (!myQueueController.Wait(myQueue))
@@ -54,6 +54,7 @@ class ThreadController : public MustLock<ProtectedT, typename WaitPolicy::Mutex,
 
 public:
    using Locker = typename base::Locker;
+
    using base::base;
    ThreadController() {
    }

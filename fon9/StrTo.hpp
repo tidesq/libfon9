@@ -172,7 +172,7 @@ template <typename SignedIntType>
 class StrToSIntAux : public StrToIntAuxBase<SignedIntType> {
    using base = StrToIntAuxBase<SignedIntType>;
    /// 檢查型別是否正確.
-   static_assert(std::numeric_limits<SignedIntType>::is_signed,
+   static_assert(std::is_signed<SignedIntType>::value,
                  "StrToSInt<SignedIntType>, SignedIntType 必須是有正負的整數型別");
 public:
    using typename base::TempResultT;
@@ -236,7 +236,7 @@ template <typename UnsignedIntType>
 class StrToUIntAux : public StrToIntAuxBase<UnsignedIntType> {
    using base = StrToIntAuxBase<UnsignedIntType>;
    /// 檢查型別是否正確.
-   static_assert(!std::numeric_limits<UnsignedIntType>::is_signed, "StrToUInt<UnsignedIntType>, UnsignedIntType必須是無正負的整數型別");
+   static_assert(std::is_unsigned<UnsignedIntType>::value, "StrToUInt<UnsignedIntType>, UnsignedIntType必須是無正負的整數型別");
 public:
    using typename base::TempResultT;
    using typename base::ResultT;
@@ -265,7 +265,7 @@ public:
 /// \ingroup AlNum
 /// 自動依照 IntType 是否有正負, 選擇 StrToSInt<IntType> 或 StrToUInt<IntType>.
 template <class IntType>
-using StrToIntAux = conditional_t<std::numeric_limits<IntType>::is_signed, StrToSIntAux<IntType>, StrToUIntAux<IntType>>;
+using StrToIntAux = conditional_t<std::is_signed<IntType>::value, StrToSIntAux<IntType>, StrToUIntAux<IntType>>;
 
 /// \ingroup AlNum
 /// 輔助 StrToNum() 轉成「Decimal整數」的類別.
