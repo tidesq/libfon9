@@ -210,7 +210,7 @@ FmtTS::FmtTS(StrView fmtstr) {
          item = static_cast<TsFmtItem>(chItem);
          break;
       }
-      fon9_MSC_WARN_POP;
+      fon9_WARN_POP;
 
       if (this->ItemsCount_ >= numofele(this->FmtItems_))
          return;

@@ -14,23 +14,21 @@ fon9_WARN_DISABLE_PADDING;
 /// 必須先鎖定, 才能使用 BaseT.
 template <class BaseT,
    class MutexT = std::mutex,
-   template <class MutexT> class MutexLockerT = std::unique_lock>
+   class MutexLockerT = std::unique_lock<MutexT>>
 class MustLock {
    fon9_NON_COPY_NON_MOVE(MustLock);
    MutexT mutable Mutex_;
    BaseT          Base_;
 public:
-   using LockerBase = MutexLockerT<MutexT>;
-
    template <class... ArgsT>
    MustLock(ArgsT&&... args) : Base_{std::forward<ArgsT>(args)...} {
    }
 
    /// 必須透過鎖定才能取得 LockedBaseT 物件.
    template <class OwnerT, class LockedBaseT>
-   class LockerT : public LockerBase {
+   class LockerT : public MutexLockerT {
       fon9_NON_COPYABLE(LockerT);
-      using base = LockerBase;
+      using base = MutexLockerT;
       OwnerT*  Owner_;
    public:
       LockerT() : Owner_{nullptr} {}

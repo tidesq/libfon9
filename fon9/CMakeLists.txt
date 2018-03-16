@@ -33,3 +33,6 @@ target_link_libraries(TimeStamp_UT fon9_s)
 
 add_executable(RevPrint_UT buffer/RevPrint_UT.cpp)
 target_link_libraries(RevPrint_UT fon9_s)
+
+add_executable(ThreadController_UT ThreadController_UT.cpp)
+target_link_libraries(ThreadController_UT fon9_s)

@@ -32,3 +32,34 @@
 ## `fon9::DummyMutex`
 [fon9/DummyMutex.hpp](../fon9/DummyMutex.hpp)
 * 提供 mutex 相容的介面，但沒有鎖住任何東西。
+
+## SleepPolicy
+[fon9/SleepPolicy.hpp](../fon9/SleepPolicy.hpp)
+* `fon9::BusySleepPolicy`
+* `fon9::YieldSleepPolicy`
+* `fon9::NanoSleepPolicy<ns>`
+
+## `fon9::SpinMutex<SleepPolicy>`
+[fon9/SpinMutex.hpp](../fon9/SpinMutex.hpp)
+* `using SpinBusy = SpinMutex<BusySleepPolicy>;`
+
+## WaitPolicy
+[fon9/WaitPolicy.hpp](../fon9/WaitPolicy.hpp)
+* `fon9::WaitPolicy_CV`
+* `fon9::WaitPolicy_Spin<MutexT>`
+* `using SpinBusy = SpinMutex<BusySleepPolicy>;`
+
+## `fon9::CountDownLatch`
+[fon9/CountDownLatch.hpp](../fon9/CountDownLatch.hpp)
+* 等候指定數量的倒數。
+
+## `fon9::CyclicBarrier`
+[fon9/CyclicBarrier.hpp](../fon9/CyclicBarrier.hpp)
+* 當同時等候中的 Threads 到達指定數量時，則喚醒所有等候者。
+
+## `fon9::ThreadController<ProtectedT, WaitPolicy>`
+[fon9/ThreadController.hpp](../fon9/ThreadController.hpp)
+* 一般 thread 執行時的資料保護、流程控制。
+
+## Timer 計時器
+[fon9/Timer.hpp](../fon9/Timer.hpp)

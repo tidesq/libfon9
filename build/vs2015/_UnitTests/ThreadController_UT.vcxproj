@@ -11,19 +11,19 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{6B9031A7-02E1-4171-8CA5-9F780BE21806}</ProjectGuid>
-    <RootNamespace>libfonix</RootNamespace>
+    <ProjectGuid>{B0840AB3-8BEB-4CC0-B891-316B8AFC2501}</ProjectGuid>
+    <RootNamespace>ThreadController_UT</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -55,7 +55,6 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\..\..\..\fon9</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_DEBUG;fon9_EXPORT</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -66,7 +65,6 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\..\..\..\fon9</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG;fon9_EXPORT</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -74,57 +72,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\fon9\buffer\RevBuffer.hpp" />
-    <ClInclude Include="..\..\..\fon9\buffer\RevFormat.hpp" />
-    <ClInclude Include="..\..\..\fon9\buffer\RevPrint.hpp" />
-    <ClInclude Include="..\..\..\fon9\buffer\RevPut.hpp" />
-    <ClInclude Include="..\..\..\fon9\Comparable.hpp" />
-    <ClInclude Include="..\..\..\fon9\CountDownLatch.hpp" />
-    <ClInclude Include="..\..\..\fon9\CyclicBarrier.hpp" />
-    <ClInclude Include="..\..\..\fon9\DecBase.hpp" />
-    <ClInclude Include="..\..\..\fon9\Decimal.hpp" />
-    <ClInclude Include="..\..\..\fon9\DummyMutex.hpp" />
-    <ClInclude Include="..\..\..\fon9\Exception.hpp" />
-    <ClInclude Include="..\..\..\fon9\FmtDef.hpp" />
-    <ClInclude Include="..\..\..\fon9\MustLock.hpp" />
-    <ClInclude Include="..\..\..\fon9\SleepPolicy.hpp" />
-    <ClInclude Include="..\..\..\fon9\SortedVector.hpp" />
-    <ClInclude Include="..\..\..\fon9\SpinMutex.hpp" />
-    <ClInclude Include="..\..\..\fon9\StrTo.hpp" />
-    <ClInclude Include="..\..\..\fon9\StrTools.hpp" />
-    <ClInclude Include="..\..\..\fon9\StrView.hpp" />
-    <ClInclude Include="..\..\..\fon9\Subr.hpp" />
-    <ClInclude Include="..\..\..\fon9\sys\Config.h" />
-    <ClInclude Include="..\..\..\fon9\sys\Config.hpp" />
-    <ClInclude Include="..\..\..\fon9\TestTools.hpp" />
+    <ClCompile Include="..\..\..\fon9\ThreadController_UT.cpp" />
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="..\..\..\fon9\ThreadController.hpp" />
-    <ClInclude Include="..\..\..\fon9\TimeInterval.hpp" />
-    <ClInclude Include="..\..\..\fon9\TimeStamp.hpp" />
-    <ClInclude Include="..\..\..\fon9\ToStr.hpp" />
-    <ClInclude Include="..\..\..\fon9\ToStrFmt.hpp" />
-    <ClInclude Include="..\..\..\fon9\TypeName.hpp" />
-    <ClInclude Include="..\..\..\fon9\Utility.hpp" />
-    <ClInclude Include="..\..\..\fon9\WaitPolicy.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\fon9\buffer\README.md" />
-    <None Include="..\..\..\README.md" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="..\..\..\CMakeLists.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\..\fon9\buffer\RevFormat.cpp" />
-    <ClCompile Include="..\..\..\fon9\CountDownLatch.cpp" />
-    <ClCompile Include="..\..\..\fon9\CyclicBarrier.cpp" />
-    <ClCompile Include="..\..\..\fon9\DecBase.cpp" />
-    <ClCompile Include="..\..\..\fon9\FmtDef.cpp" />
-    <ClCompile Include="..\..\..\fon9\StrTo.cpp" />
-    <ClCompile Include="..\..\..\fon9\StrTools.cpp" />
-    <ClCompile Include="..\..\..\fon9\TimeInterval.cpp" />
-    <ClCompile Include="..\..\..\fon9\TimeStamp.cpp" />
-    <ClCompile Include="..\..\..\fon9\ToStr.cpp" />
-    <ClCompile Include="..\..\..\fon9\ToStrFmt.cpp" />
+    <ProjectReference Include="..\libfon9\libfon9.vcxproj">
+      <Project>{6b9031a7-02e1-4171-8ca5-9f780be21806}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
