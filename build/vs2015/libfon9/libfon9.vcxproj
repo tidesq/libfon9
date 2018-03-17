@@ -75,9 +75,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\buffer\RevBuffer.hpp" />
-    <ClInclude Include="..\..\..\fon9\buffer\RevFormat.hpp" />
-    <ClInclude Include="..\..\..\fon9\buffer\RevPrint.hpp" />
-    <ClInclude Include="..\..\..\fon9\buffer\RevPut.hpp" />
+    <ClInclude Include="..\..\..\fon9\RevFormat.hpp" />
+    <ClInclude Include="..\..\..\fon9\RevPrint.hpp" />
+    <ClInclude Include="..\..\..\fon9\RevPut.hpp" />
     <ClInclude Include="..\..\..\fon9\Comparable.hpp" />
     <ClInclude Include="..\..\..\fon9\CountDownLatch.hpp" />
     <ClInclude Include="..\..\..\fon9\CyclicBarrier.hpp" />
@@ -117,7 +117,7 @@
     <Text Include="..\..\..\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\fon9\buffer\RevFormat.cpp" />
+    <ClCompile Include="..\..\..\fon9\RevFormat.cpp" />
     <ClCompile Include="..\..\..\fon9\CountDownLatch.cpp" />
     <ClCompile Include="..\..\..\fon9\CyclicBarrier.cpp" />
     <ClCompile Include="..\..\..\fon9\DecBase.cpp" />

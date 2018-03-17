@@ -12,7 +12,7 @@ set(fon9src
  CyclicBarrier.cpp
  Timer.cpp
  
- buffer/RevFormat.cpp
+ RevFormat.cpp
 )
 add_library(fon9_s STATIC ${fon9src})
 target_link_libraries(fon9_s pthread rt)
@@ -35,7 +35,7 @@ target_link_libraries(ToStr_UT fon9_s)
 add_executable(TimeStamp_UT TimeStamp_UT.cpp)
 target_link_libraries(TimeStamp_UT fon9_s)
 
-add_executable(RevPrint_UT buffer/RevPrint_UT.cpp)
+add_executable(RevPrint_UT RevPrint_UT.cpp)
 target_link_libraries(RevPrint_UT fon9_s)
 
 add_executable(ThreadController_UT ThreadController_UT.cpp)

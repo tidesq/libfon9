@@ -1,7 +1,7 @@
-﻿/// \file fon9/buffer/RevPut.hpp
+﻿/// \file fon9/RevPut.hpp
 /// \author fonwinz@gmail.com
-#ifndef __fon9_buffer_RevPut_hpp__
-#define __fon9_buffer_RevPut_hpp__
+#ifndef __fon9_RevPut_hpp__
+#define __fon9_RevPut_hpp__
 #include "fon9/buffer/RevBuffer.hpp"
 #include <string.h>
 
@@ -50,4 +50,4 @@ void RevPutMapToStr(RevBuffer& rbuf, const Map& src, char chKVSplitter, char chR
 }
 
 } // namespace
-#endif//__fon9_buffer_RevPut_hpp__
+#endif//__fon9_RevPut_hpp__

@@ -1,7 +1,7 @@
 ﻿// \file fon9/ThreadController_UT.cpp
 // \author fonwinz@gmail.com
 #include "fon9/ThreadController.hpp"
-#include "fon9/buffer/RevPrint.hpp"
+#include "fon9/RevPrint.hpp"
 #include "fon9/TestTools.hpp"
 #include <queue>
 

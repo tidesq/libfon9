@@ -1,7 +1,7 @@
 ﻿// \file fon9/ToStr_UT.cpp
 // \author fonwinz@gmail.com
 #define _CRT_SECURE_NO_WARNINGS
-#include "fon9/buffer/RevFormat.hpp"
+#include "fon9/RevFormat.hpp"
 #include "fon9/Decimal.hpp"
 #include "fon9/TestTools.hpp"
 

@@ -1,6 +1,6 @@
-﻿/// \file fon9/buffer/RevFormat.cpp
+﻿/// \file fon9/RevFormat.cpp
 /// \author fonwinz@gmail.com
-#include "fon9/buffer/RevFormat.hpp"
+#include "fon9/RevFormat.hpp"
 #include "fon9/StrTo.hpp"
 
 namespace fon9 {

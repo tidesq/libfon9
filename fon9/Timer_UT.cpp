@@ -2,7 +2,7 @@
 // \author fonwinz@gmail.com
 #include "fon9/Timer.hpp"
 #include "fon9/TestTools.hpp"
-#include "fon9/buffer/RevPrint.hpp"
+#include "fon9/RevPrint.hpp"
 
 // 壓力測試方法:
 // - 建立4個 thread

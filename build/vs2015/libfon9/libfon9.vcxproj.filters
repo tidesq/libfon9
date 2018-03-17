@@ -104,19 +104,19 @@
     <ClInclude Include="..\..\..\fon9\buffer\RevBuffer.hpp">
       <Filter>Header Files\buffer</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\buffer\RevPut.hpp">
+    <ClInclude Include="..\..\..\fon9\RevPut.hpp">
       <Filter>Header Files\buffer</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\FmtDef.hpp">
       <Filter>Header Files\_base\_AlNum / StrTools</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\buffer\RevPrint.hpp">
+    <ClInclude Include="..\..\..\fon9\RevPrint.hpp">
       <Filter>Header Files\buffer</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\ToStrFmt.hpp">
       <Filter>Header Files\_base\_AlNum / StrTools</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\buffer\RevFormat.hpp">
+    <ClInclude Include="..\..\..\fon9\RevFormat.hpp">
       <Filter>Header Files\buffer</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\WaitPolicy.hpp">
@@ -181,7 +181,7 @@
     <ClCompile Include="..\..\..\fon9\ToStrFmt.cpp">
       <Filter>Source Files\_base\_AlNum</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\fon9\buffer\RevFormat.cpp">
+    <ClCompile Include="..\..\..\fon9\RevFormat.cpp">
       <Filter>Source Files\buffer</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\CountDownLatch.cpp">

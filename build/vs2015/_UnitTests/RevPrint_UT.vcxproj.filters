@@ -14,15 +14,18 @@
     <ClInclude Include="..\..\..\fon9\buffer\RevBuffer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\buffer\RevPut.hpp">
+    <ClInclude Include="..\..\..\fon9\RevPut.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\buffer\RevPrint.hpp">
+    <ClInclude Include="..\..\..\fon9\RevPrint.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\RevFormat.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\fon9\buffer\RevPrint_UT.cpp">
+    <ClCompile Include="..\..\..\fon9\RevPrint_UT.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

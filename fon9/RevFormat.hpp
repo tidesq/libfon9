@@ -1,8 +1,8 @@
-﻿/// \file fon9/buffer/RevFormat.hpp
+﻿/// \file fon9/RevFormat.hpp
 /// \author fonwinz@gmail.com
-#ifndef __fon9_buffer_RevFormat_hpp__
-#define __fon9_buffer_RevFormat_hpp__
-#include "fon9/buffer/RevPrint.hpp"
+#ifndef __fon9_RevFormat_hpp__
+#define __fon9_RevFormat_hpp__
+#include "fon9/RevPrint.hpp"
 #include <tuple>
 #include <array>
 
@@ -93,4 +93,4 @@ inline void RevPrint(RevBuffer& rbuf, InplaceFmt, StrView fmtstr, ArgsT&&... arg
 }
 
 } // namespace
-#endif//__fon9_buffer_RevFormat_hpp__
+#endif//__fon9_RevFormat_hpp__

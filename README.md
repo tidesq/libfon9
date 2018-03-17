@@ -123,12 +123,12 @@ ToStrRev(Fmt)    : 0.015506810 secs / 1,000,000 times =  15.506810000 ns
   * 基本格式化輸出
     * `ToStrRev(pout, value, fmt);`
     * `RevPrint(RevBuffer& rbuf, value1, value2, fmt2, ...);`
-      * [buffer/RevPrint.hpp](fon9/buffer/RevPrint.hpp)
+      * [fon9/RevPrint.hpp](fon9/RevPrint.hpp)
       * value1 無格式化, 轉呼叫 `ToStrRev(pout, value1);`
       * value2 使用 fmt2 格式化, 轉呼叫 `ToStrRev(pout, value2, fmt2);`
   * 格式化輸出, 類似 `sprintf();`, `fmt::format()`
       * `RevFormat(rbuf, format, value...);`
-        * [buffer/RevFormat.hpp](fon9/buffer/RevFormat.hpp)
+        * [fon9/RevFormat.hpp](fon9/RevFormat.hpp)
       * 例如:
       ```c++
       // output: "/abc/def/123"

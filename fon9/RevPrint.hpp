@@ -1,8 +1,8 @@
-﻿/// \file fon9/buffer/RevPrint.hpp
+﻿/// \file fon9/RevPrint.hpp
 /// \author fonwinz@gmail.com
-#ifndef __fon9_buffer_RevPrint_hpp__
-#define __fon9_buffer_RevPrint_hpp__
-#include "fon9/buffer/RevPut.hpp"
+#ifndef __fon9_RevPrint_hpp__
+#define __fon9_RevPrint_hpp__
+#include "fon9/RevPut.hpp"
 #include "fon9/ToStrFmt.hpp"
 
 namespace fon9 {
@@ -88,4 +88,4 @@ inline auto RevPrint(RevBuffer& rbuf, T1&& value1, FmtT&& fmt, ArgsT&&... args)
 }
 
 } // namespace
-#endif//__fon9_buffer_RevPrint_hpp__
+#endif//__fon9_RevPrint_hpp__

@@ -20,9 +20,9 @@ producer --> | buffer | --> | DcQueue | --> consumer
 #### 由後往前填入：[buffer/RevBuffer.hpp](RevBuffer.hpp)
 * 大部分的情況下，資料從後往前填，才是建立輸出資料最有效率的方式。
 * `RevPrint(rbuf, value, ...);` or `RevPrint(rbuf, value, fmt, ...);`
-  * [buffer/RevPrint.hpp](RevPrint.hpp)
+  * [fon9/RevPrint.hpp](../RevPrint.hpp)
 * `RevFormat(rbuf, format, ...);`
-  * [buffer/RevFormat.hpp](RevFormat.hpp)
+  * [fon9/RevFormat.hpp](../RevFormat.hpp)
 
 #### 由前往後填入：[buffer/FwdBuffer.hpp](FwdBuffer.hpp)
 * 在某些無法立即取得全部資料，但必須依序填入的情況，例：
