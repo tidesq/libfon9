@@ -43,7 +43,7 @@ protected:
          // 比預期時間長?
          // 1.系統時間改變,
          // 2.系統暫停(例:進入睡眠)後喚醒,
-         // 3.OnTimer()處理時間過長: 當累計到多少 Session, 處理超過20ms秒?
+         // 3.OnTimer()處理時間過長: 當累計到多少 Session, 處理超過 20 ms?
          if (gOverBegin == 0)
             gOverBegin = gSessionCount - gSessionDtor;
       }
@@ -182,4 +182,7 @@ void TestTimerThread() {
 int main() {
    fon9::AutoPrintTestInfo utinfo{"Timer"};
    TestTimerThread();
+
+   // 測試在 main() 結束後, DefaultTimerThread 是否能正常結束.
+   fon9::GetDefaultTimerThread();
 }

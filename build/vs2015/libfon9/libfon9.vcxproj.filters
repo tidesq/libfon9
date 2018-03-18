@@ -42,6 +42,12 @@
     <Filter Include="Source Files\_base\_Thread">
       <UniqueIdentifier>{eea5d9cf-adfe-4983-bddb-4e64c1f0a36e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\_base\_Tools / Utility">
+      <UniqueIdentifier>{bc7b085d-56ee-449b-8fdd-fbbff7e4b5bb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\sys">
+      <UniqueIdentifier>{4d218dae-874b-4827-a68a-657702151655}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\sys\Config.h">
@@ -146,6 +152,15 @@
     <ClInclude Include="..\..\..\fon9\Timer.hpp">
       <Filter>Header Files\_base\_Thread</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\Log.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\ThreadId.hpp">
+      <Filter>Header Files\_base\_Thread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\sys\OnWindowsMainExit.hpp">
+      <Filter>Header Files\sys</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -192,6 +207,15 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\Timer.cpp">
       <Filter>Source Files\_base\_Thread</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\Log.cpp">
+      <Filter>Source Files\_base\_Tools / Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\ThreadId.cpp">
+      <Filter>Source Files\_base\_Thread</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\sys\OnWindowsMainExit.cpp">
+      <Filter>Source Files\sys</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

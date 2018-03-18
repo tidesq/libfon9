@@ -256,6 +256,11 @@ class fon9_API TimerThread {
 
 protected:
    void ThrRun(std::string timerName);
+   /// Terminate() & Wait thread join.
+   void WaitTerminate();
+   void Terminate() {
+      this->TimerController_.Terminate();
+   }
 
 public:
    TimerThread(std::string timerName);

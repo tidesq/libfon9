@@ -63,7 +63,10 @@
 
 ## Timer 計時器
 [fon9/Timer.hpp](../fon9/Timer.hpp)
+* 由於 Timer 共用 TimerThread，所以若 OnTimer 事件的執行時間太久，
+  則會影響下一個 Timer，可能會超過預計的執行時間。
 ### 必須先建立一個 `fon9::TimerThread` 讓 Timer 觸發的 thread。
+* `fon9::TimerThread& fon9::GetDefaultTimerThread();` 可取得 fon9 預設的 TimerThread
 ### 允許 MyObject 在觸發前死亡
 使用 `std::shared_ptr<MyObject>` + `fon9::TimerEntry_OwnerWP<MyObject, &MyObject::OnTimer>`
 觸發 `MyObject::OnTimer()` 事件

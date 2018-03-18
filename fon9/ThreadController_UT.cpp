@@ -1,18 +1,9 @@
 ﻿// \file fon9/ThreadController_UT.cpp
 // \author fonwinz@gmail.com
 #include "fon9/ThreadController.hpp"
-#include "fon9/RevPrint.hpp"
+#include "fon9/Log.hpp"
 #include "fon9/TestTools.hpp"
 #include <queue>
-
-#ifndef fon9_LOG_ThrRun
-template <class... ArgsT>
-void fon9_LOG_ThrRun(ArgsT&&... args) {
-   fon9::RevBufferFixedSize<1024> rbuf;
-   RevPrint(rbuf, std::forward<ArgsT>(args)..., "\n\0");
-   std::cout << rbuf.GetCurrent();
-}
-#endif
 
 /// - 每個 thread 會建立一個 MessageHandlerT.
 /// - MessageHandlerT 必須提供:
@@ -49,8 +40,8 @@ class MessageQueueService {
          }
       }
       __END_ThrRun:
-      fon9_LOG_ThrRun("MessageQueueService.ThrRun.End|name=", thrName);
       messageHandler.OnThreadEnd(thrName);
+      fon9_LOG_ThrRun("MessageQueueService.ThrRun.End|name=", thrName);
    }
 
    using ThreadPool = std::vector<std::thread>;

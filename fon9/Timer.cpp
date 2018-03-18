@@ -1,24 +1,22 @@
 ﻿// \file fon9/Timer.cpp
 // \author fonwinz@gmail.com
 #include "fon9/Timer.hpp"
-//#include "fon9/impl/OnWindowsMainExit.hpp"
+#include "fon9/Log.hpp"
+#include "fon9/sys/OnWindowsMainExit.hpp"
 
 namespace fon9 {
 
 TimerThread& GetDefaultTimerThread() {
-#if 0
-   struct DefaultTimerThread : public TimerThread, impl::OnWindowsMainExitHandle {
+   struct DefaultTimerThread : public TimerThread, sys::OnWindowsMainExitHandle {
       fon9_NON_COPY_NON_MOVE(DefaultTimerThread);
       DefaultTimerThread() : TimerThread{"Default.TimerThread.Thread"} {}
-      void OnWindowsMainExit_Notify() { this->Dispose(); }
-      void OnWindowsMainExit_ThreadJoin() { ThreadJoin(*this); }
+      void OnWindowsMainExit_Notify() {
+         this->Terminate();
+      }
+      void OnWindowsMainExit_ThreadJoin() {
+         this->WaitTerminate();
+      }
    };
-#else
-   struct DefaultTimerThread : public TimerThread {
-      fon9_NON_COPY_NON_MOVE(DefaultTimerThread);
-      DefaultTimerThread() : TimerThread{"Default.TimerThread.Thread"} {}
-   };
-#endif
    static DefaultTimerThread TimerThread_;
    return TimerThread_;
 }
@@ -113,6 +111,9 @@ TimerThread::TimerThread(std::string timerName) {
    this->Thread_ = std::thread(&TimerThread::ThrRun, this, std::move(timerName));
 }
 TimerThread::~TimerThread() {
+   this->WaitTerminate();
+}
+void TimerThread::WaitTerminate() {
    this->TimerController_.WaitTerminate();
    if (this->Thread_.joinable())
       this->Thread_.join();
@@ -127,7 +128,7 @@ bool TimerThread::CheckCurrEmit(Locker& timerThread, TimerEntry& timer) {
 }
 
 void TimerThread::ThrRun(std::string timerName) {
-   (void)timerName;//fon9_LOG_ThrRun("TimerThread.ThrRun|name=", timerName);
+   fon9_LOG_ThrRun("TimerThread.ThrRun|name=", timerName);
    for (;;) {
       Locker   timerThread{this->TimerController_};
       bool     waitResult = (timerThread->CvWaitSecs_.GetOrigValue() < 0
@@ -162,7 +163,7 @@ void TimerThread::ThrRun(std::string timerName) {
       }
    }
 __BREAK_ThrRun:;
-   //fon9_LOG_ThrRun("TimerThread.ThrRun.End|name=", timerName);
+   fon9_LOG_ThrRun("TimerThread.ThrRun.End|name=", timerName);
 }
 
 } // namespace fon9

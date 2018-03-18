@@ -10,9 +10,11 @@ set(fon9src
 
  CountDownLatch.cpp
  CyclicBarrier.cpp
+ ThreadId.cpp
  Timer.cpp
  
  RevFormat.cpp
+ Log.cpp
 )
 add_library(fon9_s STATIC ${fon9src})
 target_link_libraries(fon9_s pthread rt)

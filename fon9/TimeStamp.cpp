@@ -45,8 +45,8 @@ struct TimeStampThreadLocalCache {
    TsOrigType  EpochSeconds_;
    TimeUS      PartUS_{DecDivisor<TimeUS,6>::Divisor};
    TimeUS      PartFIXMS_{DecDivisor<TimeUS,3>::Divisor};
-   char        BufferDateTimeStr_[kDateTimeStrWidth];
-   char        BufferDateTimeStr_FIXMS_[kDateTimeStrWidth_FIXMS];
+   char        BufferDateTimeStr_[kDateTimeStrWidth + 1];
+   char        BufferDateTimeStr_FIXMS_[kDateTimeStrWidth_FIXMS + 1];
 
    TimeStampThreadLocalCache() {
       memset(this, 0, sizeof(*this));
@@ -134,7 +134,7 @@ fon9_API TsOrigType YYYYMMDDHHMMSS_ToEpochSeconds(DateTime14T yyyymmddhhmmss) {
    return stdtm_ToEpochSeconds(tm);
 }
 
-fon9_API char* ToStrRev(char* pout, TimeStamp ts) {
+fon9_API const char* ToStrRev_Full(TimeStamp ts) {
    if (fon9_LIKELY(!ts.IsNull())) {
       const TsOrigType  es = ts.GetOrigValue();
       const TimeUS      us = static_cast<TimeUS>((es < 0 ? -es : es) % ts.Divisor);
@@ -147,12 +147,11 @@ fon9_API char* ToStrRev(char* pout, TimeStamp ts) {
          Cached_.PartUS_ = us;
          Pic9ToStrRev<TimeStamp::Scale>(Cached_.BufferDateTimeStr_ + kDateTimeStrWidth, us);
       }
-      memcpy(pout -= kDateTimeStrWidth, Cached_.BufferDateTimeStr_, kDateTimeStrWidth);
+      return Cached_.BufferDateTimeStr_;
    }
-   else
-      memset(pout -= kDateTimeStrWidth, ' ', kDateTimeStrWidth);
-   return pout;
+   return nullptr;
 }
+
 fon9_API char* ToStrRev_FIX(char* pout, TimeStamp ts) {
    if (fon9_LIKELY(!ts.IsNull()))
       return Cached_.ToStrRev_FIX(pout, ts.ToEpochSeconds());

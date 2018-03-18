@@ -159,8 +159,40 @@ enum {
 };
 
 /// \ingroup AlNum
+/// 輸出時間的 YYYYMMDDHHMMSS.uuuuuu 字串(有含EOS).
+/// \retval nullptr  無效的 ts
+/// \retval !nullptr 時間字串輸出, 在同一個 thread 裡面, 下次呼叫會改變此值.
+fon9_API const char* ToStrRev_Full(TimeStamp ts);
+
+/// \ingroup AlNum
 /// 輸出時間的 YYYYMMDDHHMMSS.uuuuuu 字串.
-fon9_API char* ToStrRev(char* pout, TimeStamp ts);
+inline char* ToStrRev(char* pout, TimeStamp ts) {
+   if (const char* pstr = ToStrRev_Full(ts))
+      memcpy(pout -= kDateTimeStrWidth, pstr, kDateTimeStrWidth);
+   else
+      memset(pout -= kDateTimeStrWidth, ' ', kDateTimeStrWidth);
+   return pout;
+}
+
+/// \ingroup AlNum
+/// 輸出時間的 YYYYMMDD-HHMMSS.uuuuuu 字串.
+inline char* ToStrRev_Date_Time_us(char* pout, TimeStamp ts) {
+   if (const char* pstr = ToStrRev_Full(ts)) {
+      memcpy(pout -= 13, pstr + 8, 13);
+      *--pout = '-';
+      memcpy(pout -= 8, pstr, 8);
+      static_assert(kDateTimeStrWidth == 8 + 13, "DateTimeStr is not 'YYYYMMDDHHMMSS.uuuuuu' ?");
+   }
+   else
+      memset(pout -= kDateTimeStrWidth + 1, ' ', kDateTimeStrWidth + 1);
+   return pout;
+}
+template <class RevBuffer>
+void RevPut_Date_Time_us(RevBuffer& rbuf, TimeStamp ts) {
+   char* pout = rbuf.AllocPrefix(kDateTimeStrWidth + 1);
+   pout = ToStrRev_Date_Time_us(pout, ts);
+   rbuf.SetPrefixUsed(pout);
+}
 
 /// \ingroup AlNum
 /// 輸出時間的 YYYYMMDD-HH:MM:SS 字串 (FIX時間格式).

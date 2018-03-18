@@ -75,6 +75,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\buffer\RevBuffer.hpp" />
+    <ClInclude Include="..\..\..\fon9\Log.hpp" />
     <ClInclude Include="..\..\..\fon9\RevFormat.hpp" />
     <ClInclude Include="..\..\..\fon9\RevPrint.hpp" />
     <ClInclude Include="..\..\..\fon9\RevPut.hpp" />
@@ -98,8 +99,10 @@
     <ClInclude Include="..\..\..\fon9\Subr.hpp" />
     <ClInclude Include="..\..\..\fon9\sys\Config.h" />
     <ClInclude Include="..\..\..\fon9\sys\Config.hpp" />
+    <ClInclude Include="..\..\..\fon9\sys\OnWindowsMainExit.hpp" />
     <ClInclude Include="..\..\..\fon9\TestTools.hpp" />
     <ClInclude Include="..\..\..\fon9\ThreadController.hpp" />
+    <ClInclude Include="..\..\..\fon9\ThreadId.hpp" />
     <ClInclude Include="..\..\..\fon9\TimeInterval.hpp" />
     <ClInclude Include="..\..\..\fon9\Timer.hpp" />
     <ClInclude Include="..\..\..\fon9\TimeStamp.hpp" />
@@ -117,6 +120,7 @@
     <Text Include="..\..\..\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\fon9\Log.cpp" />
     <ClCompile Include="..\..\..\fon9\RevFormat.cpp" />
     <ClCompile Include="..\..\..\fon9\CountDownLatch.cpp" />
     <ClCompile Include="..\..\..\fon9\CyclicBarrier.cpp" />
@@ -124,6 +128,8 @@
     <ClCompile Include="..\..\..\fon9\FmtDef.cpp" />
     <ClCompile Include="..\..\..\fon9\StrTo.cpp" />
     <ClCompile Include="..\..\..\fon9\StrTools.cpp" />
+    <ClCompile Include="..\..\..\fon9\sys\OnWindowsMainExit.cpp" />
+    <ClCompile Include="..\..\..\fon9\ThreadId.cpp" />
     <ClCompile Include="..\..\..\fon9\TimeInterval.cpp" />
     <ClCompile Include="..\..\..\fon9\Timer.cpp" />
     <ClCompile Include="..\..\..\fon9\TimeStamp.cpp" />
