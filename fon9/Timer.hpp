@@ -96,6 +96,8 @@ class fon9_API TimerEntry : public intrusive_ref_counter<TimerEntry> {
 
    friend class TimerThread;
    TimerEntryKey  Key_;
+
+   void SetupRun(TimeStamp atTimePoint, const TimeInterval* after);
 public:
    TimerThread& TimerThread_;
    TimerEntry(TimerThread& timerThread) : TimerThread_(timerThread) {
@@ -123,12 +125,12 @@ public:
    /// 並將 EmitTime 設為 TimeStamp::Null()
    void StopAndWait();
 
-   void RunAt(TimeStamp timePoint);
+   void RunAt(TimeStamp atTimePoint) {
+      this->SetupRun(atTimePoint, nullptr);
+   }
 
-   void RunAfter(TimeInterval delaySecs) {
-      TimeStamp now = UtcNow();
-      now += delaySecs;
-      this->RunAt(now);
+   void RunAfter(TimeInterval after) {
+      this->SetupRun(TimeStamp{UtcNow() + after}, &after);
    }
 };
 

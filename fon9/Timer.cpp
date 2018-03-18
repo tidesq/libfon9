@@ -64,14 +64,14 @@ void TimerEntry::StopNoWait() {
       this->Key_.SeqNo_ = TimerSeqNo::NoWaiting;
    }
 }
-void TimerEntry::RunAt(TimeStamp timePoint) {
+void TimerEntry::SetupRun(TimeStamp atTimePoint, const TimeInterval* after) {
    TimerThread::Locker   timerThread{this->TimerThread_.TimerController_};
    if (this->Key_.SeqNo_ == TimerSeqNo::Disposed)
       return;
    if (IsTimerWaitInLine(this->Key_.SeqNo_))
       timerThread->Erase(this->Key_);
 
-   this->Key_.EmitTime_ = timePoint;
+   this->Key_.EmitTime_ = atTimePoint;
    timerThread->LastSeqNo_ = static_cast<TimerSeqNo>(static_cast<underlying_type_t<TimerSeqNo>>(timerThread->LastSeqNo_) + 1);
    if (fon9_UNLIKELY(!IsTimerWaitInLine(timerThread->LastSeqNo_)))
       timerThread->LastSeqNo_ = TimerSeqNo::WaitInLine;
@@ -80,7 +80,7 @@ void TimerEntry::RunAt(TimeStamp timePoint) {
    auto ifind = timerThread->Timers_.insert(TimerThread::TimerThreadData::Timers::value_type{this->Key_, this->shared_from_this()}).first;
    if (fon9_LIKELY(ifind != timerThread->Timers_.end() - 1))
       return;
-   TimeInterval wsecs = timePoint - UtcNow();
+   TimeInterval wsecs = after ? *after : TimeInterval{atTimePoint - UtcNow()};
    if (fon9_UNLIKELY(timerThread->CvWaitSecs_ == wsecs))
       return;
    timerThread->CvWaitSecs_ = wsecs;
