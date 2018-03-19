@@ -68,9 +68,16 @@ void ToStr_benchmark() {
    stopWatch.ResetTimer();
    for (long L = -kTimes / 2; L < kTimes / 2; L++) {
       rbuf.RewindEOS();
+      fon9::RevPrint(rbuf, L);
+   }
+   stopWatch.PrintResult("RevPrint(rbuf)   ", kTimes);
+
+   stopWatch.ResetTimer();
+   for (long L = -kTimes / 2; L < kTimes / 2; L++) {
+      rbuf.RewindEOS();
       fon9::RevFormat(rbuf, "{0}", L);
    }
-   stopWatch.PrintResult("RevFormat()      ", kTimes);
+   stopWatch.PrintResult("RevFormat(rbuf)  ", kTimes);
 
    stopWatch.ResetTimer();
    for (long L = -kTimes / 2; L < kTimes / 2; L++)

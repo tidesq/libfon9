@@ -74,7 +74,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\fon9\buffer\BufferList.hpp" />
+    <ClInclude Include="..\..\..\fon9\buffer\BufferListBuilder.hpp" />
+    <ClInclude Include="..\..\..\fon9\buffer\BufferNode.hpp" />
+    <ClInclude Include="..\..\..\fon9\buffer\BufferNodeWaiter.hpp" />
+    <ClInclude Include="..\..\..\fon9\buffer\DcQueue.hpp" />
+    <ClInclude Include="..\..\..\fon9\buffer\DcQueueList.hpp" />
+    <ClInclude Include="..\..\..\fon9\buffer\MemBlock.hpp" />
     <ClInclude Include="..\..\..\fon9\buffer\RevBuffer.hpp" />
+    <ClInclude Include="..\..\..\fon9\buffer\RevBufferList.hpp" />
     <ClInclude Include="..\..\..\fon9\Log.hpp" />
     <ClInclude Include="..\..\..\fon9\RevFormat.hpp" />
     <ClInclude Include="..\..\..\fon9\RevPrint.hpp" />
@@ -120,6 +128,12 @@
     <Text Include="..\..\..\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\fon9\buffer\BufferList.cpp" />
+    <ClCompile Include="..\..\..\fon9\buffer\BufferNode.cpp" />
+    <ClCompile Include="..\..\..\fon9\buffer\BufferNodeWaiter.cpp" />
+    <ClCompile Include="..\..\..\fon9\buffer\DcQueue.cpp" />
+    <ClCompile Include="..\..\..\fon9\buffer\DcQueueList.cpp" />
+    <ClCompile Include="..\..\..\fon9\buffer\MemBlock.cpp" />
     <ClCompile Include="..\..\..\fon9\Log.cpp" />
     <ClCompile Include="..\..\..\fon9\RevFormat.cpp" />
     <ClCompile Include="..\..\..\fon9\CountDownLatch.cpp" />

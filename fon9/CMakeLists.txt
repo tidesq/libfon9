@@ -15,6 +15,13 @@ set(fon9src
  
  RevFormat.cpp
  Log.cpp
+ 
+ buffer/MemBlock.cpp
+ buffer/BufferNode.cpp
+ buffer/BufferList.cpp
+ buffer/BufferNodeWaiter.cpp
+ buffer/DcQueue.cpp
+ buffer/DcQueueList.cpp
 )
 add_library(fon9_s STATIC ${fon9src})
 target_link_libraries(fon9_s pthread rt)
@@ -45,3 +52,6 @@ target_link_libraries(ThreadController_UT fon9_s)
 
 add_executable(Timer_UT Timer_UT.cpp)
 target_link_libraries(Timer_UT fon9_s)
+
+add_executable(Buffer_UT buffer/Buffer_UT.cpp)
+target_link_libraries(Buffer_UT fon9_s)

@@ -31,27 +31,29 @@ producer --> | buffer | --> | DcQueue | --> consumer
 
 ### 根據記憶體的使用方式分類：
 #### 使用單一記憶體空間
-* 使用固定大小的記憶體：當空間不足時 throw exception。
+* 使用固定大小的記憶體：當空間不足時 throw `fon9::BufferOverflow`。
+  * `RevBufferFixedMem`
+  * `RevBufferFixedSize<Size>`
 * 使用 malloc/realloc：當空間不足時重新分配，複製舊資料到新空間。
   * fon9 不提供此類方法。
 
-#### 使用記憶體串列
+#### 使用記憶體串列：[buffer/BufferList.hpp](BufferList.hpp)
+[buffer/RevBufferList.hpp](RevBufferList.hpp)
 * 這是 fon9 的主要作法。
 * 當空間不足時：分配新的 BufferNode，串到原本的 BufferList。
 * 可插入控制節點，得知資料的使用狀況。
+  * [buffer/BufferNodeWaiter.hpp](BufferNodeWaiter.hpp)
 
 ---------------------------------------
 
 ## DcQueue：用來消費資料
+* [buffer/DcQueue.hpp](DcQueue.hpp)
+* [buffer/DcQueueList.hpp](DcQueueList.hpp)
 * 資料不一定連續
 * 可同時適用於 Reactor(Linux)、Proactor(Windows)
 
-### enqueue:
-* 複製資料
-* 移入一串資料區塊: 使用 BufferList
-
 ### consumer: output device：非同步使用，每次使用 n 個區塊：
-* `PeekBlock()`：一次取出 n 個區塊的位置及大小。
+* `DcQueueList::PeekBlockVector()`：一次取出 n 個區塊的位置及大小。
   * Linux 可用 `writev()`，Windows 可用 `WSASend()`，一次消費多個區塊。
 * `PopConsumed()`：移除用掉的資料。
 * `ConsumedErr()`：消費失敗，移除全部資料。例如：寫檔失敗、傳送失敗。

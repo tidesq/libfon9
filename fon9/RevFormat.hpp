@@ -85,11 +85,20 @@ inline void RevFormat(RevBuffer& rbuf, StrView fmtstr) {
 
 //--------------------------------------------------------------------------//
 
-struct InplaceFmt : public StopRevPrint {};
+class Fmt : public StopRevPrint {
+   StrView FmtStr_;
+public:
+   explicit Fmt(StrView fmt) : FmtStr_{fmt} {
+   }
+   template <class... ArgsT>
+   void operator()(RevBuffer& rbuf, ArgsT&&... args) {
+      RevFormat(rbuf, this->FmtStr_, std::forward<ArgsT>(args)...);
+   }
+};
 
 template <class... ArgsT>
-inline void RevPrint(RevBuffer& rbuf, InplaceFmt, StrView fmtstr, ArgsT&&... args) {
-   RevFormat(rbuf, fmtstr, std::forward<ArgsT>(args)...);
+inline void RevPrint(RevBuffer& rbuf, Fmt fmt, ArgsT&&... args) {
+   fmt(rbuf, std::forward<ArgsT>(args)...);
 }
 
 } // namespace

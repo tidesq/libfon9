@@ -23,5 +23,11 @@ int CountDownLatch::ForceWakeUp() {
    this->Waiter_.NotifyAll(locker);
    return bfcount;
 }
+int CountDownLatch::AddCounter(unsigned count) {
+   Locker   locker(this->Mutex_);
+   int bfcount = this->Counter_;
+   this->Counter_ += count;
+   return bfcount;
+}
 
 } // namespace

@@ -2,6 +2,7 @@
 // \author fonwinz@gmail.com
 #include "fon9/Log.hpp"
 #include "fon9/ThreadId.hpp"
+#include "fon9/buffer/DcQueueList.hpp"
 
 namespace fon9 {
 
@@ -18,7 +19,23 @@ fon9_API const LogLevelText  CstrLevelMap[static_cast<int>(LogLevel::Count) + 1]
 };
 
 static void LogWriteToStdout(const LogArgs& /*logArgs*/, BufferList&& buf) {
-   fwrite(buf.GetCurrent(), 1, buf.GetUsedSize(), stdout);
+   if (buf.empty())
+      return;
+   DcQueueList dcQueue{std::move(buf)};
+   for (;;) {
+      const auto  mem{dcQueue.PeekCurrBlock()};
+      if (mem.first == nullptr)
+         break;
+      size_t wrsz = fwrite(mem.first, 1, mem.second, stdout);
+      int    eno = (wrsz < mem.second ? errno : 0);
+      dcQueue.PopConsumed(wrsz);
+      if (eno) {
+         std::error_condition econd = std::generic_category().default_error_condition(eno);
+         dcQueue.ConsumeErr(econd);
+         break;
+      }
+   }
+   assert(dcQueue.empty());
 }
 static FnLogWriter   FnLogWriter_ = &LogWriteToStdout;
 

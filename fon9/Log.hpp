@@ -4,16 +4,9 @@
 #define __fon9_Log_hpp__
 #include "fon9/RevFormat.hpp"
 #include "fon9/TimeStamp.hpp"
+#include "fon9/buffer/RevBufferList.hpp"
 
 namespace fon9 {
-
-// TODO: 在 BufferList 尚未完成之前, 暫時使用固定大小的緩衝區.
-struct RevBufferList : public  RevBufferFixedSize<1024> {
-   fon9_NON_COPY_NON_MOVE(RevBufferList);
-   RevBufferList(size_t) {}
-   RevBufferList&& MoveOut() { return std::move(*this); }
-};
-using BufferList = RevBufferList;
 
 /// \ingroup Misc
 /// Log訊息的等級, 數字越小越不重要.
@@ -70,7 +63,7 @@ fon9_WARN_POP;
 
 /// \ingroup Misc
 /// Log 訊息的最後寫入函式型別.
-/// args.Time_ = 此筆記錄的時間, 可協助判斷是否需要開啟新檔案.
+/// logArgs.Time_ = 此筆記錄的時間, 可用來判斷是否需要開啟新檔案.
 typedef void (*FnLogWriter) (const LogArgs& logArgs, BufferList&& buf);
 
 /// \ingroup Misc
@@ -104,7 +97,7 @@ fon9_API void LogWrite(LogLevel level, RevBufferList&& rbuf);
 ///      - fon9_LOG_INFO("DllMgr.LoadConfig|seedName=", this->Name_, "|cfgFileName=", cfgFileName);
 #define fon9_LOG(level, ...) do {                              \
    if (fon9_UNLIKELY(level >= fon9::LogLevel_)) {              \
-      fon9::RevBufferList rbuf_{256+sizeof(fon9::NumOutBuf)};  \
+      fon9::RevBufferList rbuf_{128+sizeof(fon9::NumOutBuf)};  \
       fon9::RevPrint(rbuf_, __VA_ARGS__, '\n');                \
       fon9::LogWrite(level, std::move(rbuf_));                 \
    }                                                           \

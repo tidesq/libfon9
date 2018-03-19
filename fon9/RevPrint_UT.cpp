@@ -229,7 +229,7 @@ int main() {
    CHECK_RevPrint("           Hello 您", fon9::RevPrint(rbuf, "Hello 您好!", fon9::FmtDef{"20.10"}));
 
    utinfo.PrintSplitter();
-   CHECK_RevPrint("/123/'{' {Test}/123/'}' {Test}/",     fon9::RevPrint(rbuf, '/', 123, fon9::InplaceFmt{}, "/'{' {{Test}}/{0}/'}' {{Test}}/", 123));
+   CHECK_RevPrint("/123/'{' {Test}/123/'}' {Test}/",     fon9::RevPrint(rbuf, '/', 123, fon9::Fmt{"/'{' {{Test}}/{0}/'}' {{Test}}/"}, 123));
    CHECK_RevPrint("/'{' {Test}/123/'}' {Test}/",         fon9::RevFormat(rbuf, "/'{' {{Test}}/{0}/'}' {{Test}}/", 123));
    CHECK_RevPrint("/{ {Test}/    123,456,789/{Test} }/", fon9::RevFormat(rbuf, "/{ {{Test}}/{0:,15}/{{Test}} }/", 123456789));
    CHECK_RevPrint("/Hello World!/{2}/",                  fon9::RevFormat(rbuf, "/{0} {1}!/{2}/", strHello, cstrWorld));

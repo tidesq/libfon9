@@ -4,8 +4,11 @@
 #define __fon9_Exception_hpp__
 #include "fon9/sys/Config.hpp"
 #include <stdexcept>
+#include <system_error>
 
 namespace fon9 {
+
+using ErrCond = std::error_condition;
 
 /// \ingroup Misc
 /// 丟出異常.

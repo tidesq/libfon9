@@ -33,6 +33,10 @@ public:
    /// 強迫倒數結束.
    /// 返回強制中斷前剩餘倒數次數.
    int ForceWakeUp();
+
+   /// 強制增加 Counter.
+   /// 返回強制增加前剩餘倒數次數.
+   int AddCounter(unsigned count);
 };
 fon9_WARN_POP;
 

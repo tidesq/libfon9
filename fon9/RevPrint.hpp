@@ -55,15 +55,16 @@ inline auto RevPrint(RevBufferT& rbuf, ValueT value, const FmtT& fmt) -> decltyp
 
 //--------------------------------------------------------------------------//
 
+struct StopRevPrint {};
+
 template <class RevBuffer, class T1, class T2>
 inline auto RevPrint(RevBuffer& rbuf, T1&& value1, T2&& value2)
--> enable_if_t<!std::is_same<decay_t<T2>, AutoFmt<T1>>::value> {
+-> enable_if_t<!std::is_same<decay_t<T2>, AutoFmt<T1>>::value
+   && !std::is_base_of<StopRevPrint, decay_t<T1>>::value> {
 
    RevPrint(rbuf, std::forward<T2>(value2));
    RevPrint(rbuf, std::forward<T1>(value1));
 }
-
-struct StopRevPrint {};
 
 /// \ingroup Buffer
 /// 利用 ToStrRev(pout, value) 把 value 轉成字串填入 rbuf.

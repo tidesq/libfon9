@@ -66,4 +66,8 @@ typedef  class classOfTemplate<__VA_ARGS__> nameOfTypedef;
    fon9_NON_COPYABLE(className)           \
    fon9_NON_MOVEABLE(className)
 
+namespace fon9 {
+using byte = unsigned char;
+} // namespace
+
 #endif//__fon9_sys_Config_hpp__
