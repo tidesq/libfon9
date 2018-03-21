@@ -11,14 +11,11 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\fon9\ThreadController_UT.cpp">
+    <ClCompile Include="..\..\..\fon9\buffer\MemBlock_UT.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\fon9\ThreadController.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\fon9\MessageQueue.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>

@@ -22,11 +22,12 @@ fon9_WARN_DISABLE_PADDING;
 ///   - 也就是: 要求量<=256B 分配 256B; 要求量<=512B 分配 512B; ...
 class fon9_API MemBlock {
    fon9_NON_COPYABLE(MemBlock);
-   using SSizeT = typename std::make_signed<MemBlockSize>::type;
    /// <0 表示直接使用 MemPtr_ 直接從 malloc(-Size_) 得到, 釋放時須直接呼叫 free();
-   SSizeT   Size_;
-   byte*    MemPtr_{};
+   using SSizeT = typename std::make_signed<MemBlockSize>::type;
+   byte*    MemPtr_{nullptr};
+   SSizeT   Size_{0};
 public:
+   class TCache;
    MemBlock() = default;
 
    /// 透過 MemBlock::Alloc(MemBlockSize) 建構.
@@ -34,7 +35,7 @@ public:
       this->Alloc(sz);
    }
 
-   MemBlock(MemBlock&& r) : Size_(r.Size_), MemPtr_(r.Release()) {
+   MemBlock(MemBlock&& r) : MemPtr_(r.Release()), Size_(r.Size_) {
    }
    MemBlock& operator=(MemBlock&& r) {
       if (this->MemPtr_ != r.MemPtr_) {

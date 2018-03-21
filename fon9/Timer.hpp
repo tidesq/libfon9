@@ -253,13 +253,12 @@ class fon9_API TimerThread {
    std::thread       Thread_;
 
    bool CheckCurrEmit(Locker& timerThread, TimerEntry& timer);
-
+   bool RunTimer(Locker&);
 protected:
    void ThrRun(std::string timerName);
-   /// Terminate() & Wait thread join.
-   void WaitTerminate();
-   void Terminate() {
-      this->TimerController_.Terminate();
+   void WaitForEndNow();
+   void NotifyForEndNow() {
+      this->TimerController_.NotifyForEndNow();
    }
 
 public:

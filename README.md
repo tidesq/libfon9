@@ -36,6 +36,16 @@
 ---------------------------------------
 ## 一般工具
 ### [Signal/Slot (Observer, Subject/Subscriber, Event, Callback...)](Overview/Subr.md)
+### [Buffer 機制](fon9/buffer)
+### Log
+* [fon9/Log.hpp](fon9/Log.hpp)
+* `fon9_LOG_TRACE(...)`、`fon9_LOG_DEBUG(...)`、`fon9_LOG_INFO(...)`...
+* 其中的 `...` 會使用 `RevPrint(rbuf, ...)` 建立訊息。
+### StaticPtr
+* [fon9/StaticPtr.hpp](fon9/StaticPtr.hpp)
+* 取代 `static std::unique_ptr<T> ptr;` 或 `static thread_local std::unique_ptr<T> ptr;`
+* 因為在 ptr 死亡後，可能還會用到 ptr。
+* 增加 ptr.IsDisposed() 判斷 ptr 本身(不是所指物件)，是否已經死亡。
 ### intrusive_ptr<>、intrusive_ref_counter<>
 * [fon9/intrusive_ptr.hpp](fon9/intrusive_ptr.hpp)
   * [參考 boost 的文件](http://www.boost.org/doc/libs/1_60_0/libs/smart_ptr/intrusive_ptr.html)
@@ -56,8 +66,6 @@
       ```
 * [fon9/intrusive_ref_counter.hpp](fon9/intrusive_ref_counter.hpp)
   * [參考 boost 的文件](http://www.boost.org/doc/libs/1_60_0/libs/smart_ptr/intrusive_ref_counter.html)
-### [Buffer 機制](fon9/buffer)
-### Log
 ---------------------------------------
 ## 文字/數字/基礎型別
 ### [StrView](fon9/StrView.hpp)
@@ -145,6 +153,7 @@ ToStrRev(Fmt)    : 0.015506810 secs / 1,000,000 times =  15.506810000 ns
 ### [CyclicBarrierLatch](Overview/ThreadTools.md#fon9cyclicbarrier)
 ### [ThreadController](Overview/ThreadTools.md#fon9threadcontrollerprotectedt-waitpolicy)
 ### [Timer 計時器](Overview/ThreadTools.md#timer-計時器)
+### [MessageQueue](Overview/ThreadTools.md#messagequeue)
 ---------------------------------------
 ## 檔案/儲存/載入
 ### File/Path tools

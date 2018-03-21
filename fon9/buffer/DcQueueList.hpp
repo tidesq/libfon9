@@ -18,14 +18,17 @@ protected:
    BufferList  BlockList_;
 
    void NodeConsumed(BufferNode* node) {
+      if (BufferNodeVirtual* vnode = BufferNodeVirtual::CastFrom(node))
+         vnode->OnBufferConsumed();
       FreeNode(node);
    }
-   void NodeConsumed(BufferNode* node, const ErrCond&, BufferNodeSize errSize) {
+   void NodeConsumed(BufferNode* node, const ErrCond& errc, BufferNodeSize errSize) {
       (void)errSize; // node 使用失敗的資料量.
+      if (BufferNodeVirtual* vnode = BufferNodeVirtual::CastFrom(node))
+         vnode->OnBufferConsumedErr(errc);
       FreeNode(node);
    }
 
-   void RemoveFrontControlNode();
    void FrontToCurrBlock();
 
    virtual bool DcQueuePeekMore(byte* tmpbuf, size_t sz) override;

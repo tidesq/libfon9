@@ -132,3 +132,15 @@ public:
    }
 };
 ```
+
+## MessageQueue
+[fon9/MessageQueue.hpp](../fon9/MessageQueue.hpp)
+```c++
+template <
+   class MessageHandlerT,
+   class MessageT = typename MessageHandlerT::MessageType,
+   class MessageContainerT = std::deque<MessageT>,
+   class WaitPolicy = WaitPolicy_CV
+>
+class MessageQueueService;
+```

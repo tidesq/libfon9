@@ -11,15 +11,12 @@ void DcQueueList::FrontToCurrBlock() {
       return;
    }
    while (front) {
-      if (BufferNodeVirtual* vnode = BufferNodeVirtual::CastFrom(front)) {
-         vnode->OnBufferConsumed();
-         FreeNode(this->BlockList_.pop_front());
-         front = this->BlockList_.front();
-         continue;
+      if (front->GetDataSize() > 0) {
+         this->ResetCurrBlock(front->GetDataBegin(), front->GetDataEnd());
+         return;
       }
-      assert(front->GetDataSize() > 0);
-      this->ResetCurrBlock(front->GetDataBegin(), front->GetDataEnd());
-      break;
+      this->NodeConsumed(this->BlockList_.pop_front());
+      front = this->BlockList_.front();
    }
 }
 BufferList DcQueueList::MoveOut() {
@@ -59,12 +56,6 @@ bool DcQueueList::DcQueueHasMore(size_t sz) const {
    return false;
 }
 
-void DcQueueList::RemoveFrontControlNode() {
-   BufferNode* node = this->BlockList_.pop_front();
-   if (BufferNodeVirtual* vnode = BufferNodeVirtual::CastFrom(node))
-      vnode->OnBufferConsumed();
-   FreeNode(node);
-}
 void DcQueueList::DcQueueRemoveMore(size_t sz) {
    // 先釋放 curr block.
    if (BufferNode* front = this->BlockList_.pop_front())
@@ -81,11 +72,8 @@ void DcQueueList::DcQueueRemoveMore(size_t sz) {
             return;
          }
          sz -= nodesz;
-         this->NodeConsumed(this->BlockList_.pop_front());
       }
-      else {
-         this->RemoveFrontControlNode();
-      }
+      this->NodeConsumed(this->BlockList_.pop_front());
    }
    assert(sz == 0 && this->BlockList_.empty());
    this->ClearCurrBlock();
@@ -106,11 +94,8 @@ size_t DcQueueList::DcQueueReadMore(byte* buf, size_t sz) {
          memcpy(buf + rdsz, beg, nodesz);
          rdsz += nodesz;
          sz -= nodesz;
-         this->NodeConsumed(this->BlockList_.pop_front());
       }
-      else {
-         this->RemoveFrontControlNode();
-      }
+      this->NodeConsumed(this->BlockList_.pop_front());
    }
    assert(this->BlockList_.empty());
    this->ClearCurrBlock();

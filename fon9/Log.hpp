@@ -86,6 +86,9 @@ fon9_API void LogWrite(const LogArgs& logArgs, BufferList&& buf);
 /// `FnLogWriter(tm, rbuf.MoveOut());` 所以返回前 rbuf 會被清空.
 fon9_API void LogWrite(LogLevel level, RevBufferList&& rbuf);
 
+enum {
+   kLogBlockNodeSize = 128 + sizeof(fon9::NumOutBuf),
+};
 /// \ingroup Misc
 /// 根據Log等級(level), 寫入 Log.
 /// 記錄的格式: `YYYYMMDD-HHMMSS.uuuuuu thrid[LEVEL]...\n`
@@ -95,12 +98,12 @@ fon9_API void LogWrite(LogLevel level, RevBufferList&& rbuf);
 ///   - 範例:
 ///      - fon9_LOG_ERROR("TimedFile.OpenNewFile|FileName=", newFile.GetOpenName(), "|OpenMode=", newFile.GetOpenMode(), "|err=", res);
 ///      - fon9_LOG_INFO("DllMgr.LoadConfig|seedName=", this->Name_, "|cfgFileName=", cfgFileName);
-#define fon9_LOG(level, ...) do {                              \
-   if (fon9_UNLIKELY(level >= fon9::LogLevel_)) {              \
-      fon9::RevBufferList rbuf_{128+sizeof(fon9::NumOutBuf)};  \
-      fon9::RevPrint(rbuf_, __VA_ARGS__, '\n');                \
-      fon9::LogWrite(level, std::move(rbuf_));                 \
-   }                                                           \
+#define fon9_LOG(level, ...) do {                           \
+   if (fon9_UNLIKELY(level >= fon9::LogLevel_)) {           \
+      fon9::RevBufferList rbuf_{fon9::kLogBlockNodeSize};   \
+      fon9::RevPrint(rbuf_, __VA_ARGS__, '\n');             \
+      fon9::LogWrite(level, std::move(rbuf_));              \
+   }                                                        \
 } while(0)
 
 #ifdef fon9_NOLOG_TRACE

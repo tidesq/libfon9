@@ -31,7 +31,7 @@ protected:
       , DataBeginOffset_(dataOffset)
       , DataEndOffset_(dataOffset) {
       assert(GetMemBeginOffset() <= dataOffset);
-      assert(this->GetMemBegin() + dataOffset <= this->GetMemEnd());
+      assert(dataOffset <= blockSize);
    }
    BufferNode(BufferNodeSize blockSize, BufferNodeType nodeType)
       : BlockSize_{blockSize}

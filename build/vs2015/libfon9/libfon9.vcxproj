@@ -81,9 +81,11 @@
     <ClInclude Include="..\..\..\fon9\buffer\DcQueue.hpp" />
     <ClInclude Include="..\..\..\fon9\buffer\DcQueueList.hpp" />
     <ClInclude Include="..\..\..\fon9\buffer\MemBlock.hpp" />
+    <ClInclude Include="..\..\..\fon9\buffer\MemBlockImpl.hpp" />
     <ClInclude Include="..\..\..\fon9\buffer\RevBuffer.hpp" />
     <ClInclude Include="..\..\..\fon9\buffer\RevBufferList.hpp" />
     <ClInclude Include="..\..\..\fon9\Log.hpp" />
+    <ClInclude Include="..\..\..\fon9\MessageQueue.hpp" />
     <ClInclude Include="..\..\..\fon9\RevFormat.hpp" />
     <ClInclude Include="..\..\..\fon9\RevPrint.hpp" />
     <ClInclude Include="..\..\..\fon9\RevPut.hpp" />
@@ -101,6 +103,7 @@
     <ClInclude Include="..\..\..\fon9\SleepPolicy.hpp" />
     <ClInclude Include="..\..\..\fon9\SortedVector.hpp" />
     <ClInclude Include="..\..\..\fon9\SpinMutex.hpp" />
+    <ClInclude Include="..\..\..\fon9\StaticPtr.hpp" />
     <ClInclude Include="..\..\..\fon9\StrTo.hpp" />
     <ClInclude Include="..\..\..\fon9\StrTools.hpp" />
     <ClInclude Include="..\..\..\fon9\StrView.hpp" />

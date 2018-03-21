@@ -11,8 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{B0840AB3-8BEB-4CC0-B891-316B8AFC2501}</ProjectGuid>
-    <RootNamespace>ThreadController_UT</RootNamespace>
+    <ProjectGuid>{5D83E5F6-E5A8-4AEC-84AF-F34DD582B586}</ProjectGuid>
+    <RootNamespace>MemBlock_UT</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -55,6 +55,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\..\..\..\fon9</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -73,16 +74,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\fon9\ThreadController_UT.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\fon9\MessageQueue.hpp" />
-    <ClInclude Include="..\..\..\fon9\ThreadController.hpp" />
+    <ClCompile Include="..\..\..\fon9\buffer\MemBlock_UT.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\libfon9\libfon9.vcxproj">
       <Project>{6b9031a7-02e1-4171-8ca5-9f780be21806}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\fon9\MessageQueue.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

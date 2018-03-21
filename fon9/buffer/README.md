@@ -43,6 +43,11 @@ producer --> | buffer | --> | DcQueue | --> consumer
 * 當空間不足時：分配新的 BufferNode，串到原本的 BufferList。
 * 可插入控制節點，得知資料的使用狀況。
   * [buffer/BufferNodeWaiter.hpp](BufferNodeWaiter.hpp)
+* BufferNode 使用 MemBlock 機制分配：
+  * 每個 thread 建立一組 memory pool。
+  * 當 thread 的 memory pool 用完時，跟 MemBlockCenter 分配一串 FeeeMemList。
+  * 當 thread 釋放的 MemBlock 過多時，會歸還給 MemBlockCenter。
+  * MemBlockCenter 定時檢查預留的 FreeMemlist 是否足夠或太多。
 
 ---------------------------------------
 

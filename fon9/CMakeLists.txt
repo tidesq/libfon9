@@ -55,3 +55,6 @@ target_link_libraries(Timer_UT fon9_s)
 
 add_executable(Buffer_UT buffer/Buffer_UT.cpp)
 target_link_libraries(Buffer_UT fon9_s)
+
+add_executable(MemBlock_UT buffer/MemBlock_UT.cpp)
+target_link_libraries(MemBlock_UT fon9_s)

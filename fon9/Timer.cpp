@@ -9,13 +9,9 @@ namespace fon9 {
 TimerThread& GetDefaultTimerThread() {
    struct DefaultTimerThread : public TimerThread, sys::OnWindowsMainExitHandle {
       fon9_NON_COPY_NON_MOVE(DefaultTimerThread);
-      DefaultTimerThread() : TimerThread{"Default.TimerThread.Thread"} {}
-      void OnWindowsMainExit_Notify() {
-         this->Terminate();
-      }
-      void OnWindowsMainExit_ThreadJoin() {
-         this->WaitTerminate();
-      }
+      DefaultTimerThread() : TimerThread{"Default.TimerThread"} {}
+      void OnWindowsMainExit_Notify() { this->NotifyForEndNow(); }
+      void OnWindowsMainExit_ThreadJoin() { this->WaitForEndNow(); }
    };
    static DefaultTimerThread TimerThread_;
    return TimerThread_;
@@ -111,10 +107,10 @@ TimerThread::TimerThread(std::string timerName) {
    this->Thread_ = std::thread(&TimerThread::ThrRun, this, std::move(timerName));
 }
 TimerThread::~TimerThread() {
-   this->WaitTerminate();
+   this->WaitForEndNow();
 }
-void TimerThread::WaitTerminate() {
-   this->TimerController_.WaitTerminate();
+void TimerThread::WaitForEndNow() {
+   this->TimerController_.WaitForEndNow();
    if (this->Thread_.joinable())
       this->Thread_.join();
 }
@@ -127,42 +123,43 @@ bool TimerThread::CheckCurrEmit(Locker& timerThread, TimerEntry& timer) {
    return true;
 }
 
+bool TimerThread::RunTimer(Locker& timerThread) {
+   while (this->TimerController_.GetState(timerThread) == ThreadState::ExecutingOrWaiting) {
+      if (timerThread->Timers_.empty()) {
+         timerThread->CvWaitSecs_ = TimeInterval_Second(-1);
+         return true;
+      }
+      TimerEntrySP   timer = timerThread->Timers_.back().second;
+      TimeStamp      now = UtcNow();
+      TimeInterval   ti = timer->Key_.EmitTime_ - now;
+      if (ti.GetOrigValue() > 0) {
+         timerThread->CvWaitSecs_ = ti;
+         return true;
+      }
+      timer->Key_.SeqNo_ = TimerSeqNo::NoWaiting;
+      timerThread->Timers_.pop_back();
+      timerThread->CurrEntry_ = timer.get();
+      timerThread.unlock();
+      // callback in unlock...
+      // 在這兒 timer.detach(), 然後在 EmitOnTimer() 裡面 intrusive_ptr_release(timer);
+      timer.detach()->EmitOnTimer(now);
+      timerThread.lock();
+      timerThread->CurrEntry_ = nullptr;
+   }
+   return false;
+}
 void TimerThread::ThrRun(std::string timerName) {
    fon9_LOG_ThrRun("TimerThread.ThrRun|name=", timerName);
-   for (;;) {
+   {
       Locker   timerThread{this->TimerController_};
-      bool     waitResult = (timerThread->CvWaitSecs_.GetOrigValue() < 0
-                              ? this->TimerController_.Wait(timerThread)
-                              : this->TimerController_.WaitFor(timerThread, timerThread->CvWaitSecs_.ToDuration()));
-      if (fon9_UNLIKELY(!waitResult))
-         break;
-
-      for (;;) {
-         if (timerThread->Timers_.empty()) {
-            timerThread->CvWaitSecs_ = TimeInterval_Second(-1);
-            break;
-         }
-         TimerEntrySP   timer = timerThread->Timers_.back().second;
-         TimeStamp      now = UtcNow();
-         TimeInterval   ti = timer->Key_.EmitTime_ - now;
-         if (ti.GetOrigValue() > 0) {
-            timerThread->CvWaitSecs_ = ti;
-            break;
-         }
-         timer->Key_.SeqNo_ = TimerSeqNo::NoWaiting;
-         timerThread->Timers_.pop_back();
-         timerThread->CurrEntry_ = timer.get();
-         timerThread.unlock();
-         // callback in unlock...
-         // 在這兒 timer.detach(), 然後在 EmitOnTimer() 裡面 intrusive_ptr_release(timer);
-         timer.detach()->EmitOnTimer(now);
-         timerThread.lock();
-         timerThread->CurrEntry_ = nullptr;
-         if (!this->TimerController_.CheckRunning(timerThread))
-            goto __BREAK_ThrRun;
+      while (this->RunTimer(timerThread)) {
+         if (timerThread->CvWaitSecs_.GetOrigValue() < 0)
+            this->TimerController_.Wait(timerThread);
+         else
+            this->TimerController_.WaitFor(timerThread, timerThread->CvWaitSecs_.ToDuration());
       }
+      this->TimerController_.OnBeforeThreadEnd(timerThread);
    }
-__BREAK_ThrRun:;
    fon9_LOG_ThrRun("TimerThread.ThrRun.End|name=", timerName);
 }
 
