@@ -7,14 +7,19 @@ set(fon9src
  ToStrFmt.cpp
  TimeInterval.cpp
  TimeStamp.cpp
+ RevFormat.cpp
 
  CountDownLatch.cpp
  CyclicBarrier.cpp
  ThreadId.cpp
  Timer.cpp
  
- RevFormat.cpp
  Log.cpp
+ ErrC.cpp
+ Outcome.cpp
+
+ File.cpp
+ FilePath.cpp
  
  buffer/MemBlock.cpp
  buffer/BufferNode.cpp
@@ -58,3 +63,6 @@ target_link_libraries(Buffer_UT fon9_s)
 
 add_executable(MemBlock_UT buffer/MemBlock_UT.cpp)
 target_link_libraries(MemBlock_UT fon9_s)
+
+add_executable(File_UT File_UT.cpp)
+target_link_libraries(File_UT fon9_s)

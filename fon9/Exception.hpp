@@ -4,11 +4,8 @@
 #define __fon9_Exception_hpp__
 #include "fon9/sys/Config.hpp"
 #include <stdexcept>
-#include <system_error>
 
 namespace fon9 {
-
-using ErrCond = std::error_condition;
 
 /// \ingroup Misc
 /// 丟出異常.
@@ -28,6 +25,7 @@ template <class ReturnT, class E, class... ArgsT>
 }
 
 fon9_MSC_WARN_DISABLE(4623); // 4623: 'fon9::BufferOverflow': default constructor was implicitly defined as deleted
+
 #define fon9_DEFINE_EXCEPTION(exceptionName, baseException) \
 class exceptionName : public baseException { \
    using base = baseException; \

@@ -66,7 +66,7 @@ inline auto RevPrint(RevBuffer& rbuf, T1&& value1, T2&& value2)
    RevPrint(rbuf, std::forward<T1>(value1));
 }
 
-/// \ingroup Buffer
+/// \ingroup AlNum
 /// 利用 ToStrRev(pout, value) 把 value 轉成字串填入 rbuf.
 template <class RevBuffer, class T1, class T2, class... ArgsT>
 inline auto RevPrint(RevBuffer& rbuf, T1&& value1, T2&& value2, ArgsT&&... args)
@@ -78,7 +78,7 @@ inline auto RevPrint(RevBuffer& rbuf, T1&& value1, T2&& value2, ArgsT&&... args)
    RevPrint(rbuf, std::forward<T1>(value1));
 }
 
-/// \ingroup Buffer
+/// \ingroup AlNum
 /// 利用 ToStrRev(pout, value, fmt) 把 value 轉成字串填入 rbuf.
 template <class RevBuffer, class T1, class FmtT, class... ArgsT>
 inline auto RevPrint(RevBuffer& rbuf, T1&& value1, FmtT&& fmt, ArgsT&&... args)

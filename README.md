@@ -41,6 +41,15 @@
 * [fon9/Log.hpp](fon9/Log.hpp)
 * `fon9_LOG_TRACE(...)`、`fon9_LOG_DEBUG(...)`、`fon9_LOG_INFO(...)`...
 * 其中的 `...` 會使用 `RevPrint(rbuf, ...)` 建立訊息。
+### 返回值可包含錯誤碼: `Outcome<>`
+* [fon9/Outcome.hpp](fon9/Outcome.hpp)
+* `Outcome<Result, Error=ErrC>`
+### 錯誤碼 `ErrC`
+* [fon9/ErrC.hpp](fon9/ErrC.hpp)
+* `using ErrC = std::error_condition;`
+* Windows: `ErrC GetSysErrC(DWORD eno = ::GetLastError());`
+* UNIX: `ErrC GetSysErrC(int eno = errno);`
+* `void RevPrint(RevBuffer& rbuf, ErrC errc);`
 ### StaticPtr
 * [fon9/StaticPtr.hpp](fon9/StaticPtr.hpp)
 * 取代 `static std::unique_ptr<T> ptr;` 或 `static thread_local std::unique_ptr<T> ptr;`
@@ -157,6 +166,12 @@ ToStrRev(Fmt)    : 0.015506810 secs / 1,000,000 times =  15.506810000 ns
 ---------------------------------------
 ## 檔案/儲存/載入
 ### File/Path tools
+* [fon9/File.hpp](fon9/File.hpp)
+  * 在讀寫時指定位置(由 OS 保證)，避免不同 thread 同時讀寫，造成 seek + rw 之間交錯造成的問題。
+  * Append 開檔模式，由 OS 保證寫入時，一定寫到檔案尾端。
+* [fon9/FilePath.hpp](fon9/FilePath.hpp)
+  * 檔名拆解、組合工具。
+  * 建立路徑工具。
 ### Serialize/Deserialize
 ### InnFile
 ### 資料同步機制

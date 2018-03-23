@@ -98,7 +98,6 @@ public:
       this->End_ = iend;
    }
    
-
    /// 可與 std 配合使用的 iterator 及相關 methods.
    using const_iterator = const char*;
    /// 與 const_iterator 完全相同, StrView 不能改變內容, 所以 iterator 也不能改變內容.
@@ -127,7 +126,7 @@ public:
    }
    /// 不含 EOS 的字元數量.
    constexpr size_t size() const {
-      return static_cast<size_t>(end() - begin());
+      return static_cast<size_t>(this->End_ - this->Begin_);
    }
 
    /// 取得第一個字元.
@@ -139,7 +138,11 @@ public:
 
    /// 建立 std::string
    std::string ToString() const {
-      return std::string(begin(), end());
+      return std::string(this->begin(), this->end());
+   }
+   template <class StrT>
+   void AppendTo(StrT& str) const {
+      str.append(this->begin(), this->end());
    }
 
    /// 比較大小, 若內容相同就相同, 不考慮是否有EOS.

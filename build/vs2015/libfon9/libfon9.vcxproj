@@ -84,8 +84,13 @@
     <ClInclude Include="..\..\..\fon9\buffer\MemBlockImpl.hpp" />
     <ClInclude Include="..\..\..\fon9\buffer\RevBuffer.hpp" />
     <ClInclude Include="..\..\..\fon9\buffer\RevBufferList.hpp" />
+    <ClInclude Include="..\..\..\fon9\ErrC.hpp" />
+    <ClInclude Include="..\..\..\fon9\Fdr.hpp" />
+    <ClInclude Include="..\..\..\fon9\File.hpp" />
+    <ClInclude Include="..\..\..\fon9\FilePath.hpp" />
     <ClInclude Include="..\..\..\fon9\Log.hpp" />
     <ClInclude Include="..\..\..\fon9\MessageQueue.hpp" />
+    <ClInclude Include="..\..\..\fon9\Outcome.hpp" />
     <ClInclude Include="..\..\..\fon9\RevFormat.hpp" />
     <ClInclude Include="..\..\..\fon9\RevPrint.hpp" />
     <ClInclude Include="..\..\..\fon9\RevPut.hpp" />
@@ -110,6 +115,8 @@
     <ClInclude Include="..\..\..\fon9\Subr.hpp" />
     <ClInclude Include="..\..\..\fon9\sys\Config.h" />
     <ClInclude Include="..\..\..\fon9\sys\Config.hpp" />
+    <ClInclude Include="..\..\..\fon9\sys\FilePOSIX.hpp" />
+    <ClInclude Include="..\..\..\fon9\sys\FileWin32.hpp" />
     <ClInclude Include="..\..\..\fon9\sys\OnWindowsMainExit.hpp" />
     <ClInclude Include="..\..\..\fon9\TestTools.hpp" />
     <ClInclude Include="..\..\..\fon9\ThreadController.hpp" />
@@ -137,7 +144,11 @@
     <ClCompile Include="..\..\..\fon9\buffer\DcQueue.cpp" />
     <ClCompile Include="..\..\..\fon9\buffer\DcQueueList.cpp" />
     <ClCompile Include="..\..\..\fon9\buffer\MemBlock.cpp" />
+    <ClCompile Include="..\..\..\fon9\ErrC.cpp" />
+    <ClCompile Include="..\..\..\fon9\File.cpp" />
+    <ClCompile Include="..\..\..\fon9\FilePath.cpp" />
     <ClCompile Include="..\..\..\fon9\Log.cpp" />
+    <ClCompile Include="..\..\..\fon9\Outcome.cpp" />
     <ClCompile Include="..\..\..\fon9\RevFormat.cpp" />
     <ClCompile Include="..\..\..\fon9\CountDownLatch.cpp" />
     <ClCompile Include="..\..\..\fon9\CyclicBarrier.cpp" />

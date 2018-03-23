@@ -102,7 +102,7 @@ size_t DcQueueList::DcQueueReadMore(byte* buf, size_t sz) {
    return rdsz;
 }
 
-void DcQueueList::ConsumeErr(const ErrCond& errc) {
+void DcQueueList::ConsumeErr(const ErrC& errc) {
    BufferNode* node = this->BlockList_.pop_front();
    if (node == nullptr)
       return;

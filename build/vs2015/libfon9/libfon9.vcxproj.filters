@@ -48,6 +48,12 @@
     <Filter Include="Source Files\_base\_Thread">
       <UniqueIdentifier>{eea5d9cf-adfe-4983-bddb-4e64c1f0a36e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\_base\_File">
+      <UniqueIdentifier>{d485e1cc-19ac-4309-9bd9-30be41629a7b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\_base\_File">
+      <UniqueIdentifier>{1cdb2047-f3de-40c4-a1b2-5d27b49ceba8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\sys\Config.h">
@@ -194,6 +200,27 @@
     <ClInclude Include="..\..\..\fon9\MessageQueue.hpp">
       <Filter>Header Files\_base\_Thread</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\Fdr.hpp">
+      <Filter>Header Files\_base\_File</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\File.hpp">
+      <Filter>Header Files\_base\_File</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\sys\FileWin32.hpp">
+      <Filter>Header Files\_base\_File</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\sys\FilePOSIX.hpp">
+      <Filter>Header Files\_base\_File</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\FilePath.hpp">
+      <Filter>Header Files\_base\_File</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\Outcome.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\ErrC.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -267,6 +294,18 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\buffer\BufferList.cpp">
       <Filter>Source Files\buffer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\File.cpp">
+      <Filter>Source Files\_base\_File</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\FilePath.cpp">
+      <Filter>Source Files\_base\_File</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\Outcome.cpp">
+      <Filter>Source Files\_base\_Tools / Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\ErrC.cpp">
+      <Filter>Source Files\_base\_Tools / Utility</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

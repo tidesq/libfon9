@@ -141,24 +141,33 @@ constexpr const char* StrRFindIf(const StrView& str, FnPredicate&&... fnPred) {
 
 //--------------------------------------------------------------------------//
 
+inline const char* StrTrimHead(const char* pbeg, const char* pend) {
+   if (const char* p = StrFindIf(pbeg, pend, isnotspace))
+      return p;
+   return pend;
+}
+inline const char* StrTrimTail(const char* pbeg, const char* pend) {
+   if (const char* p = StrRFindIf(pbeg, pend, isnotspace))
+      return p + 1;
+   return pbeg;
+}
+
 /// \ingroup AlNum
 /// 移除 str 前方的空白字元: `isspace()==true` 的字元.
 /// 若 str 全都是空白, 則將 str 移動到尾端: str.SetBegin(str.end()).
 inline void StrTrimHead(StrView& str) {
-   const char* pbeg = StrFindIf(str, isnotspace);
-   str.SetBegin(pbeg ? pbeg : str.end());
+   str.SetBegin(StrTrimHead(str.begin(), str.end()));
 }
-inline void StrTrimHead(StrView& str, const char* pbegin) {
-   const char* pbeg = StrFindIf(pbegin, str.end(), isnotspace);
-   str.SetBegin(pbeg ? pbeg : str.end());
+inline void StrTrimHead(StrView& str, const char* pfrom) {
+   assert(str.begin() <= pfrom && pfrom <= str.end());
+   str.SetBegin(StrTrimHead(pfrom, str.end()));
 }
 
 /// \ingroup AlNum
 /// 移除 str 尾端的空白字元: `isspace()==true` 的字元.
 /// 若 str 全都是空白, 則將 str 移動到頭端: str.SetEnd(str.begin()).
 inline void StrTrimTail(StrView& str) {
-   const char* pend = StrRFindIf(str, isnotspace);
-   str.SetEnd(pend ? pend : str.begin());
+   str.SetEnd(StrTrimTail(str.begin(), str.end()));
 }
 
 /// \ingroup AlNum
@@ -166,9 +175,66 @@ inline void StrTrimTail(StrView& str) {
 /// 若 str 全都是空白, 則將 str 移動到尾端: str.SetBegin(str.end()).
 inline void StrTrim(StrView& str) {
    if (const char* pbeg = StrFindIf(str, isnotspace))
-      str.Reset(pbeg, StrFindIf(pbeg, str.end(), isnotspace) + 1);
+      str.Reset(pbeg, StrRFindIf(pbeg, str.end(), isnotspace) + 1);
    else
       str.SetBegin(str.end());
+}
+
+//--------------------------------------------------------------------------//
+
+template <class TrimAux, class FnSplitter>
+StrView StrFetch(StrView& src, TrimAux trimAux, FnSplitter fnSplitter) {
+   (void)trimAux;
+   const char* const pbeg = src.begin();
+   const char* const pend = src.end();
+   if (pbeg != pend) {
+      const char* pDelim = fnSplitter(pbeg, pend);
+      if (pDelim && pDelim != pend) {
+         src.SetBegin(pDelim + 1);
+         return StrView{pbeg, trimAux.TrimDelim(pbeg, pDelim)};
+      }
+      src.SetBegin(pend);
+      return StrView{pbeg, trimAux.TrimTail(pbeg, pend)};
+   }
+   return StrView{pbeg, pbeg};
+}
+
+template <class FnSplitter>
+StrView StrFetchNoTrim(StrView& src, FnSplitter fnSplitter) {
+   struct TrimAux {
+      static constexpr const char* TrimDelim(const char*, const char* pDelim) { return pDelim; }
+      static constexpr const char* TrimTail(const char*, const char* pend) { return pend; }
+   };
+   return StrFetch(src, TrimAux{}, fnSplitter);
+}
+
+inline StrView StrFetchNoTrim(StrView& src, char chDelim) {
+   return StrFetchNoTrim(src, [chDelim](const char* pbeg, const char* pend) {
+      return StrView::traits_type::find(pbeg, static_cast<size_t>(pend - pbeg), chDelim);
+   });
+}
+
+/// \ingroup AlNum
+/// - 透過 fnSplitter 找到要分割的位置.
+/// - 然後傳回分割位置前的字串(移除前後空白)
+/// - src 移動到分割位置之後.
+/// - 如果沒找到分割位置, 則傳回: 移除前後空白的src, src 移到 end() 的位置.
+template <class FnSplitter>
+StrView StrFetchTrim(StrView& src, FnSplitter fnSplitter) {
+   StrTrimHead(src);
+   struct TrimAux {
+      static const char* TrimDelim(const char* pbeg, const char* pDelim) { return StrTrimTail(pbeg, pDelim); }
+      // 因為一開頭已呼叫過 StrTrimHead() & 檢查 src.size() != 0;
+      // 所以 src 必定有非空白字元, 此時 StrRFindIf() 必定不會是 nullptr.
+      static const char* TrimTail(const char* pbeg, const char* pend) { return StrRFindIf(pbeg, pend, isnotspace) + 1; }
+   };
+   return StrFetch(src, TrimAux{}, fnSplitter);
+}
+
+inline StrView StrFetchTrim(StrView& src, char chDelim) {
+   return StrFetchTrim(src, [chDelim](const char* pbeg, const char* pend) {
+      return StrView::traits_type::find(pbeg, static_cast<size_t>(pend - pbeg), chDelim);
+   });
 }
 
 //--------------------------------------------------------------------------//

@@ -4,10 +4,11 @@
 ///
 /// \author fonwinz@gmail.com
 
-/// \defgroup fon9_MACRO  巨集定義
-/// \defgroup Misc        其他工具
 /// \defgroup AlNum       文數字
 /// \defgroup Thrs        Thread
+/// \defgroup Buffer      緩衝區機制
+/// \defgroup Misc        其他工具
+/// \defgroup fon9_MACRO  巨集定義
 #ifndef __fon9_sys_Config_hpp__
 #define __fon9_sys_Config_hpp__
 #include "fon9/sys/Config.h"

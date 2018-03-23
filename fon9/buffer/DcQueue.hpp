@@ -3,6 +3,7 @@
 #ifndef __fon9_buffer_DcQueue_hpp__
 #define __fon9_buffer_DcQueue_hpp__
 #include "fon9/buffer/RevBuffer.hpp"
+#include "fon9/ErrC.hpp"
 #include <string.h> // memcpy()
 
 namespace fon9 {
@@ -112,7 +113,7 @@ public:
    }
 
    /// 資料輸出失敗, 清除全部的內容.
-   virtual void ConsumeErr(const ErrCond& errc) = 0;
+   virtual void ConsumeErr(const ErrC& errc) = 0;
 
    /// 將資料複製到 buf 並移除, 最多複製 sz bytes, 傳回實際複製的資料量.
    size_t Read(void* buf, const size_t sz) {
@@ -188,11 +189,33 @@ public:
    virtual size_t CalcSize() const override {
       return this->GetCurrBlockSize();
    }
-   virtual void ConsumeErr(const ErrCond&) override {
+   virtual void ConsumeErr(const ErrC&) override {
       this->ClearCurrBlock();
    }
 };
 fon9_MSC_WARN_POP;
+
+/// \ingroup Buffer
+/// 把 buf 透過 fnWriter(blk, blksz) 消費掉,
+/// 當作 DcQueue.PeekCurrBlock() 的使用範例.
+/// 每次消費一個block, 直到: buf 用完, 或, fnWriter() 返回錯誤.
+template <class DcQueue, class FnWriter>
+auto DeviceOutputBlock(DcQueue&& buf, FnWriter fnWriter) -> decltype(fnWriter(nullptr, 0)) {
+   using Outcome = decltype(fnWriter(nullptr, 0));
+   typename Outcome::ResultType wsz{0};
+   for (;;) {
+      auto blk = buf.PeekCurrBlock();
+      if (!blk.first)
+         return Outcome{wsz};
+      const Outcome res = fnWriter(blk.first, blk.second);
+      if (!res) {
+         buf.ConsumeErr(res.GetError());
+         return res;
+      }
+      wsz += res.GetResult();
+      buf.PopConsumed(res.GetResult());
+   }
+}
 
 } // namespace
 #endif//__fon9_buffer_DcQueue_hpp__

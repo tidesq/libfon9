@@ -38,6 +38,17 @@ inline auto ToStrRev(char* pout, IntT value, const FmtDef& fmt) -> enable_if_t<s
    return IntToStrRev(pout, abs_cast(value), value < 0, fmt);
 }
 
+template <typename EnumT>
+inline auto ToStrRev(char* pout, EnumT value, const FmtDef& fmt) -> enable_if_t<std::is_enum<EnumT>::value && !HasBitOpT<EnumT>::value, char*> {
+   return ToStrRev(pout, static_cast<underlying_type_t<EnumT>>(value), fmt);
+}
+template <typename EnumT>
+inline auto ToStrRev(char* pout, EnumT value, FmtDef fmt) -> enable_if_t<std::is_enum<EnumT>::value && HasBitOpT<EnumT>::value, char*> {
+   if (!IsEnumContainsAny(fmt.Flags_, FmtFlag::MaskBase))
+      fmt.Flags_ |= FmtFlag::BaseHex;
+   return ToStrRev(pout, static_cast<underlying_type_t<EnumT>>(value), fmt);
+}
+
 //--------------------------------------------------------------------------//
 
 /// 輸出指定[精確度precision]的小數位.
@@ -58,11 +69,14 @@ fon9_API char* DecToStrRev(char* pout, uintmax_t value, bool isNeg, DecScaleT sc
 struct BaseFmt {
    uintmax_t Value_;
    BaseFmt() = delete;
-   template <typename T, typename = enable_if_t<std::is_integral<T>::value, T>>
+   template <typename T, enable_if_t<std::is_integral<T>::value, T> = 0>
    explicit BaseFmt(T v) : Value_{unsigned_cast(v)} {
    }
    template <typename T>
    explicit BaseFmt(const T* v) : Value_{reinterpret_cast<uintmax_t>(v)} {
+   }
+   template <typename T, enable_if_t<std::is_enum<T>::value, T> = T{}>
+   explicit BaseFmt(T v) : Value_{unsigned_cast(static_cast<underlying_type_t<T>>(v))} {
    }
 };
 inline char* ToStrRev(char* pout, BaseFmt value, FmtDef fmt) {
@@ -73,7 +87,9 @@ template <FmtFlag baseFlag, char* (*FnToStrRev)(char* pout, uintmax_t value)>
 struct BaseDefine : public BaseFmt {
    BaseDefine() = delete;
    using BaseFmt::BaseFmt;
-   static constexpr FmtFlag BaseFlag() { return baseFlag; }
+   static constexpr FmtFlag BaseFlag() {
+      return baseFlag;
+   }
    static char* ToStrRev(char* pout, uintmax_t value) {
       return FnToStrRev(pout, value);
    }

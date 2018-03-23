@@ -5,11 +5,21 @@
 #include "fon9/buffer/DcQueue.hpp"
 #include "fon9/buffer/BufferList.hpp"
 
+#ifdef fon9_POSIX
+#define fon9_HAVE_iovec
+#include <sys/uio.h> // struct iovec
+#include <limits.h>  // IOV_MAX
+inline void fon9_PutIoVectorElement(struct iovec* piov, void* dat, size_t datsz) {
+   piov->iov_base = dat;
+   piov->iov_len = datsz;
+}
+#endif
+
 namespace fon9 {
 
 fon9_MSC_WARN_DISABLE(4251  //C4251: 'BlockList_': class 'SinglyLinkedList2<fon9::BufferNode>' needs to have dll-interface
                       4265);// dtor isnot virtual.
-/// \ingroup Others
+/// \ingroup Buffer
 /// 訊息消費端的緩衝區處理: 使用 BufferList.
 class fon9_API DcQueueList : public DcQueue {
    fon9_NON_COPYABLE(DcQueueList);
@@ -22,7 +32,7 @@ protected:
          vnode->OnBufferConsumed();
       FreeNode(node);
    }
-   void NodeConsumed(BufferNode* node, const ErrCond& errc, BufferNodeSize errSize) {
+   void NodeConsumed(BufferNode* node, const ErrC& errc, BufferNodeSize errSize) {
       (void)errSize; // node 使用失敗的資料量.
       if (BufferNodeVirtual* vnode = BufferNodeVirtual::CastFrom(node))
          vnode->OnBufferConsumedErr(errc);
@@ -54,7 +64,7 @@ public:
    }
 
    /// 消費資料時發生錯誤, 清除緩衝區內的全部資料(如果有 BufferNodeCallback, 則會自動觸發通知).
-   virtual void ConsumeErr(const ErrCond& errc) override;
+   virtual void ConsumeErr(const ErrC& errc) override;
 
    /// 將 node 加到尾端, 並交由 this 管理.
    /// node 不可為 nullptr.
@@ -103,30 +113,36 @@ public:
 };
 fon9_MSC_WARN_POP;
 
-#ifdef fon9_HAVE_iovec
-/// DcQueueList 必須支援: PeekBlockVector();
-template <class DcQueueList, class FnWriter>
-auto DeviceOutputIovec(DcQueueList& buf, FnWriter fnWriter) -> decltype(fnWriter(nullptr, 0)) {
-   using Result = decltype(fnWriter(nullptr, 0));
-   using ResultV = typename Result::ResultValueType;
-   struct iovec   iov[IOV_MAX];
-   ResultV        wsz{};
+/// \ingroup Buffer
+/// - DcQueueList 必須支援: PeekBlockVector();
+/// - 必須額外提供 fon9_PutIoVectorElement(IoVec* iov, void* dat, size_t size); 將 dat,size 填入 iov;
+template <class DcQueueList, class IoVec, size_t IoVecMaxN, class FnWriter>
+auto DeviceOutputIovec(DcQueueList& buf, IoVec (&iov)[IoVecMaxN], FnWriter fnWriter) -> decltype(fnWriter(nullptr, 0)) {
+   using Outcome = decltype(fnWriter(nullptr, 0));
+   typename Outcome::ResultType  wsz{0};
    for (;;) {
       size_t iovcnt = buf.PeekBlockVector(iov);
       if (iovcnt <= 0)
-         return wsz;
-      Result res = fnWriter(iov, iovcnt);
+         return Outcome{wsz};
+      Outcome res = fnWriter(iov, iovcnt);
       if (!res) {
-         buf.ConsumeErr(res.GetErrorCode());
+         buf.ConsumeErr(res.GetError());
          return res;
       }
-      wsz += res.GetResultValue();
-      buf.PopConsumed(res.GetResultValue());
+      wsz += res.GetResult();
+      buf.PopConsumed(res.GetResult());
    }
+}
+
+#ifdef fon9_HAVE_iovec
+template <class DcQueueList, class FnWriter>
+auto DeviceOutputIovec(DcQueueList& buf, FnWriter fnWriter) -> decltype(fnWriter(nullptr, 0)) {
+   struct iovec   iov[IOV_MAX];
+   return DeviceOutputIovec(buf, iov, fnWriter);
 }
 #endif
 
-inline void BufferListConsumeErr(BufferList&& src, const ErrCond& errc) {
+inline void BufferListConsumeErr(BufferList&& src, const ErrC& errc) {
    DcQueueList{std::move(src)}.ConsumeErr(errc);
 }
 

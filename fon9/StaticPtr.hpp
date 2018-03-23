@@ -6,7 +6,7 @@
 
 namespace fon9 {
 
-/// \ingroup Tools
+/// \ingroup Misc
 /// 取代 `static std::unique_ptr<T> ptr;` or `static thread_local std::unique_ptr<T> ptr;`
 /// 因為在 ptr 死亡後, 可能還會用到 ptr ?!
 /// 增加 IsDisposed() 判斷 ptr 本身(不是所指物件), 是否已經死亡!

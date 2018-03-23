@@ -14,7 +14,7 @@ BufferNodeWaiter* BufferNodeWaiter::Alloc(CountDownLatch& waiter) {
 void BufferNodeWaiter::OnBufferConsumed() {
    this->Waiter_->CountDown();
 }
-void BufferNodeWaiter::OnBufferConsumedErr(const ErrCond&) {
+void BufferNodeWaiter::OnBufferConsumedErr(const ErrC&) {
    this->Waiter_->CountDown();
 }
 

@@ -7,7 +7,7 @@
 
 namespace fon9 {
 
-/// \ingroup Others
+/// \ingroup Buffer
 /// 在 Buffer 裡面當此 node 被處理後, 呼叫 ThreadWaiter::Done().
 /// 可用在等候資料同步.
 class fon9_API BufferNodeWaiter : public BufferNodeVirtual {
@@ -19,7 +19,7 @@ class fon9_API BufferNodeWaiter : public BufferNodeVirtual {
 protected:
    virtual ~BufferNodeWaiter();
    virtual void OnBufferConsumed() override;
-   virtual void OnBufferConsumedErr(const ErrCond& errc) override;
+   virtual void OnBufferConsumedErr(const ErrC& errc) override;
 public:
    static BufferNodeWaiter* Alloc(CountDownLatch& waiter);
 

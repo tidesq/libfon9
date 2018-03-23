@@ -4,7 +4,8 @@
 #define __fon9_buffer_BufferNode_hpp__
 #include "fon9/buffer/MemBlock.hpp"
 #include "fon9/SinglyLinkedList.hpp"
-#include "fon9//Exception.hpp"
+#include "fon9/Exception.hpp"
+#include "fon9/ErrC.hpp"
 
 namespace fon9 {
 
@@ -166,7 +167,7 @@ protected:
 
 public:
    virtual void OnBufferConsumed() = 0;
-   virtual void OnBufferConsumedErr(const ErrCond& errc) = 0;
+   virtual void OnBufferConsumedErr(const ErrC& errc) = 0;
 
    /// node 必須是 BufferNodeVirtual 才會轉型成功.
    static BufferNodeVirtual* CastFrom(BufferNode* node) {

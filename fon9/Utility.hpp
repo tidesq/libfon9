@@ -59,22 +59,15 @@ using make_index_sequence = typename make_integer_sequence<N>::type;
 
 /// \ingroup Misc
 /// 檢查 EnumT 是否支援 bitwise 操作元(enum 可用 fon9_ENABLE_ENUM_BITWISE_OP(EnumT) 定義).
-/// HasBitOp<T>::value == true or false;
+/// HasBitOpT<T>::value == true or false;
 template <typename EnumT>
 struct HasBitOpT {
    template <typename T>
-   static auto HasBitOpChecker(T)->decltype(IsEnumContains(T{}, T{}));
+   static auto HasBitOpChecker(const T&)->decltype(IsEnumContains(T{}, T{}));
    struct No { bool _[16]; };
    static No HasBitOpChecker(...);
-   enum { value = (sizeof(HasBitOpChecker(typename std::remove_reference<EnumT>::type{})) != sizeof(No)) };
+   enum { value = (sizeof(HasBitOpChecker(*static_cast<typename std::remove_reference<EnumT>::type*>(nullptr))) != sizeof(No)) };
 };
-/// \ingroup Misc
-/// 檢查 EnumT 是否支援 bitwise 操作元(enum 可用 fon9_ENABLE_ENUM_BITWISE_OP(EnumT) 定義).
-/// HasBitOp<T>() == true or false;
-template <typename EnumT>
-constexpr bool HasBitOp() {
-   return HasBitOpT<EnumT>::value;
-}
 
 /// \ingroup Misc
 /// 自動根據 IntType 是否有正負: 擴展成最大整數:
@@ -183,6 +176,12 @@ inline T* InplaceNew(void* p, ArgsT&&... args) {
    #ifdef DBG_NEW
    #define new DBG_NEW
    #endif
+}
+// 直接呼叫解構, 同 C++17 所提供的.
+template<class T>
+inline void destroy_at(T* p) {
+   (void)p;
+   p->~T();
 }
 
 /// \ingroup fon9_MACRO

@@ -166,6 +166,17 @@ inline auto ToStrRev(char* pout, IntT value) -> enable_if_t<std::is_unsigned<Int
    return UIntToStrRev(pout, static_cast<uintmax_t>(value));
 }
 
+template <typename EnumT>
+inline auto ToStrRev(char* pout, EnumT value) -> enable_if_t<std::is_enum<EnumT>::value && !HasBitOpT<EnumT>::value, char*> {
+   return ToStrRev(pout, static_cast<underlying_type_t<EnumT>>(value));
+}
+template <typename EnumT>
+inline auto ToStrRev(char* pout, EnumT value) -> enable_if_t<std::is_enum<EnumT>::value && HasBitOpT<EnumT>::value, char*> {
+   pout = HexToStrRev(pout, static_cast<underlying_type_t<EnumT>>(value));
+   *--pout = 'x';
+   return pout;
+}
+
 //--------------------------------------------------------------------------//
 
 /// \ingroup AlNum
