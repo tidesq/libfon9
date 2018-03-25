@@ -96,8 +96,8 @@ class SessionContainTimer : public fon9::intrusive_ref_counter<SessionContainTim
    fon9_NON_COPY_NON_MOVE(SessionContainTimer);
 
    static void EmitOnTimer(fon9::TimerEntry* timer, fon9::TimeStamp now) {
-      SessionContainTimer* pthis = fon9::ContainerOf(*static_cast<decltype(SessionContainTimer::Timer_)*>(timer), &SessionContainTimer::Timer_);
-      pthis->OnTimer(timer, now);
+      SessionContainTimer& rthis = fon9::ContainerOf(*static_cast<decltype(SessionContainTimer::Timer_)*>(timer), &SessionContainTimer::Timer_);
+      rthis.OnTimer(timer, now);
    }
    fon9::DataMemberEmitOnTimer<&SessionContainTimer::EmitOnTimer> Timer_;
 

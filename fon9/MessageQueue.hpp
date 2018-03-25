@@ -3,6 +3,7 @@
 #ifndef __fon9_MessageQueue_hpp__
 #define __fon9_MessageQueue_hpp__
 #include "fon9/ThreadController.hpp"
+#include "fon9/ThreadTools.hpp"
 #include "fon9/Log.hpp"
 #include <deque>
 #include <vector>
@@ -28,7 +29,7 @@ namespace fon9 {
 ///               ... 在這裡處理 this->ConsumingMessage_
 ///            }
 ///         \endcode
-///   - void MessageHandlerT::OnThreadEnd(const std::string& thrName);
+///   - `void MessageHandlerT::OnThreadEnd(const std::string& thrName);`
 template <
    class MessageHandlerT,
    class MessageT = typename MessageHandlerT::MessageType,
@@ -101,16 +102,7 @@ class MessageQueueService {
    }
 
    void WaitThreadJoin() {
-      for (std::thread& thr : this->ThreadPool_) {
-         if (thr.joinable())
-            thr.join();
-      }
-   }
-
-protected:
-   void WaitForEndNow() {
-      this->QueueController_.WaitForEndNow();
-      this->WaitThreadJoin();
+      JoinThreads(this->ThreadPool_);
    }
 
 public:
@@ -152,6 +144,12 @@ public:
          this->OnMessage(remainMessageHandler, queue);
          queue.lock();
       }
+   }
+   /// 通知結束, 並在 thread 結束後返回, 但不處理剩餘訊息.
+   /// 可再呼叫 `WaitForEndNow(MessageHandlerT& remainMessageHandler);` 處理剩餘訊息.
+   void WaitForEndNow() {
+      this->QueueController_.WaitForEndNow();
+      this->WaitThreadJoin();
    }
 
    /// 通知訊息處理完畢後結束 thread.

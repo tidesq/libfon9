@@ -14,7 +14,7 @@ class fon9_API BufferNodeWaiter : public BufferNodeVirtual {
    fon9_NON_COPY_NON_MOVE(BufferNodeWaiter);
    using base = BufferNodeVirtual;
    CountDownLatch* Waiter_{nullptr};
-   friend BufferNodeWaiter* BufferNode::Alloc<BufferNodeWaiter>(size_t);
+   friend class BufferNode;// for BufferNode::Alloc();
    using base::base;
 protected:
    virtual ~BufferNodeWaiter();

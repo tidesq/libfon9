@@ -44,7 +44,7 @@ protected:
    virtual bool DcQueuePeekMore(byte* tmpbuf, size_t sz) override;
    virtual bool DcQueueHasMore(size_t sz) const override;
    /// 移除已用掉的資料量.
-   /// 歸還已用掉的 BufferNode(如果有 BufferNodeCallback, 則會自動觸發通知).
+   /// 歸還已用掉的 BufferNode, 如果有控制節點, 則會觸發 OnBufferConsumed() 通知.
    virtual void DcQueueRemoveMore(size_t sz) override;
    virtual size_t DcQueueReadMore(byte* buf, size_t sz) override;
 public:
@@ -97,7 +97,6 @@ public:
       if (this->MemCurrent_ == nullptr)
          return 0;
       fon9_PutIoVectorElement(vect, const_cast<byte*>(this->MemCurrent_), this->GetCurrBlockSize());
-
       size_t      count = 1;
       BufferNode* node = this->BlockList_.front();
       while(count < maxCount) {
@@ -105,8 +104,11 @@ public:
             break;
          if (const size_t blksz = node->GetDataSize())
             fon9_PutIoVectorElement(vect + count++, node->GetDataBegin(), blksz);
-         else // 遇到控制節點(BufferNodeCallback, BufferNodeVirtual...) 應中斷 block 連續性.
-            break;
+         else if (BufferNodeVirtual* vnode = BufferNodeVirtual::CastFrom(node)) {
+            // 是否允許跨越控制節點?
+            if (!IsEnumContains(vnode->StyleFlags_, BufferNodeVirtual::StyleFlag::AllowCrossing))
+               break;
+         }
       }
       return count;
    }

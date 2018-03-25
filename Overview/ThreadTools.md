@@ -61,6 +61,28 @@
 [fon9/ThreadController.hpp](../fon9/ThreadController.hpp)
 * 一般 thread 執行時的資料保護、流程控制。
 
+## `Worker<WorkContentController>`
+[fon9/Worker.hpp](../fon9/Worker.hpp)
+* 控制一次只會有一個 thread 執行 Worker，但是允許任意 thread 要求 Worker 做事。
+
+## MessageQueue
+[fon9/MessageQueue.hpp](../fon9/MessageQueue.hpp)
+```c++
+template <
+   class MessageHandlerT,
+   class MessageT = typename MessageHandlerT::MessageType,
+   class MessageContainerT = std::deque<MessageT>,
+   class WaitPolicy = WaitPolicy_CV
+>
+class MessageQueueService;
+```
+
+## `fon9::GetDefaultThreadPool()`
+[fon9/DefaultThreadPool.hpp](../fon9/DefaultThreadPool.hpp)
+* 取得 fon9 提供的一個 thread pool.
+  * 一般用於不急迫, 但比較花時間的簡單工作, 例如: 寫檔、domain name 查找...
+  * 程式結束時, 剩餘的工作會被拋棄!
+
 ## Timer 計時器
 [fon9/Timer.hpp](../fon9/Timer.hpp)
 * 由於 Timer 共用 TimerThread，所以若 OnTimer 事件的執行時間太久，
@@ -131,16 +153,4 @@ public:
       this->Timer_.RunAfter(delaySecs);
    }
 };
-```
-
-## MessageQueue
-[fon9/MessageQueue.hpp](../fon9/MessageQueue.hpp)
-```c++
-template <
-   class MessageHandlerT,
-   class MessageT = typename MessageHandlerT::MessageType,
-   class MessageContainerT = std::deque<MessageT>,
-   class WaitPolicy = WaitPolicy_CV
->
-class MessageQueueService;
 ```

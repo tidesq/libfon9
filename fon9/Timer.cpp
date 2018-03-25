@@ -2,6 +2,7 @@
 // \author fonwinz@gmail.com
 #include "fon9/Timer.hpp"
 #include "fon9/Log.hpp"
+#include "fon9/ThreadTools.hpp"
 #include "fon9/sys/OnWindowsMainExit.hpp"
 
 namespace fon9 {
@@ -111,8 +112,7 @@ TimerThread::~TimerThread() {
 }
 void TimerThread::WaitForEndNow() {
    this->TimerController_.WaitForEndNow();
-   if (this->Thread_.joinable())
-      this->Thread_.join();
+   JoinThread(this->Thread_);
 }
 
 bool TimerThread::CheckCurrEmit(Locker& timerThread, TimerEntry& timer) {

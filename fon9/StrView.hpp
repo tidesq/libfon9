@@ -40,7 +40,7 @@ public:
 
    constexpr StrView() : StrView{"", static_cast<size_t>(0u)} {
    }
-   /// \param ibegin 字串開頭, 不可使用 nullptr!
+   /// \param ibegin 字串開頭, 可使用 nullptr!
    /// \param sz     字串長度.
    constexpr StrView(const char* ibegin, size_t sz) : Begin_{ibegin}, End_{ibegin + sz} {
    }

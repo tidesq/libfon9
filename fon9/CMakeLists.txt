@@ -13,6 +13,7 @@ set(fon9src
  CyclicBarrier.cpp
  ThreadId.cpp
  Timer.cpp
+ DefaultThreadPool.cpp
  
  Log.cpp
  ErrC.cpp
@@ -20,6 +21,7 @@ set(fon9src
 
  File.cpp
  FilePath.cpp
+ TimedFileName.cpp
  
  buffer/MemBlock.cpp
  buffer/BufferNode.cpp
@@ -66,3 +68,6 @@ target_link_libraries(MemBlock_UT fon9_s)
 
 add_executable(File_UT File_UT.cpp)
 target_link_libraries(File_UT fon9_s)
+
+add_executable(TimedFileName_UT TimedFileName_UT.cpp)
+target_link_libraries(TimedFileName_UT fon9_s)

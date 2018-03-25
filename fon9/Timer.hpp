@@ -66,7 +66,7 @@ fon9_MSC_WARN_DISABLE_NO_PUSH(4251);//C4251: '...' needs to have dll-interface t
 ///            // Timer 作為 data member, 不需要 delete, 所以 OnTimerEntryReleased(): do nothing.
 ///         }
 ///         virtual void EmitOnTimer(fon9::TimeStamp now) override {
-///            TimerUser* user = fon9::ContainerOf(*this, &TimerUser::Timer_);
+///            TimerUser* user = &fon9::ContainerOf(*this, &TimerUser::Timer_);
 ///            ... do something ...
 ///            delete user;
 ///         }
@@ -157,7 +157,7 @@ public:
 /// \code
 ///   class MyObject {
 ///      static void EmitOnTimer1(fon9::TimerEntry* timer, fon9::TimeStamp now) {
-///         MyObject* pthis = fon9::ContainerOf(*static_cast<decltype(MyObject::Timer1_)*>(timer), &MyObject::Timer1_);
+///         MyObject& rthis = fon9::ContainerOf(*static_cast<decltype(MyObject::Timer1_)*>(timer), &MyObject::Timer1_);
 ///         // 處理 Timer1 事件...
 ///      }
 ///      fon9::DataMemberEmitOnTimer<&MyObject::EmitOnTimer1> Timer1_;

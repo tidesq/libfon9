@@ -7,7 +7,7 @@ namespace fon9 {
 BufferNodeWaiter::~BufferNodeWaiter() {
 }
 BufferNodeWaiter* BufferNodeWaiter::Alloc(CountDownLatch& waiter) {
-   BufferNodeWaiter* res = base::Alloc<BufferNodeWaiter>(0);
+   BufferNodeWaiter* res = base::Alloc<BufferNodeWaiter>(0, StyleFlag::AllowCrossing);
    res->Waiter_ = &waiter;
    return res;
 }

@@ -121,6 +121,9 @@
     <ClInclude Include="..\..\..\fon9\TestTools.hpp" />
     <ClInclude Include="..\..\..\fon9\ThreadController.hpp" />
     <ClInclude Include="..\..\..\fon9\ThreadId.hpp" />
+    <ClInclude Include="..\..\..\fon9\DefaultThreadPool.hpp" />
+    <ClInclude Include="..\..\..\fon9\ThreadTools.hpp" />
+    <ClInclude Include="..\..\..\fon9\TimedFileName.hpp" />
     <ClInclude Include="..\..\..\fon9\TimeInterval.hpp" />
     <ClInclude Include="..\..\..\fon9\Timer.hpp" />
     <ClInclude Include="..\..\..\fon9\TimeStamp.hpp" />
@@ -129,6 +132,7 @@
     <ClInclude Include="..\..\..\fon9\TypeName.hpp" />
     <ClInclude Include="..\..\..\fon9\Utility.hpp" />
     <ClInclude Include="..\..\..\fon9\WaitPolicy.hpp" />
+    <ClInclude Include="..\..\..\fon9\Worker.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\fon9\buffer\README.md" />
@@ -158,6 +162,8 @@
     <ClCompile Include="..\..\..\fon9\StrTools.cpp" />
     <ClCompile Include="..\..\..\fon9\sys\OnWindowsMainExit.cpp" />
     <ClCompile Include="..\..\..\fon9\ThreadId.cpp" />
+    <ClCompile Include="..\..\..\fon9\DefaultThreadPool.cpp" />
+    <ClCompile Include="..\..\..\fon9\TimedFileName.cpp" />
     <ClCompile Include="..\..\..\fon9\TimeInterval.cpp" />
     <ClCompile Include="..\..\..\fon9\Timer.cpp" />
     <ClCompile Include="..\..\..\fon9\TimeStamp.cpp" />

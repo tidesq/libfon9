@@ -20,7 +20,7 @@ namespace impl {
 static const TimeInterval  kMemBlockCenter_CheckInterval{TimeInterval_Millisecond(200)};
 
 MemBlockCenter::MemBlockCenter() : Timer_{GetDefaultTimerThread()} {
-   Timer_.RunAfter(kMemBlockCenter_CheckInterval);
+   Timer_.RunAfter(TimeInterval{});
 }
 MemBlockCenter::~MemBlockCenter() {
    this->Timer_.DisposeAndWait();
@@ -115,9 +115,9 @@ void MemBlockCenter::InitLevel(unsigned lvidx, const size_t* reserveFreeListCoun
 }
 
 void MemBlockCenter::EmitOnTimer(TimerEntry* timer, TimeStamp) {
-   MemBlockCenter* pthis = ContainerOf(*static_cast<decltype(MemBlockCenter::Timer_)*>(timer), &MemBlockCenter::Timer_);
+   MemBlockCenter& rthis = ContainerOf(*static_cast<decltype(MemBlockCenter::Timer_)*>(timer), &MemBlockCenter::Timer_);
    for (unsigned lvidx = 0; lvidx < kMemBlockLevelCount; ++lvidx)
-      pthis->InitLevel(lvidx, nullptr);
+      rthis.InitLevel(lvidx, nullptr);
    timer->RunAfter(kMemBlockCenter_CheckInterval);
 }
 

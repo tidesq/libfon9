@@ -221,6 +221,18 @@
     <ClInclude Include="..\..\..\fon9\ErrC.hpp">
       <Filter>Header Files\_base\_Tools / Utility</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\TimedFileName.hpp">
+      <Filter>Header Files\_base\_File</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\Worker.hpp">
+      <Filter>Header Files\_base\_Thread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\ThreadTools.hpp">
+      <Filter>Header Files\_base\_Thread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\DefaultThreadPool.hpp">
+      <Filter>Header Files\_base\_Thread</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -306,6 +318,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\ErrC.cpp">
       <Filter>Source Files\_base\_Tools / Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\TimedFileName.cpp">
+      <Filter>Source Files\_base\_File</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\DefaultThreadPool.cpp">
+      <Filter>Source Files\_base\_Thread</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -20,6 +20,8 @@ class MustLock {
    MutexT mutable Mutex_;
    BaseT          Base_;
 public:
+   using MutexLocker = MutexLockerT;
+
    template <class... ArgsT>
    MustLock(ArgsT&&... args) : Base_{std::forward<ArgsT>(args)...} {
    }
@@ -61,10 +63,10 @@ public:
    ConstLocker Lock() const { return ConstLocker{*this}; }
    ConstLocker ConstLock() const { return ConstLocker{*this}; }
 
-   static MustLock* StaticCast(BaseT& pbase) {
+   static MustLock& StaticCast(BaseT& pbase) {
       return ContainerOf(pbase, &MustLock::Base_);
    }
-   static const MustLock* StaticCast(const BaseT& pbase) {
+   static const MustLock& StaticCast(const BaseT& pbase) {
       return ContainerOf(*const_cast<BaseT*>(&pbase), &MustLock::Base_);
    }
 };

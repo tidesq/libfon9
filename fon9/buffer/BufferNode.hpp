@@ -55,8 +55,8 @@ protected:
    /// NodeT 必須提供建構: `NodeT::NodeT(BufferNodeSize blockSize);`
    /// \param  extSize 除了 sizeof(NodeT) 之外, 額外需要的空間: (實際分配的大小 >= extSize + sizeof(NodeT))
    /// \return 必須透過 FreeNode(retval) 歸還.
-   template <class NodeT>
-   static NodeT* Alloc(size_t extSize) {
+   template <class NodeT, class... ArgsT>
+   static NodeT* Alloc(size_t extSize, ArgsT&&... args) {
       extSize += sizeof(NodeT);
       const MemBlockSize requiredSize = static_cast<MemBlockSize>(extSize);
       if (fon9_UNLIKELY(requiredSize != extSize)) {
@@ -70,7 +70,7 @@ protected:
          #endif
             // 為了不輕易讓使用者建立 NodeT, 所以僅允許在 BufferNode::Alloc() 建立, 連使用 InplaceNew<>() 都不允許.
             // InplaceNew<NodeT>(ptr, mb.size());
-            NodeT* node = ::new (ptr) NodeT(mb.size());
+            NodeT* node = ::new (ptr) NodeT(mb.size(), std::forward<ArgsT>(args)...);
          #ifdef DBG_NEW
          #define new DBG_NEW
          #endif
@@ -152,20 +152,21 @@ inline size_t CalcDataSize(const BufferNode* front) {
    return sz;
 }
 
+fon9_WARN_DISABLE_PADDING;
 /// \ingroup Buffer
-/// 在 Buffer 消費到此節點時, 會呼叫 OnBufferConsumed(); 然後才會移除&釋放此節點.
+/// 在 Buffer 消費完此節點時, 會呼叫 OnBufferConsumed(); 然後才會移除&釋放此節點.
 /// 可用於自訂「資料消費之後」的行為.
 /// 用法範例可參考: BufferNodeWaiter, LogFile::TimeNode, LogFile::ConfigNode, LogFile::HighWaterNode
 class fon9_API BufferNodeVirtual : public BufferNode {
    fon9_NON_COPY_NON_MOVE(BufferNodeVirtual);
    using base = BufferNode;
-protected:
-   BufferNodeVirtual(BufferNodeSize blockSize) : base(blockSize, BufferNodeType::Virtual) {
-   }
-   virtual ~BufferNodeVirtual();
-   fon9_API friend void FreeNode(BufferNode* node);
-
 public:
+   enum class StyleFlag {
+      /// 允許跨越此節點, 若無此旗標, 則必須在前面的節點都用完後才能繼續。
+      AllowCrossing = 0x01,
+   };
+   const StyleFlag StyleFlags_;
+
    virtual void OnBufferConsumed() = 0;
    virtual void OnBufferConsumedErr(const ErrC& errc) = 0;
 
@@ -173,7 +174,18 @@ public:
    static BufferNodeVirtual* CastFrom(BufferNode* node) {
       return node->GetNodeType() == BufferNodeType::Virtual ? static_cast<BufferNodeVirtual*>(node) : nullptr;
    }
+
+protected:
+   BufferNodeVirtual(BufferNodeSize blockSize, StyleFlag style)
+      : base(blockSize, BufferNodeType::Virtual)
+      , StyleFlags_{style} {
+   }
+   virtual ~BufferNodeVirtual();
+
+   fon9_API friend void FreeNode(BufferNode* node);
 };
+fon9_ENABLE_ENUM_BITWISE_OP(BufferNodeVirtual::StyleFlag);
+fon9_WARN_POP;
 
 } // namespaces
 #endif//__fon9_buffer_BufferNode_hpp__

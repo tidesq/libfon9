@@ -135,11 +135,11 @@ inline void ZeroStruct(T& r) {
 /// ...
 /// MyField* fld;
 /// ...
-/// MyRec* myrec = fon9::ContainerOf(*fld, &MyRec::Field_);
+/// MyRec& myrec = fon9::ContainerOf(*fld, &MyRec::Field_);
 /// \endcode
 template <class T, typename DataMemberT>
-inline T* ContainerOf(DataMemberT& m, DataMemberT T::*pDataMember) {
-   return reinterpret_cast<T*>(reinterpret_cast<uintptr_t>(&m) - (reinterpret_cast<std::ptrdiff_t>(&(reinterpret_cast<const T*>(1)->*pDataMember)) - 1));
+inline T& ContainerOf(DataMemberT& m, DataMemberT T::*pDataMember) {
+   return *reinterpret_cast<T*>(reinterpret_cast<uintptr_t>(&m) - (reinterpret_cast<std::ptrdiff_t>(&(reinterpret_cast<const T*>(1)->*pDataMember)) - 1));
 }
 
 template <class Base, class Derived>
