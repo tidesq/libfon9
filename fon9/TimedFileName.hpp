@@ -12,31 +12,7 @@ fon9_MSC_WARN_DISABLE_NO_PUSH(4251);// dll-interface.
 /// \ingroup Misc
 /// 在指定時間測量單位(TimeChecker::TimeScale)之下, 檢查時間是否有變動.
 class fon9_API TimeChecker {
-   TimeStamp   Time_{};
-   DateTime14T YMDHMS_{};
-   void Clear() {
-      this->Time_ = TimeStamp{};
-      this->YMDHMS_ = DateTime14T{};
-   }
 public:
-   TimeChecker() = default;
-   TimeChecker(TimeChecker&& rhs) : Time_{rhs.Time_}, YMDHMS_{rhs.YMDHMS_} {
-      rhs.Clear();
-   }
-   TimeChecker& operator=(TimeChecker&& rhs) {
-      this->Time_ = rhs.Time_;
-      this->YMDHMS_ = rhs.YMDHMS_;
-      rhs.Clear();
-      return *this;
-   }
-   
-   TimeChecker(const TimeChecker&) = default;
-   TimeChecker& operator=(const TimeChecker&) = default;
-
-   TimeStamp GetTime() const {
-      return this->Time_;
-   }
-
    /// **何時** 需要開啟新的檔案?
    enum class TimeScale : DateTime14T {
       /// 檔名切換與時間變動無關.
@@ -58,7 +34,35 @@ public:
       Year = Month * 100,
    };
 
-   void Reset(TimeScale tmScale, TimeStamp tm, TimeZoneOffset tzadj);
+   TimeChecker() = default;
+   TimeChecker(TimeChecker&& rhs) {
+      *this = std::move(rhs);
+   }
+   TimeChecker& operator=(TimeChecker&& rhs) {
+      this->UtcTime_ = rhs.UtcTime_;
+      this->AdjustedYMDHMS_ = rhs.AdjustedYMDHMS_;
+      this->Scale_ = rhs.Scale_;
+      this->TimeZoneOffset_ = rhs.TimeZoneOffset_;
+      rhs.Clear();
+      return *this;
+   }
+   
+   TimeChecker(const TimeChecker&) = default;
+   TimeChecker& operator=(const TimeChecker&) = default;
+
+   TimeStamp GetUtcTime() const {
+      return this->UtcTime_;
+   }
+   TimeZoneOffset GetTimeZoneOffset() const {
+      return this->TimeZoneOffset_;
+   }
+
+   void Reset(TimeScale tmScale, TimeZoneOffset tzadj) {
+      this->Scale_ = tmScale;
+      this->TimeZoneOffset_ = tzadj;
+      this->Clear();
+   }
+   void Reset(TimeStamp tm);
 
    /// 與上次時間差距在 n(-60秒..0秒) 秒內, 視為同一時間.
    /// 避免: 從不同地方收集的時間誤差, 例:
@@ -74,7 +78,17 @@ public:
    ///
    /// \retval true  時間有變動.
    /// \retval false 時間沒變動.
-   bool CheckTime(TimeScale tmScale, TimeStamp tm, TimeZoneOffset tzadj);
+   bool CheckTime(TimeStamp tm);
+
+private:
+   void Clear() {
+      this->UtcTime_ = TimeStamp{};
+      this->AdjustedYMDHMS_ = DateTime14T{};
+   }
+   TimeStamp      UtcTime_{};
+   DateTime14T    AdjustedYMDHMS_{};
+   TimeScale      Scale_{};
+   TimeZoneOffset TimeZoneOffset_;
 };
 
 /// \ingroup Misc
@@ -84,15 +98,13 @@ class fon9_API TimedFileName {
 public:
    using TimeScale = TimeChecker::TimeScale;
 
-   /// fmt = "{0}{1}", 參數0=時間(TimeStamp), 參數1=序號(正整數).
-   TimedFileName(std::string fmt, TimeScale tmScale);
+   /// fmtFileName = "{0}{1}", 參數0=時間(TimeStamp), 參數1=序號(正整數).
+   TimedFileName(std::string fmtFileName, TimeScale tmScale);
    TimedFileName(TimedFileName&& rhs) {
       *this = std::move(rhs);
    }
    TimedFileName& operator=(TimedFileName&& rhs) {
-      this->FnFormat_ = std::move(rhs.FnFormat_);
-      this->Scale_ = rhs.Scale_;
-      this->TimeZoneOffset_ = rhs.TimeZoneOffset_;
+      this->FmtFileName_ = std::move(rhs.FmtFileName_);
       this->TimeChecker_ = std::move(rhs.TimeChecker_);
       this->SeqNo_ = rhs.SeqNo_;
       this->FileName_ = std::move(rhs.FileName_);
@@ -100,14 +112,8 @@ public:
       return *this;
    }
 
-   TimeScale GetTimeScale() const {
-      return this->Scale_;
-   }
-   TimeZoneOffset GetTimeZoneOffset() const {
-      return this->TimeZoneOffset_;
-   }
-   TimeStamp GetTime() const {
-      return this->TimeChecker_.GetTime();
+   const TimeChecker& GetTimeChecker() const {
+      return this->TimeChecker_;
    }
 
    /// 檢查是否需要重建檔名, 若有需要則返回 true, 並在返回前重建檔名.
@@ -143,7 +149,7 @@ public:
    /// \retval false 檔名沒變動: 檔名格式沒有提供參數{1}
    bool AddSeqNo() {
       ++this->SeqNo_;
-      return RebuildFileName();
+      return this->RebuildFileName();
    }
 
    /// 強制使用指定時間重建檔名.
@@ -152,9 +158,7 @@ public:
 
 private:
    bool RebuildFileName();
-   FmtPre         FnFormat_;
-   TimeScale      Scale_;
-   TimeZoneOffset TimeZoneOffset_;
+   FmtPre         FmtFileName_;
    TimeChecker    TimeChecker_;
    size_t         SeqNo_{};
    std::string    FileName_;

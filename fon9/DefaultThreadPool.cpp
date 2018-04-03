@@ -8,6 +8,8 @@ namespace fon9 {
 struct DefaultThreadTaskHandler {
    using MessageType = DefaultThreadTask;
    DefaultThreadTaskHandler(DefaultThreadPool&) {
+      if (gWaitLogSystemReady)
+         gWaitLogSystemReady();
    }
    void OnMessage(DefaultThreadTask& task) {
       task();

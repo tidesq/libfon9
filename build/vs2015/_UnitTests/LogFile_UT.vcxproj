@@ -11,8 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{D7A143E2-B3E0-4F49-9B76-EF03B9744964}</ProjectGuid>
-    <RootNamespace>Subr_UT</RootNamespace>
+    <ProjectGuid>{82E5B0C5-FE71-4C58-AE95-9E9DE07831DF}</ProjectGuid>
+    <RootNamespace>LogFile_UT</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -54,8 +54,7 @@
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_DEBUG</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\..\fon9</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -65,7 +64,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\fon9</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -74,20 +73,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\fon9\Subr_UT.cpp" />
+    <ClCompile Include="..\..\..\fon9\LogFile_UT.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\fon9\DummyMutex.hpp" />
-    <ClInclude Include="..\..\..\fon9\MustLock.hpp" />
-    <ClInclude Include="..\..\..\fon9\SortedVector.hpp" />
-    <ClInclude Include="..\..\..\fon9\Subr.hpp" />
-    <ClInclude Include="..\..\..\fon9\sys\Config.h" />
-    <ClInclude Include="..\..\..\fon9\sys\Config.hpp" />
-    <ClInclude Include="..\..\..\fon9\TestTools.hpp" />
-    <ClInclude Include="..\..\..\fon9\Utility.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\..\Overview\Subr.md" />
+    <ProjectReference Include="..\libfon9\libfon9.vcxproj">
+      <Project>{6b9031a7-02e1-4171-8ca5-9f780be21806}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

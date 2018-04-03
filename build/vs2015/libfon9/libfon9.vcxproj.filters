@@ -233,11 +233,26 @@
     <ClInclude Include="..\..\..\fon9\DefaultThreadPool.hpp">
       <Filter>Header Files\_base\_Thread</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\Appender.hpp">
+      <Filter>Header Files\_base\_File</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\LogFile.hpp">
+      <Filter>Header Files\_base\_File</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\FileAppender.hpp">
+      <Filter>Header Files\_base\_File</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\buffer\FwdBufferList.hpp">
+      <Filter>Header Files\buffer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
     <None Include="..\..\..\fon9\buffer\README.md">
       <Filter>Header Files\buffer</Filter>
+    </None>
+    <None Include="..\..\..\Overview\ThreadTools.md">
+      <Filter>Header Files\_base\_Thread</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -324,6 +339,15 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\DefaultThreadPool.cpp">
       <Filter>Source Files\_base\_Thread</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\Appender.cpp">
+      <Filter>Source Files\_base\_File</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\LogFile.cpp">
+      <Filter>Source Files\_base\_File</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\FileAppender.cpp">
+      <Filter>Source Files\_base\_File</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

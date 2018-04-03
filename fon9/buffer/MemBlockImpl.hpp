@@ -125,10 +125,10 @@ class MemBlockCenter : public intrusive_ref_counter<MemBlockCenter> {
    struct CenterLevelImpl {
       fon9_NON_COPY_NON_MOVE(CenterLevelImpl);
       CenterLevelImpl() = default;
-      CenterLevelList   Reserved_;
+      CenterLevelList   Reserved_; // 透過 FreeFull() 的歸還, 或 InitLevel() 建立的備用緩衝.
       CenterLevelList   Recycle_;  // 尚未整理的歸還, 每個 FreeMemList 數量不定.
-      size_t            ReservedCount_{3};
-      size_t            RequiredCount_{0};
+      size_t            ReservedCount_{4}; // 預設 or 透過 MemBlockInit() 設定的最少串列保留數量.
+      size_t            RequiredCount_{0}; // 每個 thread 會要求增加一個保留數量.
    };
    using CenterLevel = MustLock<CenterLevelImpl, SpinBusy>;
 
@@ -137,6 +137,8 @@ class MemBlockCenter : public intrusive_ref_counter<MemBlockCenter> {
 
    static void EmitOnTimer(TimerEntry* timer, TimeStamp now);
    DataMemberEmitOnTimer<&MemBlockCenter::EmitOnTimer> Timer_;
+
+   void InitLevel(unsigned lvidx, CenterLevel::Locker& lvCenter);
 public:
    MemBlockCenter();
    ~MemBlockCenter();

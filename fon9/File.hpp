@@ -158,6 +158,7 @@ public:
    Result Append(StrView buf) {
       return this->Append(buf.begin(), buf.size());
    }
+   /// 如果 outbuf 包含多個 block, 並且可能在多個 threads 同時呼叫: 應考慮使用 FileAppender.
    Result Append(DcQueueList& outbuf);
 
    /// 強迫寫入儲存媒體.

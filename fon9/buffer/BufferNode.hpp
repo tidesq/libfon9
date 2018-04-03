@@ -156,7 +156,7 @@ fon9_WARN_DISABLE_PADDING;
 /// \ingroup Buffer
 /// 在 Buffer 消費完此節點時, 會呼叫 OnBufferConsumed(); 然後才會移除&釋放此節點.
 /// 可用於自訂「資料消費之後」的行為.
-/// 用法範例可參考: BufferNodeWaiter, LogFile::TimeNode, LogFile::ConfigNode, LogFile::HighWaterNode
+/// 用法範例可參考: BufferNodeWaiter, FileAppender::NodeReopen, FileAppender::NodeCheckRotateTime;
 class fon9_API BufferNodeVirtual : public BufferNode {
    fon9_NON_COPY_NON_MOVE(BufferNodeVirtual);
    using base = BufferNode;

@@ -70,12 +70,10 @@ typedef void (*FnLogWriter) (const LogArgs& logArgs, BufferList&& buf);
 /// 設定 Log 訊息的最後寫入函式, 預設: 寫到 stdout(預設值不是 thread safe: 可能會 interlace)
 /// 如果 fnLogWriter = nullptr 則還原為預設 stdout 輸出.
 /// NOT thread safe!
-fon9_API void SetLogWriter(FnLogWriter fnLogWriter);
-
+fon9_API void SetLogWriter(FnLogWriter fnLogWriter, TimeZoneOffset tzadj);
 /// \ingroup Misc
-/// 如果現在的 LogWriter == fnLogWriter, 則還原為預設 stdout 輸出.
-/// NOT thread safe!
-fon9_API void ResetLogWriter(FnLogWriter fnLogWriter);
+/// 如果現在的 LogWriter == fnLogWriter, 則還原成預設值: 寫到 stdout.
+fon9_API void UnsetLogWriter(FnLogWriter fnLogWriter);
 
 /// \ingroup Misc
 /// 把 buf 寫入 log: 透過 SetLogWriter() 設定的 log 寫入函式.
@@ -101,7 +99,8 @@ enum {
 #define fon9_LOG(level, ...) do {                           \
    if (fon9_UNLIKELY(level >= fon9::LogLevel_)) {           \
       fon9::RevBufferList rbuf_{fon9::kLogBlockNodeSize};   \
-      fon9::RevPrint(rbuf_, __VA_ARGS__, '\n');             \
+      fon9::RevPutChar(rbuf_, '\n');                        \
+      fon9::RevPrint(rbuf_, __VA_ARGS__);                   \
       fon9::LogWrite(level, std::move(rbuf_));              \
    }                                                        \
 } while(0)
@@ -130,6 +129,10 @@ enum {
 #define fon9_LOG_FATAL(...)  fon9_LOG(fon9::LogLevel::Fatal, __VA_ARGS__)
 
 #define fon9_LOG_ThrRun(...) fon9_LOG_IMP(__VA_ARGS__)
+
+// fon9 內部使用: GetDefaultTimerThread(); GetDefaultThreadPool(); 的 ThrRun() 等候 Log system 備妥.
+extern void (*gWaitLogSystemReady)();
+extern void AddLogHeader(RevBufferList& rbuf, TimeStamp tm, LogLevel level);
 
 }// namespace
 #endif//__fon9_Log_hpp__

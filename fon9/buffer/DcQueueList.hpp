@@ -89,6 +89,11 @@ public:
          return this->GetCurrBlockSize() + CalcDataSize(node->GetNext());
       return 0;
    }
+
+   size_t GetNodeCount() const {
+      return this->BlockList_.size();
+   }
+
    /// 一次取得數個資料區塊.
    /// 透過 fon9_PutIoVectorElement(T* piov, void* dat, size_t datsz); 設定資料區塊位置&大小.
    /// \return 傳回取出的區塊數量.
@@ -131,6 +136,8 @@ auto DeviceOutputIovec(DcQueueList& buf, IoVec (&iov)[IoVecMaxN], FnWriter fnWri
          buf.ConsumeErr(res.GetError());
          return res;
       }
+      if (res.GetResult() == 0)
+         return Outcome{wsz};
       wsz += res.GetResult();
       buf.PopConsumed(res.GetResult());
    }

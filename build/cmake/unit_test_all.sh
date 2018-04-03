@@ -29,3 +29,8 @@ $OUTPUT_DIR/Buffer_UT
 $OUTPUT_DIR/MemBlock_UT
 $OUTPUT_DIR/File_UT
 $OUTPUT_DIR/TimedFileName_UT
+
+rm -rf ./logs
+rm -rf /tmp/*log
+rm -rf /tmp/*txt
+$OUTPUT_DIR/LogFile_UT

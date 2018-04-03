@@ -47,8 +47,8 @@ public:
 
 /// \ingroup Thrs
 /// 控制一次只會有一個 thread 執行 Worker，但是允許任意 thread 要求 Worker 做事。
-/// - 透過 Worker<> 通知 WorkContentController 執行、結束。
-/// - 管制 WorkContentController::TakeCall() 不會有重複進入的情況。
+/// - Multi Producer: 透過 Worker<> 通知 WorkContentController 執行、結束。
+/// - Single Consumer: 管制 WorkContentController::TakeCall() 不會有重複進入的情況。
 ///
 /// \tparam WorkContentController 必須提供(可參考 ThreadController_UT.cpp):
 ///   \code

@@ -37,25 +37,32 @@ static void LogWriteToStdout(const LogArgs& /*logArgs*/, BufferList&& buf) {
    }
    assert(dcQueue.empty());
 }
-static FnLogWriter   FnLogWriter_ = &LogWriteToStdout;
+static FnLogWriter      FnLogWriter_ = &LogWriteToStdout;
+static TimeZoneOffset   LogTimeZoneAdjust_;
+void (*gWaitLogSystemReady)();
 
-fon9_API void ResetLogWriter(FnLogWriter fnLogWriter) {
-   if (FnLogWriter_ == fnLogWriter)
-      FnLogWriter_ = &LogWriteToStdout;
-}
-
-fon9_API void SetLogWriter(FnLogWriter fnLogWriter) {
+fon9_API void SetLogWriter(FnLogWriter fnLogWriter, TimeZoneOffset tzadj) {
    FnLogWriter_ = fnLogWriter ? fnLogWriter : &LogWriteToStdout;
+   LogTimeZoneAdjust_ = tzadj;
+}
+fon9_API void UnsetLogWriter(FnLogWriter fnLogWriter) {
+   if (FnLogWriter_ == fnLogWriter) {
+      FnLogWriter_ = &LogWriteToStdout;
+      LogTimeZoneAdjust_ = TimeZoneOffset{};
+   }
 }
 
 fon9_API void LogWrite(const LogArgs& logArgs, BufferList&& buf) {
    FnLogWriter_(logArgs, std::move(buf));
 }
 
+void AddLogHeader(RevBufferList& rbuf, TimeStamp tm, LogLevel level) {
+   RevPrint(rbuf, ThisThread_.GetThreadIdStr(), GetLevelStr(level));
+   RevPut_Date_Time_us(rbuf, tm);
+}
 fon9_API void LogWrite(LogLevel level, RevBufferList&& rbuf) {
    LogArgs logArgs{level};
-   RevPrint(rbuf, ThisThread_.GetThreadIdStr(), GetLevelStr(level));
-   RevPut_Date_Time_us(rbuf, logArgs.Time_);
+   AddLogHeader(rbuf, logArgs.Time_ + LogTimeZoneAdjust_, level);
    FnLogWriter_(logArgs, rbuf.MoveOut());
 }
 

@@ -71,8 +71,8 @@ public:
                     "'&Outcome.Result_' != '&Outcome.Error_'");
    }
 
-   // Outcome() : St_{OutcomeSt::NoValue} {}
-   Outcome() = delete;
+   Outcome() : St_{OutcomeSt::NoValue} {
+   }
 
    explicit Outcome(const ResultT& r) : St_{OutcomeSt::Result} {
       fon9::InplaceNew<ResultT>(&this->Result_, r);
@@ -237,6 +237,16 @@ public:
    }
 };
 fon9_WARN_POP;
+
+template <class RevBuffer, class ResultT, class ErrorT>
+inline void RevPrint(RevBuffer& rbuf, const Outcome<ResultT, ErrorT>& oc) {
+   if (oc.IsError())
+      RevPrint(rbuf, "err=", oc.GetError());
+   else if (oc.HasResult())
+      RevPrint(rbuf, "result=", oc.GetResult());
+   else
+      RevPrint(rbuf, "no result");
+}
 
 } // namespace
 #endif//__fon9_Outcome_hpp__

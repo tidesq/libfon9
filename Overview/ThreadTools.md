@@ -109,7 +109,7 @@ public:
 class MyObject {
    fon9_NON_COPY_NON_MOVE(MyObject);
    static void EmitOnTimer(fon9::TimerEntry* timer, fon9::TimeStamp now) {
-      MyObject* pthis = fon9::ContainerOf(*static_cast<decltype(MyObject::Timer_)*>(timer), &MyObject::Timer_);
+      MyObject& rthis = fon9::ContainerOf(*static_cast<decltype(MyObject::Timer_)*>(timer), &MyObject::Timer_);
       // 處理 Timer 事件...
    }
    fon9::DataMemberEmitOnTimer<&MyObject::EmitOnTimer> Timer_;
@@ -135,7 +135,7 @@ class MyObject {
       fon9_NON_COPY_NON_MOVE(Timer);
       using base = fon9::DataMemberTimer;
       virtual void EmitOnTimer(fon9::TimeStamp now) override {
-         MyObject* owner = fon9::ContainerOf(*this, &MyObject::Timer_);
+         MyObject& owner = fon9::ContainerOf(*this, &MyObject::Timer_);
          // ... Timer_ 觸發後, 執行這裡.
       }
    public:

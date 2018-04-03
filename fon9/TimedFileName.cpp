@@ -5,57 +5,58 @@
 
 namespace fon9 {
 
-void TimeChecker::Reset(TimeScale tmScale, TimeStamp tm, TimeZoneOffset tzadj) {
-   this->Time_ = tm;
-   tm += tzadj;
-   this->YMDHMS_ = ToYYYYMMDDHHMMSS(tm);
-   if (tmScale > TimeScale::No)
-      this->YMDHMS_ /= static_cast<DateTime14T>(tmScale);
+void TimeChecker::Reset(TimeStamp tm) {
+   this->UtcTime_ = tm;
+   tm += this->TimeZoneOffset_;
+   this->AdjustedYMDHMS_ = ToYYYYMMDDHHMMSS(tm);
+   if (this->Scale_ > TimeScale::No)
+      this->AdjustedYMDHMS_ /= static_cast<DateTime14T>(this->Scale_);
 }
 
-bool TimeChecker::CheckTime(TimeScale tmScale, TimeStamp tm, TimeZoneOffset tzadj) {
-   if (tmScale <= TimeScale::No) {
-      if (this->Time_ != TimeStamp{})
+bool TimeChecker::CheckTime(TimeStamp tm) {
+   if (this->Scale_ <= TimeScale::No) {
+      if (this->UtcTime_ != TimeStamp{})
          return false;
-      this->Time_ = tm;
+      this->UtcTime_ = tm;
       return true;
    }
-   TimeInterval difs = tm - this->Time_;
+   TimeInterval difs = tm - this->UtcTime_;
    if (TimeInterval_Second(-60) < difs && difs <= TimeInterval{})
       // 時間小幅往前, 視為誤差, 不改變現在狀態.
       return false;
-   this->Time_ = tm;
-   tm += tzadj;
-   DateTime14T ymdhms = ToYYYYMMDDHHMMSS(tm) / static_cast<DateTime14T>(tmScale);
-   if (this->YMDHMS_ == ymdhms)
+   this->UtcTime_ = tm;
+   tm += this->TimeZoneOffset_;
+   DateTime14T ymdhms = ToYYYYMMDDHHMMSS(tm) / static_cast<DateTime14T>(this->Scale_);
+   if (this->AdjustedYMDHMS_ == ymdhms)
       return false;
-   this->YMDHMS_ = ymdhms;
+   this->AdjustedYMDHMS_ = ymdhms;
    return true;
 }
 
 //--------------------------------------------------------------------------//
 
-TimedFileName::TimedFileName(std::string fmt, TimeScale tscale)
-   : FnFormat_{std::move(fmt)}
-   , Scale_{tscale} {
+TimedFileName::TimedFileName(std::string fmtFileName, TimeScale tmScale)
+   : FmtFileName_{std::move(fmtFileName)} {
    StrView tmfmt;
-   if (this->FnFormat_.GetArgIdFormat(0u, tmfmt))
-      this->TimeZoneOffset_ = FmtTS{tmfmt}.TimeZoneOffset_;
+   TimeZoneOffset tzadj;
+   if (this->FmtFileName_.GetArgIdFormat(0u, tmfmt))
+      tzadj = FmtTS{tmfmt}.TimeZoneOffset_;
+   this->TimeChecker_.Reset(tmScale, tzadj);
 }
 bool TimedFileName::RebuildFileName(TimeStamp tm) {
    this->SeqNo_ = 0;
-   this->TimeChecker_.Reset(this->Scale_, tm, this->TimeZoneOffset_);
+   this->TimeChecker_.Reset(tm);
    return this->RebuildFileName();
 }
 bool TimedFileName::CheckTime(TimeStamp tm) {
-   if (!this->TimeChecker_.CheckTime(this->Scale_, tm, this->TimeZoneOffset_))
+   if (!this->TimeChecker_.CheckTime(tm))
       return false;
    if (!this->RebuildFileName()) { // 時間變了, 但檔名沒變: 檔名格式與 Scale_ 不搭配!
-      if (this->FnFormat_.GetMaxArgId() >= 1) // 可以依靠 SeqNo 來改變檔名.
+      if (this->FmtFileName_.GetMaxArgId() >= 1) // 可以依靠 SeqNo 來改變檔名.
          return this->AddSeqNo();
       return false;
    }
-   if (this->SeqNo_ != 0 && this->FnFormat_.GetMaxArgId() >= 1) {
+   if (this->SeqNo_ != 0 && this->FmtFileName_.GetMaxArgId() >= 1) {
       this->SeqNo_ = 0;
       this->RebuildFileName();
    }
@@ -63,7 +64,7 @@ bool TimedFileName::CheckTime(TimeStamp tm) {
 }
 bool TimedFileName::RebuildFileName() {
    RevBufferList   rbuf{128};
-   this->FnFormat_(rbuf, this->TimeChecker_.GetTime(), this->SeqNo_);
+   this->FmtFileName_(rbuf, this->TimeChecker_.GetUtcTime(), this->SeqNo_);
    std::string fnNew = BufferTo<std::string>(rbuf.MoveOut());
    if (this->FileName_ == fnNew)
       return false;

@@ -60,6 +60,9 @@ extern "C" {
                   4371 /* 'std::_Pmf_wrap<...>' : layout of class may have changed from a previous version of the compiler due to better packing of member 'std::_Pmf_wrap<...>::_Mypmf' */ \
                   4365 /* 'return' : conversion from 'bool' to 'BOOLEAN', signed / unsigned mismatch */ \
                   4574 /* 'INCL_WINSOCK_API_TYPEDEFS' is defined to be '0': did you mean to use '#if INCL_WINSOCK_API_TYPEDEFS'? */ \
+                  4355 /* 'this': used in base member initializer list */ \
+                  5026 /* move constructor was implicitly defined as deleted */ \
+                  5027 /* move assignment operator was implicitly defined as deleted */ \
                )
       #define fon9_AFTER_INCLUDE_STD      fon9_MSC_WARN_POP
       #define fon9_WARN_DISABLE_PADDING   fon9_MSC_WARN_DISABLE(4820)

@@ -22,6 +22,9 @@ set(fon9src
  File.cpp
  FilePath.cpp
  TimedFileName.cpp
+ Appender.cpp
+ FileAppender.cpp
+ LogFile.cpp
  
  buffer/MemBlock.cpp
  buffer/BufferNode.cpp
@@ -71,3 +74,6 @@ target_link_libraries(File_UT fon9_s)
 
 add_executable(TimedFileName_UT TimedFileName_UT.cpp)
 target_link_libraries(TimedFileName_UT fon9_s)
+
+add_executable(LogFile_UT LogFile_UT.cpp)
+target_link_libraries(LogFile_UT fon9_s)

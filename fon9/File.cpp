@@ -147,9 +147,16 @@ File::Result File::Write(PosType offset, const void* buf, size_t count) {
    fon9_File_CheckArgs(this, buf);
    return PosWrite(this->Fdr_.GetFD(), buf, count, offset);
 }
+
+#define fon9_File_CheckIsOpened(fptr, outbuf) \
+   if (fon9_UNLIKELY(!fptr->IsOpened())) { \
+      ErrC errc{std::make_error_condition(std::errc::bad_file_descriptor)}; \
+      outbuf.ConsumeErr(errc); \
+      return errc; \
+   }
+//------------------
 File::Result File::Write(PosType offset, DcQueueList& outbuf) {
-   if (!this->IsOpened())
-      return std::make_error_condition(std::errc::bad_file_descriptor);
+   fon9_File_CheckIsOpened(this, outbuf);
    return PosWrite(this->Fdr_, outbuf, offset);
 }
 //----------------------------------------------------------------------
@@ -165,8 +172,7 @@ File::Result File::Append(const void* buf, size_t count) {
    return AppWrite(this->Fdr_.GetFD(), buf, count);
 }
 File::Result File::Append(DcQueueList& outbuf) {
-   if (!this->IsOpened())
-      return std::make_error_condition(std::errc::bad_file_descriptor);
+   fon9_File_CheckIsOpened(this, outbuf);
    // 避免在處理 outbuf 的過程中重新開檔(例: LogFile 透過特殊 BufferNode 處理重新開檔),
    // 造成 fd 的改變, 所以這裡要傳遞 this->Fdr_
    return AppWrite(this->Fdr_, outbuf);

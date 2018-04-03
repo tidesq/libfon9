@@ -17,7 +17,9 @@ static std::array<size_t, kMemBlockLevelCount> MemBlockLevelMaxNodeCount_{
 
 //--------------------------------------------------------------------------//
 namespace impl {
-static const TimeInterval  kMemBlockCenter_CheckInterval{TimeInterval_Millisecond(200)};
+// kMemBlockCenter_CheckInterval: MemBlock 整理間隔。
+// 不用太頻繁，因為若瞬間有大用量，則應暫時保留較多的緩衝。若用量不大，也沒必要頻繁的整理。
+static const TimeInterval  kMemBlockCenter_CheckInterval{TimeInterval_Millisecond(2000)};
 
 MemBlockCenter::MemBlockCenter() : Timer_{GetDefaultTimerThread()} {
    Timer_.RunAfter(TimeInterval{});
@@ -63,6 +65,8 @@ void MemBlockCenter::Recycle(TCacheLevelPools& levels) {
          if (cnode2)
             lvCenter->Recycle_.push_front(cnode2);
          --lvCenter->RequiredCount_;
+         if (cnode1 || cnode2)
+            this->InitLevel(lvidx, lvCenter);
       }
       ++lvidx;
    }
@@ -77,13 +81,9 @@ static bool FreeMemListMerge(FreeMemList& dst, FreeMemList& src, size_t maxNodeC
    }
    return true;
 }
-void MemBlockCenter::InitLevel(unsigned lvidx, const size_t* reserveFreeListCount) {
-   CenterLevel::Locker lvCenter{this->Levels_[lvidx]};
-   if (reserveFreeListCount)
-      lvCenter->ReservedCount_ = *reserveFreeListCount;
-
+void MemBlockCenter::InitLevel(unsigned lvidx, CenterLevel::Locker& lvCenter) {
    size_t   count = (lvCenter->ReservedCount_ + lvCenter->RequiredCount_);
-   size_t   curr  = lvCenter->Reserved_.size();
+   size_t   curr = lvCenter->Reserved_.size();
    CenterLevelList recycle = std::move(lvCenter->Recycle_);
    if (curr > count) {
       CenterLevelList r2 = lvCenter->Reserved_.pop_front(curr - count);
@@ -112,6 +112,12 @@ void MemBlockCenter::InitLevel(unsigned lvidx, const size_t* reserveFreeListCoun
          recycle = std::move(lvCenter->Recycle_);
       lvCenter.unlock();
    }
+}
+void MemBlockCenter::InitLevel(unsigned lvidx, const size_t* reserveFreeListCount) {
+   CenterLevel::Locker lvCenter{this->Levels_[lvidx]};
+   if (reserveFreeListCount)
+      lvCenter->ReservedCount_ = *reserveFreeListCount;
+   this->InitLevel(lvidx, lvCenter);
 }
 
 void MemBlockCenter::EmitOnTimer(TimerEntry* timer, TimeStamp) {

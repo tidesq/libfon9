@@ -5,9 +5,11 @@
 * libfon9 是 **風言軟體工程有限公司** 獨力開發的「C++ 跨平台基礎建設」程式庫
 * 使用 C++11
   * Windows: VS 2015
+    * fon9/build/vs2015/fon9.sln
   * Linux:
     * gcc (Ubuntu 5.4.0-6ubuntu1~16.04.4) 5.4.0 20160609
     * cmake version 3.5.1
+    * fon9/build/cmake/build.sh
 * 跨平台，但不支援老舊的OS
 * 僅考慮 64 位元平台
 * 字串僅考慮 UTF8，source file 也使用 UTF8 編碼。
@@ -38,9 +40,20 @@
 ### [Signal/Slot (Observer, Subject/Subscriber, Event, Callback...)](Overview/Subr.md)
 ### [Buffer 機制](fon9/buffer)
 ### Log
+* [效率測試及比較](ext/logvs)
 * [fon9/Log.hpp](fon9/Log.hpp)
 * `fon9_LOG_TRACE(...)`、`fon9_LOG_DEBUG(...)`、`fon9_LOG_INFO(...)`...
 * 其中的 `...` 會使用 `RevPrint(rbuf, ...)` 建立訊息。
+* 預設使用 stdout 輸出 log 訊息，您可以使用底下函式開啟使用 log file
+[fon9/LogFile.hpp](fon9/LogFile.hpp)
+```c++
+File::Result InitLogWriteToFile(std::string fmtFileName,
+                                FileRotate::TimeScale tmScale,
+                                File::SizeType maxFileSize,
+                                size_t highWaterLevelNodeCount);
+```
+  * fmtFileName 格式 "{0}{1}", 參數0=時間(TimeStamp), 參數1=序號(正整數)。
+  * 若 fmtFileName 時間格式有設定 TimeZone, 例如: "{0:+8}", 則紀錄訊息的時間也會跟著調整。
 ### 返回值可包含錯誤碼: `Outcome<>`
 * [fon9/Outcome.hpp](fon9/Outcome.hpp)
 * `Outcome<Result, Error=ErrC>`

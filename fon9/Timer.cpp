@@ -149,6 +149,8 @@ bool TimerThread::RunTimer(Locker& timerThread) {
    return false;
 }
 void TimerThread::ThrRun(std::string timerName) {
+   if (gWaitLogSystemReady)
+      gWaitLogSystemReady();
    fon9_LOG_ThrRun("TimerThread.ThrRun|name=", timerName);
    {
       Locker   timerThread{this->TimerController_};
