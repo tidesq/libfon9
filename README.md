@@ -5,11 +5,11 @@
 * libfon9 是 **風言軟體工程有限公司** 獨力開發的「C++ 跨平台基礎建設」程式庫
 * 使用 C++11
   * Windows: VS 2015
-    * fon9/build/vs2015/fon9.sln
+    * `./build/vs2015/fon9.sln`
   * Linux:
     * gcc (Ubuntu 5.4.0-6ubuntu1~16.04.4) 5.4.0 20160609
     * cmake version 3.5.1
-    * fon9/build/cmake/build.sh
+    * `./build/cmake/build.sh`
 * 跨平台，但不支援老舊的OS
 * 僅考慮 64 位元平台
 * 字串僅考慮 UTF8，source file 也使用 UTF8 編碼。

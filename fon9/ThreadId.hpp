@@ -12,15 +12,16 @@ struct ThreadId {
    using IdType = uintptr_t;
    /// Windows=GetCurrentThreadId(), Linux=pthread_self()
    IdType   ThreadId_;
-   /// ThreadId_ 轉成字串: 預設 = 從尾端算起 " nnnnn"(10進位字串), 若超過5碼, 則自動擴展.
-   char     ThreadIdStr_[15];
    /// ThreadIdStr_ 不含 EOS 的長度.
    uint8_t  ThreadIdStrWidth_;
+   /// ThreadId_ 轉成字串: 預設 = 從前方算起 " nnnnn"(10進位字串, 長度最少為6包含開頭1空白), 若超過5碼, 則自動擴展.
+   /// 必定會有 EOS, 但不包含在 ThreadIdStrWidth_.
+   char     ThreadIdStr_[15];
 
    ThreadId();
 
    StrView GetThreadIdStr() const {
-      return StrView{this->ThreadIdStr_ + sizeof(this->ThreadIdStr_) - this->ThreadIdStrWidth_ - 1, this->ThreadIdStrWidth_};
+      return StrView{this->ThreadIdStr_, this->ThreadIdStrWidth_};
    }
 };
 

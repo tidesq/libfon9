@@ -3,8 +3,27 @@
 #ifndef __fon9_SinglyLinkedList_hpp__
 #define __fon9_SinglyLinkedList_hpp__
 #include "fon9/sys/Config.hpp"
+#include <atomic>
 
 namespace fon9 {
+
+template <class Node>
+inline void FreeList(Node* first) {
+   while (Node* curr = first) {
+      first = first->GetNext();
+      FreeNode(curr);
+   }
+}
+
+template <class Node>
+inline size_t CalcNodeCount(Node* node) {
+   size_t count = 0;
+   while (node) {
+      node = node->GetNext();
+      ++count;
+   }
+   return count;
+}
 
 /// \ingroup Misc
 /// - 僅提供在前端增加節點(push_front)的單向串鍊.
@@ -15,20 +34,6 @@ namespace fon9 {
 template <class Node>
 class SinglyLinkedList {
    fon9_NON_COPYABLE(SinglyLinkedList);
-   static void FreeList(Node* first) {
-      while (Node* curr = first) {
-         first = first->GetNext();
-         FreeNode(curr);
-      }
-   }
-   static size_t CalcNodeCount(Node* node) {
-      size_t count = 0;
-      while (node) {
-         node = node->GetNext();
-         ++count;
-      }
-      return count;
-   }
 
    Node*    Head_{nullptr};
    size_t   Count_{0};
@@ -250,6 +255,11 @@ public:
    using base::cfront;
    using base::empty;
    using base::size;
+
+   Node* ReleaseList() {
+      this->Back_ = nullptr;
+      return base::ReleaseList();
+   }
 };
 
 /// \ingroup Misc
@@ -268,6 +278,14 @@ class SinglyLinkedListNode {
 public:
    SinglyLinkedListNode() = default;
    DerivedT* GetNext() const { return this->Next_; }
+
+   // for lock-free singly linked list.
+   // after run: NewHead = [front ... back->next = OldHead]
+   friend inline void PushToHead(std::atomic<DerivedT*>& head, DerivedT* front, DerivedT* back) {
+      assert(back->Next_ == nullptr);
+      while (!head.compare_exchange_strong(back->Next_, front, std::memory_order_release, std::memory_order_relaxed)) {
+      }
+   }
 };
 
 } // namespace

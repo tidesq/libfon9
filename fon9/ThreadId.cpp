@@ -18,14 +18,12 @@ const thread_local ThreadId  ThisThread_;
 
 ThreadId::ThreadId() : ThreadId_{::GetCurrentThreadId()} {
    char* const pend = this->ThreadIdStr_ + sizeof(this->ThreadIdStr_);
-   char* pout = pend;
-   *--pout = 0;
-   pout = UIntToStrRev(pout, this->ThreadId_);
-   uint8_t w = static_cast<uint8_t>(pend - pout - 1);
-   while(w++ < 5)
-      *--pout = ' ';
-   *--pout = ' ';
-   this->ThreadIdStrWidth_ = w;
+   char*       pout = UIntToStrRev(pend, this->ThreadId_);
+   size_t      wlen = static_cast<size_t>(pend - pout);
+   this->ThreadIdStrWidth_ = static_cast<uint8_t>(wlen + 1);
+   this->ThreadIdStr_[0] = ' ';
+   memmove(this->ThreadIdStr_ + 1, pout, wlen);
+   *(this->ThreadIdStr_ + 1 + wlen) = '\0';
 }
 
 fon9_API const ThreadId& GetThisThreadId() {
