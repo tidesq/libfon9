@@ -152,12 +152,32 @@ void AsyncFileAppender::DisposeAsync() {
    this->Worker_.Dispose();
 }
 bool AsyncFileAppender::MakeCallNow(WorkContentLocker& lk) {
+   if (!lk->SetToAsyncTaking())
+      return true;
    lk.unlock();
-   if (this->use_count() == 0)// => 此時必定正在解構(或正要進行解構).
-      return false;           // 為了避免在解構時, 又呼叫 MakeCallNow() 造成重複解構!
-   intrusive_ptr_add_ref(this);
+
+   //>>>>>
+   //if (this->use_count() == 0)// => 此時必定正在解構(或正要進行解構).
+   //   return false;           // 為了避免在解構時, 又呼叫 MakeCallNow() 造成重複解構!
+   //(*) 如果在此時最後一個 ptr 死了...
+   //    最後這次的 MakeCallNow() 是哪來的呢? Timer?
+   //intrusive_ptr_add_ref(this);
+   //=====
+   //* 由於有 AsyncTaking 旗標的保護，所以這裡就不用判斷 use_count()==0 了!
+   //* 改成判斷 intrusive_ptr_add_ref() 的傳回值(加一之前的值):
+   //  如果加一前 ref counter == 0, 則表示 this 已經進入死亡程序，
+   //  此時不可執行 async，但保留 AsyncTaking==true: 讓後進者在 unlock() 之前就離開。
+   if (intrusive_ptr_add_ref(this) == 0)
+      return false;
+   // => 理論上, 應該要在解構過程等候 [此次MakeCallNow()的呼叫者(例如: LogFile 裡面的 Timer_)] 結束。
+   // => 這招只能用在只有一個額外 user(例如: LogFile 裡面的 Timer_) 的場合。
+   //<<<<<
+
    GetDefaultThreadPool().EmplaceMessage([this]() {
-      this->Worker_.TakeCall();
+      this->Worker_.GetWorkContent([this](WorkContentLocker& lk2) {
+         lk2->SetAsyncTaken();
+         this->Worker_.TakeCall(lk2);
+      });
       intrusive_ptr_release(this);
    });
    return true;

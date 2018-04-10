@@ -159,7 +159,7 @@ void run_log_benchmark(Function&& fn) {
    uint64_t sum = 0; for (auto v : latencies) { sum += v; }
    fon9::RevBufferFixedSize<1024> rbuf;
    rbuf.RewindEOS();
-   fon9::RevFormat(rbuf, "{0:,11}|{1:,11}|{2:,11}|{3:,11}|{4:,11}|{5:,11}|{6:,11.0}|",
+   fon9::RevFormat(rbuf, "{0:,11}|{1:,11}|{2:,11}|{3:,11}|{4:,11}|{5:,11}|{6:,11.0}|\n",
                   latencies[static_cast<size_t>(iterations * 0.5)],
                   latencies[static_cast<size_t>(iterations * 0.75)],
                   latencies[static_cast<size_t>(iterations * 0.9)],
@@ -167,7 +167,7 @@ void run_log_benchmark(Function&& fn) {
                   latencies[static_cast<size_t>(iterations * 0.999)],
                   latencies[latencies.size() - 1],
                   fon9::Decimal<int64_t, 6>(static_cast<double>(sum) / static_cast<double>(latencies.size())));
-   std::cout << rbuf.GetCurrent() << std::endl;
+   std::cout << rbuf.GetCurrent();
 }
 
 template < typename Function >

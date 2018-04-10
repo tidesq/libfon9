@@ -20,10 +20,12 @@ ThreadId::ThreadId() : ThreadId_{::GetCurrentThreadId()} {
    char* const pend = this->ThreadIdStr_ + sizeof(this->ThreadIdStr_);
    char*       pout = UIntToStrRev(pend, this->ThreadId_);
    size_t      wlen = static_cast<size_t>(pend - pout);
-   this->ThreadIdStrWidth_ = static_cast<uint8_t>(wlen + 1);
-   this->ThreadIdStr_[0] = ' ';
-   memmove(this->ThreadIdStr_ + 1, pout, wlen);
-   *(this->ThreadIdStr_ + 1 + wlen) = '\0';
+   while (++wlen <= 5)
+      *--pout = ' ';
+   *--pout = ' ';
+   this->ThreadIdStrWidth_ = static_cast<uint8_t>(wlen);
+   memmove(this->ThreadIdStr_, pout, wlen);
+   *(this->ThreadIdStr_ + wlen) = '\0';
 }
 
 fon9_API const ThreadId& GetThisThreadId() {

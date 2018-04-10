@@ -16,7 +16,7 @@
 // fonwin:[ from boost 1.58
 #include <assert.h>
 #define BOOST_SP_NO_SP_CONVERTIBLE
-#define BOOST_NOEXCEPT
+#define BOOST_NOEXCEPT     noexcept
 #define BOOST_NO_CXX11_NULLPTR
 #define BOOST_NO_IOSTREAM
 #define BOOST_ASSERT(x)    assert(x)

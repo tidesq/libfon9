@@ -17,6 +17,7 @@ enum class WorkerState {
 fon9_WARN_DISABLE_PADDING;
 class WorkContentBase {
    WorkerState State_{WorkerState::Sleeping};
+   bool        IsAsyncTaking_{false};
 public:
    WorkerState GetWorkerState() const {
       return this->State_;
@@ -42,6 +43,17 @@ public:
          return true;
       }
       return false;
+   }
+
+   bool SetToAsyncTaking() {
+      if (this->IsAsyncTaking_)
+         return false;
+      this->IsAsyncTaking_ = true;
+      return true;
+   }
+   void SetAsyncTaken() {
+      assert(this->IsAsyncTaking_ == true);
+      this->IsAsyncTaking_ = false;
    }
 };
 
