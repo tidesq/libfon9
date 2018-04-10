@@ -86,6 +86,8 @@
     <ClInclude Include="..\..\..\fon9\buffer\MemBlockImpl.hpp" />
     <ClInclude Include="..\..\..\fon9\buffer\RevBuffer.hpp" />
     <ClInclude Include="..\..\..\fon9\buffer\RevBufferList.hpp" />
+    <ClInclude Include="..\..\..\fon9\CharAry.hpp" />
+    <ClInclude Include="..\..\..\fon9\DyObj.hpp" />
     <ClInclude Include="..\..\..\fon9\ErrC.hpp" />
     <ClInclude Include="..\..\..\fon9\Fdr.hpp" />
     <ClInclude Include="..\..\..\fon9\File.hpp" />
@@ -133,6 +135,7 @@
     <ClInclude Include="..\..\..\fon9\TimeStamp.hpp" />
     <ClInclude Include="..\..\..\fon9\ToStr.hpp" />
     <ClInclude Include="..\..\..\fon9\ToStrFmt.hpp" />
+    <ClInclude Include="..\..\..\fon9\Trie.hpp" />
     <ClInclude Include="..\..\..\fon9\TypeName.hpp" />
     <ClInclude Include="..\..\..\fon9\Utility.hpp" />
     <ClInclude Include="..\..\..\fon9\WaitPolicy.hpp" />

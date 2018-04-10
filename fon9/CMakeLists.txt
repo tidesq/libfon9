@@ -42,6 +42,9 @@ target_link_libraries(fon9 pthread rt dl)
 add_executable(Subr_UT Subr_UT.cpp)
 target_link_libraries(Subr_UT pthread)
 
+add_executable(Trie_UT Trie_UT.cpp)
+target_link_libraries(Trie_UT fon9_s)
+
 add_executable(StrView_UT StrView_UT.cpp)
 target_link_libraries(StrView_UT)
 

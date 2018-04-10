@@ -3,7 +3,10 @@ libfon9 TODO list
 
 ---------------------------------------
 ## 演算法/容器
-### [Trie](https://zh.wikipedia.org/wiki/Trie)
+### LevelArray
+---------------------------------------
+## Misc
+### SchTask
 ---------------------------------------
 ## 檔案/儲存/載入
 ### Serialize/Deserialize

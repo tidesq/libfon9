@@ -245,6 +245,15 @@
     <ClInclude Include="..\..\..\fon9\buffer\FwdBufferList.hpp">
       <Filter>Header Files\buffer</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\Trie.hpp">
+      <Filter>Header Files\_base\_Container / Algorithm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\DyObj.hpp">
+      <Filter>Header Files\_base\_Container / Algorithm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\CharAry.hpp">
+      <Filter>Header Files\_base\_AlNum / StrTools</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />

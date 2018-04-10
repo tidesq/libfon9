@@ -34,7 +34,7 @@
 ## 演算法/容器
 ### [SortedVector](fon9/SortedVector.hpp)
 ### [SinglyLinkedList](fon9/SinglyLinkedList.hpp)
-### [Trie](https://zh.wikipedia.org/wiki/Trie)
+### [Trie](Overview/Trie.md)
 ---------------------------------------
 ## 一般工具
 ### [Signal/Slot (Observer, Subject/Subscriber, Event, Callback...)](Overview/Subr.md)
