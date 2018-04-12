@@ -1,7 +1,7 @@
 ﻿# fon9 library - Thread Tools
 
 ## `fon9::MustLock`
-[fon9/MustLock.hpp](../fon9/MustLock.hpp)
+* [`fon9/MustLock.hpp`](../fon9/MustLock.hpp)
 * 當某個物件需要提供 thread safe 特性時，一般而言都需要用 mutex 來保護，通常寫法如下，
   但這樣的缺點非常明顯：每次要使用 `obj_` 時，都要「記得」使用 lock，一旦有地方遺漏了，就會造成難以發現的 bug。
   * 宣告:
@@ -30,43 +30,43 @@
     * 可以避免誤用「容易有錯誤認知的 member」，例如： `std::string::empty() const` 是 thread safe 嗎?
   
 ## `fon9::DummyMutex`
-[fon9/DummyMutex.hpp](../fon9/DummyMutex.hpp)
+* [`fon9/DummyMutex.hpp`](../fon9/DummyMutex.hpp)
 * 提供 mutex 相容的介面，但沒有鎖住任何東西。
 
 ## SleepPolicy
-[fon9/SleepPolicy.hpp](../fon9/SleepPolicy.hpp)
+* [`fon9/SleepPolicy.hpp`](../fon9/SleepPolicy.hpp)
 * `fon9::BusySleepPolicy`
 * `fon9::YieldSleepPolicy`
 * `fon9::NanoSleepPolicy<ns>`
 
 ## `fon9::SpinMutex<SleepPolicy>`
-[fon9/SpinMutex.hpp](../fon9/SpinMutex.hpp)
+* [`fon9/SpinMutex.hpp`](../fon9/SpinMutex.hpp)
 * `using SpinBusy = SpinMutex<BusySleepPolicy>;`
 
 ## WaitPolicy
-[fon9/WaitPolicy.hpp](../fon9/WaitPolicy.hpp)
+* [`fon9/WaitPolicy.hpp`](../fon9/WaitPolicy.hpp)
 * `fon9::WaitPolicy_CV`
 * `fon9::WaitPolicy_Spin<MutexT>`
 * `using SpinBusy = SpinMutex<BusySleepPolicy>;`
 
 ## `fon9::CountDownLatch`
-[fon9/CountDownLatch.hpp](../fon9/CountDownLatch.hpp)
+* [`fon9/CountDownLatch.hpp`](../fon9/CountDownLatch.hpp)
 * 等候指定數量的倒數。
 
 ## `fon9::CyclicBarrier`
-[fon9/CyclicBarrier.hpp](../fon9/CyclicBarrier.hpp)
+* [`fon9/CyclicBarrier.hpp`](../fon9/CyclicBarrier.hpp)
 * 當同時等候中的 Threads 到達指定數量時，則喚醒所有等候者。
 
 ## `fon9::ThreadController<ProtectedT, WaitPolicy>`
-[fon9/ThreadController.hpp](../fon9/ThreadController.hpp)
+* [`fon9/ThreadController.hpp`](../fon9/ThreadController.hpp)
 * 一般 thread 執行時的資料保護、流程控制。
 
-## `Worker<WorkContentController>`
-[fon9/Worker.hpp](../fon9/Worker.hpp)
+## `fon9::Worker<WorkContentController>`
+* [`fon9/Worker.hpp`](../fon9/Worker.hpp)
 * 控制一次只會有一個 thread 執行 Worker，但是允許任意 thread 要求 Worker 做事。
 
 ## MessageQueue
-[fon9/MessageQueue.hpp](../fon9/MessageQueue.hpp)
+* [`fon9/MessageQueue.hpp`](../fon9/MessageQueue.hpp)
 ```c++
 template <
    class MessageHandlerT,
@@ -78,16 +78,16 @@ class MessageQueueService;
 ```
 
 ## `fon9::GetDefaultThreadPool()`
-[fon9/DefaultThreadPool.hpp](../fon9/DefaultThreadPool.hpp)
+* [`fon9/DefaultThreadPool.hpp`](../fon9/DefaultThreadPool.hpp)
 * 取得 fon9 提供的一個 thread pool.
   * 一般用於不急迫, 但比較花時間的簡單工作, 例如: 寫檔、domain name 查找...
   * 程式結束時, 剩餘的工作會被拋棄!
 
 ## Timer 計時器
-[fon9/Timer.hpp](../fon9/Timer.hpp)
+* [`fon9/Timer.hpp`](../fon9/Timer.hpp)
 * 由於 Timer 共用 TimerThread，所以若 OnTimer 事件的執行時間太久，
   則會影響下一個 Timer，可能會超過預計的執行時間。
-### 必須先建立一個 `fon9::TimerThread` 讓 Timer 觸發的 thread。
+### 必須先建立一個讓 Timer 寄居的 thread: `fon9::TimerThread`
 * `fon9::TimerThread& fon9::GetDefaultTimerThread();` 可取得 fon9 預設的 TimerThread
 ### 允許 MyObject 在觸發前死亡
 使用 `std::shared_ptr<MyObject>` + `fon9::TimerEntry_OwnerWP<MyObject, &MyObject::OnTimer>`

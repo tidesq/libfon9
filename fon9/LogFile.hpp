@@ -9,14 +9,14 @@ namespace fon9 {
 
 /// \ingroup Misc
 /// \param fmtFileName 格式 "{0}{1}", 參數0 = 時間(TimeStamp), 參數1 = 序號(正整數)。
-///   - 若 fmtFileName 時間格式有設定 TimeZone(e.g. "{0:+8}"), 則紀錄訊息的時間也會跟著調整。
+///   - 若 fmtFileName 時間格式有設定 TimeZone(e.g. "{0:+8}"), 則記錄訊息的時間也會跟著調整。
 /// \param tmScale 檔案時間切換刻度
 /// \param maxFileSize >0 時才有效
 ///   - 每次寫完 AppendBuffer 時檢查一次檔案大小, 超過此值則更換檔案, 檔名格式必須有{1}序號參數。
 ///   - 實際檔案大小可能會超過: 最後換檔前那次 AppendBuffer 的資料量。
 /// \param  highWaterLevelNodeCount > 0: 當尚未寫入的資料量超過 highWaterLevelNodeCount:
-///   - 等候資料消化?
-///   - 之後的資料會被拋棄?
+///   - fon9_LOG_() 會等候資料消化後才會返回。
+///   - TODO: 可選擇: 拋棄之後的log訊息.
 /// \return File::Open() 的結果.
 fon9_API File::Result InitLogWriteToFile(std::string fmtFileName,
                                          FileRotate::TimeScale tmScale,

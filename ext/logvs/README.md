@@ -1,6 +1,6 @@
 # fon9 log
 
-## 簡單的結果紀錄及思考
+## 簡單的結果記錄及思考
 http://fonwin.blogspot.tw/2018/04/c-logging-library-comparison.html
 
 ## [測試說明](https://docs.google.com/spreadsheets/d/17mGrTZJBR-xHcwqySYvliLJ6y65RJvC8qWiWO4Nb28U/edit#gid=1494936172)

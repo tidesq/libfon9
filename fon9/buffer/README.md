@@ -17,14 +17,14 @@ producer --> | buffer | --> | DcQueue | --> consumer
 * 例如：從 input device 讀入訊息。
 
 ### 根據資料的填入方向分成 2 類：
-#### 由後往前填入：[buffer/RevBuffer.hpp](RevBuffer.hpp)
+#### 由後往前填入：[`buffer/RevBuffer.hpp`](RevBuffer.hpp)
 * 大部分的情況下，資料從後往前填，才是建立輸出資料最有效率的方式。
 * `RevPrint(rbuf, value, ...);` or `RevPrint(rbuf, value, fmt, ...);`
-  * [fon9/RevPrint.hpp](../RevPrint.hpp)
+  * [`fon9/RevPrint.hpp`](../RevPrint.hpp)
 * `RevFormat(rbuf, format, ...);`
-  * [fon9/RevFormat.hpp](../RevFormat.hpp)
+  * [`fon9/RevFormat.hpp`](../RevFormat.hpp)
 
-#### 由前往後填入：[buffer/FwdBuffer.hpp](FwdBuffer.hpp)
+#### 由前往後填入：[`buffer/FwdBuffer.hpp`](FwdBuffer.hpp)
 * 在某些無法立即取得全部資料，但必須依序填入的情況，例：
   * 一次收到 n 筆下單要求，必須依序處理下單要求，然後一次ACK處理結果。
   * 接收資料時的緩衝。
@@ -37,12 +37,12 @@ producer --> | buffer | --> | DcQueue | --> consumer
 * 使用 malloc/realloc：當空間不足時重新分配，複製舊資料到新空間。
   * fon9 不提供此類方法。
 
-#### 使用記憶體串列：[buffer/BufferList.hpp](BufferList.hpp)
-[buffer/RevBufferList.hpp](RevBufferList.hpp)
+#### 使用記憶體串列：[`buffer/BufferList.hpp`](BufferList.hpp)
+* [`buffer/RevBufferList.hpp`](RevBufferList.hpp)
 * 這是 fon9 的主要作法。
 * 當空間不足時：分配新的 BufferNode，串到原本的 BufferList。
 * 可插入控制節點，得知資料的使用狀況。
-  * [buffer/BufferNodeWaiter.hpp](BufferNodeWaiter.hpp)
+  * 例如: [`buffer/BufferNodeWaiter.hpp`](BufferNodeWaiter.hpp)
 * BufferNode 使用 MemBlock 機制分配：
   * 每個 thread 建立一組 memory pool。
   * 當 thread 的 memory pool 用完時，跟 MemBlockCenter 分配一串 FeeeMemList。
@@ -52,8 +52,8 @@ producer --> | buffer | --> | DcQueue | --> consumer
 ---------------------------------------
 
 ## DcQueue：用來消費資料
-* [buffer/DcQueue.hpp](DcQueue.hpp)
-* [buffer/DcQueueList.hpp](DcQueueList.hpp)
+* [`buffer/DcQueue.hpp`](DcQueue.hpp)
+* [`buffer/DcQueueList.hpp`](DcQueueList.hpp)
 * 資料不一定連續
 * 可同時適用於 Reactor(Linux)、Proactor(Windows)
 

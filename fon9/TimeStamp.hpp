@@ -333,10 +333,9 @@ struct fon9_API FmtTS : public FmtDef {
 
    FmtTS() = default;
 
-   /// [ItemChars[char]][[+-TimeZoneOffset(spc)][width][.precision]]
-   /// - TimeZoneOffset 若使用 TimeZoneName 則必須加上「'」單引號ˇ.
-   /// - 如果尾端有 "." 或 ".0" 則自動小數位.
-   /// - 如果尾端沒有 ".precision" 則不顯示小數位.
+   /// [TsFmtItemChar[char]][[+-TimeZoneOffset(spc)][width][.precision]]
+   /// - TimeZoneOffset 若使用 TimeZoneName 則必須加上「'」單引號，例如： 'TW'
+   /// - 如果尾端有 "." 或 ".0" 則自動小數位, 如果尾端沒有 ".precision" 則不顯示小數位.
    FmtTS(StrView fmtstr);
 };
 fon9_MSC_WARN_POP;

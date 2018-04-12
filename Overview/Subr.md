@@ -1,5 +1,5 @@
 ﻿# fon9 library - 事件通知機制: Subr
-[fon9/Subr.hpp](../fon9/Subr.hpp)
+* [`fon9/Subr.hpp`](../fon9/Subr.hpp)
 ---------------------------------------
 ## 命名、相同的概念(不同的名稱)
 libfon9 採用 Subject 的概念來設計、命名。  
@@ -85,7 +85,7 @@ void Combine(CombinerT& combiner, ArgsT&&... args);
 
 ---------------------------------------
 ## benchmark
-* [fon9/Subr_UT.cpp](../fon9/Subr_UT.cpp)
+* [`fon9/Subr_UT.cpp`](../fon9/Subr_UT.cpp)
   * Hardware: HP ProLiant DL380p Gen8 / E5-2680 v2 @ 2.80GHz
   * OS: ESXi 6.5.0 Update 1 (Build 5969303) / VM: Windows server 2016(1607)  
     Compiler: MSVC 2015(VC 19.00.24215.1)
@@ -113,5 +113,6 @@ Subject<std::function(FnPtr)>              : 0.320089850 secs / 10,000,000 times
 Subject<struct Subr>                       : 0.321531892 secs / 10,000,000 times =  32.153189200 ns
 Subject<std::function(struct Subr)>        : 0.319457887 secs / 10,000,000 times =  31.945788700 ns
 ```
-* [signal slot benchmarks](https://github.com/NoAvailableAlias/signal-slot-benchmarks/tree/master/#performance)
-  * [點這兒看結果](../ext/sigslot/README.md)
+* [signal slot benchmarks 測試方法](https://github.com/NoAvailableAlias/signal-slot-benchmarks)
+  * [點這兒看結果](../ext/sigslot)
+  

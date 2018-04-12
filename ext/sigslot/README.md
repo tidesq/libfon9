@@ -1,4 +1,4 @@
-* 測試方法 [signal slot benchmarks](https://github.com/NoAvailableAlias/signal-slot-benchmarks/tree/master/#performance)
+* [signal slot benchmarks 測試方法](https://github.com/NoAvailableAlias/signal-slot-benchmarks)
 * Hardware: HP ProLiant DL380p Gen8 / E5-2680 v2 @ 2.80GHz
 * OS: ESXi 6.5.0 Update 1 (Build 5969303) / VM: Windows server 2016(1607)
 * Compiler: MSVC 2015(VC 19.00.24215.1)

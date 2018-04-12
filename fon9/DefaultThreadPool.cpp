@@ -23,7 +23,10 @@ fon9_API DefaultThreadPool& GetDefaultThreadPool() {
    struct DefaultThreadPoolImpl : public DefaultThreadPool, sys::OnWindowsMainExitHandle {
       fon9_NON_COPY_NON_MOVE(DefaultThreadPoolImpl);
       DefaultThreadPoolImpl() {
-         uint32_t threadCount = 4; // TODO: 從 getenv()、argv 取得參數?
+         // TODO: 從 getenv()、argv 取得參數?
+         // 目前只有 log file 用到, 以後可能有 DNS resolve...
+         uint32_t threadCount = 1;
+
          this->StartThread(threadCount, "fon9.DefaultThreadPool");
       }
       void OnWindowsMainExit_Notify() {
