@@ -54,6 +54,12 @@
     <Filter Include="Header Files\_base\_File">
       <UniqueIdentifier>{1cdb2047-f3de-40c4-a1b2-5d27b49ceba8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\io">
+      <UniqueIdentifier>{05d6ffd0-e46b-4906-9756-971a4ca6dfe5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\io">
+      <UniqueIdentifier>{79c89ba7-f364-4238-a048-1a4499d39168}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\sys\Config.h">
@@ -254,6 +260,27 @@
     <ClInclude Include="..\..\..\fon9\CharAry.hpp">
       <Filter>Header Files\_base\_AlNum / StrTools</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\Device.hpp">
+      <Filter>Header Files\io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\IoBase.hpp">
+      <Filter>Header Files\io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\Manager.hpp">
+      <Filter>Header Files\io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\Session.hpp">
+      <Filter>Header Files\io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\SimpleManager.hpp">
+      <Filter>Header Files\io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\AQueue.hpp">
+      <Filter>Header Files\_base\_Thread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\DeviceAsyncOp.hpp">
+      <Filter>Header Files\io</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -263,6 +290,7 @@
     <None Include="..\..\..\Overview\ThreadTools.md">
       <Filter>Header Files\_base\_Thread</Filter>
     </None>
+    <None Include="..\..\..\fon9\io\README.md" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\..\CMakeLists.txt" />
@@ -357,6 +385,18 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\FileAppender.cpp">
       <Filter>Source Files\_base\_File</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\Device.cpp">
+      <Filter>Source Files\io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\IoBase.cpp">
+      <Filter>Source Files\io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\Manager.cpp">
+      <Filter>Source Files\io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\Session.cpp">
+      <Filter>Source Files\io</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

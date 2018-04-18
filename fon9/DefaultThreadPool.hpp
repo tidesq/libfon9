@@ -10,7 +10,7 @@ namespace fon9 {
 /// 在 GetDefaultThreadPool() 裡面執行的單一作業。
 using DefaultThreadTask = std::function<void()>;
 struct DefaultThreadTaskHandler;
-using DefaultThreadPool = MessageQueueService<DefaultThreadTaskHandler, DefaultThreadTask>;
+using DefaultThreadPool = MessageQueue<DefaultThreadTaskHandler, DefaultThreadTask>;
 
 /// \ingroup Thrs
 /// 取得 fon9 提供的一個 thread pool.

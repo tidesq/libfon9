@@ -14,7 +14,7 @@ namespace fon9 {
 /// - 每個 thread 會建立一個 MessageHandlerT 用來處理訊息.
 /// - MessageHandlerT 必須提供:
 ///   - `typename MessageHandlerT::MessageType;`
-///   - `MessageHandlerT::MessageHandlerT(MessageQueueService&);`
+///   - `MessageHandlerT::MessageHandlerT(MessageQueue&);`
 ///   - 處理訊息, 底下函式三選一, 只能提供其中一種:
 ///      - 一次一筆
 ///         `void MessageHandlerT::OnMessage(MessageType&);`
@@ -22,7 +22,7 @@ namespace fon9 {
 ///         `void MessageHandlerT::OnMessage(MessageContainerT& container);`
 ///      - 一次一批, MessageHandlerT 自行取出訊息.
 ///         \code
-///            void MessageHandlerT::OnMessage(typename MessageQueueService::Locker& queue) {
+///            void MessageHandlerT::OnMessage(typename MessageQueue::Locker& queue) {
 ///               assert(this->ConsumingMessage_.empty());
 ///               this->ConsumingMessage_.swap(*queue);
 ///               queue.unlock(); // 這裡必須自行呼叫 unlock(); 然後再處理 this->ConsumingMessage_;
@@ -36,8 +36,8 @@ template <
    class MessageContainerT = std::deque<MessageT>,
    class WaitPolicy = WaitPolicy_CV
 >
-class MessageQueueService {
-   fon9_NON_COPY_NON_MOVE(MessageQueueService);
+class MessageQueue {
+   fon9_NON_COPY_NON_MOVE(MessageQueue);
    using QueueController = ThreadController<MessageContainerT, WaitPolicy>;
    using LockerT = typename QueueController::Locker;
    using ThreadPool = std::vector<std::thread>;
@@ -88,8 +88,8 @@ class MessageQueueService {
       }
    }
 
-   static void ThrRun(std::string thrName, MessageQueueService* pthis) {
-      fon9_LOG_ThrRun("MessageQueueService.ThrRun|name=", thrName);
+   static void ThrRun(std::string thrName, MessageQueue* pthis) {
+      fon9_LOG_ThrRun("MessageQueue.ThrRun|name=", thrName);
       MessageHandlerT   messageHandler(*pthis);
       {
          Locker  queue{pthis->QueueController_};
@@ -98,7 +98,7 @@ class MessageQueueService {
          pthis->QueueController_.OnBeforeThreadEnd(queue);
       }
       messageHandler.OnThreadEnd(thrName);
-      fon9_LOG_ThrRun("MessageQueueService.ThrRun.End|name=", thrName);
+      fon9_LOG_ThrRun("MessageQueue.ThrRun.End|name=", thrName);
    }
 
    void WaitThreadJoin() {
@@ -111,10 +111,10 @@ public:
    using MessageContainer = MessageContainerT;
    using Locker = LockerT;
 
-   MessageQueueService() {
+   MessageQueue() {
    }
    /// 若有剩餘未執行的訊息，將會被拋棄。
-   ~MessageQueueService() {
+   ~MessageQueue() {
       this->WaitForEndNow();
    }
 

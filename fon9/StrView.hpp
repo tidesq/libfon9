@@ -140,6 +140,14 @@ public:
    std::string ToString() const {
       return std::string(this->begin(), this->end());
    }
+   std::string ToString(StrView head) const {
+      std::string res;
+      res.reserve(head.size() + this->size());
+      head.AppendTo(res);
+      this->AppendTo(res);
+      return res;
+   }
+
    template <class StrT>
    void AppendTo(StrT& str) const {
       str.append(this->begin(), this->end());

@@ -12,7 +12,14 @@ namespace fon9 {
 fon9_WARN_DISABLE_PADDING;
 fon9_MSC_WARN_DISABLE_NO_PUSH(4251);//dll-interface.
 /// \ingroup Misc
-/// - 可以同時多個 thread 呼叫 Append(BufferList&&) 節點資料不會交錯.
+/// - 可以同時多個 thread 呼叫 `Append()` 節點資料不會交錯.
+/// - 衍生者可改寫:
+///   - `virtual void MakeCallForWork(WorkContentLocker& lk);`
+///     - 預設: `if (lk->SetToRinging()) this->MakeCallNow(lk);`
+/// - 衍生者需實現:
+///   - `virtual bool MakeCallNow(WorkContentLocker& lk) = 0;`
+///   - `virtual void ConsumeAppendBuffer(DcQueueList& buffer) = 0;`
+/// - 衍生者範例: `FileAppender`, `LogFile`, `io::SendBuffer`
 class fon9_API Appender {
    fon9_NON_COPY_NON_MOVE(Appender);
 

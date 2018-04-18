@@ -205,7 +205,7 @@ StrView StrFetchNoTrim(StrView& src, FnSplitter fnSplitter) {
       static constexpr const char* TrimDelim(const char*, const char* pDelim) { return pDelim; }
       static constexpr const char* TrimTail(const char*, const char* pend) { return pend; }
    };
-   return StrFetch(src, TrimAux{}, fnSplitter);
+   return StrFetch(src, TrimAux{}, std::move(fnSplitter));
 }
 
 inline StrView StrFetchNoTrim(StrView& src, char chDelim) {
@@ -217,7 +217,7 @@ inline StrView StrFetchNoTrim(StrView& src, char chDelim) {
 /// \ingroup AlNum
 /// - 透過 fnSplitter 找到要分割的位置.
 /// - 然後傳回分割位置前的字串(移除前後空白)
-/// - src 移動到分割位置之後.
+/// - src 移動到分割位置+1(沒有移除空白)
 /// - 如果沒找到分割位置, 則傳回: 移除前後空白的src, src 移到 end() 的位置.
 template <class FnSplitter>
 StrView StrFetchTrim(StrView& src, FnSplitter fnSplitter) {
@@ -228,7 +228,7 @@ StrView StrFetchTrim(StrView& src, FnSplitter fnSplitter) {
       // 所以 src 必定有非空白字元, 此時 StrRFindIf() 必定不會是 nullptr.
       static const char* TrimTail(const char* pbeg, const char* pend) { return StrRFindIf(pbeg, pend, isnotspace) + 1; }
    };
-   return StrFetch(src, TrimAux{}, fnSplitter);
+   return StrFetch(src, TrimAux{}, std::move(fnSplitter));
 }
 
 inline StrView StrFetchTrim(StrView& src, char chDelim) {
@@ -237,11 +237,39 @@ inline StrView StrFetchTrim(StrView& src, char chDelim) {
    });
 }
 
+template <class FnPred>
+struct CharSplitterFn {
+   decay_t<FnPred> FnPred_;
+   template <class... ArgsT>
+   constexpr CharSplitterFn(ArgsT&&... args) : FnPred_{std::forward<ArgsT>(args)...} {
+   }
+   const char* operator()(const char* pbeg, const char* pend) {
+      while (pbeg != pend) {
+         if (this->FnPred_(static_cast<unsigned char>(*pbeg)))
+            return pbeg;
+         ++pbeg;
+      }
+      return pend;
+   }
+};
+
+template <class FnPred>
+constexpr CharSplitterFn<FnPred> MakeCharSplitterFn(FnPred&& fnPred) {
+   return CharSplitterFn<FnPred>{std::move(fnPred)};
+}
+/// \ingroup AlNum
+/// 透過 CharSplitterFn<> 機制, 提供使用「字元函式(e.g. &isspace)」判斷分隔符號.
+/// e.g. `StrView v = StrFetchTrim(src, &isspace);`
+inline StrView StrFetchTrim(StrView& src, bool (*fn)(int ch)) {
+   return StrFetchTrim(src, MakeCharSplitterFn(fn));
+}
+
 //--------------------------------------------------------------------------//
 
 /// \ingroup AlNum
 /// 如果 utf8str 長度超過 expectLen 則切除超過的部分,
 /// 如果切除的位置剛好是一個 [utf8字] 的一部份, 則長度會再縮減, 避免有被切斷的 [utf8字].
+/// \return 傳回切割後的字串, 不會變動 utf8str.
 fon9_API StrView StrView_TruncUTF8(StrView utf8str, size_t expectLen);
 
 } // namespace fon9

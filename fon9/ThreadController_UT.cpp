@@ -6,6 +6,7 @@
 
 //--------------------------------------------------------------------------//
 
+fon9_WARN_DISABLE_PADDING;
 using WorkMessageType = int64_t;
 struct WorkContentBase : public fon9::WorkContentBase {
    std::thread::id   LastRunningThreadId_;
@@ -75,6 +76,7 @@ struct WorkContentController : public fon9::MustLock<WorkContentBase> {
       return lk->TakeCall(lk);
    }
 };
+fon9_WARN_POP;
 
 //--------------------------------------------------------------------------//
 
@@ -147,7 +149,7 @@ struct WorkerInMessageQueue {
    struct WorkerHandler {
       size_t CountOnMessage_{0};
       using MessageType = Worker*;
-      using WorkerService = fon9::MessageQueueService<WorkerHandler>;
+      using WorkerService = fon9::MessageQueue<WorkerHandler>;
       WorkerHandler(WorkerService&) {
       }
       void OnThreadEnd(const std::string& thrName) {
@@ -221,7 +223,7 @@ public:
       MessageType(int v) : Value_{v} {
       }
    };
-   using MyQueueService = fon9::MessageQueueService<MyMessageHandler>;
+   using MyQueueService = fon9::MessageQueue<MyMessageHandler>;
 
    MyMessageHandler(MyQueueService&) {
    }
@@ -262,7 +264,7 @@ public:
 
 int main()
 {
-   fon9::AutoPrintTestInfo utinfo{"ThreadController/MessageQueueService/Worker"};
+   fon9::AutoPrintTestInfo utinfo{"ThreadController/MessageQueue/Worker"};
    MyMessageHandler::Test();
 
    utinfo.PrintSplitter();

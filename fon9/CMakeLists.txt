@@ -32,13 +32,17 @@ set(fon9src
  buffer/BufferNodeWaiter.cpp
  buffer/DcQueue.cpp
  buffer/DcQueueList.cpp
+ 
+ io/Session.cpp
+ io/Manager.cpp
+ io/Device.cpp
 )
 add_library(fon9_s STATIC ${fon9src})
 target_link_libraries(fon9_s pthread rt)
 add_library(fon9 SHARED ${fon9src})
 target_link_libraries(fon9 pthread rt dl)
 
-# unit tests
+# unit tests: AlNum
 add_executable(Subr_UT Subr_UT.cpp)
 target_link_libraries(Subr_UT pthread)
 
@@ -60,18 +64,24 @@ target_link_libraries(TimeStamp_UT fon9_s)
 add_executable(RevPrint_UT RevPrint_UT.cpp)
 target_link_libraries(RevPrint_UT fon9_s)
 
+# unit tests: Thread Tools
 add_executable(ThreadController_UT ThreadController_UT.cpp)
 target_link_libraries(ThreadController_UT fon9_s)
 
 add_executable(Timer_UT Timer_UT.cpp)
 target_link_libraries(Timer_UT fon9_s)
 
+add_executable(AQueue_UT AQueue_UT.cpp)
+target_link_libraries(AQueue_UT fon9_s)
+
+# unit tests: buffer
 add_executable(Buffer_UT buffer/Buffer_UT.cpp)
 target_link_libraries(Buffer_UT fon9_s)
 
 add_executable(MemBlock_UT buffer/MemBlock_UT.cpp)
 target_link_libraries(MemBlock_UT fon9_s)
 
+# unit tests: file
 add_executable(File_UT File_UT.cpp)
 target_link_libraries(File_UT fon9_s)
 

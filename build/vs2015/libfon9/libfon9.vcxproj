@@ -75,6 +75,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\Appender.hpp" />
+    <ClInclude Include="..\..\..\fon9\AQueue.hpp" />
     <ClInclude Include="..\..\..\fon9\buffer\BufferList.hpp" />
     <ClInclude Include="..\..\..\fon9\buffer\BufferListBuilder.hpp" />
     <ClInclude Include="..\..\..\fon9\buffer\BufferNode.hpp" />
@@ -93,6 +94,12 @@
     <ClInclude Include="..\..\..\fon9\File.hpp" />
     <ClInclude Include="..\..\..\fon9\FileAppender.hpp" />
     <ClInclude Include="..\..\..\fon9\FilePath.hpp" />
+    <ClInclude Include="..\..\..\fon9\io\Device.hpp" />
+    <ClInclude Include="..\..\..\fon9\io\DeviceAsyncOp.hpp" />
+    <ClInclude Include="..\..\..\fon9\io\IoBase.hpp" />
+    <ClInclude Include="..\..\..\fon9\io\Manager.hpp" />
+    <ClInclude Include="..\..\..\fon9\io\Session.hpp" />
+    <ClInclude Include="..\..\..\fon9\io\SimpleManager.hpp" />
     <ClInclude Include="..\..\..\fon9\Log.hpp" />
     <ClInclude Include="..\..\..\fon9\LogFile.hpp" />
     <ClInclude Include="..\..\..\fon9\MessageQueue.hpp" />
@@ -143,6 +150,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\fon9\buffer\README.md" />
+    <None Include="..\..\..\fon9\io\README.md" />
     <None Include="..\..\..\Overview\ThreadTools.md" />
     <None Include="..\..\..\README.md" />
   </ItemGroup>
@@ -161,6 +169,10 @@
     <ClCompile Include="..\..\..\fon9\File.cpp" />
     <ClCompile Include="..\..\..\fon9\FileAppender.cpp" />
     <ClCompile Include="..\..\..\fon9\FilePath.cpp" />
+    <ClCompile Include="..\..\..\fon9\io\Device.cpp" />
+    <ClCompile Include="..\..\..\fon9\io\IoBase.cpp" />
+    <ClCompile Include="..\..\..\fon9\io\Manager.cpp" />
+    <ClCompile Include="..\..\..\fon9\io\Session.cpp" />
     <ClCompile Include="..\..\..\fon9\Log.cpp" />
     <ClCompile Include="..\..\..\fon9\LogFile.cpp" />
     <ClCompile Include="..\..\..\fon9\Outcome.cpp" />

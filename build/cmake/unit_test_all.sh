@@ -31,6 +31,7 @@ $OUTPUT_DIR/MemBlock_UT
 
 $OUTPUT_DIR/ThreadController_UT
 $OUTPUT_DIR/Timer_UT
+$OUTPUT_DIR/AQueue_UT
 
 $OUTPUT_DIR/File_UT
 $OUTPUT_DIR/TimedFileName_UT

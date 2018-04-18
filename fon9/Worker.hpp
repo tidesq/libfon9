@@ -45,12 +45,14 @@ public:
       return false;
    }
 
+   /// 正在喚醒「非同步工作」, 一旦喚醒就會開始工作。
    bool SetToAsyncTaking() {
       if (this->IsAsyncTaking_)
          return false;
       this->IsAsyncTaking_ = true;
       return true;
    }
+   /// 「非同步工作」已喚醒, 接下來必定會呼叫 TakeCall();
    void SetAsyncTaken() {
       assert(this->IsAsyncTaking_ == true);
       this->IsAsyncTaking_ = false;

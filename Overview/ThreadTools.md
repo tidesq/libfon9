@@ -74,7 +74,7 @@ template <
    class MessageContainerT = std::deque<MessageT>,
    class WaitPolicy = WaitPolicy_CV
 >
-class MessageQueueService;
+class MessageQueue;
 ```
 
 ## `fon9::GetDefaultThreadPool()`

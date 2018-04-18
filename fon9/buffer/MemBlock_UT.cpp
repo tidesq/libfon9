@@ -75,7 +75,7 @@ void TestMemThread(const unsigned kTimes, const char* msg) {
       using MessageType = Mem;
       using MessageContainer = std::vector<MessageType>;
       MessageContainer ConsumingMessage_;
-      using QueueServiceBase = fon9::MessageQueueService<MemConsumer, MessageType, MessageContainer>;
+      using QueueServiceBase = fon9::MessageQueue<MemConsumer, MessageType, MessageContainer>;
       struct QueueService : public QueueServiceBase {
          fon9_NON_COPY_NON_MOVE(QueueService);
          QueueService() = default;
