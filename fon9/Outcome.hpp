@@ -248,5 +248,25 @@ inline void RevPrint(RevBuffer& rbuf, const Outcome<ResultT, ErrorT>& oc) {
       RevPrint(rbuf, "no result");
 }
 
+/// \ingroup Misc
+/// 成功 or 失敗(ErrorT) or 尚未提供結果.
+template <class ErrorT = ErrC>
+struct Result3 : public Outcome<bool, ErrorT> {
+   using base = Outcome<bool, ErrorT>;
+public:
+   using base::base;
+   void SetResultOK() {
+      base::operator=(true);
+   }
+};
+
+template <class RevBuffer, class ErrorT>
+inline void RevPrint(RevBuffer& rbuf, const Result3<ErrorT>& oc) {
+   if (oc.IsError())
+      RevPrint(rbuf, ":err=", oc.GetError());
+   else if (oc.HasResult())
+      RevPrint(rbuf, ":OK");
+}
+
 } // namespace
 #endif//__fon9_Outcome_hpp__

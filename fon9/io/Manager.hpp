@@ -16,6 +16,7 @@ fon9_MSC_WARN_DISABLE_NO_PUSH(4251);//dll-interface.
 /// - 設定管理: 包含設定的「儲存及載入」.
 /// - 排程管理: 何時「啟用 / 結束」某條設定.
 /// - 與系統管理員互動.
+/// - 連線失敗、斷線: 定時重新開啟.
 ///
 class fon9_API Manager : public intrusive_ref_counter<Manager> {
    fon9_NON_COPY_NON_MOVE(Manager);

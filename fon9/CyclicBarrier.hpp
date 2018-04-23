@@ -17,11 +17,11 @@ class fon9_API CyclicBarrier {
    using Locker = typename Waiter::Locker;
    Mutex    Mutex_;
    Waiter   Latch_;
-   unsigned WaittingCount_;
+   unsigned WaitingCount_;
 public:
    /// 期待等候的數量.
    const unsigned ExpectedCount_;
-   explicit CyclicBarrier(unsigned expectedCount) : WaittingCount_(0), ExpectedCount_(expectedCount) {
+   explicit CyclicBarrier(unsigned expectedCount) : WaitingCount_(0), ExpectedCount_(expectedCount) {
    }
    /// 當同時等候的Threads到達指定數量時返回.
    void Wait();

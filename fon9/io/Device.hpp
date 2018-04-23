@@ -13,9 +13,11 @@ using Bookmark = uintmax_t;
 
 enum class DeviceCommonOption {
    SendASAP = 0x01,
+   /// 若 `RecvBufferSize OnDevice_LinkReady();` 或 `RecvBufferSize OnDevice_Recv();`
+   /// 傳回 RecvBufferSize::NoRecvEvent, 則會關閉 OnDevice_Recv() 事件.
+   NoRecvEvent = 0x02,
 };
 fon9_ENABLE_ENUM_BITWISE_OP(DeviceCommonOption);
-
 
 fon9_MSC_WARN_DISABLE(4251);//dll-interface.
 /// \ingroup io
@@ -27,7 +29,7 @@ class fon9_API Device : public intrusive_ref_counter<Device> {
    Bookmark             SessionBookmark_{0};
    Bookmark             ManagerBookmark_{0};
    std::string          DeviceId_;
-   DeviceCommonOption   CommonOptions_{};
+   DeviceCommonOption   CommonOptions_{DeviceCommonOption::SendASAP};
 
 public:
    const Style       Style_;
@@ -59,6 +61,8 @@ public:
    void SetManagerBookmark(Bookmark n) { this->ManagerBookmark_ = n; }
    Bookmark GetManagerBookmark() const { return this->ManagerBookmark_; }
 
+   /// - 如果 !cfgstr.empty() 則使用 OpImpl_Open(cfgstr) 來開啟.
+   /// - 如果 cfgstr.empty()  會先檢查現在狀態是否允許 reopen, 如果可以, 則使用 OpImpl_Reopen() 來開啟.
    void AsyncOpen(std::string cfgstr) {
       this->OpQueue_.AddTask(DeviceAsyncOp(&Device::OpThr_Open, std::move(cfgstr)));
    }
@@ -134,7 +138,7 @@ public:
    std::string WaitGetDeviceInfo();
 
    /// 設定 device 的屬性參數, Device 支援:
-   /// - SendASAP=Y
+   /// - SendASAP=N  預設值為 'Y'，只要不是 'N' 就會設定成 Yes(若未設定，初始值為 Yes)。
    std::string WaitSetProperty(StrView strTagValueList);
 
    /// 執行特定命令.
@@ -168,7 +172,7 @@ protected:
    /// - 透過 OpThr_Open() 而來的呼叫, 必定: !cfgstr.IsNullOrEmpty(); && st<State::Disposing
    virtual void OpImpl_Open(std::string cfgstr) = 0;
    /// 透過 OpThr_Open() 而來的呼叫, 此時必定:
-   /// - st < State::Disposing && st != State::OpenConfigError && st != Ready(LinkReady,Listening,WaittingLinkIn)
+   /// - st < State::Disposing && st != State::OpenConfigError && st != Ready(LinkReady,Listening,WaitingLinkIn)
    virtual void OpImpl_Reopen() = 0;
    /// 關閉完畢後, 必須由衍生者設定 State::Closed 狀態.
    /// 若要花些時間關閉(例:等候遠端確認), 則可先設定 State::Closing 狀態.
@@ -176,6 +180,8 @@ protected:
    /// 呼叫此處時, 狀態必定為 State::Disposing; 預設 do nothing.
    virtual void OpImpl_Dispose(std::string cause);
 
+   /// 狀態異動通知衍生者.
+   /// 在觸發 this->Session_->OnDevice_StateChanged(*this, e); 之前，告知衍生者。
    /// 預設 do nothing.
    virtual void OpImpl_StateChanged(const StateChangedArgs& e);
    virtual void OpImpl_AppendDeviceInfo(std::string& info);
@@ -207,7 +213,7 @@ protected:
    /// OpThr_SetLinkReady() 的流程:
    /// - 衍生者: 發現 LinkReady, 進入 Op thread 呼叫 OpThr_SetLinkReady();
    /// - 在 OpThr_SetLinkReady() 裡面:
-   ///   - 衍生者如果要「設定傳送緩衝的LinkReady狀態」:
+   ///   - 衍生者如果要「設定傳送緩衝的LinkReady狀態」應在 OpImpl_StateChanged() 裡面:
    ///      \code
    ///         virtual void OpImpl_StateChanged(const StateChangedArgs& e) override {
    ///            if (e.After_ == State::LinkReady)
@@ -235,6 +241,10 @@ protected:
    /// - 傳回 retval.empty() 表示成功.
    std::string OpImpl_SetPropertyList(StrView propList);
    virtual std::string OpImpl_SetProperty(StrView tag, StrView value);
+
+   void SetNoRecvEvent() {
+      this->CommonOptions_ |= DeviceCommonOption::NoRecvEvent;
+   }
 };
 fon9_MSC_WARN_POP;
 

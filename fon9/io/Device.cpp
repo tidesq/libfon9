@@ -38,7 +38,7 @@ void Device::OpThr_Open(std::string cfgstr) {
    // 沒有 cfgstr, 檢查現在狀態是否允許 reopen.
    if (st == State::Listening ||
        st == State::LinkReady ||
-       st == State::WaittingLinkIn ||
+       st == State::WaitingLinkIn ||
        st == State::OpenConfigError)
       return;
    this->OpImpl_Reopen();
@@ -77,8 +77,14 @@ void Device::OpThr_SetLinkReady(std::string stmsg) {
       return;
    // 避免在處理 OnDevice_StateChanged() 之後 State_ 被改變(例:特殊情況下關閉了 Device),
    // 所以在此再判斷一次 State_, 必需仍為 LinkReady, 才需觸發 OnDevice_LinkReady() 事件.
-   if (this->State_ == State::LinkReady)
-      this->OpThr_StartRecv(this->Session_->OnDevice_LinkReady(*this));
+   if (this->State_ == State::LinkReady) {
+      RecvBufferSize preallocSize = this->Session_->OnDevice_LinkReady(*this);
+      if (preallocSize == RecvBufferSize::NoRecvEvent)
+         this->CommonOptions_ |= DeviceCommonOption::NoRecvEvent;
+      else
+         this->CommonOptions_ -= DeviceCommonOption::NoRecvEvent;
+      this->OpThr_StartRecv(preallocSize);
+   }
 }
 void Device::OpThr_SetBrokenState(std::string cause) {
    switch (this->State_) {
@@ -102,7 +108,7 @@ void Device::OpThr_SetBrokenState(std::string cause) {
       this->OpThr_Close(std::move(cause));
       break;
    case State::Opening:
-   case State::WaittingLinkIn:
+   case State::WaitingLinkIn:
    case State::Linking:
       //if (State::Opening <= this->State_ && this->State_ <= State::Linking)
       this->OpThr_SetState(State::LinkError, &cause);
@@ -183,12 +189,8 @@ std::string Device::WaitSetProperty(StrView strTagValue) {
    return res;
 }
 std::string Device::OpImpl_SetPropertyList(StrView propList) {
-   for (;;) {
-      StrTrim(propList);
-      if (propList.empty())
-         break;
-      StrView tag = StrFetchTrim(propList, '=');
-      StrView value = StrFetchTrim(propList, '|');
+   StrView tag, value;
+   while (FetchTagValue(propList, tag, value)) {
       std::string res = this->OpImpl_SetProperty(tag, value);
       if (!res.empty())
          return res;
@@ -197,10 +199,10 @@ std::string Device::OpImpl_SetPropertyList(StrView propList) {
 }
 std::string Device::OpImpl_SetProperty(StrView tag, StrView value) {
    if (tag == "SendASAP") {
-      if (toupper(value.Get1st()) == 'Y')
-         this->CommonOptions_ |= DeviceCommonOption::SendASAP;
-      else
+      if (toupper(value.Get1st()) == 'N')
          this->CommonOptions_ -= DeviceCommonOption::SendASAP;
+      else
+         this->CommonOptions_ |= DeviceCommonOption::SendASAP;
       return std::string();
    }
    return tag.ToString("unknown property name:");

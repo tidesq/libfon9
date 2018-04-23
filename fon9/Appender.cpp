@@ -55,17 +55,6 @@ bool Appender::WaitConsumed(WorkContentLocker& locker) {
 
 //--------------------------------------------------------------------------//
 
-void Appender::WorkContentController::AddWork(Locker& lk, const void* buf, size_t size) {
-   FwdBufferNode* node = FwdBufferNode::CastFrom(lk->QueuingBuffer_.back());
-   if (node == nullptr || node->GetRemainSize() < size)
-      node = FwdBufferNode::Alloc(size);
-   byte* pout = node->GetDataEnd();
-   memcpy(pout, buf, size);
-   node->SetDataEnd(pout + size);
-   if (node != lk->QueuingBuffer_.back())
-      lk->QueuingBuffer_.push_back(node);
-   this->MakeCallForWork(lk);
-}
 WorkerState Appender::WorkContentController::TakeCall(Locker& lk) {
    DcQueueList& workingBuffer = lk->UnsafeWorkingBuffer_;
    workingBuffer.push_back(std::move(lk->QueuingBuffer_));

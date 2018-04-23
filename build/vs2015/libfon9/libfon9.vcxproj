@@ -97,7 +97,10 @@
     <ClInclude Include="..\..\..\fon9\io\Device.hpp" />
     <ClInclude Include="..\..\..\fon9\io\DeviceAsyncOp.hpp" />
     <ClInclude Include="..\..\..\fon9\io\IoBase.hpp" />
+    <ClInclude Include="..\..\..\fon9\io\IoServiceArgs.hpp" />
     <ClInclude Include="..\..\..\fon9\io\Manager.hpp" />
+    <ClInclude Include="..\..\..\fon9\io\RecvBuffer.hpp" />
+    <ClInclude Include="..\..\..\fon9\io\SendBuffer.hpp" />
     <ClInclude Include="..\..\..\fon9\io\Session.hpp" />
     <ClInclude Include="..\..\..\fon9\io\SimpleManager.hpp" />
     <ClInclude Include="..\..\..\fon9\Log.hpp" />
@@ -171,7 +174,10 @@
     <ClCompile Include="..\..\..\fon9\FilePath.cpp" />
     <ClCompile Include="..\..\..\fon9\io\Device.cpp" />
     <ClCompile Include="..\..\..\fon9\io\IoBase.cpp" />
+    <ClCompile Include="..\..\..\fon9\io\IoServiceArgs.cpp" />
     <ClCompile Include="..\..\..\fon9\io\Manager.cpp" />
+    <ClCompile Include="..\..\..\fon9\io\RecvBuffer.cpp" />
+    <ClCompile Include="..\..\..\fon9\io\SendBuffer.cpp" />
     <ClCompile Include="..\..\..\fon9\io\Session.cpp" />
     <ClCompile Include="..\..\..\fon9\Log.cpp" />
     <ClCompile Include="..\..\..\fon9\LogFile.cpp" />

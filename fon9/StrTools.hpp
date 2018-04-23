@@ -267,6 +267,25 @@ inline StrView StrFetchTrim(StrView& src, bool (*fn)(int ch)) {
 //--------------------------------------------------------------------------//
 
 /// \ingroup AlNum
+/// 簡單的從 src 取出一個 field, src = `field1|field2|field3...`, field = `tag=value`
+/// - 若 src 移除前後空白後為 empty(), 則返回 false.
+/// - 若 src 沒有 chFieldDelim, 則將 src 視為一個 field.
+/// - 如果 field 沒有 chEqual 則返回:
+///   - tag = 移除前後空白的 field
+///   - value 為 empty
+/// - 取出最後一個 field 之後, src 為 empty.
+inline bool FetchTagValue(StrView& src, StrView& tag, StrView& value, char chFieldDelim = '|', char chEqual = '=') {
+   StrTrim(src);
+   if (src.empty())
+      return false;
+   tag = StrFetchTrim(src, chEqual);
+   value = StrFetchTrim(src, chFieldDelim);
+   return true;
+}
+
+//--------------------------------------------------------------------------//
+
+/// \ingroup AlNum
 /// 如果 utf8str 長度超過 expectLen 則切除超過的部分,
 /// 如果切除的位置剛好是一個 [utf8字] 的一部份, 則長度會再縮減, 避免有被切斷的 [utf8字].
 /// \return 傳回切割後的字串, 不會變動 utf8str.

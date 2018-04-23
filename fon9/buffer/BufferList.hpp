@@ -37,5 +37,9 @@ inline StrT BufferTo(const BufferList& buf) {
    return str;
 }
 
+/// \ingroup Buffer
+/// 如果 dst.back() 足夠存放 src 則直接複製到 dst.back(), 否則在 dst 後面增加一個節點存放 src.
+fon9_API size_t AppendToBuffer(BufferList& dst, const void* src, size_t size);
+
 } // namespaces
 #endif//__fon9_buffer_BufferList_hpp__

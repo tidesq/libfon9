@@ -210,6 +210,36 @@ template <size_t arysz>
 constexpr StrView StrView_all(const char(&cary)[arysz]) {
    return StrView{cary, cary + arysz};
 }
+
+/// \ingroup AlNum
+/// 協助建立enum列舉字串.
+/// - enum EnumT { item, item1, item2 };
+/// - fon9_MAKE_ENUM_StrView(0, EnumT, item) 會建立 "0.item"
+/// - 並檢查 item 是否正確(此例為: item==0)
+/// - 通常用在建立 enum 字串陣列:
+///   \code
+///      const StrView EnumT_StrView[] {
+///         fon9_MAKE_ENUM_StrView(0, EnumT, item), // StrView{"0.item"}
+///         fon9_MAKE_ENUM_StrView(1, EnumT, item1),// StrView{"1.item1"}
+///         fon9_MAKE_ENUM_StrView(2, EnumT, item2),// StrView{"2.item2"}
+///       //fon9_MAKE_ENUM_StrView(4, EnumT, item), // compile error! item!=4
+///      };
+///   \endcode
+#define fon9_MAKE_ENUM_StrView(n,EnumClass,item) \
+      fon9::MakeEnumStrView<n==static_cast<std::underlying_type<EnumClass>::type>(item)>(#n "." #item)
+#define fon9_MAKE_ENUM_CLASS_StrView(n,EnumClass,item) \
+      fon9::MakeEnumStrView<n==static_cast<std::underlying_type<EnumClass>::type>(EnumClass::item)>(#n "." #item)
+
+#define fon9_MAKE_ENUM_StrView_NoSeq(n,EnumClass,item) \
+      fon9::MakeEnumStrView<n==static_cast<std::underlying_type<EnumClass>::type>(item)>(#item)
+#define fon9_MAKE_ENUM_CLASS_StrView_NoSeq(n,EnumClass,item) \
+      fon9::MakeEnumStrView<n==static_cast<std::underlying_type<EnumClass>::type>(EnumClass::item)>(#item)
+
+template <bool isItemCorrect, size_t arysz>
+constexpr StrView MakeEnumStrView(const char(&str)[arysz]) {
+   return StrView{str};
+   static_assert(isItemCorrect, "Incorrect enum item#");
+}
 } // namespace fon9
 
 namespace std {

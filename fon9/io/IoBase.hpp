@@ -63,19 +63,19 @@ enum class State {
    OpenConfigError,
    /// 開啟中: 開啟尚未完成.
    /// 若開啟完成, 則進入底下3種可能的狀態, 視不同的 Device Style 而定:
-   /// - WaittingLinkIn
+   /// - WaitingLinkIn
    /// - Linking
    /// - Listening
    Opening,
 
    /// 連入等候中: 例如一個 USB port, 正在等候 USB 設備的插入.
-   WaittingLinkIn,
+   WaitingLinkIn,
    /// 連線建立中: 例如 TcpClient 呼叫了 connect().
    Linking,
    /// 連線建立失敗: 例如 TcpClient 呼叫 connect() 之後沒有連線成功.
    LinkError,
    /// 連線成功: 可以開始收送資料.
-   /// - WaittingLinkIn, Linking 之後, 連線成功的狀態.
+   /// - WaitingLinkIn, Linking 之後, 連線成功的狀態.
    LinkReady,
    /// 連線中斷.
    /// - **LinkReady 之後** , 連線中斷了!

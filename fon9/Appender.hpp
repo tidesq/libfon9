@@ -70,7 +70,10 @@ protected:
          lk->QueuingBuffer_.push_back(std::move(buf));
          this->MakeCallForWork(lk);
       }
-      void AddWork(Locker& lk, const void* buf, size_t size);
+      void AddWork(Locker& lk, const void* buf, size_t size) {
+         AppendToBuffer(lk->QueuingBuffer_, buf, size);
+         this->MakeCallForWork(lk);
+      }
       WorkerState TakeCall(Locker& lk);
    };
    using Worker = fon9::Worker<WorkContentController>;

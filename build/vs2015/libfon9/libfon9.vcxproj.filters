@@ -60,6 +60,12 @@
     <Filter Include="Source Files\io">
       <UniqueIdentifier>{79c89ba7-f364-4238-a048-1a4499d39168}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\io\_base">
+      <UniqueIdentifier>{c1fe716a-5306-4d85-85fb-6f4096b10710}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\io\_base">
+      <UniqueIdentifier>{7d983219-7662-49b3-96fe-128510012da5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\sys\Config.h">
@@ -260,26 +266,35 @@
     <ClInclude Include="..\..\..\fon9\CharAry.hpp">
       <Filter>Header Files\_base\_AlNum / StrTools</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\io\Device.hpp">
-      <Filter>Header Files\io</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\io\IoBase.hpp">
-      <Filter>Header Files\io</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\io\Manager.hpp">
-      <Filter>Header Files\io</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\io\Session.hpp">
-      <Filter>Header Files\io</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\io\SimpleManager.hpp">
-      <Filter>Header Files\io</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\fon9\AQueue.hpp">
       <Filter>Header Files\_base\_Thread</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\Device.hpp">
+      <Filter>Header Files\io\_base</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\fon9\io\DeviceAsyncOp.hpp">
-      <Filter>Header Files\io</Filter>
+      <Filter>Header Files\io\_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\IoBase.hpp">
+      <Filter>Header Files\io\_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\Manager.hpp">
+      <Filter>Header Files\io\_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\Session.hpp">
+      <Filter>Header Files\io\_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\SimpleManager.hpp">
+      <Filter>Header Files\io\_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\SendBuffer.hpp">
+      <Filter>Header Files\io\_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\RecvBuffer.hpp">
+      <Filter>Header Files\io\_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\IoServiceArgs.hpp">
+      <Filter>Header Files\io\_base</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -387,16 +402,25 @@
       <Filter>Source Files\_base\_File</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\io\Device.cpp">
-      <Filter>Source Files\io</Filter>
+      <Filter>Source Files\io\_base</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\io\IoBase.cpp">
-      <Filter>Source Files\io</Filter>
+      <Filter>Source Files\io\_base</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\io\Manager.cpp">
-      <Filter>Source Files\io</Filter>
+      <Filter>Source Files\io\_base</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\io\Session.cpp">
-      <Filter>Source Files\io</Filter>
+      <Filter>Source Files\io\_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\SendBuffer.cpp">
+      <Filter>Source Files\io\_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\RecvBuffer.cpp">
+      <Filter>Source Files\io\_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\IoServiceArgs.cpp">
+      <Filter>Source Files\io\_base</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

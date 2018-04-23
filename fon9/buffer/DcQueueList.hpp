@@ -17,7 +17,7 @@ inline void fon9_PutIoVectorElement(struct iovec* piov, void* dat, size_t datsz)
 
 namespace fon9 {
 
-fon9_MSC_WARN_DISABLE(4251  //C4251: 'BlockList_': class 'SinglyLinkedList2<fon9::BufferNode>' needs to have dll-interface
+fon9_MSC_WARN_DISABLE(4251  // 'BlockList_': class 'SinglyLinkedList2<fon9::BufferNode>' needs to have dll-interface
                       4265);// dtor isnot virtual.
 /// \ingroup Buffer
 /// 訊息消費端的緩衝區處理: 使用 BufferList.
@@ -116,6 +116,16 @@ public:
          }
       }
       return count;
+   }
+
+   /// 取出最後節點, 然後在最後節點的資料區尾端增加資料.
+   BufferNode* GetBackForExpand() {
+      return this->BlockList_.back();
+   }
+   void BackExpanded(BufferNode* back) {
+      assert(this->BlockList_.back() == back);
+      if (back && this->BlockList_.front() == back)
+         this->MemEnd_ = back->GetDataEnd();
    }
 };
 fon9_MSC_WARN_POP;

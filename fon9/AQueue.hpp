@@ -110,7 +110,7 @@ public:
                this->Owner_.AfterPushed(this->LockGuard_, this->PushedCount_);
          }
       }
-      /// 如果 this->IsAllowInvoke_ == true; 則會立即執行 task().
+      /// 如果 this->IsAllowInvoke_ == true; 則會立即執行 task.
       /// 您也可以自己先判斷 this->IsAllowInvoke_ 再決定是否呼叫 AddTask()
       void AddTask(Task task) {
          if (this->IsAllowInvoke_)

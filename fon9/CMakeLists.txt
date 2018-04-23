@@ -36,6 +36,9 @@ set(fon9src
  io/Session.cpp
  io/Manager.cpp
  io/Device.cpp
+ io/SendBuffer.cpp
+ io/RecvBuffer.cpp
+ io/IoServiceArgs.cpp
 )
 add_library(fon9_s STATIC ${fon9src})
 target_link_libraries(fon9_s pthread rt)

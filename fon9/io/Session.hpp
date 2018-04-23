@@ -70,6 +70,8 @@ public:
    /*
    幾經思考, 似乎已無必要提供此事件:
    因為可加入自訂的 BufferNodeVirtual，在消費到該節點時取得通知，執行必要的後續作業。
+   但 `BufferNodeVirtual` 的通知是在「送完 or 傳送發生錯誤」，所以該通知不與 Device 的事件相關，使用時要小心。
+
    /// 當 Device 的傳送緩衝區資料已送完通知, 預設: do nothing.
    /// - Device 預設關閉此事件, 若有需要此事件, 則透過 Device::EnableSendBufferEmptyEv(); 啟用.
    /// - 這裡是指的是 Device 內部的傳送緩衝區, 不代表系統緩衝區已送完.
