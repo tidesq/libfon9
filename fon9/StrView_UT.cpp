@@ -79,7 +79,7 @@ int main() {
    TestStrViewCompare(sABCDE, sABC1, 1);
 
    fon9::StrView sEmpty{};
-   fon9::StrView sNull{nullptr, static_cast<size_t>(0)};
+   fon9::StrView sNull{nullptr};
 
    TestStrViewCompare(sNull,  sABC1, -1);
    TestStrViewCompare(sEmpty, sABC1, -1);

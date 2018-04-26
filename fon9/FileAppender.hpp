@@ -14,7 +14,6 @@ fon9_AFTER_INCLUDE_STD;
 namespace fon9 {
 
 fon9_WARN_DISABLE_PADDING;
-fon9_MSC_WARN_DISABLE_NO_PUSH(4251);//dll-interface.
 
 class FileRotate {
    fon9_NON_COPY_NON_MOVE(FileRotate);

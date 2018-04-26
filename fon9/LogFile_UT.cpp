@@ -55,7 +55,7 @@ void TestTimerFlush() {
    while (fgets(rdbuf, sizeof(rdbuf), stdin)) {
       fon9::StrView  rd{fon9::StrView_cstr(rdbuf)};
       fapp->Append(rd);
-      fon9::StrTrim(rd);
+      fon9::StrTrim(&rd);
       if (rd == "flush")
          fapp->WaitFlushed();
       else if (rd == "quit")

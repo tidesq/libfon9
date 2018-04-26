@@ -141,43 +141,53 @@ constexpr const char* StrRFindIf(const StrView& str, FnPredicate&&... fnPred) {
 
 //--------------------------------------------------------------------------//
 
-inline const char* StrTrimHead(const char* pbeg, const char* pend) {
+inline const char* StrFindTrimHead(const char* pbeg, const char* pend) {
    if (const char* p = StrFindIf(pbeg, pend, isnotspace))
       return p;
    return pend;
 }
-inline const char* StrTrimTail(const char* pbeg, const char* pend) {
+inline const char* StrFindTrimTail(const char* pbeg, const char* pend) {
    if (const char* p = StrRFindIf(pbeg, pend, isnotspace))
       return p + 1;
    return pbeg;
 }
 
 /// \ingroup AlNum
-/// 移除 str 前方的空白字元: `isspace()==true` 的字元.
-/// 若 str 全都是空白, 則將 str 移動到尾端: str.SetBegin(str.end()).
-inline void StrTrimHead(StrView& str) {
-   str.SetBegin(StrTrimHead(str.begin(), str.end()));
+/// - 移除 str 前方的空白字元: `isspace()==true` 的字元.
+/// - 若 str 全都是空白, 則將 str 移動到尾端: str->SetBegin(str->end()).
+/// - 為了讓介面清楚明示 str 會被修改, 所以使用 `StrView*`.
+/// - 傳回值: reference of `*str`
+inline StrView& StrTrimHead(StrView* str) {
+   str->SetBegin(StrFindTrimHead(str->begin(), str->end()));
+   return *str;
 }
-inline void StrTrimHead(StrView& str, const char* pfrom) {
-   assert(str.begin() <= pfrom && pfrom <= str.end());
-   str.SetBegin(StrTrimHead(pfrom, str.end()));
-}
-
-/// \ingroup AlNum
-/// 移除 str 尾端的空白字元: `isspace()==true` 的字元.
-/// 若 str 全都是空白, 則將 str 移動到頭端: str.SetEnd(str.begin()).
-inline void StrTrimTail(StrView& str) {
-   str.SetEnd(StrTrimTail(str.begin(), str.end()));
+inline StrView& StrTrimHead(StrView* str, const char* pfrom) {
+   assert(str->begin() <= pfrom && pfrom <= str->end());
+   str->SetBegin(StrFindTrimHead(pfrom, str->end()));
+   return *str;
 }
 
 /// \ingroup AlNum
-/// 移除 str 頭尾的空白字元: `isspace()==true` 的字元.
-/// 若 str 全都是空白, 則將 str 移動到尾端: str.SetBegin(str.end()).
-inline void StrTrim(StrView& str) {
-   if (const char* pbeg = StrFindIf(str, isnotspace))
-      str.Reset(pbeg, StrRFindIf(pbeg, str.end(), isnotspace) + 1);
+/// - 移除 str 尾端的空白字元: `isspace()==true` 的字元.
+/// - 若 str 全都是空白, 則將 str 移動到頭端: str->SetEnd(str->begin()).
+/// - 為了讓介面清楚明示 str 會被修改, 所以使用 `StrView*`.
+/// - 傳回值: reference of `*str`
+inline StrView& StrTrimTail(StrView* str) {
+   str->SetEnd(StrFindTrimTail(str->begin(), str->end()));
+   return *str;
+}
+
+/// \ingroup AlNum
+/// - 移除 str 頭尾的空白字元: `isspace()==true` 的字元.
+/// - 若 str 全都是空白, 則將 str 移動到尾端: str.SetBegin(str.end()).
+/// - 為了讓介面清楚明示 str 會被修改, 所以使用 `StrView*`.
+/// - 傳回值: reference of `*str`
+inline StrView& StrTrim(StrView* str) {
+   if (const char* pbeg = StrFindIf(*str, isnotspace))
+      str->Reset(pbeg, StrRFindIf(pbeg, str->end(), isnotspace) + 1);
    else
-      str.SetBegin(str.end());
+      str->SetBegin(str->end());
+   return *str;
 }
 
 //--------------------------------------------------------------------------//
@@ -221,20 +231,13 @@ inline StrView StrFetchNoTrim(StrView& src, char chDelim) {
 /// - 如果沒找到分割位置, 則傳回: 移除前後空白的src, src 移到 end() 的位置.
 template <class FnSplitter>
 StrView StrFetchTrim(StrView& src, FnSplitter fnSplitter) {
-   StrTrimHead(src);
    struct TrimAux {
-      static const char* TrimDelim(const char* pbeg, const char* pDelim) { return StrTrimTail(pbeg, pDelim); }
+      static const char* TrimDelim(const char* pbeg, const char* pDelim) { return StrFindTrimTail(pbeg, pDelim); }
       // 因為一開頭已呼叫過 StrTrimHead() & 檢查 src.size() != 0;
       // 所以 src 必定有非空白字元, 此時 StrRFindIf() 必定不會是 nullptr.
       static const char* TrimTail(const char* pbeg, const char* pend) { return StrRFindIf(pbeg, pend, isnotspace) + 1; }
    };
-   return StrFetch(src, TrimAux{}, std::move(fnSplitter));
-}
-
-inline StrView StrFetchTrim(StrView& src, char chDelim) {
-   return StrFetchTrim(src, [chDelim](const char* pbeg, const char* pend) {
-      return StrView::traits_type::find(pbeg, static_cast<size_t>(pend - pbeg), chDelim);
-   });
+   return StrFetch(StrTrimHead(&src), TrimAux{}, std::move(fnSplitter));
 }
 
 template <class FnPred>
@@ -257,6 +260,7 @@ template <class FnPred>
 constexpr CharSplitterFn<FnPred> MakeCharSplitterFn(FnPred&& fnPred) {
    return CharSplitterFn<FnPred>{std::move(fnPred)};
 }
+
 /// \ingroup AlNum
 /// 透過 CharSplitterFn<> 機制, 提供使用「字元函式(e.g. &isspace)」判斷分隔符號.
 /// e.g. `StrView v = StrFetchTrim(src, &isspace);`
@@ -267,21 +271,105 @@ inline StrView StrFetchTrim(StrView& src, bool (*fn)(int ch)) {
 //--------------------------------------------------------------------------//
 
 /// \ingroup AlNum
-/// 簡單的從 src 取出一個 field, src = `field1|field2|field3...`, field = `tag=value`
-/// - 若 src 移除前後空白後為 empty(), 則返回 false.
-/// - 若 src 沒有 chFieldDelim, 則將 src 視為一個 field.
-/// - 如果 field 沒有 chEqual 則返回:
-///   - tag = 移除前後空白的 field
-///   - value 為 empty
-/// - 取出最後一個 field 之後, src 為 empty.
-inline bool FetchTagValue(StrView& src, StrView& tag, StrView& value, char chFieldDelim = '|', char chEqual = '=') {
-   StrTrim(src);
-   if (src.empty())
-      return false;
-   tag = StrFetchTrim(src, chEqual);
-   value = StrFetchTrim(src, chFieldDelim);
-   return true;
+/// - 找到第一個 chDelim = 要分割的位置.
+/// - 如果有找到 chDelim:
+///   - 傳回分割位置前的字串(移除前後空白)
+///   - src 移動到分割位置+1(沒有移除空白)
+/// - 如果沒找到 chDelim, 則傳回: 移除前後空白的src, src 移到 end() 的位置.
+inline StrView StrFetchTrim(StrView& src, char chDelim) {
+   return StrFetchTrim(src, [chDelim](const char* pbeg, const char* pend) {
+      return StrView::traits_type::find(pbeg, static_cast<size_t>(pend - pbeg), chDelim);
+   });
 }
+
+/// \ingroup AlNum
+/// 類似 StrFetchTrim(StrView& src, char chDelim);
+/// - 在沒找到 chDelim 時: src 會設為 nullptr.
+/// - 在有找到 chDelim 時:
+///   - src 會移除前方空白, 尾端不動.
+///   - 傳回值會移除尾端空白, 但前方不動.
+fon9_API StrView StrSplit(StrView& src, char chDelim);
+inline StrView StrSplitTrim(StrView& src, char chDelim) {
+   return StrSplit(StrTrim(&src), chDelim);
+}
+
+/// \ingroup AlNum
+/// 簡單的從 src 取出一組 `tag=value`, src = `tag=value|tag=value|tag=value...`.
+/// - **不考慮括號** 包住的巢狀欄位, 如果有需要考慮括號, 則應使用 `FetchField()`
+/// - 若 src 移除前後空白後為 empty(), 則返回 false.
+/// - 如果沒有找到 chEqual, 則 value 為 nullptr.
+fon9_API bool FetchTagValue(StrView& src, StrView& tag, StrView& value, char chFieldDelim = '|', char chEqual = '=');
+
+//--------------------------------------------------------------------------//
+
+/// \ingroup AlNum
+/// 括號配對定義.
+struct StrBrPair {
+   /// 起始括號字元:「 '、"、{、[、( 」
+   char     Left_;
+   /// 結束括號字元:「 '、"、}、]、) 」
+   char     Right_;
+   /// 是否允許巢狀括號.
+   bool     IsAllowNest_;
+};
+
+/// \ingroup AlNum
+/// 字串解析時的括號設定參數.
+struct fon9_API StrBrArg {
+   /// 括號配對起始設定.
+   const StrBrPair*  BrBegin_;
+   /// 有幾個括號配對設定.
+   size_t            BrCount_;
+
+   /// 指定數量的「括號對」設定.
+   constexpr StrBrArg(const StrBrPair* beg, size_t count) : BrBegin_(beg), BrCount_(count) {
+   }
+
+   /// 用「括號對」陣列建構.
+   template <size_t arysz>
+   constexpr StrBrArg(const StrBrPair(&brAry)[arysz]) : StrBrArg{&brAry[0],arysz} {
+   }
+
+   /// 在 [BrBegin_..end)->Left_ 尋找 chLeft.
+   /// 若 chLeft 沒找到, 則傳回 nullptr;
+   const StrBrPair* Find(char chLeft) const;
+
+   /// 預設的括號設定參數: 「 {}、[]、()、''、"" 」
+   static const StrBrArg   Default_;
+   /// 排除大括號之後的括號設定參數: 「 []、()、''、"" 」
+   static const StrBrArg   DefaultNoCurly_;
+   /// 引號設定參數: 「 ''、"" 」
+   static const StrBrArg   Quotation_;
+};
+
+/// \ingroup AlNum
+/// 從 src 取出一個用 chDelim 分隔的字串.
+/// - 用 brArg 考慮各種括號、引號, 例如: "{apple|orange|(car|bus)}|1234|5678"; 則傳回 "{apple|orange|(car|bus)}", src = "1234|5678"
+/// - 若有 '\' 則 '\' 的下一個字元, 不考慮是否為括號.
+/// - 若沒找到 chDelim 則傳回 src, 且將 src 移到尾端: src.SetBegin(src.end()).
+/// - 若有找到 chDelim 則傳回 StrView{src.begin(), pDelim}; 且將 src 移到 pDelim 的下一個字元: src.SetBegin(pDelim+1);
+/// - 傳回值 & src 都不會移除任何的空白.
+/// \code
+///   while (!cfgstr.empty()) {
+///      fon9::StrView value = fon9::FetchField(cfgstr, '|');
+///      fon9::StrView tag = fon9::StrSplitTrim(value, '=');
+///      ...處理 tag & value...
+///   }
+/// \endcode
+fon9_API StrView FetchField(StrView& src, char chDelim, const StrBrArg& brArg = StrBrArg::Default_);
+
+/// \ingroup AlNum
+/// 先移除 src 開頭空白, 然後:
+/// - 如果 *src.begin() 有左括號(由brArg定義), 且有找到對應的右括號:
+///   - retval = 括號內的字串(包含空白), *retval.end()==右括號.
+///   - src = {右括號位置+1, src.end()}
+/// - 如果 *src.begin() 有左括號, 但沒找到對應的右括號:
+///   - retval = 移除開頭左括號後的字串
+///   - src = {retval.end(), retval.end()}
+/// - 如果 *src.begin() 沒左括號:
+///   - retval = nullptr
+///   - src = 移除開頭空白後的字串.
+fon9_API StrView FetchFirstBr(StrView& src, const StrBrArg& brArg = StrBrArg::Default_);
 
 //--------------------------------------------------------------------------//
 

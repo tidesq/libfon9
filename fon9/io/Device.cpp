@@ -209,27 +209,26 @@ std::string Device::OpImpl_SetProperty(StrView tag, StrView value) {
 }
 
 std::string Device::OnDevice_Command(StrView cmd, StrView param) {
-   if (cmd.Compare("open") == 0)
+   if (cmd == "open")
       this->AsyncOpen(param.ToString());
-   else if (cmd.Compare("close") == 0)
+   else if (cmd == "close")
       this->AsyncClose(param.ToString("DeviceCommand.close:"));
-   else if (cmd.Compare("lclose") == 0)
+   else if (cmd == "lclose")
       this->AsyncLingerClose(param.ToString("DeviceCommand.lclose:"));
-   else if (cmd.Compare("dispose") == 0)
+   else if (cmd == "dispose")
       this->AsyncDispose(param.ToString("DeviceCommand.dispose:"));
-   else if (cmd.Compare("info") == 0)
+   else if (cmd == "info")
       return this->WaitGetDeviceInfo();
-   else if (cmd.Compare("set") == 0)
+   else if (cmd == "set")
       return this->WaitSetProperty(param);
-   else if (cmd.Compare("ses") == 0)
+   else if (cmd == "ses")
       return this->Session_->SessionCommand(*this, param);
    else return std::string{"unknown device command"};
    return std::string();
 }
 std::string Device::DeviceCommand(StrView cmdln) {
    StrView cmd = StrFetchTrim(cmdln, &isspace);
-   StrTrim(cmdln);
-   return this->OnDevice_Command(cmd, cmdln);
+   return this->OnDevice_Command(cmd, StrTrim(&cmdln));
 }
 
 } } // namespaces

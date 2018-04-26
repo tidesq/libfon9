@@ -5,8 +5,7 @@
 namespace fon9 {
 
 fon9_API uintmax_t HexStrTo(StrView hexstr, const char** endptr) {
-   StrTrimHead(hexstr);
-   const char ch1 = static_cast<char>(hexstr.Get1st());
+   const char ch1 = static_cast<char>(StrTrimHead(&hexstr).Get1st());
    if (ch1 == 'x' || ch1 == 'X')
       hexstr.SetBegin(hexstr.begin() + 1);
    uintmax_t  value = 0;
@@ -22,8 +21,7 @@ fon9_API uintmax_t HexStrTo(StrView hexstr, const char** endptr) {
    return value;
 }
 fon9_API uintmax_t HIntStrTo(StrView str, const char** endptr) {
-   StrTrimHead(str);
-   char ch = static_cast<char>(str.Get1st());
+   char ch = static_cast<char>(StrTrimHead(&str).Get1st());
    if (ch == '0') {
       str.SetBegin(str.begin() + 1);
       ch = static_cast<char>(str.Get1st());

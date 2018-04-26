@@ -19,7 +19,6 @@ enum class DeviceCommonOption {
 };
 fon9_ENABLE_ENUM_BITWISE_OP(DeviceCommonOption);
 
-fon9_MSC_WARN_DISABLE(4251);//dll-interface.
 /// \ingroup io
 /// 通訊設備基底.
 class fon9_API Device : public intrusive_ref_counter<Device> {
@@ -39,7 +38,7 @@ public:
    /// - 建構者必須在建構完畢, 取得一個 DeviceSP 之後, 立即呼叫 Initialize();
    /// - 必須提供有效的 ses, 運行過程中不會再檢查 this->Session_ 是否有效.
    /// - mgr 可以為 nullptr.
-   Device(Style style, SessionSP ses, ManagerSP mgr)
+   Device(SessionSP ses, ManagerSP mgr, Style style)
       : State_{State::Initializing}
       , Style_{style}
       , Session_{std::move(ses)}
@@ -246,7 +245,6 @@ protected:
       this->CommonOptions_ |= DeviceCommonOption::NoRecvEvent;
    }
 };
-fon9_MSC_WARN_POP;
 
 inline void DeviceAsyncOpInvoker::MakeCallForWork() {
    Device&  owner = ContainerOf(DeviceOpQueue::StaticCast(*this), &Device::OpQueue_);

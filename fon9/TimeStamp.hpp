@@ -323,7 +323,6 @@ enum class TsFmtItemChar : char {
    Second02 = 'S',
 };
 
-fon9_MSC_WARN_DISABLE(4251);//C4251: 'fon9::FmtTS::TimeZoneOffset_': class 'fon9::TimeZoneOffset' needs to have dll-interface to be used by clients of struct 'fon9::FmtTS'
 /// \ingroup AlNum
 /// TimeStamp 的格式化定義.
 struct fon9_API FmtTS : public FmtDef {
@@ -338,7 +337,6 @@ struct fon9_API FmtTS : public FmtDef {
    /// - 如果尾端有 "." 或 ".0" 則自動小數位, 如果尾端沒有 ".precision" 則不顯示小數位.
    FmtTS(StrView fmtstr);
 };
-fon9_MSC_WARN_POP;
 
 template <> struct FmtSelector<TimeStamp> {
    using FmtType = FmtTS;

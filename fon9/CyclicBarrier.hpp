@@ -6,7 +6,6 @@
 
 namespace fon9 {
 
-fon9_MSC_WARN_DISABLE(4251);
 /// \ingroup Thrs
 /// 當同時等候中的 Threads 到達指定數量時, 則喚醒所有等候者.
 /// 喚醒等候者之後, 計數器會歸0, 重複等候邏輯.
@@ -26,7 +25,6 @@ public:
    /// 當同時等候的Threads到達指定數量時返回.
    void Wait();
 };
-fon9_MSC_WARN_POP;
 
 } // namespaces
 #endif//__fon9_CyclicBarrier_hpp__

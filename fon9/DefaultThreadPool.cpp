@@ -24,8 +24,8 @@ fon9_API DefaultThreadPool& GetDefaultThreadPool() {
       fon9_NON_COPY_NON_MOVE(DefaultThreadPoolImpl);
       DefaultThreadPoolImpl() {
          // TODO: 從 getenv()、argv 取得參數?
-         // 目前只有 log file 用到, 以後可能有 DNS resolve...
-         uint32_t threadCount = 1;
+         // 目前只有 log file & DN resolve(io/SocketAddressDN.cpp) 用到, 以後可能有...
+         uint32_t threadCount = 2;
 
          this->StartThread(threadCount, "fon9.DefaultThreadPool");
       }

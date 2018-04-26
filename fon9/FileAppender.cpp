@@ -108,7 +108,7 @@ void FileAppender::CheckRotateTime(TimeStamp tm) {
 }
 
 bool FileAppender::MakeCallNow(WorkContentLocker& lk) {
-   this->Worker_.TakeCall(lk);
+   this->Worker_.TakeCallLocked(lk);
    return true;
 }
 void FileAppender::ConsumeAppendBuffer(DcQueueList& buffer) {
@@ -176,7 +176,7 @@ bool AsyncFileAppender::MakeCallNow(WorkContentLocker& lk) {
    GetDefaultThreadPool().EmplaceMessage([this]() {
       this->Worker_.GetWorkContent([this](WorkContentLocker& lk2) {
          lk2->SetAsyncTaken();
-         this->Worker_.TakeCall(lk2);
+         this->Worker_.TakeCallLocked(lk2);
       });
       intrusive_ptr_release(this);
    });

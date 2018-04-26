@@ -66,6 +66,18 @@
     <Filter Include="Source Files\io\_base">
       <UniqueIdentifier>{7d983219-7662-49b3-96fe-128510012da5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\io\_socket">
+      <UniqueIdentifier>{0db64cbf-e358-4232-b6a2-4fe3e2f8d306}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\io\_socket">
+      <UniqueIdentifier>{b138268a-b5e3-4663-833b-11e1f7468282}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\io\win">
+      <UniqueIdentifier>{1b8383d3-3d97-4b80-add5-bf9d01f4b971}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\io\win">
+      <UniqueIdentifier>{1c4b62d1-464f-4277-84b5-8ada7524a4b0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\sys\Config.h">
@@ -296,6 +308,27 @@
     <ClInclude Include="..\..\..\fon9\io\IoServiceArgs.hpp">
       <Filter>Header Files\io\_base</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\Server.hpp">
+      <Filter>Header Files\io\_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\SocketServer.hpp">
+      <Filter>Header Files\io\_socket</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\Socket.hpp">
+      <Filter>Header Files\io\_socket</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\SocketClient.hpp">
+      <Filter>Header Files\io\_socket</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\SocketAddress.hpp">
+      <Filter>Header Files\io\_socket</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\SocketConfig.hpp">
+      <Filter>Header Files\io\_socket</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\SocketAddressDN.hpp">
+      <Filter>Header Files\io\_socket</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -421,6 +454,27 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\io\IoServiceArgs.cpp">
       <Filter>Source Files\io\_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\Server.cpp">
+      <Filter>Source Files\io\_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\Socket.cpp">
+      <Filter>Source Files\io\_socket</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\SocketClient.cpp">
+      <Filter>Source Files\io\_socket</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\SocketServer.cpp">
+      <Filter>Source Files\io\_socket</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\SocketAddress.cpp">
+      <Filter>Source Files\io\_socket</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\SocketConfig.cpp">
+      <Filter>Source Files\io\_socket</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\SocketAddressDN.cpp">
+      <Filter>Source Files\io\_socket</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -8,7 +8,7 @@
 
 namespace fon9 {
 
-fon9_MSC_WARN_DISABLE(4265);// dtor isnot virtual.
+fon9_MSC_WARN_DISABLE(4265); /* dtor isnot virtual. */
 /// \ingroup Buffer
 /// RevBuffer, FwdBuffer 建立好的輸出資料, 移動到這裡, 提供消費者使用.
 /// 消費者大約分為2類:

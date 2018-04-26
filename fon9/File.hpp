@@ -63,7 +63,6 @@ inline std::string FileModeToStr(FileMode fm) {
 }
 
 fon9_WARN_DISABLE_PADDING;
-fon9_MSC_WARN_DISABLE_NO_PUSH(4251);//dll-interface.
 /// \ingroup Misc
 /// 一般檔案處理.
 /// - 不支援 Seek, 一律在讀寫時指定位置, 或使用 Append 模式開檔、寫檔.

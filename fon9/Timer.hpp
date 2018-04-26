@@ -52,7 +52,6 @@ class fon9_API TimerThread;
 fon9_API TimerThread& GetDefaultTimerThread();
 
 fon9_WARN_DISABLE_PADDING;
-fon9_MSC_WARN_DISABLE_NO_PUSH(4251);//C4251: '...' needs to have dll-interface to be used by clients of class '...'
 /// \ingroup Thrs
 /// 使用一個「額外共用的 TimerThread」提供計時功能.
 /// - 在 OnTimer() 被觸發時, 至少還有一個 TimerEntrySP 保留 timer.
@@ -223,7 +222,6 @@ public:
 };
 
 fon9_WARN_DISABLE_PADDING;
-fon9_MSC_WARN_DISABLE_NO_PUSH(4251);// C4251: '...' needs to have dll-interface to be used by clients of class '...'
 /// \ingroup Thrs
 /// 實際的 TimerEntry 放在 TimerThread 裡面執行.
 class fon9_API TimerThread {

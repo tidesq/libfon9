@@ -72,6 +72,7 @@ extern "C" {
          4514 /* 'name' : unreferenced inline function has been removed */ \
          4710 /* 'name' : function not inlined */ \
          4711 /* function 'name' selected for automatic inline expansion */ \
+         4251 /* needs to have dll-interface to be used by clients */ \
       )
       /// 強迫 MSVC 輸出使用 utf8 編碼.
       #pragma execution_character_set("UTF-8")

@@ -15,9 +15,8 @@ struct FmtArgContextBase {
 };
 
 fon9_WARN_DISABLE_PADDING;
-fon9_MSC_WARN_DISABLE_NO_PUSH(4265// C4265: 'fon9::FmtArgContext<std::basic_string<char,std::char_traits<char>,std::allocator<char>>>': class has virtual functions, but destructor is not virtual
-                              4251// dll-interface
-                              );
+fon9_MSC_WARN_DISABLE_NO_PUSH(4265); /* dtor isnot virtual. */
+
 template <typename ArgT>
 struct FmtArgContext : public FmtArgContextBase {
    ArgT  Value_;

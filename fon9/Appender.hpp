@@ -10,7 +10,6 @@
 namespace fon9 {
 
 fon9_WARN_DISABLE_PADDING;
-fon9_MSC_WARN_DISABLE_NO_PUSH(4251);//dll-interface.
 /// \ingroup Misc
 /// - 可以同時多個 thread 呼叫 `Append()` 節點資料不會交錯.
 /// - 衍生者可改寫:

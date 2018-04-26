@@ -27,8 +27,8 @@ enum class OutcomeSt {
 
 fon9_WARN_DISABLE_PADDING;
 fon9_GCC_WARN_DISABLE("-Wstrict-aliasing");
-//fon9_MSC_WARN_DISABLE_NO_PUSH(4582  //4582: 'fon9::Outcome<Value,fon9::ErrC>::ResultTemp_': constructor is not implicitly called
-//                              4583);//4583: 'fon9::Outcome<Value,fon9::ErrC>::ResultTemp_': destructor is not implicitly called
+//fon9_MSC_WARN_DISABLE_NO_PUSH(4582  //'fon9::Outcome<Value,fon9::ErrC>::ResultTemp_': constructor is not implicitly called
+//                              4583);//'fon9::Outcome<Value,fon9::ErrC>::ResultTemp_': destructor is not implicitly called
 
 template <class ResultT, class ErrorT = ErrC>
 class Outcome {
@@ -248,24 +248,91 @@ inline void RevPrint(RevBuffer& rbuf, const Outcome<ResultT, ErrorT>& oc) {
       RevPrint(rbuf, "no result");
 }
 
+//--------------------------------------------------------------------------//
+
 /// \ingroup Misc
 /// 成功 or 失敗(ErrorT) or 尚未提供結果.
-template <class ErrorT = ErrC>
-struct Result3 : public Outcome<bool, ErrorT> {
+template <class ErrorT>
+class Result3T : public Outcome<bool, ErrorT> {
    using base = Outcome<bool, ErrorT>;
+   /// 尚未提供結果.
+   Result3T() = default;
 public:
    using base::base;
-   void SetResultOK() {
+   Result3T(Result3T&&) = default;
+   Result3T(const Result3T&) = default;
+   Result3T& operator=(Result3T&&) = default;
+   Result3T& operator=(const Result3T&) = default;
+
+   static constexpr Result3T kNoResult() {
+      return Result3T{};
+   }
+   static constexpr Result3T kSuccess() {
+      return Result3T(true);
+   }
+
+   void SetSuccess() {
       base::operator=(true);
    }
 };
+using Result3 = Result3T<ErrC>;
 
 template <class RevBuffer, class ErrorT>
-inline void RevPrint(RevBuffer& rbuf, const Result3<ErrorT>& oc) {
+inline void RevPrint(RevBuffer& rbuf, const Result3T<ErrorT>& oc) {
    if (oc.IsError())
       RevPrint(rbuf, ":err=", oc.GetError());
    else if (oc.HasResult())
       RevPrint(rbuf, ":OK");
+}
+
+//--------------------------------------------------------------------------//
+
+fon9_WARN_DISABLE_PADDING;
+/// \ingroup Misc
+/// 當 FnName_ 為 nullptr 表示成功, 否則為: 呼叫 FnName_ 失敗的錯誤碼.
+/// 通常用於一個操作裡面有多個系統呼叫時使用。
+template <class ErrorT>
+class Result2T {
+   const char* FnName_{nullptr};
+   ErrorT      ErrC_{};
+   template <size_t sz> Result2T(char (&fnName)[sz], ErrorT&&) = delete;
+   template <size_t sz> Result2T(char (&fnName)[sz], const ErrorT&) = delete;
+public:
+   Result2T() = default;
+   /// fnName 必須為不會失效的字串常數.
+   template <size_t sz>
+   Result2T(const char (&fnName)[sz], ErrorT&& e) : FnName_{fnName}, ErrC_{std::move(e)} {
+   }
+   template <size_t sz>
+   Result2T(const char (&fnName)[sz], const ErrorT& e) : FnName_{fnName}, ErrC_{e} {
+   }
+
+   constexpr bool IsError() const {
+      return this->FnName_ != nullptr;
+   }
+   constexpr bool IsSuccess() const {
+      return this->FnName_ == nullptr;
+   }
+   explicit constexpr operator bool() const {
+      return this->IsSuccess();
+   }
+   constexpr bool operator!() const {
+      return this->IsError();
+   }
+
+   const char* GetErrorFn() const {
+      return this->FnName_;
+   }
+   const ErrorT& GetError() const {
+      return this->ErrC_;
+   }
+};
+fon9_WARN_POP;
+
+template <class RevBuffer, class ErrorT>
+inline void RevPrint(RevBuffer& rbuf, const Result2T<ErrorT>& oc) {
+   if (oc.IsError())
+      RevPrint(rbuf, "errfn=", oc.GetErrorFn(), "|err=", oc.GetError());
 }
 
 } // namespace

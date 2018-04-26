@@ -7,7 +7,6 @@
 namespace fon9 { namespace io {
 
 fon9_WARN_DISABLE_PADDING;
-fon9_MSC_WARN_DISABLE_NO_PUSH(4251);//dll-interface.
 /// \ingroup io
 /// Device 管理員基底.
 ///

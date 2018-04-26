@@ -28,7 +28,7 @@ public:
          char      _Narrow[_Size];
          const int _Bytes = WideCharToMultiByte(CP_UTF8, 0, &_Wide[0], -1, _Narrow, _Size, 0, 0) - 1;
          if (_Bytes > 0) {
-            const char* pend = StrTrimTail(_Narrow, _Narrow + _Bytes);
+            const char* pend = StrFindTrimTail(_Narrow, _Narrow + _Bytes);
             if (_Narrow != pend)
                return std::string(static_cast<const char*>(_Narrow), pend);
          }

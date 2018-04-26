@@ -11,8 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{B0840AB3-8BEB-4CC0-B891-316B8AFC2501}</ProjectGuid>
-    <RootNamespace>ThreadController_UT</RootNamespace>
+    <ProjectGuid>{CE838802-E0C7-4EC4-B127-AF4FD3711730}</ProjectGuid>
+    <RootNamespace>Socket_UT</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -74,11 +74,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\fon9\ThreadController_UT.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\fon9\MessageQueue.hpp" />
-    <ClInclude Include="..\..\..\fon9\ThreadController.hpp" />
+    <ClCompile Include="..\..\..\fon9\io\Socket_UT.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\libfon9\libfon9.vcxproj">

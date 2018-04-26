@@ -78,4 +78,115 @@ fon9_API StrView StrView_TruncUTF8(StrView utf8str, size_t expectLen) {
    }
    return StrView{pbegin, ptrunc};
 }
+
+//--------------------------------------------------------------------------//
+
+fon9_API StrView StrSplit(StrView& src, char chDelim) {
+   if (const char* pEqual = StrView::traits_type::find(src.begin(), src.size(), chDelim)) {
+      StrView retval{src.begin(), StrFindTrimTail(src.begin(), pEqual)};
+      src.Reset(StrFindTrimHead(pEqual + 1, src.end()), src.end());
+      return retval;
+   }
+   StrView retval{src};
+   src.Reset(nullptr);
+   return retval;
+}
+
+fon9_API bool FetchTagValue(StrView& src, StrView& tag, StrView& value, char chFieldDelim, char chEqual) {
+   if (StrTrimHead(&src).empty())
+      return false;
+   value = StrFetchTrim(src, chFieldDelim);
+   tag = StrSplit(value, chEqual);
+   return true;
+}
+
+//--------------------------------------------------------------------------//
+
+static constexpr StrBrPair DefaultBrPair[]{
+   {'{', '}', true},
+   {'[', ']', true},
+   {'(', ')', true},
+   {'\'', '\'', false},
+   {'"', '"', false},
+};
+const StrBrArg StrBrArg::Default_{DefaultBrPair};
+const StrBrArg StrBrArg::DefaultNoCurly_{DefaultBrPair + 1, numofele(DefaultBrPair) - 1};
+const StrBrArg StrBrArg::Quotation_{DefaultBrPair + 3, 2};
+
+const StrBrPair* StrBrArg::Find(char chLeft) const {
+   if (this->BrCount_ <= 0)
+      return nullptr;
+   const StrBrPair* beg = this->BrBegin_;
+   const StrBrPair* end = beg + this->BrCount_;
+   for (; beg != end; ++beg) {
+      if (beg->Left_ == chLeft)
+         return beg;
+   }
+   return nullptr;
+}
+
+//--------------------------------------------------------------------------//
+
+//
+// 引號「'、"」內可為「除了 chEndQ」的任意字元(除非 chEndQ 前面是 '\'), 包含沒對應的括號.
+static const char* SkipQuotationEnd(const char* pbeg, const char* pend, char chEndQ) {
+   while (const char* pbrEnd = StrView::traits_type::find(pbeg, static_cast<size_t>(pend - pbeg), chEndQ)) {
+      if (pbrEnd == pbeg || *(pbrEnd - 1) != '\\')
+         return pbrEnd;
+      pbeg = pbrEnd + 1;
+   }
+   return nullptr;
+}
+
+static const char* FindSplit(const char* pbeg, const char* pend, char chDelim, const StrBrArg& brArg);
+// *(pbeg-1) 必定 == br.Left_; 然後尋找結束的引號, 或對應的右括號.
+inline static const char* FindBrEnd(const StrBrPair& br, const char* pbeg, const char* pend, const StrBrArg& brArg) {
+   return br.IsAllowNest_
+      ? FindSplit(pbeg, pend, br.Right_, brArg)
+      : SkipQuotationEnd(pbeg, pend, br.Right_);
+}
+static const char* FindSplit(const char* pbeg, const char* pend, char chDelim, const StrBrArg& brArg) {
+   while (pbeg < pend) {
+      const char  chBeg = *pbeg;
+      if (chBeg == chDelim)
+         return pbeg;
+      ++pbeg;
+      if (chBeg == '\\') {
+         ++pbeg;
+         continue;
+      }
+      if (const StrBrPair* br = brArg.Find(chBeg))
+         if (const char* pspl = FindBrEnd(*br, pbeg, pend, brArg))
+            pbeg = pspl + 1;
+   }
+   return nullptr;
+}
+
+fon9_API StrView FetchField(StrView& src, char chDelim, const StrBrArg& brArg) {
+   if (const char* pDelim = FindSplit(src.begin(), src.end(), chDelim, brArg)) {
+      StrView retval{src.begin(), pDelim};
+      src.SetBegin(pDelim + 1);
+      return retval;
+   }
+   StrView retval{src};
+   src.SetBegin(src.end());
+   return retval;
+}
+
+fon9_API StrView FetchFirstBr(StrView& src, const StrBrArg& brArg) {
+   if (!StrTrimHead(&src).empty()) {
+      const char* pbeg = src.begin();
+      if (const StrBrPair* br = brArg.Find(*pbeg)) {
+         ++pbeg;
+         const char* pBrEnd = FindBrEnd(*br, pbeg, src.end(), brArg);
+         if (pBrEnd)
+            src.SetBegin(pBrEnd + 1);
+         else
+            src.SetBegin(pBrEnd = src.end());
+         return StrView{pbeg, pBrEnd};
+      }
+   }
+   return StrView{nullptr};
+}
+
 } // namespace fon9

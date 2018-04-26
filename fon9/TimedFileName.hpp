@@ -8,7 +8,6 @@
 namespace fon9 {
 
 fon9_WARN_DISABLE_PADDING;
-fon9_MSC_WARN_DISABLE_NO_PUSH(4251);// dll-interface.
 /// \ingroup Misc
 /// 在指定時間測量單位(TimeChecker::TimeScale)之下, 檢查時間是否有變動.
 class fon9_API TimeChecker {

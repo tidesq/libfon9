@@ -8,8 +8,6 @@
 namespace fon9 { namespace io {
 
 fon9_WARN_DISABLE_PADDING;
-fon9_MSC_WARN_DISABLE_NO_PUSH(4251);//dll-interface.
-
 /// \ingroup io
 /// 通訊「處理程序」基底.
 /// * 檢核對方的合法性(登入、驗證...)。

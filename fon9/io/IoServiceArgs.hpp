@@ -2,11 +2,13 @@
 /// \author fonwinz@gmail.com
 #ifndef __fon9_io_IoServiceArgs_hpp__
 #define __fon9_io_IoServiceArgs_hpp__
-#include "fon9/ThreadController.hpp"
 #include "fon9/StrView.hpp"
-#include <vector>
 
-fon9_MSC_WARN_DISABLE(4251);//dll-interface.
+fon9_BEFORE_INCLUDE_STD;
+#include <thread>
+#include <vector>
+fon9_AFTER_INCLUDE_STD;
+
 namespace fon9 { namespace io {
 
 enum class HowWait {
@@ -83,5 +85,4 @@ struct fon9_API ServiceThreadArgs {
 };
 
 } } // namespaces
-fon9_WARN_POP;
 #endif//__fon9_io_IoServiceArgs_hpp__

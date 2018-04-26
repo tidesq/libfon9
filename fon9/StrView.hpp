@@ -26,12 +26,10 @@ class StrView : public Comparable<StrView> {
    template <size_t arysz>
    StrView(char(&str)[arysz]) = delete;
 
-   /// 讓 compiler 在使用 StrView(nullptr) 時會產生錯誤.
-   /// \code
-   /// StrView sv1{nullptr};//VC: error C2440: 'initializing': cannot convert from 'initializer list' to 'fon9::StrView'
-   /// StrView sv2(nullptr);//VC: error C2668: 'fon9::StrView::StrView': ambiguous call to overloaded function
-   /// \endcode
-   StrView(const void* r) = delete;
+   /// 不允許使用 const char* 建構, 應使用 StrView_cstr(const char*);
+   StrView(const void*) = delete;
+   StrView(std::nullptr_t, size_t sz) = delete;
+   StrView(std::nullptr_t, const char*) = delete;
 
    const char* Begin_;
    const char* End_;
@@ -40,9 +38,11 @@ public:
 
    constexpr StrView() : StrView{"", static_cast<size_t>(0u)} {
    }
-   /// \param ibegin 字串開頭, 可使用 nullptr!
+   /// \param ibegin 字串開頭, 不可使用 nullptr!
    /// \param sz     字串長度.
    constexpr StrView(const char* ibegin, size_t sz) : Begin_{ibegin}, End_{ibegin + sz} {
+   }
+   constexpr StrView(std::nullptr_t) : Begin_{nullptr}, End_{nullptr} {
    }
 
    /// 使用 [ibegin..iend) 方式建構.
@@ -96,6 +96,9 @@ public:
       assert(ibegin <= iend);
       this->Begin_  = ibegin;
       this->End_ = iend;
+   }
+   void Reset(std::nullptr_t) {
+      this->Begin_ = this->End_ = nullptr;
    }
    
    /// 可與 std 配合使用的 iterator 及相關 methods.
@@ -151,6 +154,24 @@ public:
    template <class StrT>
    void AppendTo(StrT& str) const {
       str.append(this->begin(), this->end());
+   }
+
+   /// 建立有EOS的字串, 傳回 vbuf.
+   /// 如果 size() >= vbufSize  則僅會複製部分內容, 然後 vbuf[vbufSize-1] 填入 EOS;
+   /// 不考慮 UTF8 的字元截斷問題.
+   char* ToString(char* vbuf, size_t vbufSize) const {
+      size_t len = this->size();
+      if (len >= vbufSize)
+         len = vbufSize - 1;
+      traits_type::move(vbuf, this->Begin_, len);
+      vbuf[len] = 0;
+      return vbuf;
+   }
+
+   /// \copydoc ToString(char* vbuf, size_t vbufSize) const;
+   template <size_t arysz>
+   char* ToString(char(&vbuf)[arysz]) const {
+      return ToString(vbuf, arysz);
    }
 
    /// 比較大小, 若內容相同就相同, 不考慮是否有EOS.

@@ -34,7 +34,7 @@ bool Appender::WaitNodeConsumed(WorkContentLocker& locker, BufferList& buf) {
 bool Appender::WaitFlushed(WorkContentLocker& locker) {
    while (!locker->QueuingBuffer_.empty() || locker->WorkingThreadId_) {
       if (!locker->WorkingThreadId_) {
-         this->Worker_.TakeCall(locker);
+         this->Worker_.TakeCallLocked(locker);
          continue;
       }
       if (!this->WaitNodeConsumed(locker, locker->QueuingBuffer_))

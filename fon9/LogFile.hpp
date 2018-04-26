@@ -25,7 +25,6 @@ fon9_API File::Result InitLogWriteToFile(std::string fmtFileName,
 
 fon9_API bool WaitLogFileFlushed();
 
-fon9_MSC_WARN_DISABLE(4251);//dll-interface.
 /// \ingroup Misc
 /// - 寫檔時機:
 ///   - 每隔 n 秒: 透過 SetFlushInterval() 設定, 預設為 1 秒.
@@ -66,7 +65,6 @@ public:
       return AsyncFileAppenderSP{new LogFileAppender{std::forward<ArgsT>(args)...}};
    }
 };
-fon9_MSC_WARN_POP;
 
 } // namespace
 #endif//__fon9_LogFile_hpp__

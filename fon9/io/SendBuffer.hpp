@@ -20,8 +20,6 @@ enum SendBufferState {
 };
 
 fon9_WARN_DISABLE_PADDING;
-fon9_MSC_WARN_DISABLE_NO_PUSH(4251);//dll-interface.
-
 /// \ingroup io
 /// 傳送緩衝區: 如果情況允許, 則提供 **立即可送** 的返回值, 由呼叫端負責立即送出。
 /// - ASAP

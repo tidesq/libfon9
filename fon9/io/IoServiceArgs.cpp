@@ -1,7 +1,6 @@
 ﻿/// \file fon9/io/IoServiceArgs.cpp
 /// \author fonwinz@gmail.com
 #include "fon9/io/IoServiceArgs.hpp"
-#include "fon9/Utility.hpp"
 #include "fon9/StrTo.hpp"
 #include "fon9/Log.hpp"
 #include "fon9/Outcome.hpp"
@@ -40,29 +39,26 @@ const char* IoServiceArgs::FromTagValue(StrView tag, StrView value) {
          return value.begin();
       }
    }
-   else if (tag.Compare("Capacity") == 0)
+   else if (tag == "Capacity")
       this->Capacity_ = StrTo(value, 0u);
-   else if (tag.Compare("Wait") == 0) {
+   else if (tag == "Wait") {
       if ((this->HowWait_ = StrToHowWait(value)) == HowWait::Unknown) {
          this->HowWait_ = HowWait::Block;
          return value.begin();
       }
    }
-   else if (tag.Compare("Cpus") == 0) {
-      for (;;) {
-         StrTrimHead(value);
-         if (value.empty())
-            break;
-         do {
-            int n = StrTo(value, -1);
-            if (n < 0)
-               return value.begin();
-            this->CpuAffinity_.push_back(static_cast<uint32_t>(n));
-            StrTrimHead(value);
-            if (value.empty())
-               return nullptr;
-         } while (isdigit(static_cast<unsigned char>(value.Get1st())));
-         value.SetBegin(value.begin() + 1);
+   else if (tag == "Cpus") {
+      while (!StrTrimHead(&value).empty()) {
+         StrView v1 = StrFetchTrim(value, ',');
+         if (v1.empty())
+            continue;
+         const char* pend;
+         int n = StrTo(v1, -1, &pend);
+         if (n < 0)
+            return v1.begin();
+         if (pend != v1.end())
+            return pend;
+         this->CpuAffinity_.push_back(static_cast<uint32_t>(n));
       }
    }
    else
@@ -82,7 +78,7 @@ const char* IoServiceArgs::Parse(StrView values) {
 //--------------------------------------------------------------------------//
 
 void ServiceThreadArgs::OnThrRunBegin(std::thread& thr, StrView msgHead) const {
-   Result3<ErrC>   cpuAffinityResult;
+   Result3  cpuAffinityResult{Result3::kNoResult()};
    if (this->CpuAffinity_ >= 0) {
       #if defined(fon9_WINDOWS)
       if (SetThreadAffinityMask(thr.native_handle(), (static_cast<DWORD_PTR>(1) << this->CpuAffinity_)) == 0) {
@@ -96,7 +92,7 @@ void ServiceThreadArgs::OnThrRunBegin(std::thread& thr, StrView msgHead) const {
       #endif
       }
       else
-         cpuAffinityResult.SetResultOK();
+         cpuAffinityResult.SetSuccess();
    }
    fon9_LOG_ThrRun(msgHead, ".ThrRun|name=", this->Name_,
                     "|index=", this->ThreadPoolIndex_ + 1,

@@ -7,7 +7,6 @@
 namespace fon9 {
 
 fon9_WARN_DISABLE_PADDING;
-fon9_MSC_WARN_DISABLE_NO_PUSH(4251);
 /// \ingroup Thrs
 /// 等候指定數量的倒數.
 /// 一旦倒數到 0, 就會叫醒所有的等候者, 且以後的等候都會立即返回.

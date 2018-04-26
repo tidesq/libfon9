@@ -17,8 +17,7 @@ inline void fon9_PutIoVectorElement(struct iovec* piov, void* dat, size_t datsz)
 
 namespace fon9 {
 
-fon9_MSC_WARN_DISABLE(4251  // 'BlockList_': class 'SinglyLinkedList2<fon9::BufferNode>' needs to have dll-interface
-                      4265);// dtor isnot virtual.
+fon9_MSC_WARN_DISABLE(4265); /* dtor isnot virtual. */
 /// \ingroup Buffer
 /// 訊息消費端的緩衝區處理: 使用 BufferList.
 class fon9_API DcQueueList : public DcQueue {

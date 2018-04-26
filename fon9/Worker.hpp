@@ -71,15 +71,13 @@ public:
 ///   class MyWorkContentController : public fon9::MustLock<MyWorkContent> {
 ///      // 在 Worker::Dispose() 轉呼叫到此.
 ///      void Dispose(Locker& lk, ...) {
-///         if (this->SetToDisposing())
+///         if (lk->SetToDisposing())
 ///            this->MakeNotifyAll(lk); // or this->MakeCall(lk); or this->NotifyOne(lk); or ...
 ///      }
 ///
-///      // - 您應自行判斷: 如果 this->GetWorkerState() >= WorkerState::Disposing 要如何處理新加入的工作.
-///      // - this->GetWorkerState() 有可能為 WorkerState::Working: 表示現在可能在 TakeCall() 裡面的 unlock 狀態.
-///      // - 一般情況, 在加入新的工作後:
-///      //   - this->GetWorkerState() == WorkerState::Sleeping, 則應喚醒 Worker.
-///      //   - 在返回前(或 lk.unlock() 前) 設定 this->SetWorkerState(WorkerState::Ringing);
+///      // - 您應自行判斷: 如果 lk->GetWorkerState() >= WorkerState::Disposing 要如何處理新加入的工作.
+///      // - lk->GetWorkerState() 有可能為 WorkerState::Working: 表示現在可能在 TakeCall() 裡面的 unlock 狀態.
+///      // - 一般情況, 在加入新的工作後: lk->SetToRinging()==true, 則應喚醒 Worker, 執行 TakeCall().
 ///      void AddWork(Locker& lk, ...);
 ///
 ///      // 取出並處理工作內容.
@@ -131,9 +129,9 @@ public:
    /// 可在任意 thread 呼叫, 但最多只會有其中一個進入工作階段，執行 WorkContentController::TakeCall()。
    WorkerState TakeCall() {
       ContentLocker ctx{this->Controller_};
-      return this->TakeCall(ctx);
+      return this->TakeCallLocked(ctx);
    }
-   WorkerState TakeCall(ContentLocker& ctx) {
+   WorkerState TakeCallLocked(ContentLocker& ctx) {
       switch (ctx->GetWorkerState()) {
       default:
       case WorkerState::Working:
@@ -166,11 +164,11 @@ public:
    template <class... ArgsT>
    WorkerState TakeNap(ArgsT&&... args) {
       ContentLocker ctx{this->Controller_};
-      WorkerState   res = this->TakeCall(ctx);
+      WorkerState   res = this->TakeCallLocked(ctx);
       if (res >= WorkerState::Disposed)
          return res;
       this->Controller_.TakeNap(ctx, std::forward<ArgsT>(args)...);
-      return this->TakeCall(ctx);
+      return this->TakeCallLocked(ctx);
    }
 
    /// FnWorkContent(ContentLocker&);

@@ -39,19 +39,26 @@ set(fon9src
  io/SendBuffer.cpp
  io/RecvBuffer.cpp
  io/IoServiceArgs.cpp
+ io/SocketAddress.cpp
+ io/SocketAddressDN.cpp
+ io/SocketConfig.cpp
+ io/Socket.cpp
+ io/SocketServer.cpp
+ io/SocketClient.cpp
 )
 add_library(fon9_s STATIC ${fon9src})
 target_link_libraries(fon9_s pthread rt)
 add_library(fon9 SHARED ${fon9src})
 target_link_libraries(fon9 pthread rt dl)
 
-# unit tests: AlNum
+# unit tests: Container / Algorithm
 add_executable(Subr_UT Subr_UT.cpp)
 target_link_libraries(Subr_UT pthread)
 
 add_executable(Trie_UT Trie_UT.cpp)
 target_link_libraries(Trie_UT fon9_s)
 
+# unit tests: AlNum
 add_executable(StrView_UT StrView_UT.cpp)
 target_link_libraries(StrView_UT)
 
@@ -93,3 +100,7 @@ target_link_libraries(TimedFileName_UT fon9_s)
 
 add_executable(LogFile_UT LogFile_UT.cpp)
 target_link_libraries(LogFile_UT fon9_s)
+
+# unit tests: io
+add_executable(Socket_UT io/Socket_UT.cpp)
+target_link_libraries(Socket_UT fon9_s)
