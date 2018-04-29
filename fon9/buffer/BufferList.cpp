@@ -9,7 +9,7 @@ fon9_API void BufferAppendTo(const BufferList& buf, std::string& str) {
    BufferAppendTo<std::string>(buf, str);
 }
 
-fon9_API size_t AppendToBuffer(BufferList& dst, const void* src, size_t size) {
+fon9_API void AppendToBuffer(BufferList& dst, const void* src, size_t size) {
    FwdBufferNode* node = FwdBufferNode::CastFrom(dst.back());
    if (node == nullptr || node->GetRemainSize() < size) {
       node = FwdBufferNode::Alloc(size);
@@ -18,7 +18,6 @@ fon9_API size_t AppendToBuffer(BufferList& dst, const void* src, size_t size) {
    byte*  ptrdst = node->GetDataEnd();
    memcpy(ptrdst, src, size);
    node->SetDataEnd(ptrdst + size);
-   return size;
 }
 
 } // namespaces

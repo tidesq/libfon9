@@ -20,7 +20,7 @@ inline static bool OpThr_ParseDeviceConfig(DeviceT& dev, StrView cfgstr, FnOnTag
    errmsg.assign("Unknown config: {");
    errfn.AppendTo(errmsg);
    errmsg.push_back('}');
-   dev.OpThr_SetState(State::OpenConfigError, &errmsg);
+   dev.OpThr_SetState(State::ConfigError, &errmsg);
    return false;
 }
 

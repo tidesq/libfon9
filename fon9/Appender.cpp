@@ -14,7 +14,7 @@ void Appender::MakeCallForWork(WorkContentLocker& lk) {
 }
 
 bool Appender::WaitNodeConsumed(WorkContentLocker& locker, BufferList& buf) {
-   if (locker->WorkingThreadId_ == ThisThread_.ThreadId_) {
+   if (locker->InTakingCallThread()) {
       // 到達此處的情況: 處理 ConsumeAppendBuffer(); 時 => 有控制節點要求 flush.
       return false;
    }
@@ -32,8 +32,8 @@ bool Appender::WaitNodeConsumed(WorkContentLocker& locker, BufferList& buf) {
    return false;
 }
 bool Appender::WaitFlushed(WorkContentLocker& locker) {
-   while (!locker->QueuingBuffer_.empty() || locker->WorkingThreadId_) {
-      if (!locker->WorkingThreadId_) {
+   while (!locker->QueuingBuffer_.empty() || locker->IsTakingCall()) {
+      if (!locker->IsTakingCall()) {
          this->Worker_.TakeCallLocked(locker);
          continue;
       }
@@ -58,7 +58,6 @@ bool Appender::WaitConsumed(WorkContentLocker& locker) {
 WorkerState Appender::WorkContentController::TakeCall(Locker& lk) {
    DcQueueList& workingBuffer = lk->UnsafeWorkingBuffer_;
    workingBuffer.push_back(std::move(lk->QueuingBuffer_));
-   lk->WorkingThreadId_ = ThisThread_.ThreadId_;
    lk->WorkingNodeCount_ = workingBuffer.GetNodeCount();
    lk.unlock();
 
@@ -76,7 +75,6 @@ WorkerState Appender::WorkContentController::TakeCall(Locker& lk) {
       }
       lk.lock();
    }
-   lk->WorkingThreadId_ = ThreadId::IdType{0};
    if (lk->QueuingBuffer_.empty() && lk->WorkingNodeCount_ == 0)
       return WorkerState::Sleeping;
    return WorkerState::Working;

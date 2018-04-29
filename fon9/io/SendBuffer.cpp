@@ -4,28 +4,19 @@
 
 namespace fon9 { namespace io {
 
-void SendBuffer::ClearBuffer(const ErrC& errc, BufferStatus st) {
-   Locker buf{this->Buffer_};
-   buf->Status_ = st;
-   DcQueueList tmpbuf{std::move(buf->SendingBuffer_)};
-   tmpbuf.push_back(std::move(buf->QueuingBuffer_));
-   buf.unlock();
-   tmpbuf.ConsumeErr(errc);
+SendBuffer::LockResult SendBuffer::LockForASAP(DeviceOpQueue& opQueue, const void* src, size_t size) {
+   using OpLocker = DeviceOpQueue::ALocker;
+   OpLocker op{opQueue, AQueueTaskKind::Send};
+   if (op.DeviceState_ != State::LinkReady)
+      return LockResult::NotReady;
+   if (op.IsAllowInvoke_ && this->Buffer_.empty())
+      return LockResult::AllowASAP;
+   this->Buffer_.Append(src, size);
+   return LockResult::Queuing;
 }
-DcQueueList* SendBuffer::LockForConsume(Locker& buf) {
-   if (buf->Status_ == BufferStatus::Sending)
-      return nullptr;
-   buf->SendingBuffer_.push_back(std::move(buf->QueuingBuffer_));
-   return (buf->SendingBuffer_.empty() ? nullptr : &buf->SendingBuffer_);
-}
-DcQueueList* SendBuffer::LockForConsume() {
-   Locker buf{this->Buffer_};
-   if (DcQueueList* retval = this->LockForConsume(buf)) {
-      buf->Status_ = BufferStatus::Sending;
-      return retval;
-   }
-   return nullptr;
-}
+
+
+#if 0
 SendBuffer::LockResult SendBuffer::LockForASAP(Locker& buf) {
    if (buf->Status_ < BufferStatus::LinkReady)
       return LockResult::NotReady;
@@ -34,12 +25,19 @@ SendBuffer::LockResult SendBuffer::LockForASAP(Locker& buf) {
    buf->Status_ = BufferStatus::Sending;
    return LockResult::AllowASAP;
 }
-SendBuffer::LockResult SendBuffer::LockForASAP(const void* src, size_t size) {
-   Locker      buf{this->Buffer_};
-   LockResult  res = this->LockForASAP(buf);
-   if (res == LockResult::Queuing)
-      AppendToBuffer(buf->QueuingBuffer_, src, size);
-   return res;
+DcQueueList* SendBuffer::GetBufferForSend(Locker& buf) {
+   buf->SendingBuffer_.push_back(std::move(buf->QueuingBuffer_));
+   return (buf->SendingBuffer_.empty() ? nullptr : &buf->SendingBuffer_);
+}
+DcQueueList* SendBuffer::LockForConsume() {
+   Locker buf{this->Buffer_};
+   if (buf->Status_ == BufferStatus::Sending)
+      return nullptr;
+   if (DcQueueList* retval = this->GetBufferForSend(buf)) {
+      buf->Status_ = BufferStatus::Sending;
+      return retval;
+   }
+   return nullptr;
 }
 SendBuffer::LockResult SendBuffer::LockForASAP(BufferList&& src, DcQueueList*& outbuf) {
    Locker      buf{this->Buffer_};
@@ -107,5 +105,5 @@ SendBuffer::AfterSent SendBuffer::AfterASAP(const void* srcRemain, size_t sizeRe
    buf->SendingBuffer_.push_back(std::move(buf->QueuingBuffer_));
    return buf->SendingBuffer_.empty() ? AfterSent::BufferEmpty : AfterSent::NewArrive;
 }
-
+#endif
 } } // namespaces

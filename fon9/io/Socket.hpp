@@ -40,19 +40,14 @@ inline SocketErrC GetSocketErrC(int eno = errno) {
 /// 用此傳回 socket 操作的結果, 並提供發生錯誤的系統呼叫函式名稱。
 class SocketResult : public Result2T<SocketErrC> {
    using base = Result2T<SocketErrC>;
-   template <size_t sz> SocketResult(char (&fnName)[sz], const SocketErrC&) = delete;
-   template <size_t sz> SocketResult(char (&fnName)[sz], SocketErrC&&) = delete;
+   template <size_t sz> SocketResult(char (&fnName)[sz]) = delete;
 public:
    using base::base;
    SocketResult() = default;
    SocketResult(std::nullptr_t) {}
 
    template <size_t sz>
-   SocketResult(const char (&fnName)[sz], SocketErrC&& errc = GetSocketErrC()) : base{fnName, errc} {
-   }
-
-   template <size_t sz>
-   SocketResult(const char (&fnName)[sz], const SocketErrC& errc) : base{fnName, errc} {
+   SocketResult(const char (&fnName)[sz]) : base{fnName, GetSocketErrC()} {
    }
 };
 

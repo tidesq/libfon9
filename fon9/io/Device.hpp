@@ -159,6 +159,7 @@ public:
 
 protected:
    friend struct DeviceAsyncOpInvoker;
+   friend class DeviceOpQueue;
    DeviceOpQueue  OpQueue_;
 
    /// 預設使用 GetDefaultThreadPool() 執行 OpQueue_.
@@ -171,7 +172,7 @@ protected:
    /// - 透過 OpThr_Open() 而來的呼叫, 必定: !cfgstr.IsNullOrEmpty(); && st<State::Disposing
    virtual void OpImpl_Open(std::string cfgstr) = 0;
    /// 透過 OpThr_Open() 而來的呼叫, 此時必定:
-   /// - st < State::Disposing && st != State::OpenConfigError && st != Ready(LinkReady,Listening,WaitingLinkIn)
+   /// - st < State::Disposing && st != State::ConfigError && st != Ready(LinkReady,Listening,WaitingLinkIn)
    virtual void OpImpl_Reopen() = 0;
    /// 關閉完畢後, 必須由衍生者設定 State::Closed 狀態.
    /// 若要花些時間關閉(例:等候遠端確認), 則可先設定 State::Closing 狀態.
@@ -256,6 +257,13 @@ inline void DeviceAsyncOpInvoker::Invoke(DeviceAsyncOp& task) {
       (dev.*task.FnAsync_)(std::move(task.FnAsyncArg_));
    else
       task.AsyncTask_(dev);
+}
+
+inline DeviceOpQueue::ALocker::ALocker(DeviceOpQueue& owner, AQueueTaskKind taskKind)
+   : base::ALockerBase{owner, taskKind}
+   , DeviceState_{ContainerOf(owner, &Device::OpQueue_).OpThr_GetState()} {
+   if (this->IsAllowInvoke_)
+      this->Worker_.unlock();
 }
 
 } } // namespaces

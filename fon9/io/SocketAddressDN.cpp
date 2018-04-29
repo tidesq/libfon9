@@ -150,7 +150,6 @@ struct DnWorkContent : public WorkContentBase {
    DnRequests        DnRequests_;
    DnQueryReqId      FrontId_{1}; // DnRequests_[0] 的 Id.
    DnQueryReqId      EmittingId_{};
-   ThreadId::IdType  EmittingThreadId_{};
 };
 fon9_WARN_POP;
 
@@ -187,12 +186,10 @@ public:
          }
          if (isDone) {
             if (FnOnSocketAddressList fnOnReady = std::move(req.FnOnReady_)) {
-               ctx->EmittingThreadId_ = ThisThread_.ThreadId_;
                DnQueryReqId id = ctx->EmittingId_ = ctx->FrontId_;
                ctx.unlock(); // 觸發結果事件, 在 unlock 之後.
                fnOnReady(id, this->DnResult_);
                ctx.lock();
-               ctx->EmittingThreadId_ = 0;
             }
             break;
          }
@@ -224,7 +221,7 @@ struct DnWorker : public DnWorkController::DnWorkerBase {
    void CancelAndWait(DnQueryReqId id) {
       this->GetWorkContent([&](ContentLocker& ctx) {
          this->Cancel(ctx, id);
-         if (ctx->EmittingThreadId_ == ThisThread_.ThreadId_)
+         if (ctx->InTakingCallThread())
             return;
          while (ctx->EmittingId_ == id && ctx->FrontId_ <= id) {
             ctx.unlock();

@@ -13,7 +13,7 @@ namespace fon9 { namespace io {
 static const StrView iostStrMap[]{
    fon9_MAKE_ENUM_CLASS_StrView( 0, State, Initializing),//"0.Initializing"
    fon9_MAKE_ENUM_CLASS_StrView( 1, State, Initialized),
-   fon9_MAKE_ENUM_CLASS_StrView( 2, State, OpenConfigError),
+   fon9_MAKE_ENUM_CLASS_StrView( 2, State, ConfigError),
    fon9_MAKE_ENUM_CLASS_StrView( 3, State, Opening),
    fon9_MAKE_ENUM_CLASS_StrView( 4, State, WaitingLinkIn),
    fon9_MAKE_ENUM_CLASS_StrView( 5, State, Linking),

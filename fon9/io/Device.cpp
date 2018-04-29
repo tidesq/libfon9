@@ -39,7 +39,7 @@ void Device::OpThr_Open(std::string cfgstr) {
    if (st == State::Listening ||
        st == State::LinkReady ||
        st == State::WaitingLinkIn ||
-       st == State::OpenConfigError)
+       st == State::ConfigError)
       return;
    this->OpImpl_Reopen();
 }
@@ -90,7 +90,7 @@ void Device::OpThr_SetBrokenState(std::string cause) {
    switch (this->State_) {
    case State::Initializing:
    case State::Initialized:
-   case State::OpenConfigError:
+   case State::ConfigError:
       //if (this->State_ < State::Opening   //尚未開啟
    case State::Closing:
    case State::Closed:
@@ -152,7 +152,8 @@ bool Device::OpThr_SetState(State afst, StrView stmsg) {
 
 std::string Device::WaitGetDeviceId() {
    std::string res;
-   this->OpQueue_.WaitInvoke(DeviceAsyncOp{[&res](Device& dev) {
+   this->OpQueue_.WaitInvoke(AQueueTaskKind::Get,
+                             DeviceAsyncOp{[&res](Device& dev) {
       res = dev.DeviceId_;
    }});
    return res;
@@ -165,7 +166,8 @@ std::string Device::WaitGetDeviceInfo() {
    std::string res;
    res.reserve(300);
    res.append("|tm=");
-   this->OpQueue_.WaitInvoke(DeviceAsyncOp{[&res](Device& dev) {
+   this->OpQueue_.WaitInvoke(AQueueTaskKind::Get,
+                             DeviceAsyncOp{[&res](Device& dev) {
       if (const char* tmstr = ToStrRev_Full(UtcNow()))
          res.append(tmstr, kDateTimeStrWidth);
       res.append("|st=");

@@ -27,7 +27,7 @@ class fon9_API DeviceServer : public Device {
    using base = Device;
 public:
    DeviceServer(SessionServerSP ses, ManagerSP mgr, Style style = Style::Server)
-      : base{std::move(ses), std::move(mgr), style} {
+      : base(std::move(ses), std::move(mgr), style) {
    }
    /// Server 不支援, 傳回: SysErr::function_not_supported
    virtual SendResult SendASAP(const void* src, size_t size) override;

@@ -5,7 +5,6 @@
 #include "fon9/buffer/DcQueueList.hpp"
 #include "fon9/Worker.hpp"
 #include "fon9/SpinMutex.hpp"
-#include "fon9/ThreadId.hpp"
 
 namespace fon9 {
 
@@ -28,13 +27,12 @@ protected:
       fon9_NON_COPY_NON_MOVE(WorkContent);
       friend struct WorkContentController;
       friend class Appender;
-      BufferList        QueuingBuffer_;
+      BufferList  QueuingBuffer_;
       // UnsafeWorkingBuffer_ 僅允許在 Appender::WorkContentController::TakeCall() 裡面 unlock 的狀態下使用.
-      DcQueueList       UnsafeWorkingBuffer_;
-      ThreadId::IdType  WorkingThreadId_{0};
-      size_t            WorkingNodeCount_{0};
+      DcQueueList UnsafeWorkingBuffer_;
+      size_t      WorkingNodeCount_{0};
       // 在 ConsumeAppendBuffer() 之後的通知.
-      BufferList        ConsumedWaiter_;
+      BufferList  ConsumedWaiter_;
    public:
       WorkContent() = default;
       size_t GetQueuingNodeCount() const {

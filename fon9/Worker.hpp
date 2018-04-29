@@ -3,6 +3,7 @@
 #ifndef __fon9_Worker_hpp__
 #define __fon9_Worker_hpp__
 #include "fon9/MustLock.hpp"
+#include "fon9/ThreadId.hpp"
 
 namespace fon9 {
 
@@ -16,8 +17,9 @@ enum class WorkerState {
 
 fon9_WARN_DISABLE_PADDING;
 class WorkContentBase {
-   WorkerState State_{WorkerState::Sleeping};
-   bool        IsAsyncTaking_{false};
+   WorkerState       State_{WorkerState::Sleeping};
+   bool              IsAsyncTaking_{false};
+   ThreadId::IdType  TakingCallThreadId_;
 public:
    WorkerState GetWorkerState() const {
       return this->State_;
@@ -56,6 +58,21 @@ public:
    void SetAsyncTaken() {
       assert(this->IsAsyncTaking_ == true);
       this->IsAsyncTaking_ = false;
+   }
+
+   bool IsTakingCall() const {
+      return this->TakingCallThreadId_ != ThreadId::IdType{};
+   }
+   bool InTakingCallThread() const {
+      return this->TakingCallThreadId_ == GetThisThreadId().ThreadId_;
+   }
+   void SetTakingCallThreadId() {
+      assert(this->TakingCallThreadId_ == ThreadId::IdType{});
+      this->TakingCallThreadId_ = GetThisThreadId().ThreadId_;
+   }
+   void ClrTakingCallThreadId() {
+      assert(this->TakingCallThreadId_ == GetThisThreadId().ThreadId_);
+      this->TakingCallThreadId_ = ThreadId::IdType{};
    }
 };
 
@@ -132,7 +149,8 @@ public:
       return this->TakeCallLocked(ctx);
    }
    WorkerState TakeCallLocked(ContentLocker& ctx) {
-      switch (ctx->GetWorkerState()) {
+      WorkerState res = ctx->GetWorkerState();
+      switch (res) {
       default:
       case WorkerState::Working:
       case WorkerState::Disposed:
@@ -144,15 +162,19 @@ public:
       case WorkerState::Disposing:
          break;
       }
-      WorkerState res;
+
+      ctx->SetTakingCallThreadId();
       do {
          res = this->Controller_.TakeCall(ctx);
          WorkerState cur = ctx->GetWorkerState();
-         if (cur >= WorkerState::Disposed)
+         if (cur >= WorkerState::Disposed) {
+            ctx->ClrTakingCallThreadId();
             return cur;
+         }
          assert(cur == WorkerState::Working || cur == WorkerState::Disposing);
       } while (res == WorkerState::Working || res == WorkerState::Disposing);
       ctx->SetWorkerState(res);
+      ctx->ClrTakingCallThreadId();
       return res;
    }
 

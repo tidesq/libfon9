@@ -44,14 +44,16 @@ customer <--> | Device | <--> | Session | <--> business system
 * [`fon9/io/DeviceAsyncOp.hpp`](DeviceAsyncOp.hpp)
 * 每個 Device 都有一個自己的 task queue: `DeviceOpQueue OpQueue_;`，保存該 Device 等候中的「操作、通知」。
 * 當 `OpQueue_` 有事情要處理，會透過 `Device::MakeCallForWork()` (預設)將工作丟到 `fon9::GetDefaultThreadPool()` 執行。
+* 執行 `OpQueue_` 前，若有正在處理 AQueueTaskKind，則 OpQueue_ 會透過 `Device::MakeCallForWork()` 重新排隊。
 * 在「操作 thread」執行 `OpQueue_` 時，會將 **當時** 等候中的「操作、通知」一次處理完。
   * 處理過程中，在操作 thread 呼叫的「操作、通知」會立即插隊處理，不會進入排隊。
   * 處理過程中，在其他 thread 加入的「操作、通知」則會依序排隊到下次再執行。
 
 ### 傳送
 * 傳送資料緩衝處理 [`fon9/io/SendBuffer.hpp`](SendBuffer.hpp)
-* `io::SendBuffer` 不使用 `DeviceOpQueue`，所以 `SendASAP()` 不理會當下是否有「尚未處理」或「正在處理」的操作。
-  但是如果有其他 thread「正在傳送」或「已有傳送資料在排隊」，則當下的傳送要求，會自動變成 `SendBuffered()`。
+* `io::SendBuffer` 為了避免正在送出時，在其他 thread 觸發斷線，所以要考慮 `DeviceOpQueue`:
+  * 如果有「尚未處理」或「正在處理」的操作，則: Send 會移到「操作 thread」依序處理。
+  * 如果其他 thread「正在傳送」或「已有傳送資料在排隊」，則當下的傳送要求，會自動變成 `SendBuffered()`。
 * `SendASAP()`: 如果當下情況允許「送資料」應該要立即或盡快送出，不必回到「傳送 thread」去送(e.g. event loop thread)。
 * `Send()` 可經由設定決定使用 `SendASAP()` or `SendBuffered()`，或可由開發者直接呼叫 `SendASAP()` or `SendBuffered()`。
 * `SendASAP()` vs `SendBuffered()`
@@ -62,17 +64,10 @@ customer <--> | Device | <--> | Session | <--> business system
   * 在 **冷系統** (偶而 Send 一次) 的情況下:
     * 因 `SendBuffered()` 還有個「喚醒傳送」的工作(可能會有系統呼叫、或引發 thread switch)，所以「呼叫延遲」不一定會較低。
   * 要用哪種方式傳送，需視實際應用而定。
-* 串音的可能性:
-  * `OnDevice_StateChanged(e)`, `OnDevice_LinkReady()` 事件必定會在「操作 thread」依序通知。
-  * 通知斷線(e.Before_ == State::LinkReady)後，如果還要繼續發送資料，那就是送出端的問題了。
-    * 在未連線期間 Send 會失敗。
-    * `SendBuffer::SetLinkReady()` 到 `OnDevice_LinkReady()` 之間的 Send 會成功。
-      但是 Device 已盡到通知 (並確認 Session 已收到通知) 的責任了。
-    * 所以 Session 必須負責避免發生這種情形。
 
 ### 通知 & 接收
 * device 的事件通知 (包含: 連線成功通知、狀態改變通知、資料到達通知...)，必須有順序性。
-* 一旦 `OpQueue_` 不是空的，則後續的「通知」不論是否有低延遲需求，一律加入 `OpQueue_` 排隊。
+* 如果有「尚未處理」或「正在處理」的操作，則: 後續的「通知」不論是否有低延遲需求，一律加入 `OpQueue_` 排隊。
 * 是否需要「傳送緩衝已送完」通知?
   * 因為可加入自訂的 `BufferNodeVirtual`，在消費到該節點時取得通知，執行必要的後續作業。
   * 因此「傳送緩衝已送完」的通知似乎沒有必要存在了?

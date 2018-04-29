@@ -60,7 +60,7 @@ enum class State {
 
    /// Device::OpImpl_Open() 因設定錯誤的開啟失敗。
    /// 無法使用相同 cfgstr 再次開啟.
-   OpenConfigError,
+   ConfigError,
    /// 開啟中: 開啟尚未完成.
    /// 若開啟完成, 則進入底下3種可能的狀態, 視不同的 Device Style 而定:
    /// - WaitingLinkIn
