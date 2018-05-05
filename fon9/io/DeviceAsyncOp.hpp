@@ -24,18 +24,12 @@ struct DeviceAsyncOp {
    DeviceAsyncOp(DeviceAsyncTask task) : FnAsync_{nullptr}, AsyncTask_{std::move(task)} {
    }
 
-   DeviceAsyncOp(DeviceAsyncOp&& rhs) : FnAsync_{rhs.FnAsync_} {
-      if (rhs.FnAsync_)
-         this->FnAsyncArg_ = std::move(rhs.FnAsyncArg_);
-      else
-         this->AsyncTask_ = std::move(rhs.AsyncTask_);
+   DeviceAsyncOp(DeviceAsyncOp&& rhs) {
+      this->InplaceMove(std::move(rhs));
    }
    DeviceAsyncOp& operator=(DeviceAsyncOp&& rhs) {
       this->Destroy();
-      if ((this->FnAsync_ = rhs.FnAsync_) != nullptr)
-         InplaceNew<std::string>(&this->FnAsyncArg_, std::move(rhs.FnAsyncArg_));
-      else
-         InplaceNew<DeviceAsyncTask>(&this->AsyncTask_, std::move(rhs.AsyncTask_));
+      this->InplaceMove(std::move(rhs));
       return *this;
    }
 
@@ -43,6 +37,13 @@ struct DeviceAsyncOp {
       this->Destroy();
    }
 private:
+   void InplaceMove(DeviceAsyncOp&& rhs) {
+      if ((this->FnAsync_ = rhs.FnAsync_) != nullptr)
+         InplaceNew<std::string>(&this->FnAsyncArg_, std::move(rhs.FnAsyncArg_));
+      else
+         InplaceNew<DeviceAsyncTask>(&this->AsyncTask_, std::move(rhs.AsyncTask_));
+   }
+
    void Destroy() {
       if (this->FnAsync_)
          (&this->FnAsyncArg_)->std::string::~string();
@@ -72,26 +73,7 @@ struct DeviceAsyncOpInvoker {
    }
 };
 
-fon9_WARN_DISABLE_PADDING;
-class DeviceOpQueue : public AQueue<DeviceAsyncOp, DeviceAsyncOpInvoker> {
-   fon9_NON_COPY_NON_MOVE(DeviceOpQueue);
-   using base = AQueue<DeviceAsyncOp, DeviceAsyncOpInvoker>;
-public:
-   DeviceOpQueue() {}
-   static DeviceOpQueue& StaticCast(DeviceAsyncOpInvoker& invoker) {
-      return *static_cast<DeviceOpQueue*>(&base::StaticCast(invoker));
-   }
-
-   struct ALocker : public base::ALockerBase {
-      fon9_NON_COPY_NON_MOVE(ALocker);
-      /// 設備狀態(參考用):
-      /// - 如果 IsAllowInvoke_ 表示此狀態正確無誤.
-      /// - 如果 !IsAllowInvoke_ 表示此狀態僅供參考, 可能會在 Op thread 被改, 但此處不會變動.
-      const State DeviceState_;
-      ALocker(DeviceOpQueue& owner, AQueueTaskKind taskKind);
-   };
-};
-fon9_WARN_POP;
+using DeviceOpQueue = AQueue<DeviceAsyncOp, DeviceAsyncOpInvoker>;
 
 } } // namespaces
 #endif//__fon9_io_DeviceAsyncOp_hpp__

@@ -280,9 +280,9 @@ using Result3 = Result3T<ErrC>;
 template <class RevBuffer, class ErrorT>
 inline void RevPrint(RevBuffer& rbuf, const Result3T<ErrorT>& oc) {
    if (oc.IsError())
-      RevPrint(rbuf, ":err=", oc.GetError());
+      RevPrint(rbuf, "err=", oc.GetError());
    else if (oc.HasResult())
-      RevPrint(rbuf, ":OK");
+      RevPrint(rbuf, "OK");
 }
 
 //--------------------------------------------------------------------------//
@@ -327,6 +327,7 @@ public:
       return this->ErrC_;
    }
 };
+using Result2 = Result2T<ErrC>;
 fon9_WARN_POP;
 
 template <class RevBuffer, class ErrorT>

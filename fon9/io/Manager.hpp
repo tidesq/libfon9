@@ -20,6 +20,7 @@ fon9_WARN_DISABLE_PADDING;
 class fon9_API Manager : public intrusive_ref_counter<Manager> {
    fon9_NON_COPY_NON_MOVE(Manager);
 public:
+   Manager() = default;
    virtual ~Manager();
 
    /// 當有 client 連線到 server 時的通知, 事件順序:

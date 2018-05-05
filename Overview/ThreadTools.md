@@ -1,5 +1,12 @@
 ﻿# fon9 library - Thread Tools
 
+## `fon9::AQueue`
+* [`fon9/AQueue.hpp`](../fon9/AQueue.hpp)
+* 複雜操作集中在一個 queue 裡面依序處理。
+* 需要盡快(as soon as possible)執行的簡單操作(例如: 簡單的Get、Set)，
+  可透過 lock 後檢查是否允許立即執行，如果不行則要求排入 queue 裡面依序處理。
+* 應另開專頁說明，目前在 fon9::io::Device 有用到。
+
 ## `fon9::MustLock`
 * [`fon9/MustLock.hpp`](../fon9/MustLock.hpp)
 * 當某個物件需要提供 thread safe 特性時，一般而言都需要用 mutex 來保護，通常寫法如下，

@@ -81,7 +81,7 @@ struct fon9_API ServiceThreadArgs {
 
    /// - 透過 fon9_LOG_ThrRun(msgHead, ".ThrRun|name=", this->Name_...) 記錄 log.
    /// - if (this->CpuAffinity_ >= 0) 設定 cpu affinity.
-   void OnThrRunBegin(std::thread& thr, StrView msgHead) const;
+   void OnThrRunBegin(StrView msgHead) const;
 };
 
 } } // namespaces

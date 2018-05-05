@@ -172,13 +172,18 @@ bool AsyncFileAppender::MakeCallNow(WorkContentLocker& lk) {
    // => 理論上, 應該要在解構過程等候 [此次MakeCallNow()的呼叫者(例如: LogFile 裡面的 Timer_)] 結束。
    // => 這招只能用在只有一個額外 user(例如: LogFile 裡面的 Timer_) 的場合。
    //<<<<<
+   auto pthis{this->shared_from_this()};
 
-   GetDefaultThreadPool().EmplaceMessage([this]() {
-      this->Worker_.GetWorkContent([this](WorkContentLocker& lk2) {
+   // 為了避免 EmplaceMessage() 失敗 or 程式結束時沒有執行加入的 task,
+   // 所以在此先釋放上面的 if (intrusive_ptr_add_ref(this) == 0)...
+   // 並使用 intrusive_ptr<> pthis 傳遞, 這樣才能確保當要求的 task 沒有執行時, this 仍會正常死亡!
+   intrusive_ptr_release(this);
+
+   GetDefaultThreadPool().EmplaceMessage([pthis]() {
+      pthis->Worker_.GetWorkContent([&pthis](WorkContentLocker& lk2) {
          lk2->SetAsyncTaken();
-         this->Worker_.TakeCallLocked(lk2);
+         pthis->Worker_.TakeCallLocked(lk2);
       });
-      intrusive_ptr_release(this);
    });
    return true;
 }

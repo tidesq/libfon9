@@ -128,7 +128,10 @@ public:
    }
    void Append(const void* src, size_t size) {
       AppendToBuffer(this->BlockList_, src, size);
-      this->BackExpanded(this->BlockList_.back());
+      if (this->MemCurrent_)
+         this->BackExpanded(this->BlockList_.back());
+      else
+         this->FrontToCurrBlock();
    }
 };
 fon9_MSC_WARN_POP;

@@ -80,16 +80,16 @@ public:
    static_assert(reinterpret_cast<Fdr::fdr_t>(INVALID_SOCKET) == Fdr::kInvalidValue,
                  "Socket, Fdr 的 kInvalidValue 不一致?! 不能用 FdrAuto So_; 必須另外想辦法處理了!");
 
-   SocketResult CreateOverlappedSocket(AddressFamily family, SocketType type);
-   SocketResult CreateDeviceSocket(AddressFamily family, SocketType type) {
-      return this->CreateOverlappedSocket(family, type);
+   bool CreateOverlappedSocket(AddressFamily family, SocketType type, SocketResult& soRes);
+   bool CreateDeviceSocket(AddressFamily family, SocketType type, SocketResult& soRes) {
+      return this->CreateOverlappedSocket(family, type, soRes);
    }
 #else
    using socket_t = Fdr::fdr_t;
    enum : socket_t { kInvalidValue = Fdr::kInvalidValue };
-   SocketResult CreateNonBlockSocket(AddressFamily family, SocketType type);
-   SocketResult CreateDeviceSocket(AddressFamily family, SocketType type) {
-      return this->CreateNonBlockSocket(family, type);
+   bool CreateNonBlockSocket(AddressFamily family, SocketType type, SocketResult& soRes);
+   bool CreateDeviceSocket(AddressFamily family, SocketType type, SocketResult& soRes) {
+      return this->CreateNonBlockSocket(family, type, soRes);
    }
    explicit Socket(socket_t fd) : So_{fd} {
    }
@@ -126,8 +126,8 @@ public:
       return Socket::LoadSocketErrC(this->GetSocketHandle());
    }
 
-   SocketResult SetSocketOptions(const SocketOptions& opts) const;
-   SocketResult Bind(const SocketAddress& addr) const;
+   bool SetSocketOptions(const SocketOptions& opts, SocketResult& soRes) const;
+   bool Bind(const SocketAddress& addr, SocketResult& soRes) const;
 
 #ifdef fon9_WINDOWS
    SOCKET GetSocketHandle() const {

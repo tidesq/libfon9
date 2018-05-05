@@ -19,6 +19,7 @@
 // fonwin:[ from boost 1.58
 #include "fon9/intrusive_ptr.hpp"
 #include <atomic>
+
 #define BOOST_DEFAULTED_FUNCTION(fn, ...)    fn __VA_ARGS__
 // fonwin:][
 //#include <boost/config.hpp>
@@ -110,7 +111,7 @@ template< typename DerivedT, typename CounterPolicyT >
 unsigned int intrusive_ptr_add_ref(const intrusive_ref_counter< DerivedT, CounterPolicyT >* p) BOOST_NOEXCEPT;
 
 template< typename DerivedT, typename CounterPolicyT >
-void intrusive_ptr_release(const intrusive_ref_counter< DerivedT, CounterPolicyT >* p) BOOST_NOEXCEPT;
+unsigned int intrusive_ptr_release(const intrusive_ref_counter< DerivedT, CounterPolicyT >* p) BOOST_NOEXCEPT;
 
 /*!
  * \brief A reference counter base class
@@ -182,7 +183,7 @@ protected:
     BOOST_DEFAULTED_FUNCTION(~intrusive_ref_counter(), {})
 
     friend unsigned int intrusive_ptr_add_ref< DerivedT, CounterPolicyT >(const intrusive_ref_counter< DerivedT, CounterPolicyT >* p) BOOST_NOEXCEPT;
-    friend void intrusive_ptr_release< DerivedT, CounterPolicyT >(const intrusive_ref_counter< DerivedT, CounterPolicyT >* p) BOOST_NOEXCEPT;
+    friend unsigned int intrusive_ptr_release< DerivedT, CounterPolicyT >(const intrusive_ref_counter< DerivedT, CounterPolicyT >* p) BOOST_NOEXCEPT;
 };
 
 template< typename DerivedT, typename CounterPolicyT >
@@ -192,10 +193,12 @@ inline unsigned int intrusive_ptr_add_ref(const intrusive_ref_counter< DerivedT,
 }
 
 template< typename DerivedT, typename CounterPolicyT >
-inline void intrusive_ptr_release(const intrusive_ref_counter< DerivedT, CounterPolicyT >* p) BOOST_NOEXCEPT
+inline unsigned int intrusive_ptr_release(const intrusive_ref_counter< DerivedT, CounterPolicyT >* p) BOOST_NOEXCEPT
 {
-   if (CounterPolicyT::decrement(p->m_ref_counter) == 0)
+   unsigned int res = CounterPolicyT::decrement(p->m_ref_counter);
+   if (res == 0)
       intrusive_ptr_deleter(static_cast<const DerivedT*>(p));// delete static_cast<const DerivedT*>(p);
+   return res;
 }
 
 // fonwin:[ custom deleter.
@@ -220,6 +223,21 @@ inline void intrusive_ptr_deleter(const DerivedT* p) {
 using sp_adl_block::intrusive_ref_counter;
 using sp_adl_block::thread_unsafe_counter;
 using sp_adl_block::thread_safe_counter;
+
+template <class ObjT>
+class ObjHolder : public intrusive_ref_counter<ObjHolder<ObjT>>, public ObjT {
+   fon9_NON_COPY_NON_MOVE(ObjHolder);
+public:
+   template <class... ArgsT>
+   ObjHolder(ArgsT&&... args) : ObjT{std::forward<ArgsT>(args)...} {
+   }
+   ObjHolder() = default;
+};
+
+template <class ObjT, class... ArgsT>
+intrusive_ptr<ObjHolder<ObjT>> MakeObjHolder(ArgsT&&... args) {
+   return intrusive_ptr<ObjHolder<ObjT>>{new ObjHolder<ObjT>{std::forward<ArgsT>(args)...}};
+}
 
 } // namespace fon9//boost
 

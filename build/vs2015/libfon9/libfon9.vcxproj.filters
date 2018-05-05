@@ -78,6 +78,12 @@
     <Filter Include="Source Files\io\win">
       <UniqueIdentifier>{1c4b62d1-464f-4277-84b5-8ada7524a4b0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\io\_fdr">
+      <UniqueIdentifier>{5a6734f7-d01a-4af1-b9af-893a7155971f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\io\_fdr">
+      <UniqueIdentifier>{9f253e36-b0f3-4033-83b9-18588919a053}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\sys\Config.h">
@@ -329,6 +335,30 @@
     <ClInclude Include="..\..\..\fon9\io\SocketAddressDN.hpp">
       <Filter>Header Files\io\_socket</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\FdrTcpClient.hpp">
+      <Filter>Header Files\io\_fdr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\TcpClientBase.hpp">
+      <Filter>Header Files\io\_socket</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\FdrService.hpp">
+      <Filter>Header Files\io\_fdr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\FdrServiceEpoll.hpp">
+      <Filter>Header Files\io\_fdr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\FdrNotify.hpp">
+      <Filter>Header Files\_base\_File</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\win\IocpTcpClient.hpp">
+      <Filter>Header Files\io\win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\win\IocpService.hpp">
+      <Filter>Header Files\io\win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\win\IocpSocket.hpp">
+      <Filter>Header Files\io\win</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -338,7 +368,9 @@
     <None Include="..\..\..\Overview\ThreadTools.md">
       <Filter>Header Files\_base\_Thread</Filter>
     </None>
-    <None Include="..\..\..\fon9\io\README.md" />
+    <None Include="..\..\..\fon9\io\README.md">
+      <Filter>Header Files\io</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\..\CMakeLists.txt" />
@@ -475,6 +507,30 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\io\SocketAddressDN.cpp">
       <Filter>Source Files\io\_socket</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\FdrTcpClient.cpp">
+      <Filter>Source Files\io\_fdr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\TcpClientBase.cpp">
+      <Filter>Source Files\io\_socket</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\FdrServiceEpoll.cpp">
+      <Filter>Source Files\io\_fdr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\FdrService.cpp">
+      <Filter>Source Files\io\_fdr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\FdrNotify.cpp">
+      <Filter>Source Files\_base\_File</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\win\IocpTcpClient.cpp">
+      <Filter>Source Files\io\win</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\win\IocpService.cpp">
+      <Filter>Source Files\io\win</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\win\IocpSocket.cpp">
+      <Filter>Source Files\io\win</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

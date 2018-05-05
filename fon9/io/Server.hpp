@@ -29,7 +29,7 @@ public:
    DeviceServer(SessionServerSP ses, ManagerSP mgr, Style style = Style::Server)
       : base(std::move(ses), std::move(mgr), style) {
    }
-   /// Server 不支援, 傳回: SysErr::function_not_supported
+   /// Server 不支援, 傳回: std::errc::function_not_supported
    virtual SendResult SendASAP(const void* src, size_t size) override;
    virtual SendResult SendASAP(BufferList&& src) override;
    virtual SendResult SendBuffered(const void* src, size_t size) override;

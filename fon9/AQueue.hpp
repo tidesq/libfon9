@@ -122,68 +122,111 @@ public:
    class ALockerBase {
       fon9_NON_COPY_NON_MOVE(ALockerBase);
 
-      friend class AQueue;
-      /// 在 AQueue::WaitInvoke() 裡面使用,
-      /// 解鎖後, this 不可再使用, 所以最多只能呼叫一次.
-      void DangerUnlock() {
-         if (this->IsAllowInvoke_)
-            return;
-         if (this->AddCount_) {
-            this->Owner_.AfterAddTask(this->Worker_);
-            this->AddCount_ = 0;
-         }
-         this->Worker_.unlock();
-      }
-
    protected:
-      AQueue&     Owner_;
       WorkLocker  Worker_;
       unsigned    AddCount_{0};
 
       ALockerBase(AQueue& owner, AQueueTaskKind taskKind)
-         : Owner_(owner)
-         , Worker_{owner.WorkController_}
+         : Worker_{owner.WorkController_}
          , InTakingCallThread_{Worker_->InTakingCallThread()}
          , IsAllowInvoke_{InTakingCallThread_ || Worker_->CheckAndSet(taskKind)}
-         , TaskKind_{taskKind} {
+         , TaskKind_{taskKind}
+         , Owner_(owner) {
+      }
+      bool OnDtor_AfterInvoke() {
+         if (this->IsAllowInvoke_ && !this->InTakingCallThread_) {
+            if (!this->Worker_.owns_lock())
+               this->Worker_.lock();
+            this->Worker_->ClearTaskKind(this->TaskKind_);
+            if (!this->Worker_->Tasks_.empty()) {
+               this->Owner_.AfterAddTask(this->Worker_);
+               return true;
+            }
+         }
+         return false;
+      }
+      bool OnDtor_AfterAdd() {
+         if (this->AddCount_ <= 0)
+            return false;
+         this->Owner_.AfterAddTask(this->Worker_);
+         return true;
       }
 
    public:
       const bool           InTakingCallThread_;
       const bool           IsAllowInvoke_;
       const AQueueTaskKind TaskKind_;
+      AQueue&              Owner_;
 
       ~ALockerBase() {
-         if (this->IsAllowInvoke_) {
-            if (!this->InTakingCallThread_) {
-               this->Worker_.lock();
-               this->Worker_->ClearTaskKind(this->TaskKind_);
-               if (!this->Worker_->Tasks_.empty())
-                  this->Owner_.AfterAddTask(this->Worker_);
-            }
-         }
-         else if (this->AddCount_ > 0)
-            this->Owner_.AfterAddTask(this->Worker_);
+         if (!this->OnDtor_AfterInvoke())
+            this->OnDtor_AfterAdd();
       }
-      /// 如果 this->IsAllowInvoke_ == true; 則會立即執行 task.
-      /// 您也可以自己先判斷 this->IsAllowInvoke_ 再決定是否呼叫 AddTask()
-      void AddTask(Task task) {
-         if (this->IsAllowInvoke_)
-            this->Owner_.TaskInvoker_.Invoke(task);
-         else {
-            this->Worker_->Tasks_.emplace_back(std::move(task));
-            ++this->AddCount_;
-         }
+
+      void AddAsyncTask(Task task) {
+         assert(this->Worker_.owns_lock());
+         this->Worker_->Tasks_.emplace_back(std::move(task));
+         ++this->AddCount_;
+      }
+
+      bool IsWorkingSameTask() const {
+         return (this->Worker_->WorkingTaskKind_ & this->TaskKind_) == this->TaskKind_;
+      }
+
+      bool owns_lock() const {
+         return this->Worker_.owns_lock();
       }
    };
 
-   class ALocker : public ALockerBase {
-      fon9_NON_COPY_NON_MOVE(ALocker);
+   /// \code
+   ///   ...ALockerForAsyncTask  alocker{owner, ...};
+   ///   if (alocker.IsAllowInvoke_) {
+   ///      if (!IsAsyncTaskRequired(owner))
+   ///         return;
+   ///   }
+   ///   alocker.AddAsyncTask(...);
+   /// \endcode
+   class ALockerForAsyncTask : public ALockerBase {
+      fon9_NON_COPY_NON_MOVE(ALockerForAsyncTask);
    public:
-      ALocker(AQueue& owner, AQueueTaskKind taskKind)
+      ALockerForAsyncTask(AQueue& owner, AQueueTaskKind taskKind)
          : ALockerBase{owner, taskKind} {
-         if (this->IsAllowInvoke_)
-            this->Worker_.unlock();
+      }
+   };
+
+   class ALockerForInvoke : public ALockerBase {
+      fon9_NON_COPY_NON_MOVE(ALockerForInvoke);
+   public:
+      ALockerForInvoke(AQueue& owner, AQueueTaskKind taskKind)
+         : ALockerBase{owner, taskKind} {
+      }
+      /// \code
+      ///   ...ALockerForInvoke  alocker{owner, ...};
+      ///   if (alocker.IsAllowInvoke_) {
+      ///      if (IsSyncInvokeRequired) {
+      ///         alocker.UnlockForInvoke();
+      ///         InvokeTask();
+      ///         return;
+      ///      }
+      ///   }
+      ///   alocker.AddAsyncTask(...);
+      /// \endcode
+      void UnlockForInvoke() {
+         assert(this->IsAllowInvoke_);
+         this->Worker_.unlock();
+      }
+      /// \code
+      ///   ...ALockerForInvoke  alocker{owner, ...};
+      ///   if (alocker.CheckUnlockForInvoke())
+      ///      InvokeTask();
+      ///   else
+      ///      alocker.AddAsyncTask(...);
+      /// \endcode
+      bool CheckUnlockForInvoke() {
+         if (!this->IsAllowInvoke_)
+            return false;
+         this->Worker_.unlock();
+         return true;
       }
    };
 
@@ -191,7 +234,7 @@ public:
    /// 一旦有工作放到 Queue, 在還沒執行完畢前, 後續所有的工作都需放到 Queue.
    /// 直到 Queue 執行完畢, 才能再進行 ASAP 的處理.
    void AddTask(Task task) {
-      WorkLocker worker(this->WorkController_);
+      WorkLocker worker{this->WorkController_};
       worker->Tasks_.emplace_back(std::move(task));
       this->AfterAddTask(worker);
    }
@@ -207,20 +250,33 @@ public:
    /// }
    /// \endcode
    void WaitInvoke(AQueueTaskKind taskKind, Task task) {
-      ALocker locker{*this, taskKind};
-      if (locker.IsAllowInvoke_) {
+      class ALockerForInvokeOrWait : public ALockerBase {
+         fon9_NON_COPY_NON_MOVE(ALockerForInvokeOrWait);
+      public:
+         ALockerForInvokeOrWait(AQueue& owner, AQueueTaskKind taskKind)
+            : ALockerBase{owner, taskKind} {
+            if (this->IsAllowInvoke_)
+               this->Worker_.unlock();
+         }
+         void WaitTask(Task& task) {
+            assert(!this->IsAllowInvoke_);
+            CountDownLatch waiter{1};
+            this->Worker_->Tasks_.emplace_back(this->Owner_.TaskInvoker_.MakeWaiterTask(task, waiter));
+            this->Owner_.AfterAddTask(this->Worker_);
+            this->Worker_.unlock();
+            waiter.Wait();
+         }
+      };
+      ALockerForInvokeOrWait alocker{*this, taskKind};
+      if (alocker.IsAllowInvoke_)
          this->TaskInvoker_.Invoke(task);
-         return;
-      }
-      CountDownLatch waiter{1};
-      locker.AddTask(this->TaskInvoker_.MakeWaiterTask(task, waiter));
-      locker.DangerUnlock(); // wait() 之前, 必須先解鎖, 否則可能死結!
-      waiter.Wait();
+      else
+         alocker.WaitTask(task);
    }
 
    void TakeCall() {
       TaskContainer  tasks;
-      WorkLocker     worker(this->WorkController_);
+      WorkLocker     worker{this->WorkController_};
       if (worker->WorkingTaskKind_ != AQueueTaskKind::Empty || worker->IsTakingCall())
          return;
       tasks.swap(worker->Tasks_);

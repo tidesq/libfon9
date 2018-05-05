@@ -4,6 +4,7 @@
 #define __fon9_RevPrint_hpp__
 #include "fon9/RevPut.hpp"
 #include "fon9/ToStrFmt.hpp"
+#include "fon9/buffer/RevBufferList.hpp"
 
 namespace fon9 {
 
@@ -86,6 +87,24 @@ inline auto RevPrint(RevBuffer& rbuf, T1&& value1, FmtT&& fmt, ArgsT&&... args)
 
    RevPrint(rbuf, std::forward<ArgsT>(args)...);
    RevPrint(rbuf, std::forward<T1>(value1), std::forward<FmtT>(fmt));
+}
+
+//--------------------------------------------------------------------------//
+
+/// \ingroup AlNum
+/// 利用 RevPrint() 把 args 轉成 StrT.
+template <class StrT, class... ArgsT>
+inline StrT& RevPrintAppendTo(StrT& dst, ArgsT&&... args) {
+   RevBufferList rbuf{256};
+   RevPrint(rbuf, std::forward<ArgsT>(args)...);
+   BufferAppendTo(rbuf.MoveOut(), dst);
+   return dst;
+}
+template <class StrT, class... ArgsT>
+inline StrT RevPrintTo(ArgsT&&... args) {
+   StrT dst;
+   RevPrintAppendTo(dst, std::forward<ArgsT>(args)...);
+   return dst;
 }
 
 } // namespace

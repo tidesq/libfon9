@@ -43,5 +43,6 @@
       ```
 * [`fon9/intrusive_ref_counter.hpp`](../fon9/intrusive_ref_counter.hpp)
   * [參考 boost 的文件](http://www.boost.org/doc/libs/1_60_0/libs/smart_ptr/intrusive_ref_counter.html)
+  * 提供類似 `std::make_shared()` 但使用 `intrusive_ref_counter` 機制的: `ObjHolder<ObjT>`, `MakeObjHolder(...)`
 
 ---------------------------------------

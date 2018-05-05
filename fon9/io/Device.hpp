@@ -89,7 +89,7 @@ public:
    /// **盡可能立即** 把資料送出.
    /// 只有在 State::LinkReady 的狀態下才可送資料.
    /// \retval Success 立即送出的資料量(可能為0), 可能有部分或全部立即送出, 未立即送出的會放進 buffer 等候送出.
-   /// \retval SysErr::not_connected  狀態不是 State::LinkReady 無法傳送.
+   /// \retval std::errc::no_link  狀態不是 State::LinkReady 無法傳送.
    virtual SendResult SendASAP(const void* src, size_t size) = 0;
    virtual SendResult SendASAP(BufferList&& src) = 0;
    template <class StrT>
@@ -156,11 +156,13 @@ public:
    void AddAsyncTask(DeviceAsyncTask task) {
       this->OpQueue_.AddTask(std::move(task));
    }
+   static Device& StaticCast(DeviceOpQueue& opQueue) {
+      return ContainerOf(opQueue, &Device::OpQueue_);
+   }
 
 protected:
    friend struct DeviceAsyncOpInvoker;
-   friend class DeviceOpQueue;
-   DeviceOpQueue  OpQueue_;
+   mutable DeviceOpQueue  OpQueue_;
 
    /// 預設使用 GetDefaultThreadPool() 執行 OpQueue_.
    virtual void MakeCallForWork();
@@ -195,6 +197,13 @@ protected:
    void OpThr_Close(std::string cause);
    void OpThr_LingerClose(std::string cause);
    void OpThr_Dispose(std::string cause);
+
+   void OpThr_CheckLingerClose(std::string cause);
+   void AsyncCheckLingerClose(DeviceOpQueue::ALockerBase& alocker) {
+      if (this->OpThr_GetState() == State::Lingering)
+         alocker.AddAsyncTask(DeviceAsyncOp(&Device::OpThr_CheckLingerClose, std::string{}));
+   }
+
    /// 每個 Device 在 LinkReady 時(有些在建構時,有些在Open成功時), 都有一個識別用的Id,
    /// - 例: TcpClient: "|R=RemoteIp:Port|L=LocalIp:Port"
    /// - 由於 WaitGetDeviceInfo() 會填入: "|id={DeivceId_}"; 所以 deviceId 不可有沒配對的大括號.
@@ -213,11 +222,11 @@ protected:
    /// OpThr_SetLinkReady() 的流程:
    /// - 衍生者: 發現 LinkReady, 進入 Op thread 呼叫 OpThr_SetLinkReady();
    /// - 在 OpThr_SetLinkReady() 裡面:
-   ///   - 衍生者如果要「設定傳送緩衝的LinkReady狀態」應在 OpImpl_StateChanged() 裡面:
+   ///   - 衍生者如果要「得知 LinkReady 狀態」應在 OpImpl_StateChanged() 裡面處理:
    ///      \code
    ///         virtual void OpImpl_StateChanged(const StateChangedArgs& e) override {
    ///            if (e.After_ == State::LinkReady)
-   ///               this->SendBuffer_.SetLinkReady();
+   ///               ... do something ...;
    ///            base::OpImpl_StateChanged(e);
    ///         }
    ///      \endcode
@@ -247,6 +256,8 @@ protected:
    }
 };
 
+//--------------------------------------------------------------------------//
+
 inline void DeviceAsyncOpInvoker::MakeCallForWork() {
    Device&  owner = ContainerOf(DeviceOpQueue::StaticCast(*this), &Device::OpQueue_);
    owner.MakeCallForWork();
@@ -257,13 +268,6 @@ inline void DeviceAsyncOpInvoker::Invoke(DeviceAsyncOp& task) {
       (dev.*task.FnAsync_)(std::move(task.FnAsyncArg_));
    else
       task.AsyncTask_(dev);
-}
-
-inline DeviceOpQueue::ALocker::ALocker(DeviceOpQueue& owner, AQueueTaskKind taskKind)
-   : base::ALockerBase{owner, taskKind}
-   , DeviceState_{ContainerOf(owner, &Device::OpQueue_).OpThr_GetState()} {
-   if (this->IsAllowInvoke_)
-      this->Worker_.unlock();
 }
 
 } } // namespaces

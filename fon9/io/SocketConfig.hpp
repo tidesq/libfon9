@@ -13,7 +13,11 @@ template <class DeviceT>
 inline static bool OpThr_ParseDeviceConfig(DeviceT& dev, StrView cfgstr, FnOnTagValue fnUnknownField) {
    dev.OpThr_SetState(State::Opening, cfgstr);
    dev.Config_.SetDefaults();
-   StrView errfn = dev.Config_.ParseConfig(cfgstr, std::move(fnUnknownField));
+   StrView errfn = dev.Config_.ParseConfig(cfgstr, [&dev, &fnUnknownField](StrView tag, StrView value) {
+      if (fnUnknownField && fnUnknownField(tag, value))
+         return true;
+      return dev.OpImpl_SetProperty(tag, value).empty();
+   });
    if (errfn.empty())
       return true;
    std::string  errmsg;

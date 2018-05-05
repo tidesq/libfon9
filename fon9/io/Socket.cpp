@@ -41,11 +41,31 @@ struct SockInit {
 };
 static SockInit SockInit_;
 
-SocketResult Socket::CreateOverlappedSocket(AddressFamily family, SocketType type) {
+bool Socket::CreateOverlappedSocket(AddressFamily family, SocketType type, SocketResult& soRes) {
    this->So_.SetFD(reinterpret_cast<Fdr::fdr_t>(WSASocketW(static_cast<int>(family), static_cast<int>(type), 0, NULL, 0, WSA_FLAG_OVERLAPPED)));
-   if (this->So_.IsReadyFD())
-      return nullptr;
-   return "WSASocketW";
+   if (!this->So_.IsReadyFD()) {
+      soRes = SocketResult{"WSASocketW"};
+      return false;
+   }
+   // 為何要設定 FIONBIO?
+   // (1) 讓 DropRecv() 裡面的 WSARecv() 不會阻塞.
+   // (2) 底下的想法太天真 => 因為在 WSA_FLAG_OVERLAPPED 情況下, WSASend(無 overlapped)、send() 似乎仍會 block?!!
+   //    => 因為使用 WSASend(overlapped) 若有立即複製到 SNDBUF, 仍必須在 IocpService thread 處理送出結果.
+   //    => 這裡設定成 FIONBIO, 則可以先不使用 overlapped, 直到發生 EWOULDBLOCK(或 EAGAIN) 的錯誤時, 才使用 overlapped.
+   //    => 這樣可以避免 SendASAP() 之後, IopcService thread 處理結果之前, 其他 SendASAP() 都變成 SendBuffer();
+   //    若呼叫 send(1024 * 1024 * 100), 不論有無 FIONBIO, 返回值都是 1024 * 1024 * 100:
+   //    | FIONBIO | SNDBUF | send() elapsed(ms) |
+   //    |:-------:|-------:|--------------------|
+   //    |    Y    |  10240 |  60,  30...        |
+   //    |    N    |  10240 |  63,  30...        |
+   //    |    Y    |      0 | 341, 248...        |
+   //    |    N    |      0 | 291, 177...        |
+   unsigned long nNonBlocking = 1;
+   if (ioctlsocket(this->GetSocketHandle(), FIONBIO, &nNonBlocking) == SOCKET_ERROR) {
+      soRes = SocketResult{"FIONBIO"};
+      return false;
+   }
+   return true;
 }
 #else
 struct SockInit {
@@ -55,7 +75,7 @@ struct SockInit {
 };
 static SockInit SockInit_;
 
-SocketResult Socket::CreateNonBlockSocket(AddressFamily family, SocketType type) {
+bool Socket::CreateNonBlockSocket(AddressFamily family, SocketType type, SocketResult& soRes) {
    int   sockType = static_cast<int>(type);
    #ifdef SOCK_NONBLOCK
       sockType |= SOCK_NONBLOCK;
@@ -64,13 +84,17 @@ SocketResult Socket::CreateNonBlockSocket(AddressFamily family, SocketType type)
       sockType |= SOCK_CLOEXEC;
    #endif
    this->So_.SetFD(::socket(static_cast<int>(family), sockType, IPPROTO_TCP));
-   if (!this->So_.IsReadyFD())
-      return SocketResult{"socket"};
+   if (!this->So_.IsReadyFD()) {
+      soRes = SocketResult{"socket"};
+      return false;
+   }
    #ifndef SOCK_NONBLOCK
-      if (!this->So_.SetNonBlock())
-         return SocketResult{"SetNonBlock"};
+   if (!this->So_.SetNonBlock()) {
+      soRes = SocketResult{"SetNonBlock"};
+      return false;
+   }
    #endif
-   return nullptr;
+   return true;
 }
 #endif
 
@@ -87,10 +111,11 @@ SocketErrC Socket::LoadSocketErrC(socket_t so) {
    return GetSocketErrC(eno);
 }
 
-SocketResult Socket::Bind(const SocketAddress& addr) const {
+bool Socket::Bind(const SocketAddress& addr, SocketResult& soRes) const {
    if (::bind(this->GetSocketHandle(), &addr.Addr_, addr.GetAddrLen()) == 0)
-      return nullptr;
-   return SocketResult{"bind"};
+      return true;
+   soRes = SocketResult{"bind"};
+   return false;
 }
 
 //--------------------------------------------------------------------------//
@@ -107,9 +132,8 @@ inline static void SetOpt(socket_t so, int level, int optname, const ValueT& val
       SetSocketResultError(cstrOptName, soRes);
 }
 
-SocketResult Socket::SetSocketOptions(const SocketOptions& opts) const {
-   SocketResult   soRes;
-   auto           so = this->GetSocketHandle();
+bool Socket::SetSocketOptions(const SocketOptions& opts, SocketResult& soRes) const {
+   auto  so = this->GetSocketHandle();
 #ifdef SO_NOSIGPIPE // iOS
    int   setNoSigPIPE = 1;
    setsockopt(so, SOL_SOCKET, SO_NOSIGPIPE, &setNoSigPIPE, "NoSigPIPE", sizeof(setNoSigPIPE));
@@ -165,7 +189,7 @@ SocketResult Socket::SetSocketOptions(const SocketOptions& opts) const {
       #endif
       }
    }
-   return soRes;
+   return soRes.IsSuccess();
 }
 
 } } // namespaces

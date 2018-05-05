@@ -35,7 +35,7 @@ struct fon9_API SocketServerConfig {
 
    StrView ParseConfig(StrView cfgstr, FnOnTagValue fnUnknownField, FnOnTagValue fnClientOptionsUnknownField = FnOnTagValue{});
 
-   SocketResult CreateListenSocket(Socket& soListen) const;
+   bool CreateListenSocket(Socket& soListen, SocketResult& soRes) const;
 };
 fon9_WARN_POP;
 

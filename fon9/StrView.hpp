@@ -27,7 +27,7 @@ class StrView : public Comparable<StrView> {
    StrView(char(&str)[arysz]) = delete;
 
    /// 不允許使用 const char* 建構, 應使用 StrView_cstr(const char*);
-   StrView(const void*) = delete;
+   explicit StrView(const void*) = delete;
    StrView(std::nullptr_t, size_t sz) = delete;
    StrView(std::nullptr_t, const char*) = delete;
 

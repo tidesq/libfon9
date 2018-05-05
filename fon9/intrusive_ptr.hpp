@@ -29,7 +29,10 @@
 //#include <boost/smart_ptr/detail/sp_nullptr_t.hpp>
 
 //#include <boost/config/no_tr1/functional.hpp>          // for std::less
+#include "fon9/sys/Config.h"
+fon9_BEFORE_INCLUDE_STD;
 #include <functional>                                    // for std::less
+fon9_AFTER_INCLUDE_STD;
 // fonwin:]
 
 #if !defined(BOOST_NO_IOSTREAM)

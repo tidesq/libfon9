@@ -14,15 +14,19 @@ namespace fon9 { namespace io {
 /// - 使用 fon9 log 機制記錄 Device 事件.
 /// - 當 Device 發生錯誤: 10秒後重新連線。
 class SimpleManager : public Manager {
+   fon9_NON_COPY_NON_MOVE(SimpleManager);
+
    static constexpr TimeInterval  GetRetryInterval() {
       return TimeInterval_Second(10);
    }
 
    struct RetryTimer : public TimerEntry {
+      fon9_NON_COPY_NON_MOVE(RetryTimer);
       const DeviceSP Device_;
       RetryTimer(Device& dev) : TimerEntry{GetDefaultTimerThread()}, Device_{dev.shared_from_this()} {
       }
       virtual void OnTimer(TimeStamp now) override {
+         (void)now;
          this->Device_->AsyncOpen(std::string());
       }
    };
@@ -42,24 +46,9 @@ class SimpleManager : public Manager {
          intrusive_ptr_release(timer);
       }
    }
-public:
-   virtual void OnDevice_Destructing(Device& dev) override {
-      fon9_LOG_INFO("OnDevice_Destructing|dev=", &dev, "|mgrBookmark=", ToHex{dev.GetManagerBookmark()});
-      assert(dev.GetManagerBookmark() == 0);
-   }
-   void OnDevice_Accepted(DeviceServer& server, Device& client) {
-      fon9_LOG_INFO("OnDevice_Accepted|server=", &server, "|client=", &client);
-   }
-   virtual void OnDevice_Initialized(Device& dev) override {
-      fon9_LOG_INFO("OnDevice_Initialized|dev=", &dev);
-   }
-   void OnDevice_StateChanged(Device& dev, const StateChangedArgs& e) {
-      fon9_LOG_INFO("OnDevice_StateChanged|dev=", &dev,
-                    "|id={", e.DeviceId_, "}"
-                    "|st=", GetStateStr(e.After_),
-                    "|info=", e.Info_);
+   void CheckRetryTimer(Device& dev, State st) {
       fon9_WARN_DISABLE_SWITCH;
-      switch (e.After_) {
+      switch (st) {
       case State::LinkError:
       case State::LinkBroken:
       case State::ListenBroken:
@@ -71,13 +60,34 @@ public:
       }
       fon9_WARN_POP;
    }
+public:
+   SimpleManager() = default;
+
+   virtual void OnDevice_Destructing(Device& dev) override {
+      fon9_LOG_INFO("OnDevice_Destructing|dev=", ToPtr{&dev});
+      this->DestroyRetryTimer(dev);
+   }
+   void OnDevice_Accepted(DeviceServer& server, Device& client) {
+      fon9_LOG_INFO("OnDevice_Accepted|server=", ToPtr(&server), "|client=", ToPtr(&client));
+   }
+   virtual void OnDevice_Initialized(Device& dev) override {
+      fon9_LOG_INFO("OnDevice_Initialized|dev=", ToPtr{&dev});
+   }
+   void OnDevice_StateChanged(Device& dev, const StateChangedArgs& e) {
+      fon9_LOG_INFO("OnDevice_StateChanged|dev=", ToPtr{&dev},
+                    "|st=", GetStateStr(e.After_),
+                    "|id={", e.DeviceId_, "}"
+                    "|info=", e.Info_);
+      this->CheckRetryTimer(dev, e.After_);
+   }
    void OnDevice_StateUpdated(Device& dev, const StateUpdatedArgs& e) {
-      fon9_LOG_INFO("OnDevice_StateUpdated|dev=", &dev,
+      fon9_LOG_INFO("OnDevice_StateUpdated|dev=", ToPtr{&dev},
                     "|st=", GetStateStr(e.State_),
                     "|info=", e.Info_);
+      this->CheckRetryTimer(dev, e.State_);
    }
    void OnSession_StateUpdated(Device& dev, StrView stmsg) {
-      fon9_LOG_INFO("OnSession_StateUpdated|dev=", &dev, "|stmsg=", stmsg);
+      fon9_LOG_INFO("OnSession_StateUpdated|dev=", ToPtr{&dev}, "|stmsg=", stmsg);
    }
 };
 

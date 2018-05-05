@@ -31,6 +31,7 @@ StrView SocketServerConfig::ParseConfig(StrView cfgstr, FnOnTagValue fnUnknownFi
             this->ListenBacklog_ = 5;
       }
       else if (tag == "ClientOptions") {
+         if (0); // TODO: 要處理 AcceptedClient.DeviceCommonOption
          StrView cres = this->AcceptedClientOptions_.ParseConfig(FetchFirstBr(value), fnClientOptionsUnknownField);
          if (clires.empty())
             clires = cres;
@@ -48,15 +49,15 @@ StrView SocketServerConfig::ParseConfig(StrView cfgstr, FnOnTagValue fnUnknownFi
    return clires;
 }
 
-SocketResult SocketServerConfig::CreateListenSocket(Socket& soListen) const {
-   SocketResult res = soListen.CreateDeviceSocket(this->ListenConfig_.GetAF(), SocketType::Stream);
-   if (res) {
-      if ((res = soListen.SetSocketOptions(this->ListenConfig_.Options_)).IsSuccess())
-         if ((res = soListen.Bind(this->ListenConfig_.AddrBind_)).IsSuccess())
-            if (::listen(soListen.GetSocketHandle(), this->ListenBacklog_))
-               return SocketResult{"listen"};
+bool SocketServerConfig::CreateListenSocket(Socket& soListen, SocketResult& soRes) const {
+   if(soListen.CreateDeviceSocket(this->ListenConfig_.GetAF(), SocketType::Stream, soRes)
+      && soListen.SetSocketOptions(this->ListenConfig_.Options_, soRes)
+      && soListen.Bind(this->ListenConfig_.AddrBind_, soRes)) {
+      if (::listen(soListen.GetSocketHandle(), this->ListenBacklog_) == 0)
+         return true;
+      soRes = SocketResult{"listen"};
    }
-   return res;
+   return false;
 }
 
 } } // namespaces

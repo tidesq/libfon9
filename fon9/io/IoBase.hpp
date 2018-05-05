@@ -103,6 +103,10 @@ enum class State {
 /// 取得 st 的顯示字串.
 fon9_API StrView GetStateStr(State st);
 
+inline bool IsAllowContinueSend(State st) {
+   return st == State::LinkReady || st == State::Lingering;
+}
+
 /// \ingroup io
 /// OnDevice_StateChanged() 事件的參數.
 struct StateChangedArgs {

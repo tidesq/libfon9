@@ -9,7 +9,8 @@
 
 namespace fon9 { namespace io {
 
-void DomainNameParser::Reset(std::string dn) {
+void DomainNameParser::Reset(std::string dn, port_t defaultPortNo) {
+   this->DefaultPortNo_ = htons(defaultPortNo);
    this->LastPortNo_ = 0;
    this->DomainNames_ = std::move(dn);
    this->DnParser_ = ToStrView(this->DomainNames_);
@@ -64,33 +65,38 @@ void DomainNameParser::Parse(StrView dnPort, DomainNameParseResult& res) {
       }
       else {
          //printf("%s:%s\n", dn1.begin(), dnPort.begin());
-         port_t*        portPtr;
-         SocketAddress  addr;
-         for (struct addrinfo* pAddr = gaiRes; pAddr != nullptr; pAddr = pAddr->ai_next) {
+         port_t*           sPortPtr;
+         SocketAddress     sAddr;
+         struct addrinfo*  pAddrPrev = nullptr;
+         for (struct addrinfo* pAddr = gaiRes; pAddr != nullptr; pAddr = (pAddrPrev = pAddr)->ai_next) {
             size_t addrSize;
             if (pAddr->ai_family == AF_INET) {
-               addrSize = sizeof(addr.Addr4_);
-               portPtr = &addr.Addr4_.sin_port;
+               addrSize = sizeof(sAddr.Addr4_);
+               sPortPtr = &sAddr.Addr4_.sin_port;
             }
             else if (pAddr->ai_family == AF_INET6) {
-               addrSize = sizeof(addr.Addr6_);
-               portPtr = &addr.Addr6_.sin6_port;
+               addrSize = sizeof(sAddr.Addr6_);
+               sPortPtr = &sAddr.Addr6_.sin6_port;
             }
             else {
                continue;
             }
-            if (pAddr != gaiRes && memcmp(&addr.Addr_, pAddr->ai_addr, addrSize) == 0) {
+            if (pAddr->ai_addrlen != addrSize)
+               continue;
+
+            if (pAddrPrev && pAddrPrev->ai_addrlen == pAddr->ai_addrlen
+                && memcmp(pAddrPrev->ai_addr, pAddr->ai_addr, addrSize) == 0) {
                // 可能取得相同的 ip:port?
                // Linux 4.4.0-87-generic #110-Ubuntu SMP Tue Jul 18 12:55:35 UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
                // 使用 localhost 會取得 2 次 127.0.0.1 ??
                continue;
             }
-            memcpy(&addr.Addr_, pAddr->ai_addr, addrSize);
-            if (*portPtr == 0)
-               *portPtr = this->LastPortNo_;
+            memcpy(&sAddr.Addr_, pAddr->ai_addr, addrSize);
+            if (*sPortPtr == 0)
+               *sPortPtr = this->DefaultPortNo_ ? this->DefaultPortNo_ : this->LastPortNo_;
             else
-               this->LastPortNo_ = *portPtr;
-            res.AddressList_.push_back(addr);
+               this->LastPortNo_ = *sPortPtr;
+            res.AddressList_.push_back(sAddr);
 
          #if 0
             printf("    ");
@@ -118,7 +124,7 @@ bool DomainNameParser::Parse(DomainNameParseResult& res) {
          break;
       }
    }
-   if (this->LastPortNo_) {
+   if (this->LastPortNo_ && this->DefaultPortNo_ == 0) {
       for (SocketAddress& addr : res.AddressList_) {
          port_t& portRef = (addr.Addr_.sa_family == AF_INET6 ? addr.Addr6_.sin6_port : addr.Addr4_.sin_port);
          if (portRef != 0)
@@ -132,17 +138,19 @@ bool DomainNameParser::Parse(DomainNameParseResult& res) {
 //--------------------------------------------------------------------------//
 
 namespace impl {
+fon9_WARN_DISABLE_PADDING;
 struct DnRequest {
    std::string             DomainName_;
+   SocketAddress::port_t   DefaultPortNo_;
    FnOnSocketAddressList   FnOnReady_;
    DnRequest() = default;
-   DnRequest(std::string&& dn, FnOnSocketAddressList&& fnOnReady)
+   DnRequest(std::string&& dn, SocketAddress::port_t defaultPortNo, FnOnSocketAddressList&& fnOnReady)
       : DomainName_{std::move(dn)}
+      , DefaultPortNo_{defaultPortNo}
       , FnOnReady_{std::move(fnOnReady)} {
    }
 };
 
-fon9_WARN_DISABLE_PADDING;
 struct DnWorkContent : public WorkContentBase {
    fon9_NON_COPY_NON_MOVE(DnWorkContent);
    DnWorkContent() = default;
@@ -172,7 +180,7 @@ public:
 
    fon9::WorkerState TakeCall(Locker& ctx) {
       DnRequest&  req = ctx->DnRequests_[0];
-      this->DnParser_.Reset(req.DomainName_);
+      this->DnParser_.Reset(req.DomainName_, req.DefaultPortNo_);
       this->DnResult_.Clear();
       while (req.FnOnReady_) { // 若 !req.FnOnReady_ 表示: 已被 DnWorker::Cancel(); 清除, 此次要求已被取消.
          ctx.unlock();
@@ -199,9 +207,9 @@ public:
       return ctx->DnRequests_.empty() ? WorkerState::Sleeping : WorkerState::Working;
    }
 
-   void AddWork(Locker& lk, DnQueryReqId& id, std::string&& dn, FnOnSocketAddressList&& fnOnReady) {
+   void AddWork(Locker& lk, DnQueryReqId& id, std::string&& dn, SocketAddress::port_t defaultPortNo, FnOnSocketAddressList&& fnOnReady) {
       id = lk->FrontId_ + lk->DnRequests_.size();
-      lk->DnRequests_.emplace_back(std::move(dn), std::move(fnOnReady));
+      lk->DnRequests_.emplace_back(std::move(dn), defaultPortNo, std::move(fnOnReady));
       if (lk->SetToRinging()) {
          lk.unlock();
          GetDefaultThreadPool().EmplaceMessage(std::bind(&DnWorkerBase::TakeCall, &DnWorkerBase::StaticCast(*this)));
@@ -214,21 +222,25 @@ struct DnWorker : public DnWorkController::DnWorkerBase {
    DnWorker() = default;
 
    void Cancel(DnQueryReqId id) {
-      this->GetWorkContent([&](ContentLocker& ctx) {
-         this->Cancel(ctx, id);
-      });
+      if (id > 0)
+         this->GetWorkContent([&](ContentLocker& ctx) {
+            this->Cancel(ctx, id);
+         });
    }
-   void CancelAndWait(DnQueryReqId id) {
-      this->GetWorkContent([&](ContentLocker& ctx) {
-         this->Cancel(ctx, id);
-         if (ctx->InTakingCallThread())
-            return;
-         while (ctx->EmittingId_ == id && ctx->FrontId_ <= id) {
-            ctx.unlock();
-            std::this_thread::yield();
-            ctx.lock();
-         }
-      });
+   void CancelAndWait(DnQueryReqId* id) {
+      if (id && *id > 0) {
+         this->GetWorkContent([&](ContentLocker& ctx) {
+            this->Cancel(ctx, *id);
+            if (ctx->InTakingCallThread())
+               return;
+            while (ctx->EmittingId_ == *id && ctx->FrontId_ <= *id) {
+               ctx.unlock();
+               std::this_thread::yield();
+               ctx.lock();
+            }
+         });
+         *id = 0;
+      }
    }
 public:
    void Cancel(ContentLocker& ctx, DnQueryReqId id) {
@@ -245,10 +257,10 @@ static DnWorker& GetDefaultDnWorker() {
    return DnWorker_;
 }
 
-void AsyncDnQuery(DnQueryReqId& id, std::string dn, FnOnSocketAddressList fnOnReady) {
-   return GetDefaultDnWorker().AddWork(id, std::move(dn), std::move(fnOnReady));
+void AsyncDnQuery(DnQueryReqId& id, std::string dn, SocketAddress::port_t defaultPortNo, FnOnSocketAddressList fnOnReady) {
+   return GetDefaultDnWorker().AddWork(id, std::move(dn), defaultPortNo, std::move(fnOnReady));
 }
-void AsyncDnQuery_CancelAndWait(DnQueryReqId id) {
+void AsyncDnQuery_CancelAndWait(DnQueryReqId* id) {
    return GetDefaultDnWorker().CancelAndWait(id);
 }
 void AsyncDnQuery_Cancel(DnQueryReqId id) {

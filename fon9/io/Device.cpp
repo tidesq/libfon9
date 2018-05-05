@@ -22,10 +22,9 @@ void Device::Initialize() {
 }
 
 void Device::MakeCallForWork() {
-   intrusive_ptr_add_ref(this);
-   GetDefaultThreadPool().EmplaceMessage([this]() {
-      this->OpQueue_.TakeCall();
-      intrusive_ptr_release(this);
+   DeviceSP pthis{this};
+   GetDefaultThreadPool().EmplaceMessage([pthis]() {
+      pthis->OpQueue_.TakeCall();
    });
 }
 
@@ -48,11 +47,14 @@ void Device::OpThr_Close(std::string cause) {
    if (this->State_ < State::Closing)
       this->OpImpl_Close(std::move(cause));
 }
+void Device::OpThr_CheckLingerClose(std::string cause) {
+   if (this->State_ == State::Lingering && this->IsSendBufferEmpty())
+      this->OpImpl_Close(std::move(cause));
+}
 void Device::OpThr_LingerClose(std::string cause) {
    if (this->State_ == State::LinkReady) {
       this->OpThr_SetState(State::Lingering, &cause);
-      if (this->IsSendBufferEmpty() && this->State_ == State::Lingering)
-         this->OpImpl_Close(std::move(cause));
+      this->OpThr_CheckLingerClose(std::move(cause));
    }
    else {
       if (this->State_ < State::Lingering)

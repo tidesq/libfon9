@@ -77,17 +77,17 @@ const char* IoServiceArgs::Parse(StrView values) {
 
 //--------------------------------------------------------------------------//
 
-void ServiceThreadArgs::OnThrRunBegin(std::thread& thr, StrView msgHead) const {
+void ServiceThreadArgs::OnThrRunBegin(StrView msgHead) const {
    Result3  cpuAffinityResult{Result3::kNoResult()};
    if (this->CpuAffinity_ >= 0) {
       #if defined(fon9_WINDOWS)
-      if (SetThreadAffinityMask(thr.native_handle(), (static_cast<DWORD_PTR>(1) << this->CpuAffinity_)) == 0) {
+      if (SetThreadAffinityMask(GetCurrentThread(), (static_cast<DWORD_PTR>(1) << this->CpuAffinity_)) == 0) {
          cpuAffinityResult = GetSysErrC();
       #else
       cpu_set_t cpuset;
       CPU_ZERO(&cpuset);
       CPU_SET(this->CpuAffinity_, &cpuset);
-      if (int iErr = pthread_setaffinity_np(thr.native_handle(), sizeof(cpu_set_t), &cpuset)) {
+      if (int iErr = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset)) {
          cpuAffinityResult = GetSysErrC(iErr);
       #endif
       }
@@ -96,7 +96,7 @@ void ServiceThreadArgs::OnThrRunBegin(std::thread& thr, StrView msgHead) const {
    }
    fon9_LOG_ThrRun(msgHead, ".ThrRun|name=", this->Name_,
                     "|index=", this->ThreadPoolIndex_ + 1,
-                    "|Cpu=", this->CpuAffinity_, cpuAffinityResult,
+                    "|Cpu=", this->CpuAffinity_, ':', cpuAffinityResult,
                     "|Wait=", HowWaitToStr(this->HowWait_),
                     "|Capacity=", this->Capacity_);
 

@@ -25,6 +25,7 @@ set(fon9src
  Appender.cpp
  FileAppender.cpp
  LogFile.cpp
+ FdrNotify.cpp
  
  buffer/MemBlock.cpp
  buffer/BufferNode.cpp
@@ -33,6 +34,7 @@ set(fon9src
  buffer/DcQueue.cpp
  buffer/DcQueueList.cpp
  
+ io/IoBase.cpp
  io/Session.cpp
  io/Manager.cpp
  io/Device.cpp
@@ -45,6 +47,8 @@ set(fon9src
  io/Socket.cpp
  io/SocketServer.cpp
  io/SocketClient.cpp
+ io/TcpClientBase.cpp
+ io/FdrTcpClient.cpp
 )
 add_library(fon9_s STATIC ${fon9src})
 target_link_libraries(fon9_s pthread rt)

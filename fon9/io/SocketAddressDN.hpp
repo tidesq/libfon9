@@ -37,6 +37,7 @@ class fon9_API DomainNameParser {
    std::string DomainNames_; // 解析過程中, 此字串的內容會被改變!
    StrView     DnParser_;
    port_t      LastPortNo_;
+   port_t      DefaultPortNo_;
    void Parse(StrView dnPort, DomainNameParseResult& res);
 public:
    /// - 預設建構時會設定 AddrHints_.ai_family = AF_INET;
@@ -60,7 +61,7 @@ public:
    ///   - port 前面的 ':' 可省略
    ///   - port 必須在 "[]" 之後
    /// - 不會改變 AddrHints_
-   void Reset(std::string dn);
+   void Reset(std::string dn, port_t defaultPortNo = 0);
 
    /// 一次取出一個用','分隔的 domain name, 透過 getaddrinfo() 取得 address, 加入 res.AddressList_.
    /// getaddrinfo() 為 blocking mode, 所以這裡可能會花一點時間!
@@ -83,10 +84,11 @@ using FnOnSocketAddressList = std::function<void(DnQueryReqId id, DomainNamePars
 /// - 在 fon9::GetDefaultThreadPool() 處理, 處理完畢透過 fnOnReady() 告知結果.
 /// - id = 可丟給 AsyncDnQuery_Cancel() 取消.
 /// - 可能在返回前就呼叫了 fnOnReady(); 但在呼叫 fnOnReady() 之前 id 必定已經填妥.
-fon9_API void AsyncDnQuery(DnQueryReqId& id, std::string dn, FnOnSocketAddressList fnOnReady);
+fon9_API void AsyncDnQuery(DnQueryReqId& id, std::string dn, SocketAddress::port_t defaultPortNo, FnOnSocketAddressList fnOnReady);
 
 /// 若要取消的id正在呼叫 fnOnReady(), 則會等 fnOnReady() 結束時才返回.
-fon9_API void AsyncDnQuery_CancelAndWait(DnQueryReqId id);
+/// 返回前會將 *id 設為 0;
+fon9_API void AsyncDnQuery_CancelAndWait(DnQueryReqId* id);
 fon9_API void AsyncDnQuery_Cancel(DnQueryReqId id);
 
 } } // namespaces

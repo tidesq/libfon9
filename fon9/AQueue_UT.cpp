@@ -94,14 +94,14 @@ struct RunASAP : public RunAQueueBase {
       this->StartingLine_.Wait();
       AQueueTestTask task;
       for (uint64_t L = 0; L < kTimes; ++L) {
-         AQueue::ALocker  alocker(this->AQueue_, this->TaskKind_);
-         if (alocker.IsAllowInvoke_) {
+         AQueue::ALockerForInvoke  alocker(this->AQueue_, this->TaskKind_);
+         if (alocker.CheckUnlockForInvoke()) {
             ++this->CountImmediate_;
             task();
          }
          else {
             ++this->CountQueued_;
-            alocker.AddTask(task);
+            alocker.AddAsyncTask(task);
          }
       }
       StartingLine_.Wait();

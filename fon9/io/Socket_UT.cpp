@@ -13,9 +13,10 @@
 #include <arpa/inet.h>
 #endif
 
-//--------------------------------------------------------------------------//
-
 int main() {
+#if defined(_MSC_VER) && defined(_DEBUG)
+   _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif
    fon9::AutoPrintTestInfo utinfo("Socket");
 
    std::string dn{"localhost, www.google.com:6666,  localhost:bad,  127.0.0.1:https,aaa,[www.yahoo.com]:5555  "};
@@ -25,7 +26,7 @@ int main() {
    bool isDone = false;
    unsigned ms = 1;
    do {
-      fon9::io::AsyncDnQuery(reqid, dn,
+      fon9::io::AsyncDnQuery(reqid, dn, 0,
                              [&isDone](fon9::io::DnQueryReqId id, fon9::io::DomainNameParseResult& res) {
          isDone = true;
          std::cout << "|reqid=" << id << "|err=" << res.ErrMsg_ << std::endl;
@@ -36,10 +37,11 @@ int main() {
          }
       });
       std::this_thread::sleep_for(std::chrono::milliseconds{ms *= 2});
-      fon9::io::AsyncDnQuery_CancelAndWait(reqid);
+      fon9::io::AsyncDnQuery_CancelAndWait(&reqid);
    } while (!isDone);
    std::cout << "[OK   ] Test done|@delay(ms)=" << ms << std::endl;
 
+   //--------------------------------------------------------------------------//
    utinfo.PrintSplitter();
    std::cout << "[TEST ] SocketClientConfig::ParseConfig()";
    fon9::StrView                 res;

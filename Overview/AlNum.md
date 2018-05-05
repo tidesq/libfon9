@@ -144,6 +144,10 @@ ToStrRev(Fmt)    : 0.015506810 secs / 1,000,000 times =  15.506810000 ns
 * 基本格式化字串: `RevPrint(RevBuffer& rbuf, value1, value2, fmt2, ...);`
   * value1 無格式化，轉呼叫 `ToStrRev(pout, value1);`
   * value2 使用 fmt2 格式化，轉呼叫 `ToStrRev(pout, value2, fmt2);`
+* 格式化字串傳回 `StrT` 可以是 `std::string`
+  * `template <class StrT, class... ArgsT>  StrT& RevPrintAppendTo(StrT& dst, ArgsT&&... args);`
+  * `template <class StrT, class... ArgsT>  StrT RevPrintTo(ArgsT&&... args);`
+
 ### RevFormat
 * [`fon9/RevFormat.hpp`](../fon9/RevFormat.hpp)
 * 類似的 library: [{fmt} library](https://github.com/fmtlib/fmt)
