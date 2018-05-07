@@ -5,13 +5,17 @@
 
 #ifdef fon9_WINDOWS
 #include "fon9/io/win/IocpTcpClient.hpp"
-using TcpClient = fon9::io::IocpTcpClient;
+#include "fon9/io/win/IocpTcpServer.hpp"
 using IoService = fon9::io::IocpService;
+using IoServiceSP = fon9::io::IocpServiceSP;
+using TcpClient = fon9::io::IocpTcpClient;
+using TcpServer = fon9::io::IocpTcpServer;
 #else
 #include "fon9/io/FdrTcpClient.hpp"
 #include "fon9/io/FdrServiceEpoll.hpp"
-using TcpClient = fon9::io::FdrTcpClient;
 using IoService = fon9::io::FdrServiceEpoll;
+using IoServiceSP = fon9::io::IocpServiceSP;
+using TcpClient = fon9::io::FdrTcpClient;
 #endif
 
 using TimeUS = fon9::Decimal<uint64_t, 3>;
@@ -23,7 +27,7 @@ TimeUS GetTimeUS() {
 //--------------------------------------------------------------------------//
 
 fon9_WARN_DISABLE_PADDING;
-class PingpongSession : public fon9::io::Session {
+class PingpongSession : public fon9::io::SessionServer {
    fon9_NON_COPY_NON_MOVE(PingpongSession);
    bool IsEchoMode_;
 
@@ -101,6 +105,10 @@ __NEXT_CMD:
 public:
    PingpongSession() = default;
 
+   fon9::io::SessionSP OnDevice_Accepted(fon9::io::DeviceServer&) {
+      return this;
+   }
+
    fon9::TimeStamp   LastSendTime_;
    fon9::TimeStamp   LastRecvTime_;
    uint64_t          RecvBytes_{0};
@@ -131,27 +139,61 @@ fon9_WARN_POP;
 
 //--------------------------------------------------------------------------//
 
-int main() {
+int main(int argc, const char** argv) {
+   if (argc < 3) {
+__USAGE:
+      std::cout << R"(
+Usage:
+    c "TcpClientConfigs" "IoServiceConfigs"
+    s "TcpServerConfigs"
+
+e.g.
+    c "127.0.0.1:9000|Timeout=30" "ThreadCount=2|Wait=Block|Cpus="
+    s "9000|ThreadCount=2|Wait=Block|Cpus="
+)"
+         << std::endl;
+      return 3;
+   }
+
 #if defined(_MSC_VER) && defined(_DEBUG)
    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
+   char chMode;
+   switch (chMode = argv[1][0]) {
+   default:
+      goto __USAGE;
+   case 'c': case 's':
+      break;
+   }
+
    fon9::AutoPrintTestInfo utinfo("IoDev");
 
-   IoService::MakeResult err;
-   auto iosv{IoService::MakeService(fon9::io::IoServiceArgs{}, "IoTest", err)};
-   if (!iosv) {
-      std::cout << "IoService.MakeService()|" << fon9::RevPrintTo<std::string>(err) << std::endl;
-      return 0;
+   IoServiceSP iosv;
+   if (argc >= 4) {
+      fon9::io::IoServiceArgs iosvArgs;
+      if (const char* perr = iosvArgs.Parse(fon9::StrView_cstr(argv[3]))) {
+         std::cout << "IoServiceArgs.Parse|err@:" << perr << std::endl;
+         return 3;
+      }
+      IoService::MakeResult   err;
+      iosv = IoService::MakeService(fon9::io::IoServiceArgs{}, "IoTest", err);
+      if (!iosv) {
+         std::cout << "IoService.MakeService|" << fon9::RevPrintTo<std::string>(err) << std::endl;
+         return 3;
+      }
    }
+   else if (chMode == 'c')
+      goto __USAGE;
 
    fon9::io::ManagerSP mgr{new fon9::io::SimpleManager{}};
    PingpongSP          ses{new PingpongSession{}};
-   fon9::io::DeviceSP  dev{new TcpClient(iosv, ses, mgr)};
-#ifdef fon9_WINDOWS
-   dev->AsyncOpen("192.168.1.16:6000|Timeout=30|SNDBUF=0");
-#else
-   dev->AsyncOpen("192.168.1.16:6000|Timeout=30");
-#endif
+   fon9::io::DeviceSP  dev;
+   if (chMode == 'c')
+      dev.reset(new TcpClient(iosv, ses, mgr));
+   else
+      dev.reset(new TcpServer(iosv, ses, mgr));
+
+   dev->AsyncOpen(argv[2]);
 
    char cmdbuf[1024];
    while (fgets(cmdbuf, sizeof(cmdbuf), stdin)) {
@@ -168,4 +210,9 @@ int main() {
          std::cout << dres << std::endl;
    }
    dev->AsyncDispose("quit");
+   // 等候 AsyncDispose() 執行完畢.
+   dev->WaitGetDeviceId();
+   // wait all AcceptedClient dispose
+   while (mgr->use_count() != 2) // mgr(+1), dev->Manager_(+1)
+      std::this_thread::yield();
 }

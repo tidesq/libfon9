@@ -359,6 +359,12 @@
     <ClInclude Include="..\..\..\fon9\io\win\IocpSocket.hpp">
       <Filter>Header Files\io\win</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\win\IocpTcpServer.hpp">
+      <Filter>Header Files\io\win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\TcpServerBase.hpp">
+      <Filter>Header Files\io\_socket</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -531,6 +537,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\io\win\IocpSocket.cpp">
       <Filter>Source Files\io\win</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\win\IocpTcpServer.cpp">
+      <Filter>Source Files\io\win</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\TcpServerBase.cpp">
+      <Filter>Source Files\io\_socket</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

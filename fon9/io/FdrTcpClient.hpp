@@ -21,7 +21,7 @@ protected:
    SendBuffer  SendBuffer_;
    RecvBuffer  RecvBuffer_;
 
-   virtual bool OpThr_ConnectToImpl(Socket&& soCli, SocketResult& soRes) override;
+   virtual bool OpImpl_TcpConnect(Socket&& soCli, SocketResult& soRes) override;
 
 public:
    const FdrServiceSP IoService_;

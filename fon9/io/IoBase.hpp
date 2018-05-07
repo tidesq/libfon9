@@ -11,9 +11,11 @@
 namespace fon9 { namespace io {
 
 class Device;
+template <class DeviceT>
+using DeviceSPT = intrusive_ptr<DeviceT>;
 /// \ingroup io
 /// Device 的指標, 一般而言在收到 fon9::io::State::Disposing 事件時, 必須要 reset();
-using DeviceSP = intrusive_ptr<Device>;
+using DeviceSP = DeviceSPT<Device>;
 class DeviceServer;
 
 class Session;

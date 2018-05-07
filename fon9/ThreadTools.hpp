@@ -12,9 +12,23 @@ inline void JoinThread(std::thread& thr) {
 }
 
 template <class ThreadContainer>
-void JoinThreads(ThreadContainer& thrs) {
+inline void JoinThreads(ThreadContainer& thrs) {
    for (std::thread& thr : thrs)
       JoinThread(thr);
+}
+
+inline void JoinOrDetach(std::thread& thr) {
+   if (thr.get_id() == std::this_thread::get_id())
+      thr.detach();
+   else
+   if (thr.joinable())
+      thr.join();
+}
+
+template <class ThreadContainer>
+inline void JoinOrDetach(ThreadContainer& thrs) {
+   for (std::thread& thr : thrs)
+      JoinOrDetach(thr);
 }
 
 } // namespace fon9

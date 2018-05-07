@@ -115,9 +115,11 @@
     <ClInclude Include="..\..\..\fon9\io\SocketConfig.hpp" />
     <ClInclude Include="..\..\..\fon9\io\SocketServer.hpp" />
     <ClInclude Include="..\..\..\fon9\io\TcpClientBase.hpp" />
+    <ClInclude Include="..\..\..\fon9\io\TcpServerBase.hpp" />
     <ClInclude Include="..\..\..\fon9\io\win\IocpService.hpp" />
     <ClInclude Include="..\..\..\fon9\io\win\IocpSocket.hpp" />
     <ClInclude Include="..\..\..\fon9\io\win\IocpTcpClient.hpp" />
+    <ClInclude Include="..\..\..\fon9\io\win\IocpTcpServer.hpp" />
     <ClInclude Include="..\..\..\fon9\Log.hpp" />
     <ClInclude Include="..\..\..\fon9\LogFile.hpp" />
     <ClInclude Include="..\..\..\fon9\MessageQueue.hpp" />
@@ -206,9 +208,11 @@
     <ClCompile Include="..\..\..\fon9\io\SocketConfig.cpp" />
     <ClCompile Include="..\..\..\fon9\io\SocketServer.cpp" />
     <ClCompile Include="..\..\..\fon9\io\TcpClientBase.cpp" />
+    <ClCompile Include="..\..\..\fon9\io\TcpServerBase.cpp" />
     <ClCompile Include="..\..\..\fon9\io\win\IocpService.cpp" />
     <ClCompile Include="..\..\..\fon9\io\win\IocpSocket.cpp" />
     <ClCompile Include="..\..\..\fon9\io\win\IocpTcpClient.cpp" />
+    <ClCompile Include="..\..\..\fon9\io\win\IocpTcpServer.cpp" />
     <ClCompile Include="..\..\..\fon9\Log.cpp" />
     <ClCompile Include="..\..\..\fon9\LogFile.cpp" />
     <ClCompile Include="..\..\..\fon9\Outcome.cpp" />

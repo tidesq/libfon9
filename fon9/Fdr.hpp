@@ -53,7 +53,7 @@ public:
 
 /// \ingroup Misc
 /// 解構時會自動呼叫 close() 或 CloseHandle()
-class FdrAuto final {
+class FdrAuto {
    fon9_NON_COPYABLE(FdrAuto);
    Fdr   Fdr_;
    void MoveIn(FdrAuto& r) {

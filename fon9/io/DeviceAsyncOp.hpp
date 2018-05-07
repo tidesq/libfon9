@@ -7,7 +7,7 @@
 
 namespace fon9 { namespace io {
 
-typedef void (Device::*FnDeviceAsyncOp)(std::string);
+typedef void (*FnDeviceAsyncOp)(Device&, std::string);
 using DeviceAsyncTask = std::function<void(Device&)>;
 
 fon9_MSC_WARN_DISABLE(4371 // '' layout of class may have changed from a previous version of the compiler due to better packing of membe ''

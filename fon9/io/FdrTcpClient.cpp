@@ -37,9 +37,9 @@ FdrTcpClient::SendResult FdrTcpClient::SendBuffered(BufferList&& src) {
 
 //--------------------------------------------------------------------------//
 
-bool FdrTcpClient::OpThr_ConnectToImpl(Socket&& soCli, SocketResult& soRes) {
+bool FdrTcpClient::OpImpl_TcpConnect(Socket&& soCli, SocketResult& soRes) {
    if (::connect(soCli.GetSocketHandle(), &this->RemoteAddress_.Addr_, this->RemoteAddress_.GetAddrLen()) == 0)
-      this->OpThr_Connected(soCli);
+      this->OpImpl_Connected(soCli);
    else {
       int eno;
       #ifdef fon9_WINDOWS

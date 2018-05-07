@@ -5,6 +5,7 @@
 #include "fon9/io/IoBase.hpp"
 #include "fon9/io/IoServiceArgs.hpp"
 #include "fon9/Outcome.hpp"
+#include "fon9/Fdr.hpp"
 
 fon9_BEFORE_INCLUDE_STD;
 #include <WinSock2.h>
@@ -39,11 +40,6 @@ protected:
       return this->IocpAttach(reinterpret_cast<HANDLE>(so));
    }
 
-   /// 移除與 IocpService 的關聯.
-   /// - 所有相關的(之前透過 IocpAttach() 設定的) handle,so 都不會再收到事件.
-   /// - 如果 iocp thread 已取出 SP 正要觸發, 則有可能在返回後仍會收到事件
-   bool IocpDetach();
-
    /// 如果 Post() 失敗, 則會立即呼叫 OnIocp_Error();
    //void Post(LPOVERLAPPED lpOverlapped, DWORD dwNumberOfBytesTransferred);
 
@@ -61,8 +57,10 @@ class fon9_API IocpService : public intrusive_ref_counter<IocpService> {
    fon9_NON_COPY_NON_MOVE(IocpService);
    using ThreadPool = std::vector<std::thread>;
    ThreadPool  Threads_;
-   HANDLE      CompletionPort_;
+
    friend class IocpHandler;
+   using CompletionPortHandleSP = intrusive_ptr<ObjHolder<FdrAuto>>;
+   CompletionPortHandleSP  CompletionPort_;
 
    IocpService() = default;
 
@@ -74,7 +72,7 @@ public:
    
 private:
    void StopAndWait();
-   void ThrRun(ServiceThreadArgs args);
+   static void ThrRun(CompletionPortHandleSP cpHandleSP, ServiceThreadArgs args);
 };
 fon9_WARN_POP;
 

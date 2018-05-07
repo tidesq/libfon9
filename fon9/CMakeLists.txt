@@ -48,7 +48,7 @@ set(fon9src
  io/SocketServer.cpp
  io/SocketClient.cpp
  io/TcpClientBase.cpp
- io/FdrTcpClient.cpp
+#io/FdrTcpClient.cpp
 )
 add_library(fon9_s STATIC ${fon9src})
 target_link_libraries(fon9_s pthread rt)

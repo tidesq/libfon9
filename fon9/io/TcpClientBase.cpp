@@ -11,7 +11,7 @@ TcpClientBase::~TcpClientBase() {
    this->ConnectTimer_.StopAndWait();
 }
 
-void TcpClientBase::OpThr_TcpClearLinking() {
+void TcpClientBase::OpImpl_TcpClearLinking() {
    AsyncDnQuery_CancelAndWait(&this->DnReqId_);
    ZeroStruct(this->RemoteAddress_);
    this->NextAddrIndex_ = 0;
@@ -21,23 +21,23 @@ void TcpClientBase::OpThr_TcpClearLinking() {
 void TcpClientBase::OnConnectTimeout(TimerEntry* timer, TimeStamp now) {
    (void)now;
    TcpClientBase& rthis = ContainerOf(*static_cast<Timer*>(timer), &TcpClientBase::ConnectTimer_);
-   rthis.AddAsyncTask([](Device& dev) {
+   rthis.OpQueue_.AddTask(DeviceAsyncOp{[](Device& dev) {
       TcpClientBase*  pthis = static_cast<TcpClientBase*>(&dev);
       if (pthis->DnReqId_) {
          AsyncDnQuery_CancelAndWait(&pthis->DnReqId_);
-         pthis->OpThr_SetBrokenState("DN query timeout.");
+         OpThr_SetBrokenState(dev, "DN query timeout.");
       }
-      else if (pthis->OpThr_GetState() == State::Linking)
-         pthis->OpThr_ConnectToNext("Connect timeout.");
-   });
+      else if (pthis->OpImpl_GetState() == State::Linking)
+         pthis->OpImpl_ConnectToNext("Connect timeout.");
+   }});
 }
-void TcpClientBase::OpThr_ConnectToNext(StrView lastError) {
+void TcpClientBase::OpImpl_ConnectToNext(StrView lastError) {
    if (this->NextAddrIndex_ >= this->AddrList_.size()) {
       // 全部的 addr 都嘗試過, 才進入 LinkError 狀態.
       this->NextAddrIndex_ = 0;
       if (lastError.empty())
          lastError = (this->AddrList_.empty() ? StrView{"No hosts."} : StrView{"All hosts cannot connect."});
-      this->OpThr_SetState(State::LinkError, lastError);
+      this->OpImpl_SetState(State::LinkError, lastError);
       return;
    }
    const SocketAddress& addr = this->AddrList_[this->NextAddrIndex_++];
@@ -60,58 +60,58 @@ void TcpClientBase::OpThr_ConnectToNext(StrView lastError) {
          lastError.AppendTo(strmsg);
       }
       this->StartConnectTimer();
-      this->OpThr_SetState(State::Linking, &strmsg);
+      this->OpImpl_SetState(State::Linking, &strmsg);
       strmsg.clear();
       this->RemoteAddress_ = addr;
-      if (this->OpThr_ConnectToImpl(std::move(soCli), soRes))
+      if (this->OpImpl_TcpConnect(std::move(soCli), soRes))
          return;
    }
    else
       strmsg.push_back('|');
    RevPrintAppendTo(strmsg, soRes);
-   this->OpThr_SetState(State::LinkError, &strmsg);
+   this->OpImpl_SetState(State::LinkError, &strmsg);
 }
 void TcpClientBase::OpImpl_Open(std::string cfgstr) {
-   this->OpThr_TcpClearLinking();
+   this->OpImpl_TcpClearLinking();
    if (OpThr_ParseDeviceConfig(*this, &cfgstr, FnOnTagValue{}))
-      this->OpThr_ReopenImpl();
+      this->OpImpl_ReopenImpl();
 }
 void TcpClientBase::OpImpl_Reopen() {
-   this->OpThr_TcpClearLinking();
-   this->OpThr_ReopenImpl();
+   this->OpImpl_TcpClearLinking();
+   this->OpImpl_ReopenImpl();
 }
-void TcpClientBase::OpThr_OnDnQueryDone(DnQueryReqId id, const DomainNameParseResult& res) {
+void TcpClientBase::OpImpl_OnDnQueryDone(DnQueryReqId id, const DomainNameParseResult& res) {
    if (this->DnReqId_ != id)
       return;
    this->DnReqId_ = 0;
    this->AddrList_.insert(this->AddrList_.end(), res.AddressList_.begin(), res.AddressList_.end());
-   this->OpThr_ConnectToNext(&res.ErrMsg_);
+   this->OpImpl_ConnectToNext(&res.ErrMsg_);
 }
-void TcpClientBase::OpThr_ReopenImpl() {
+void TcpClientBase::OpImpl_ReopenImpl() {
    if (!this->Config_.AddrRemote_.IsAddrAny())
       this->AddrList_.emplace_back(this->Config_.AddrRemote_);
    if (!this->Config_.DomainNames_.empty()) {
-      this->OpThr_SetState(State::Linking, ToStrView("DN querying: " + this->Config_.DomainNames_));
+      this->OpImpl_SetState(State::Linking, ToStrView("DN querying: " + this->Config_.DomainNames_));
       this->StartConnectTimer();
       DeviceSP pthis{this};
       AsyncDnQuery(this->DnReqId_, this->Config_.DomainNames_, this->Config_.AddrRemote_.GetPort(),
                    [pthis](DnQueryReqId id, DomainNameParseResult& res) {
-         pthis->AddAsyncTask([id, res](Device& dev) {
-            static_cast<TcpClientBase*>(&dev)->OpThr_OnDnQueryDone(id, res);
-         });
+         pthis->OpQueue_.AddTask(DeviceAsyncOp{[id, res](Device& dev) {
+            static_cast<TcpClientBase*>(&dev)->OpImpl_OnDnQueryDone(id, res);
+         }});
       });
       return;
    }
    if (this->AddrList_.empty())
-      this->OpThr_SetState(State::ConfigError, "Config error: no remote address.");
+      this->OpImpl_SetState(State::ConfigError, "Config error: no remote address.");
    else
-      this->OpThr_ConnectToNext(StrView{});
+      this->OpImpl_ConnectToNext(StrView{});
 }
-void TcpClientBase::OpThr_Connected(const Socket& soCli) {
+void TcpClientBase::OpImpl_Connected(const Socket& soCli) {
    this->ConnectTimer_.StopNoWait();
    auto errc = soCli.LoadSocketErrC();
    if (errc) {
-      this->OpThr_SetBrokenState(RevPrintTo<std::string>("err=", errc));
+      OpThr_SetBrokenState(*this, RevPrintTo<std::string>("err=", errc));
       return;
    }
    SocketAddress  addrLocal;
@@ -122,25 +122,25 @@ void TcpClientBase::OpThr_Connected(const Socket& soCli) {
    if (this->RemoteAddress_ == addrLocal) {
       std::string errmsg{"err=self-connect|id="};
       uidstr.AppendTo(errmsg);
-      this->OpThr_SetBrokenState(std::move(errmsg));
+      OpThr_SetBrokenState(*this, std::move(errmsg));
    }
    else {
-      this->OpThr_SetDeviceId(uidstr.ToString());
-      this->OpThr_SetLinkReady(std::string{});
+      OpThr_SetDeviceId(*this, uidstr.ToString());
+      OpThr_SetLinkReady(*this, std::string{});
    }
 }
 void TcpClientBase::OpImpl_Close(std::string cause) {
-   this->OpThr_TcpClearLinking();
-   this->OpThr_SetState(State::Closed, &cause);
-   this->OpThr_SetDeviceId(std::string());
+   this->OpImpl_TcpClearLinking();
+   this->OpImpl_SetState(State::Closed, &cause);
+   OpThr_SetDeviceId(*this, std::string());
 }
 void TcpClientBase::OpImpl_StateChanged(const StateChangedArgs& e) {
    if (IsAllowContinueSend(e.Before_)) {
       if (e.After_ != State::Lingering)
-         this->OpThr_TcpLinkBroken();
+         this->OpImpl_TcpLinkBroken();
    }
    else if (e.Before_ == State::Linking && e.After_ != State::LinkReady)
-      this->OpThr_TcpClearLinking();
+      this->OpImpl_TcpClearLinking();
    base::OpImpl_StateChanged(e);
 }
 

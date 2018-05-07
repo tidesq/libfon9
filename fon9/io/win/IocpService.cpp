@@ -11,12 +11,9 @@ static const ULONG_PTR  kIocpKey_StopThrRun = 0;
 IocpHandler::~IocpHandler() {
 }
 IocpHandler::Result IocpHandler::IocpAttach(HANDLE handle) {
-   if (CreateIoCompletionPort(handle, this->IocpService_->CompletionPort_, reinterpret_cast<ULONG_PTR>(this), 0))
+   if (CreateIoCompletionPort(handle, this->IocpService_->CompletionPort_->GetFD(), reinterpret_cast<ULONG_PTR>(this), 0))
       return Result::kSuccess();
    return Result{GetSysErrC()};
-}
-bool IocpHandler::IocpDetach() {
-   return true;
 }
 //void IocpHandler::Post(LPOVERLAPPED lpOverlapped, DWORD dwNumberOfBytesTransferred) {
 //   if (!::PostQueuedCompletionStatus(this->IocpService_->CompletionPort_, dwNumberOfBytesTransferred, reinterpret_cast<ULONG_PTR>(this), lpOverlapped))
@@ -27,21 +24,21 @@ bool IocpHandler::IocpDetach() {
 
 IocpService::~IocpService() {
    this->StopAndWait();
-   ::CloseHandle(this->CompletionPort_);
 }
 void IocpService::StopAndWait() {
    for (size_t L = this->Threads_.size() * 2; L > 0; --L)
-      ::PostQueuedCompletionStatus(this->CompletionPort_, 0, kIocpKey_StopThrRun, nullptr);
-   JoinThreads(this->Threads_);
+      ::PostQueuedCompletionStatus(this->CompletionPort_->GetFD(), 0, kIocpKey_StopThrRun, nullptr);
+   JoinOrDetach(this->Threads_);
 }
-void IocpService::ThrRun(ServiceThreadArgs args) {
+void IocpService::ThrRun(CompletionPortHandleSP cpHandleSP, ServiceThreadArgs args) {
    args.OnThrRunBegin("IocpService");
    OVERLAPPED* lpOverlapped;
    DWORD       bytesTransfered;
    const DWORD dwMilliseconds = (IsBlockWait(args.HowWait_) ? INFINITE : 0);
+   HANDLE      cpHandle = cpHandleSP->GetFD();
    for (;;) {
       ULONG_PTR   iocpHandler = kIocpKey_StopThrRun;
-      if (::GetQueuedCompletionStatus(this->CompletionPort_, &bytesTransfered, &iocpHandler, &lpOverlapped, dwMilliseconds)) {
+      if (::GetQueuedCompletionStatus(cpHandle, &bytesTransfered, &iocpHandler, &lpOverlapped, dwMilliseconds)) {
          if (iocpHandler == kIocpKey_StopThrRun)
             break;
          reinterpret_cast<IocpHandler*>(iocpHandler)->OnIocp_Done(lpOverlapped, bytesTransfered);
@@ -73,13 +70,13 @@ void IocpService::ThrRun(ServiceThreadArgs args) {
 IocpServiceSP IocpService::MakeService(const IoServiceArgs& args, const std::string& thrName, MakeResult& err) {
    if(HANDLE cpHandle = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0)) {
       IocpServiceSP iosv{new IocpService};
-      iosv->CompletionPort_ = cpHandle;
+      iosv->CompletionPort_ = MakeObjHolder<FdrAuto>(cpHandle);
       size_t thrCount = args.ThreadCount_;
       if (thrCount <= 0)
          thrCount = 1;
       iosv->Threads_.reserve(thrCount);
       for (size_t L = 0; L < thrCount; ++L)
-         iosv->Threads_.emplace_back(&IocpService::ThrRun, iosv.get(), ServiceThreadArgs{args, thrName, L});
+         iosv->Threads_.emplace_back(&IocpService::ThrRun, iosv->CompletionPort_, ServiceThreadArgs{args, thrName, L});
       iosv->Threads_.shrink_to_fit();
       return iosv;
    }

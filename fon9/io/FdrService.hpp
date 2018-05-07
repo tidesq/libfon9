@@ -13,23 +13,12 @@
 
 namespace fon9 { namespace io {
 
-class FdrThread;
-using FdrThreadSP = intrusive_ptr<FdrThread>;
+class FdrEventHandler;
+using FdrEventHandlerSP = intrusive_ptr<FdrEventHandler>;
 
 class FdrService;
 using FdrServiceSP = intrusive_ptr<FdrService>;
 
-class FdrEventHandler;
-using FdrEventHandlerSP = intrusive_ptr<FdrEventHandler>;
-
-struct FdrIndex {
-   Fdr::fdr_t  Fdr_;
-   uint32_t    Index_;
-};
-
-/// \ingroup io
-/// 告知 FdrService 要關心那些事件.
-/// 當 FdrService 收到事件時, 也會透過此旗標告知發生了什麼事件.
 enum class FdrEventFlag {
    /// 沒有要關心的事件.
    None = 0,
@@ -43,12 +32,13 @@ enum class FdrEventFlag {
 };
 fon9_ENABLE_ENUM_BITWISE_OP(FdrEventFlag);
 
+//--------------------------------------------------------------------------//
+
 /// \ingroup io
-/// 提供一個讓「non-blocking fd」處理事件通知的 thread.
-/// - 實際作法可能使用 poll(), epoll(linux), kqueue(FreeBSD)...
+/// 處理事件通知的 thread.
+/// - 實際作法可能使用 select(), poll(), epoll(linux), kqueue(FreeBSD)...
 /// - 每個 FdrThread 負責服務一批 FdrEventHandler
 /// - 在 FdrEventHandler 建構時, 由 FdrService 決定該 handler 由哪個 FdrThread 服務
-/// - 一個 FdrEventHandler 可以處理多個 fd, 但是都會固定在建構時決定的 fdr thread
 class FdrThread : public intrusive_ref_counter<FdrThread> {
    friend class FdrEventHandler;
    void Update_OnFdrEvent(FdrEventHandlerSP handler);
@@ -107,6 +97,92 @@ public:
       return this->ThreadId_ == ThisThread_.ThreadId_;
    }
 };
+using FdrThreadSP = intrusive_ptr<FdrThread>;
+
+//--------------------------------------------------------------------------//
+
+/// \ingroup io
+/// 處理 fd 的事件通知.
+class fon9_API FdrEventHandler {
+   fon9_NON_COPY_NON_MOVE(FdrEventHandler);
+public:
+   /// 建構時由 iosv 分配 FdrThread.
+   FdrEventHandler(FdrServiceSP iosv, FdrAuto&& fd)
+      : FdrThread_{std::move(iosv)}
+      , Fdr_{std::move(fd)} {
+   }
+
+   virtual ~FdrEventHandler();
+
+   /// 更新or設定: fd(fd在建構時指定) 需要的事件.
+   /// - 把要求丟到 fdr thread 處理.
+   /// - 若已設定過, 則為更新.
+   /// - fdr thread 會用 FdrEventHandlerSP 保存 this,
+   ///   - 當不再需要事件時, 應呼叫 Remove_OnFdrEvent() 移除事件通知,
+   ///   - 無法在解構時處理 (因為尚未移除前, fdr service 會擁有 this SP, 不可能造成解構).
+   void Update_OnFdrEvent() {
+      this->FdrThread_->Update_OnFdrEvent(this);
+   }
+
+   /// 通常在 SendBuffered() 時使用:
+   /// 到 fdr thread 送出: 透過 this->OnFdrEvent_Send();
+   void StartSendInFdrThread() {
+      this->FdrThread_->StartSendInFdrThread(this);
+   }
+
+   /// 從 fdr thread 移除事件處理者.
+   /// - 實際的移除動作會到 fdr thread 裡面處理.
+   ///   - 如果 this thread == fdr thread 則會立即移除.
+   ///   - 僅把 this 加入等候移除的 qu 就返回:
+   ///      - 所以返回後仍有可能收到 OnFdrEvent() 事件.
+   /// - 一旦移除, 就不會再收到任何事件, 即使再呼叫 Update_OnFdrEvent() 也不會有任何作用.
+   void Remove_OnFdrEvent() {
+      this->FdrThread_->Remove_OnFdrEvent(this);
+   }
+
+   /// 取得需要哪些事件.
+   /// - 只會在 fdr thread 呼叫.
+   /// - 每個 fd(建構時指定) 只能設定一組 evs + evHandler;
+   ///   **不能** 針對不同 FdrEventFlag 設定不同的 evHandler.
+   /// - FdrEventFlag::None 僅表示現在不須要事件, 但是沒有從 fdr thread 移除.
+   virtual FdrEventFlag GetFdrEventFlagRequired() const = 0;
+
+   bool InFdrThread() const {
+      return this->FdrThread_->IsThisThread();
+   }
+
+   enum AfterSend {
+      AfterSend_Error,
+      AfterSend_Empty,
+      AfterSend_HasRemain,
+   };
+
+private:
+   friend class FdrThread;
+
+   /// 可能同時有多種事件通知.
+   /// 只會在 fdr thread 裡面呼叫.
+   virtual void OnFdrEvent(FdrEventFlag evs) = 0;
+
+   /// 透過 StartSendInFdrThread() 啟動在 fdr thread 的傳送.
+   virtual AfterSend OnFdrEvent_Send() = 0;
+
+   virtual void OnFdrEvent_AddRef() = 0;
+   virtual void OnFdrEvent_ReleaseRef() = 0;
+
+   inline friend void intrusive_ptr_add_ref(const FdrEventHandler* p) {
+      const_cast<FdrEventHandler*>(p)->OnFdrEvent_AddRef();
+   }
+   inline friend void intrusive_ptr_release(const FdrEventHandler* p) {
+      const_cast<FdrEventHandler*>(p)->OnFdrEvent_ReleaseRef();
+   }
+
+   // 在建構時就決定了要使用哪個 FdrThread & 處理哪個 fd 的事件.
+   const FdrThreadSP FdrThread_;
+   const FdrAuto     Fdr_;
+};
+
+//--------------------------------------------------------------------------//
 
 /// \ingroup io
 /// 負責管理 FdrThread, 決定 FdrEventHandler 要使用哪個 FdrThread.
@@ -124,86 +200,6 @@ public:
 };
 
 
-/// \ingroup io
-/// 處理 fd 的事件通知.
-class fon9_API FdrEventHandler {
-   // 在建構時就決定了要使用哪個 FdrThread & 處理哪個 fd 的事件.
-   const FdrThreadSP FdrThread_;
-   // 只能由 FdrThread 在 ThrRun 裡面填入或修改.
-   // 由 FdrThread 的實作者決定 FdrIndex_ 的用途.
-   FdrIndex FdrIndex_;
-   friend class FdrThread;
-
-public:
-   FdrEventHandler(FdrServiceSP fdrSv, Fdr::fdr_t fd);
-   virtual ~FdrEventHandler();
-
-   /// 更新or設定: fd(在建構時指定) 需要的事件.
-   /// - 把要求丟到 fdr thread 處理.
-   /// - 若已設定過, 則為更新.
-   /// - fdr thread 會用 FdrEventHandlerSP 保存 this,
-   ///   - 當不再需要事件時, 應呼叫 Remove_OnFdrEvent() 移除事件通知,
-   ///   - 無法在解構時處理(因為尚未移除前, fdr service 會擁有 this SP, 不可能造成解構).
-   void Update_OnFdrEvent() {
-      this->FdrThread_->Update_OnFdrEvent(this);
-   }
-   /// 到 fdr thread 送出: 透過 this->OnFdrEvent_Send();
-   void StartSendInFdrThread() {
-      this->FdrThread_->StartSendInFdrThread(this);
-   }
-   /// 從 fdr thread 移除事件處理者.
-   /// - 實際的移除動作會到 fdr thread 裡面處理.
-   ///   - 如果 this thread == fdr thread 則會立即移除.
-   ///   - 僅把 this 加入等候移除的 qu 就返回:
-   ///      - 所以返回後仍有可能收到 OnFdrEvent() 事件.
-   /// - 一旦移除, 就不會再收到任何事件, 即使再呼叫 Update_OnFdrEvent() 也不會有任何作用.
-   void Remove_OnFdrEvent() {
-      this->FdrThread_->Remove_OnFdrEvent(this);
-   }
-   const FdrIndex& GetFdrIndex() const {
-      return this->FdrIndex_;
-   }
-   /// 取得需要哪些事件.
-   /// - 只會在 fdr thread 呼叫.
-   /// - 每個 fd(建構時指定) 只能設定一組 evs + evHandler; **不能** 針對不同 FdrEventFlag 設定不同的 evHandler.
-   /// - FdrEventFlag::None 僅表示現在不須要事件, 但是沒有從 fdr thread 移除.
-   virtual FdrEventFlag GetFdrEventFlagRequired() const = 0;
-   bool IsThisFdrThread() const {
-      return this->FdrThread_->IsThisThread();
-   }
-
-   enum AfterSend {
-      AfterSend_Error,
-      AfterSend_Empty,
-      AfterSend_HasRemain,
-   };
-private:
-   virtual void OnFdrEvent(FdrEventFlag evs) = 0;
-   virtual AfterSend OnFdrEvent_Send() = 0;
-   virtual void OnFdrEvent_FdrThreadTerminate(const std::string& cause) = 0;
-
-   virtual void OnFdrEvent_AddRef() = 0;
-   virtual void OnFdrEvent_Release() = 0;
-   inline friend void intrusive_ptr_add_ref(const FdrEventHandler* p) {
-      const_cast<FdrEventHandler*>(p)->OnFdrEvent_AddRef();
-   }
-   inline friend void intrusive_ptr_release(const FdrEventHandler* p) {
-      const_cast<FdrEventHandler*>(p)->OnFdrEvent_Release();
-   }
-};
-template <class FdrEventHandlerBase>
-class FdrEventHandlerAutoRef : public FdrEventHandlerBase {
-   std::atomic_uint_fast32_t  RefCount_{0};
-   virtual void OnFdrEvent_AddRef() override {
-      ++this->RefCount_;
-   }
-   virtual void OnFdrEvent_Release() override {
-      if (--this->RefCount_ == 0)
-         delete this;
-   }
-public:
-   using FdrEventHandlerBase::FdrEventHandlerBase;
-};
 
 inline void FdrThread::EmitOnFdrEvent(FdrEventFlag evs, FdrEventHandler* handler) {
    handler->OnFdrEvent(evs);

@@ -21,38 +21,44 @@ protected:
       bool              IsClosing_{false};
       bool              IsConnected_{false};
       const TcpClientSP Owner_;
-      IocpClient(IocpTcpClient* owner, Socket&& so)
-         : IocpSocket(owner->IocpService_, std::move(so))
+      IocpClient(IocpTcpClient* owner, Socket&& so, SocketResult& soRes)
+         : IocpSocket(owner->IocpService_, std::move(so), soRes)
          , Owner_{owner} {
       }
-      void OpThr_Close();
-      bool OpThr_ConnectTo(const SocketAddress& addr, SocketResult& soRes);
+      void OpImpl_Close();
+      bool OpImpl_ConnectTo(const SocketAddress& addr, SocketResult& soRes);
 
-      virtual void OnIocpSocket_Recv(DcQueueList& rxbuf) override;
-      virtual void OnIocpSocket_Error(OVERLAPPED* lpOverlapped, DWORD eno) override;
+      virtual void OnIocpSocket_Received(DcQueueList& rxbuf) override;
       virtual void OnIocpSocket_Writable(DWORD bytesTransfered) override;
+      virtual void OnIocpSocket_Error(OVERLAPPED* lpOverlapped, DWORD eno) override;
 
-      virtual unsigned AddRef() override;
-      virtual unsigned ReleaseRef() override;
+      virtual unsigned IocpSocketAddRef() override;
+      virtual unsigned IocpSocketReleaseRef() override;
+      static bool OpImpl_IsSocketAlive(Device& dev, IocpSocket* impl);
    };
    using IocpClientSP = intrusive_ptr<IocpClient>;
    IocpClientSP   ImplSP_;
 
-   void OpThr_ResetImpl() {
+   void OpImpl_ResetImplSP() {
       if (IocpClientSP impl = std::move(this->ImplSP_))
-         impl->OpThr_Close();
+         impl->OpImpl_Close();
    }
 
-   virtual void OpThr_TcpLinkBroken() override;
-   virtual void OpThr_TcpClearLinking() override;
-   virtual bool OpThr_ConnectToImpl(Socket&& soCli, SocketResult& soRes) override;
-   virtual void OpThr_StartRecv(RecvBufferSize preallocSize) override;
+   virtual void OpImpl_TcpLinkBroken() override;
+   virtual void OpImpl_TcpClearLinking() override;
+   virtual bool OpImpl_TcpConnect(Socket&& soCli, SocketResult& soRes) override;
+   virtual void OpImpl_StartRecv(RecvBufferSize preallocSize) override;
 
-   struct SendChecker;
-   struct SendCheckerMem;
-   struct SendCheckerBuf;
-   SendResult CheckSend(const void* src, size_t size, DcQueueList* buffered);
-   SendResult CheckSend(BufferList&& src, DcQueueList* buffered);
+   template <class SendCheckerBase>
+   struct SendChecker : public SendCheckerBase {
+      SendChecker() = delete;
+      using SendCheckerBase::SendCheckerBase;
+      virtual IocpSocket* OpImpl_GetIocpSocket(Device& dev) override {
+         return static_cast<IocpTcpClient*>(&dev)->ImplSP_.get();
+      }
+   };
+   using SendCheckerMem = SendChecker<IocpSocket::SendCheckerMem>;
+   using SendCheckerBuf = SendChecker<IocpSocket::SendCheckerBuf>;
 public:
    const IocpServiceSP  IocpService_;
    IocpTcpClient(IocpServiceSP iosv, SessionSP ses, ManagerSP mgr)

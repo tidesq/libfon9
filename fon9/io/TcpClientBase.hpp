@@ -19,11 +19,11 @@ class fon9_API TcpClientBase : public Device {
    TcpClientBase() = delete;
    using base = Device;
 
+protected:
    template<class DeviceT>
    friend bool OpThr_ParseDeviceConfig(DeviceT& dev, StrView cfgstr, FnOnTagValue fnUnknownField);
-
-protected:
    SocketClientConfig   Config_;
+
    size_t               NextAddrIndex_;
    SocketAddressList    AddrList_;
    DnQueryReqId         DnReqId_{};
@@ -36,15 +36,17 @@ protected:
       this->ConnectTimer_.RunAfter(TimeInterval_Second(this->Config_.TimeoutSecs_));
    }
 
-   void OpThr_ConnectToNext(StrView lastError);
-   void OpThr_ReopenImpl();
-   void OpThr_OnDnQueryDone(DnQueryReqId id, const DomainNameParseResult& res);
-   void OpThr_Connected(const Socket& soCli);
-   virtual bool OpThr_ConnectToImpl(Socket&& soCli, SocketResult& soRes) = 0;
-   /// 用來清除「用來處理連線」的資源.
-   virtual void OpThr_TcpClearLinking();
-   /// 用來清除緩衝區、Socket資源...
-   virtual void OpThr_TcpLinkBroken() = 0;
+   void OpImpl_ConnectToNext(StrView lastError);
+   void OpImpl_ReopenImpl();
+   void OpImpl_OnDnQueryDone(DnQueryReqId id, const DomainNameParseResult& res);
+   void OpImpl_Connected(const Socket& soCli);
+
+   /// 實際執行 connect 的地方 ::connect() or ConnectEx() or ...
+   virtual bool OpImpl_TcpConnect(Socket&& soCli, SocketResult& soRes) = 0;
+   /// 清除「用來處理連線」的資源.
+   virtual void OpImpl_TcpClearLinking();
+   /// 清除緩衝區、Socket資源...
+   virtual void OpImpl_TcpLinkBroken() = 0;
 
    virtual void OpImpl_Open(std::string cfgstr) override;
    virtual void OpImpl_Reopen() override;

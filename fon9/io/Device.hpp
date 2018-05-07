@@ -72,10 +72,16 @@ public:
    void AsyncLingerClose(std::string cause) {
       this->OpQueue_.AddTask(DeviceAsyncOp(&Device::OpThr_LingerClose, std::move(cause)));
    }
+   void AsyncCheckSendEmpty(DeviceOpQueue::ALockerBase& alocker) {
+      if (this->OpImpl_GetState() == State::Lingering)
+         alocker.AddAsyncTask(DeviceAsyncOp(&Device::OpThr_CheckSendEmpty, std::string{}));
+   }
+   static void OpThr_CheckSendEmpty(Device& dev, std::string cause);
+
    /// 到 OpThr_Dispose() 處理:
    /// - OpThr_Close(cause):
    ///    - 如果現在狀態 < State::Closing; 會先呼叫 this->OpImpl_Close(cause);
-   /// - OpThr_SetState(State::Disposing, cause):
+   /// - OpImpl_SetState(State::Disposing, cause):
    ///   - 如果成功進入 State::Disposing 狀態, 才會呼叫 this->OpImpl_Dispose(cause);
    void AsyncDispose(std::string cause) {
       this->OpQueue_.AddTask(DeviceAsyncOp(&Device::OpThr_Dispose, std::move(cause)));
@@ -140,6 +146,11 @@ public:
    /// - SendASAP=N  預設值為 'Y'，只要不是 'N' 就會設定成 Yes(若未設定，初始值為 Yes)。
    std::string WaitSetProperty(StrView strTagValueList);
 
+   /// 取得現在狀態, 必須在 op safe 狀態下才能確保正確.
+   State OpImpl_GetState() const {
+      return this->State_;
+   }
+
    /// 執行特定命令.
    /// 可在任意 thread 呼叫此處.
    /// - open    cfgstr       this->AsyncOpen(cfgstr);
@@ -152,17 +163,15 @@ public:
    /// - 其餘傳回 "unknown device command"
    std::string DeviceCommand(StrView cmdln);
 
-   /// 加入一個在 Device Op thread 執行的工作.
-   void AddAsyncTask(DeviceAsyncTask task) {
-      this->OpQueue_.AddTask(std::move(task));
-   }
    static Device& StaticCast(DeviceOpQueue& opQueue) {
       return ContainerOf(opQueue, &Device::OpQueue_);
    }
+   /// 為了讓輔助類別(函式), 能順利、安全的操作 Device,
+   /// 所以將 OpQueue_ 放在 public.
+   mutable DeviceOpQueue  OpQueue_;
 
 protected:
    friend struct DeviceAsyncOpInvoker;
-   mutable DeviceOpQueue  OpQueue_;
 
    /// 預設使用 GetDefaultThreadPool() 執行 OpQueue_.
    virtual void MakeCallForWork();
@@ -188,36 +197,34 @@ protected:
    virtual void OpImpl_StateChanged(const StateChangedArgs& e);
    virtual void OpImpl_AppendDeviceInfo(std::string& info);
 
-   State OpThr_GetState() const {
-      return this->State_;
-   }
    /// 現在狀態必須 < State::Disposing; 才允許呼叫 this->OpImpl_Open(cfgstr);
-   void OpThr_Open(std::string cfgstr);
+   static void OpThr_Open(Device& dev, std::string cfgstr);
    /// 現在狀態必須 < State::Closing; 才需要呼叫 this->OpImpl_Close(cause);
-   void OpThr_Close(std::string cause);
-   void OpThr_LingerClose(std::string cause);
-   void OpThr_Dispose(std::string cause);
+   static void OpThr_Close(Device& dev, std::string cause);
+   static void OpThr_LingerClose(Device& dev, std::string cause);
 
-   void OpThr_CheckLingerClose(std::string cause);
-   void AsyncCheckLingerClose(DeviceOpQueue::ALockerBase& alocker) {
-      if (this->OpThr_GetState() == State::Lingering)
-         alocker.AddAsyncTask(DeviceAsyncOp(&Device::OpThr_CheckLingerClose, std::string{}));
-   }
+   /// Dispose 正常程序: 先 Close, 再處理 Dispose:
+   /// `OpThr_Close(dev, cause); OpThr_DisposeNoClose(dev, std::move(cause));`
+   static void OpThr_Dispose(Device& dev, std::string cause);
+   /// Dispose 強制程序: 直接處理 Dispose, 沒有先呼叫 Close.
+   /// if (dev.OpImpl_SetState(State::Disposing, &cause))
+   ///    dev.OpImpl_Dispose(std::move(cause));
+   static void OpThr_DisposeNoClose(Device& dev, std::string cause);
 
    /// 每個 Device 在 LinkReady 時(有些在建構時,有些在Open成功時), 都有一個識別用的Id,
    /// - 例: TcpClient: "|R=RemoteIp:Port|L=LocalIp:Port"
    /// - 由於 WaitGetDeviceInfo() 會填入: "|id={DeivceId_}"; 所以 deviceId 不可有沒配對的大括號.
-   void OpThr_SetDeviceId(std::string deviceId) {
-      this->DeviceId_ = std::move(deviceId);
+   static void OpThr_SetDeviceId(Device& dev, std::string deviceId) {
+      dev.DeviceId_ = std::move(deviceId);
    }
-   const std::string& OpThr_GetDeviceId() const {
+   const std::string& OpImpl_GetDeviceId() const {
       return this->DeviceId_;
    }
    /// \retval true  將 this->State_ 設為 afst,
    ///               並觸發 Session::OnDevice_StateChanged(), Manager::OnDevice_StateChanged() 事件.
    /// \retval false 狀態不須變動(this->State_==afst): 觸發 OnDevice_StateUpdated();
    ///               或無法變動(已進入 Disposing 程序), 不會觸發任何事件.
-   bool OpThr_SetState(State afst, StrView stmsg);
+   bool OpImpl_SetState(State afst, StrView stmsg);
 
    /// OpThr_SetLinkReady() 的流程:
    /// - 衍生者: 發現 LinkReady, 進入 Op thread 呼叫 OpThr_SetLinkReady();
@@ -230,14 +237,14 @@ protected:
    ///            base::OpImpl_StateChanged(e);
    ///         }
    ///      \endcode
-   ///   - this->OpThr_SetState(State::LinkReady, stmsg);
+   ///   - this->OpImpl_SetState(State::LinkReady, stmsg);
    ///   - if (this->State_ == State::LinkReady)
-   ///      this->OpThr_StartRecv(this->Session_->OnDevice_LinkReady(*this));
-   void OpThr_SetLinkReady(std::string stmsg);
+   ///      this->OpImpl_StartRecv(this->Session_->OnDevice_LinkReady(*this));
+   static void OpThr_SetLinkReady(Device& dev, std::string stmsg);
    /// preallocSize = this->Session_->OnDevice_LinkReady(*this);
-   virtual void OpThr_StartRecv(RecvBufferSize preallocSize);
+   virtual void OpImpl_StartRecv(RecvBufferSize preallocSize);
 
-   void OpThr_SetBrokenState(std::string cause);
+   static void OpThr_SetBrokenState(Device& dev, std::string cause);
    void AsyncSetBrokenState(std::string cause) {
       this->OpQueue_.AddTask(DeviceAsyncOp(&Device::OpThr_SetBrokenState, std::move(cause)));
    }
@@ -265,7 +272,7 @@ inline void DeviceAsyncOpInvoker::MakeCallForWork() {
 inline void DeviceAsyncOpInvoker::Invoke(DeviceAsyncOp& task) {
    Device& dev = ContainerOf(DeviceOpQueue::StaticCast(*this), &Device::OpQueue_);
    if (task.FnAsync_)
-      (dev.*task.FnAsync_)(std::move(task.FnAsyncArg_));
+      (*task.FnAsync_)(dev, std::move(task.FnAsyncArg_));
    else
       task.AsyncTask_(dev);
 }

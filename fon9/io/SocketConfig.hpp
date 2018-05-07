@@ -11,7 +11,7 @@ using FnOnTagValue = std::function<bool(StrView tag, StrView value)>;
 
 template <class DeviceT>
 inline static bool OpThr_ParseDeviceConfig(DeviceT& dev, StrView cfgstr, FnOnTagValue fnUnknownField) {
-   dev.OpThr_SetState(State::Opening, cfgstr);
+   dev.OpImpl_SetState(State::Opening, cfgstr);
    dev.Config_.SetDefaults();
    StrView errfn = dev.Config_.ParseConfig(cfgstr, [&dev, &fnUnknownField](StrView tag, StrView value) {
       if (fnUnknownField && fnUnknownField(tag, value))
@@ -24,7 +24,7 @@ inline static bool OpThr_ParseDeviceConfig(DeviceT& dev, StrView cfgstr, FnOnTag
    errmsg.assign("Unknown config: {");
    errfn.AppendTo(errmsg);
    errmsg.push_back('}');
-   dev.OpThr_SetState(State::ConfigError, &errmsg);
+   dev.OpImpl_SetState(State::ConfigError, &errmsg);
    return false;
 }
 
