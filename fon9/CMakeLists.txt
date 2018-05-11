@@ -40,7 +40,9 @@ set(fon9src
  io/Device.cpp
  io/SendBuffer.cpp
  io/RecvBuffer.cpp
+ io/IoBuffer.cpp
  io/IoServiceArgs.cpp
+
  io/SocketAddress.cpp
  io/SocketAddressDN.cpp
  io/SocketConfig.cpp
@@ -48,7 +50,11 @@ set(fon9src
  io/SocketServer.cpp
  io/SocketClient.cpp
  io/TcpClientBase.cpp
-#io/FdrTcpClient.cpp
+
+ io/FdrSocket.cpp
+ io/FdrService.cpp
+ io/FdrServiceEpoll.cpp
+ io/FdrTcpClient.cpp
 )
 add_library(fon9_s STATIC ${fon9src})
 target_link_libraries(fon9_s pthread rt)
@@ -108,3 +114,6 @@ target_link_libraries(LogFile_UT fon9_s)
 # unit tests: io
 add_executable(Socket_UT io/Socket_UT.cpp)
 target_link_libraries(Socket_UT fon9_s)
+
+add_executable(IoDev_UT io/IoDev_UT.cpp)
+target_link_libraries(IoDev_UT fon9_s)

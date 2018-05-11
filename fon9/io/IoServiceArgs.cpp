@@ -95,10 +95,10 @@ void ServiceThreadArgs::OnThrRunBegin(StrView msgHead) const {
          cpuAffinityResult.SetSuccess();
    }
    fon9_LOG_ThrRun(msgHead, ".ThrRun|name=", this->Name_,
-                    "|index=", this->ThreadPoolIndex_ + 1,
-                    "|Cpu=", this->CpuAffinity_, ':', cpuAffinityResult,
-                    "|Wait=", HowWaitToStr(this->HowWait_),
-                    "|Capacity=", this->Capacity_);
+                   "|index=", this->ThreadPoolIndex_ + 1,
+                   "|Cpu=", this->CpuAffinity_, ':', cpuAffinityResult,
+                   "|Wait=", HowWaitToStr(this->HowWait_),
+                   "|Capacity=", this->Capacity_);
 
 }
 

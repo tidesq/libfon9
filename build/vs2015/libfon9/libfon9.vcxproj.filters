@@ -365,6 +365,18 @@
     <ClInclude Include="..\..\..\fon9\io\TcpServerBase.hpp">
       <Filter>Header Files\io\_socket</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\ObjPool.hpp">
+      <Filter>Header Files\_base\_Container / Algorithm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\IoBuffer.hpp">
+      <Filter>Header Files\io\_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\FdrSocket.hpp">
+      <Filter>Header Files\io\_fdr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\IoBufferSend.hpp">
+      <Filter>Header Files\io\_base</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -543,6 +555,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\io\TcpServerBase.cpp">
       <Filter>Source Files\io\_socket</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\IoBuffer.cpp">
+      <Filter>Source Files\io\_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\FdrSocket.cpp">
+      <Filter>Source Files\io\_fdr</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

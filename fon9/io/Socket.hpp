@@ -121,7 +121,10 @@ public:
    }
 
    /// 透過 getsockopt(SO_ERROR) 取得 socket 的錯誤碼.
-   static SocketErrC LoadSocketErrC(socket_t so);
+   static int LoadSocketErrno(socket_t so);
+   static SocketErrC LoadSocketErrC(socket_t so) {
+      return GetSocketErrC(LoadSocketErrno(so));
+   }
    SocketErrC LoadSocketErrC() const {
       return Socket::LoadSocketErrC(this->GetSocketHandle());
    }
@@ -136,6 +139,9 @@ public:
 #else
    Fdr::fdr_t GetSocketHandle() const {
       return this->So_.GetFD();
+   }
+   FdrAuto MoveOut() {
+      return std::move(this->So_);
    }
 #endif
 };

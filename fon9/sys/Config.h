@@ -73,6 +73,7 @@ extern "C" {
          4710 /* 'name' : function not inlined */ \
          4711 /* function 'name' selected for automatic inline expansion */ \
          4251 /* needs to have dll-interface to be used by clients */ \
+         4275 /* non dll-interface class '...' used as base for dll-interface class '...' */ \
       )
       /// 強迫 MSVC 輸出使用 utf8 編碼.
       #pragma execution_character_set("UTF-8")

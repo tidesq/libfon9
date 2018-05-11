@@ -17,7 +17,8 @@ class DyObj {
 public:
    using value_type = T;
 
-   DyObj() = default;
+   DyObj() : HasValue_{false} {
+   }
 
    ~DyObj() {
       this->clear();
@@ -93,6 +94,18 @@ public:
    }
    const value_type* get() const {
       return this->HasValue_ ? reinterpret_cast<const value_type*>(this->ValueBuf_) : nullptr;
+   }
+   value_type* operator->() {
+      return this->get();
+   }
+   const value_type* operator->() const {
+      return this->get();
+   }
+   value_type& operator*() {
+      return *this->get();
+   }
+   const value_type& operator*() const {
+      return *this->get();
    }
 
    static DyObj& StaticCast(value_type& val) {

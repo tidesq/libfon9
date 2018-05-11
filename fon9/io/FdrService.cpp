@@ -3,93 +3,79 @@
 #include "fon9/sys/Config.h"
 #ifdef fon9_POSIX
 #include "fon9/io/FdrService.hpp"
-#include "fon9/ThreadPool.hpp"
 #include "fon9/Log.hpp"
 
 namespace fon9 { namespace io {
 
-FdrService::FdrService(const IoServiceArgs& ioArgs, std::string thrName, std::function<FdrThreadSP(const ServiceThrArgs&)> fnFdrThreadCreater)
-   : FdrThreads_{ioArgs.ThreadCount_ <= 0 ? 1 : ioArgs.ThreadCount_}
-{
-   size_t thrCount = this->FdrThreads_.size();
-   for (size_t L = 0; L < thrCount; ++L)
-      this->FdrThreads_[L] = fnFdrThreadCreater(ServiceThrArgs{ioArgs, thrName, L});
+FdrService::FdrService(FdrThreads thrs, const IoServiceArgs& ioArgs, const std::string& thrName)
+   : FdrThreads_{std::move(thrs)} {
+   assert(!this->FdrThreads_.empty());
+   size_t L = 0;
+   for (auto& thr : this->FdrThreads_)
+      thr->Thread_ = std::thread(&FdrThread::ThrRun, thr.get(), ServiceThreadArgs{ioArgs, thrName, L++});
 }
 FdrService::~FdrService() {
-   this->StopAndWait("FdrService.dtor");
 }
 FdrThreadSP FdrService::AllocFdrThread(Fdr::fdr_t fd) {
    return this->FdrThreads_[static_cast<size_t>(fd) % this->FdrThreads_.size()];
 }
-void FdrService::StopAndWait(const StrArg& cause) {
-   std::vector<std::thread> thrs{this->FdrThreads_.size()};
-   size_t L = 0;
-   for (FdrThreadSP& thr : this->FdrThreads_)
-      thrs[L++] = thr->StopThread(cause);
-   ThreadJoin(thrs);
+
+//--------------------------------------------------------------------------//
+
+void intrusive_ptr_deleter(const FdrThread* p) {
+   if (p->Thread_.joinable())
+      const_cast<FdrThread*>(p)->WakeupThread();
+   else
+      delete p;
 }
-//-------------------------------------------------------------------
+
 FdrThread::~FdrThread() {
 }
-std::thread FdrThread::StopThread(const StrArg& cause) {
-   if (this->ThrSt_ < ThrSt_Terminating) {
-      this->ThrSt_ = ThrSt_Terminating;
-      if (!cause.IsNullOrEmpty()) {
-         TerminateMessage::Locker lk{this->TerminateMessage_};
-         *lk = cause.ToString();
+void FdrThread::CancelReqs(PendingReqsImpl reqs) {
+   for (FdrEventHandlerSP& r : reqs)
+      r->OnFdrEvent_Handling(FdrEventFlag::OperationCanceled);
+}
+void FdrThread::ThrRun(ServiceThreadArgs args) {
+   args.OnThrRunBegin("FdrThread");
+   this->ThreadId_ = ThisThread_.ThreadId_;
+   this->ThrRunImpl(args);
+   if (this->use_count() != 0) {
+      // select(), poll(), epoll_wait()... error.
+      fon9_LOG_FATAL("FdrThread.ThrRun.CancelMode|name=", args.Name_);
+      while (this->use_count() > 0) {
+         // 拒絕全部的要求, 直到沒有任何人擁有 this 的 FdrThreadSP 為止.
+         this->CancelReqs(MoveOutPendingImpl(this->PendingSends_));
+         this->CancelReqs(MoveOutPendingImpl(this->PendingUpdates_));
+         MoveOutPendingImpl(this->PendingRemoves_);
+         std::this_thread::yield();
       }
    }
-   this->WakeupThread();
-   return std::move(this->Thr_);
-}
-std::string FdrThread::ThrRunTerminated() {
-   this->ThrSt_ = ThrSt_Terminated;
-   this->MoveOutPendingImpl(this->PendingReqs_);
-   this->MoveOutPendingImpl(this->PendingSends_);
-   this->MoveOutPendingImpl(this->PendingRemoves_);
-   TerminateMessage::Locker lk{this->TerminateMessage_};
-   return std::move(*lk);
+   this->Thread_.detach();
+   fon9_LOG_ThrRun("FdrThread.ThrRun.End|name=", args.Name_);
+   delete this;
 }
 void FdrThread::ProcessPendingSends() {
    PendingReqsImpl reqs = this->MoveOutPendingImpl(this->PendingSends_);
    for (FdrEventHandlerSP& sender : reqs)
-      if (sender->OnFdrEvent_Send() == FdrEventHandler::AfterSend_HasRemain)
-         this->Update_OnFdrEvent(sender);
+      sender->OnFdrEvent_StartSend();
 }
-void FdrThread::Update_OnFdrEvent(FdrEventHandlerSP handler) {
-   if (this->ThrSt_ != ThrSt_Running)
-      return;
-   else {
-      PendingReqs::Locker lk{this->PendingReqs_};
+void FdrThread::PushToPendingReqs(PendingReqs& reqs, FdrEventHandlerSP&& handler) {
+   {
+      PendingReqs::Locker lk{reqs};
       lk->emplace_back(std::move(handler));
    }
    this->WakeupThread();
 }
-void FdrThread::Remove_OnFdrEvent(FdrEventHandlerSP handler) {
-   if (this->ThrSt_ != ThrSt_Running)
-      return;
-   else {
-      PendingReqs::Locker lk{this->PendingRemoves_};
-      lk->emplace_back(std::move(handler));
-   }
-   this->WakeupThread();
+void FdrThread::WakeupThread() {
+   if (this->WakeupRequests_.fetch_add(1, std::memory_order_relaxed) == 0)
+      if (!this->IsThisThread())
+         this->WakeupFdr_.Wakeup();
 }
-void FdrThread::StartSendInFdrThread(FdrEventHandlerSP handler) {
-   if (this->ThrSt_ != ThrSt_Running)
-      return;
-   else {
-      PendingReqs::Locker lk{this->PendingSends_};
-      lk->emplace_back(std::move(handler));
-   }
-   this->WakeupThread();
-}
-//-------------------------------------------------------------------
-FdrEventHandler::FdrEventHandler(FdrServiceSP fdrSv, Fdr::fdr_t fd)
-   : FdrThread_{fdrSv->AllocFdrThread(fd)}
-   , FdrIndex_{fd, 0u}
-{
-}
+
+//--------------------------------------------------------------------------//
+
 FdrEventHandler::~FdrEventHandler() {
 }
+
 } } // namespaces
 #endif//fon9_POSIX

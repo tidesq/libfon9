@@ -129,12 +129,12 @@ public:
       ALockerBase(AQueue& owner, AQueueTaskKind taskKind)
          : Worker_{owner.WorkController_}
          , InTakingCallThread_{Worker_->InTakingCallThread()}
-         , IsAllowInvoke_{InTakingCallThread_ || Worker_->CheckAndSet(taskKind)}
+         , IsAllowInplace_{InTakingCallThread_ || Worker_->CheckAndSet(taskKind)}
          , TaskKind_{taskKind}
          , Owner_(owner) {
       }
-      bool OnDtor_AfterInvoke() {
-         if (this->IsAllowInvoke_ && !this->InTakingCallThread_) {
+      bool OnDtor_AfterInplace() {
+         if (this->IsAllowInplace_ && !this->InTakingCallThread_) {
             if (!this->Worker_.owns_lock())
                this->Worker_.lock();
             this->Worker_->ClearTaskKind(this->TaskKind_);
@@ -154,12 +154,12 @@ public:
 
    public:
       const bool           InTakingCallThread_;
-      const bool           IsAllowInvoke_;
+      const bool           IsAllowInplace_;
       const AQueueTaskKind TaskKind_;
       AQueue&              Owner_;
 
       ~ALockerBase() {
-         if (!this->OnDtor_AfterInvoke())
+         if (!this->OnDtor_AfterInplace())
             this->OnDtor_AfterAdd();
       }
 
@@ -180,7 +180,7 @@ public:
 
    /// \code
    ///   ...ALockerForAsyncTask  alocker{owner, ...};
-   ///   if (alocker.IsAllowInvoke_) {
+   ///   if (alocker.IsAllowInplace_) {
    ///      if (!IsAsyncTaskRequired(owner))
    ///         return;
    ///   }
@@ -194,36 +194,39 @@ public:
       }
    };
 
-   class ALockerForInvoke : public ALockerBase {
-      fon9_NON_COPY_NON_MOVE(ALockerForInvoke);
+   class ALockerForInplace : public ALockerBase {
+      fon9_NON_COPY_NON_MOVE(ALockerForInplace);
    public:
-      ALockerForInvoke(AQueue& owner, AQueueTaskKind taskKind)
+      ALockerForInplace(AQueue& owner, AQueueTaskKind taskKind)
          : ALockerBase{owner, taskKind} {
       }
       /// \code
-      ///   ...ALockerForInvoke  alocker{owner, ...};
-      ///   if (alocker.IsAllowInvoke_) {
-      ///      if (IsSyncInvokeRequired) {
-      ///         alocker.UnlockForInvoke();
-      ///         InvokeTask();
+      ///   ...ALockerForInplace  alocker{owner, ...};
+      ///   if (alocker.IsAllowInplace_) {
+      ///      if (其他條件也允許立即執行) {
+      ///         alocker.UnlockForInplace();
+      ///         // 解鎖後可安全的執行獨佔作業.
+      ///         RunTaskInplace();
+      ///         // alocker 解構時會檢查是否有等候中的工作,
+      ///         // 如果有, 則會透過 TaskInvoker_.MakeCallForWork(); 觸發執行(也許會到另一 thread 執行).
       ///         return;
       ///      }
       ///   }
       ///   alocker.AddAsyncTask(...);
       /// \endcode
-      void UnlockForInvoke() {
-         assert(this->IsAllowInvoke_);
+      void UnlockForInplace() {
+         assert(this->IsAllowInplace_);
          this->Worker_.unlock();
       }
       /// \code
-      ///   ...ALockerForInvoke  alocker{owner, ...};
-      ///   if (alocker.CheckUnlockForInvoke())
-      ///      InvokeTask();
+      ///   ...ALockerForInplace  alocker{owner, ...};
+      ///   if (alocker.CheckUnlockForInplace())
+      ///      RunTaskInplace();
       ///   else
       ///      alocker.AddAsyncTask(...);
       /// \endcode
-      bool CheckUnlockForInvoke() {
-         if (!this->IsAllowInvoke_)
+      bool CheckUnlockForInplace() {
+         if (!this->IsAllowInplace_)
             return false;
          this->Worker_.unlock();
          return true;
@@ -239,7 +242,7 @@ public:
       this->AfterAddTask(worker);
    }
 
-   /// if (Locker::IsAllowInvoke_) 則立即執行 task, 否則等候 work thread 執行完畢才返回.
+   /// if (Locker::IsAllowInplace_) 則立即執行 task, 否則等候 work thread 執行完畢才返回.
    /// TaskInvoker 必須額外提供:
    /// \code
    /// Task MakeWaiterTask(Task& task, CountDownLatch& waiter) {
@@ -250,16 +253,16 @@ public:
    /// }
    /// \endcode
    void WaitInvoke(AQueueTaskKind taskKind, Task task) {
-      class ALockerForInvokeOrWait : public ALockerBase {
-         fon9_NON_COPY_NON_MOVE(ALockerForInvokeOrWait);
+      class ALockerForInplaceOrWait : public ALockerBase {
+         fon9_NON_COPY_NON_MOVE(ALockerForInplaceOrWait);
       public:
-         ALockerForInvokeOrWait(AQueue& owner, AQueueTaskKind taskKind)
+         ALockerForInplaceOrWait(AQueue& owner, AQueueTaskKind taskKind)
             : ALockerBase{owner, taskKind} {
-            if (this->IsAllowInvoke_)
+            if (this->IsAllowInplace_)
                this->Worker_.unlock();
          }
          void WaitTask(Task& task) {
-            assert(!this->IsAllowInvoke_);
+            assert(!this->IsAllowInplace_);
             CountDownLatch waiter{1};
             this->Worker_->Tasks_.emplace_back(this->Owner_.TaskInvoker_.MakeWaiterTask(task, waiter));
             this->Owner_.AfterAddTask(this->Worker_);
@@ -267,8 +270,8 @@ public:
             waiter.Wait();
          }
       };
-      ALockerForInvokeOrWait alocker{*this, taskKind};
-      if (alocker.IsAllowInvoke_)
+      ALockerForInplaceOrWait alocker{*this, taskKind};
+      if (alocker.IsAllowInplace_)
          this->TaskInvoker_.Invoke(task);
       else
          alocker.WaitTask(task);

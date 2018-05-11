@@ -53,12 +53,13 @@ void IocpService::ThrRun(CompletionPortHandleSP cpHandleSP, ServiceThreadArgs ar
          if (iocpHandler)
             reinterpret_cast<IocpHandler*>(iocpHandler)->OnIocp_Error(lpOverlapped, eno);
          else {
-            // this->CompletionPort_ 本身的錯誤.
-            if (eno == ERROR_INVALID_HANDLE)
-               break;
-            fon9_LOG_ERROR("IocpService.ThrRun"
+            // CompletionPort 本身的錯誤??
+            fon9_LOG_FATAL("IocpService.ThrRun"
+                           "|iocpHandler=nullptr"
                            "|overlapped=", ToPtr{lpOverlapped},
+                           "|bytesTransfered=", bytesTransfered,
                            "|err=", GetSysErrC(eno));
+            break;
          }
       }
    }

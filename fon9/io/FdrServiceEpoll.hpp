@@ -4,31 +4,34 @@
 #define __fon9_io_FdrServiceEpoll_hpp__
 #ifdef __linux__
 #include "fon9/io/FdrService.hpp"
-#include "fon9/DyObjsPool.hpp"
+#include "fon9/ObjPool.hpp"
 
-#include "fon9/ConfigPush.hpp"
 namespace fon9 { namespace io {
 
-fon9_MSC_WARN_DISABLE(4820);
+struct FdrServiceEpoll {
+   using MakeResult = Result2;
+   static FdrServiceSP MakeService(const IoServiceArgs& ioArgs, const std::string& thrName, MakeResult& err);
+};
+
 /// \ingroup io
 /// 提供使用 epoll 處理 non-blocking fd 讀寫事件服務.
 class FdrThreadEpoll : public FdrThread {
+   const FdrAuto  FdrEpoll_;
    struct EvHandler : public FdrEventHandlerSP {
       using FdrEventHandlerSP::FdrEventHandlerSP;
-      FdrEventFlag  Events_{};
+      FdrEventFlag  Events_{FdrEventFlag::None};
    };
-   using EvHandlers = DyObjsPool<EvHandler>;
-   void ProcessPendings(Fdr::fdr_t epFd, EvHandlers& evHandlers);
-   void ThrRun(FdrAuto&& epFd, ServiceThrArgs args);
-public:
-   FdrThreadEpoll(const ServiceThrArgs& args, ResultFuncSysErr& res);
-   virtual ~FdrThreadEpoll();
+   using EvHandlers = ObjPool<EvHandler>;
 
-   /// 如果 epoll 建立失敗, 則會寫入 log, 並透過 soRes 告知.
-   static FdrServiceSP CreateFdrService(const IoServiceArgs& ioArgs, ResultFuncSysErr& res, std::string thrName);
+   void ProcessPendings(Fdr::fdr_t epFdr, EvHandlers& evHandlers);
+   virtual void ThrRunImpl(const ServiceThreadArgs& args) override;
+
+public:
+   FdrThreadEpoll(FdrServiceEpoll::MakeResult& res);
+
+   virtual ~FdrThreadEpoll();
 };
 
 } } // namespaces
-#include "fon9/ConfigPop.hpp"
-#endif
+#endif//__linux__
 #endif//__fon9_io_FdrServiceEpoll_hpp__

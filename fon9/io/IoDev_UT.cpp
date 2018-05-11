@@ -12,10 +12,13 @@ using TcpClient = fon9::io::IocpTcpClient;
 using TcpServer = fon9::io::IocpTcpServer;
 #else
 #include "fon9/io/FdrTcpClient.hpp"
+#include "fon9/io/Server.hpp"//#include "fon9/io/FdrTcpServer.hpp"
 #include "fon9/io/FdrServiceEpoll.hpp"
 using IoService = fon9::io::FdrServiceEpoll;
-using IoServiceSP = fon9::io::IocpServiceSP;
+using IoServiceSP = fon9::io::FdrServiceSP;
 using TcpClient = fon9::io::FdrTcpClient;
+//using TcpServer = fon9::io::FdrTcpServer;
+using TcpServer = fon9::io::FdrTcpClient;
 #endif
 
 using TimeUS = fon9::Decimal<uint64_t, 3>;
@@ -129,7 +132,7 @@ public:
                     "\n|recvBytes=", this->RecvBytes_,
                     "|recvCount=", this->RecvCount_,
                     "|avgBytes=", this->RecvBytes_ / this->RecvCount_,
-                    "|throughput=", fon9::Decimal<uint64_t,3>(this->RecvBytes_ / (elapsed.To<double>() * 1024 * 1024)),
+                    "|throughput=", fon9::Decimal<uint64_t,3>(static_cast<double>(this->RecvBytes_) / (elapsed.To<double>() * 1024 * 1024)),
                     "(MB/s)");
       this->RecvBytes_ = this->RecvCount_ = 0;
    }
@@ -176,7 +179,7 @@ e.g.
          return 3;
       }
       IoService::MakeResult   err;
-      iosv = IoService::MakeService(fon9::io::IoServiceArgs{}, "IoTest", err);
+      iosv = IoService::MakeService(iosvArgs, "IoTest", err);
       if (!iosv) {
          std::cout << "IoService.MakeService|" << fon9::RevPrintTo<std::string>(err) << std::endl;
          return 3;

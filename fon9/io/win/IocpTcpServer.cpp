@@ -22,10 +22,18 @@ class IocpTcpListener::AcceptedClient : public AcceptedClientDeviceBase, public 
    }
 
    virtual void OnIocpSocket_Received(DcQueueList& rxbuf) override {
-      this->InvokeRecvEvent(*this, rxbuf, nullptr);
+      this->OnRecvBufferReady(*this, rxbuf, nullptr);
    }
    virtual void OnIocpSocket_Writable(DWORD bytesTransfered) override {
-      this->ContinueSend(this, bytesTransfered, nullptr);
+      struct ContinueSendAux : public IocpContinueSendAux {
+         using IocpContinueSendAux::IocpContinueSendAux;
+         ContinueSendAux() = delete;
+         static bool IsBufferAlive(Device&, IoBuffer*) {
+            return true;
+         }
+      };
+      ContinueSendAux aux{bytesTransfered};
+      this->ContinueSend(*this, aux);
    }
 
    virtual void OpImpl_StartRecv(RecvBufferSize preallocSize) override {
@@ -58,35 +66,20 @@ public:
       return res;
    }
 
-   template <class SendCheckerBase>
-   struct SendChecker : public SendCheckerBase {
-      SendChecker() = delete;
-      using SendCheckerBase::SendCheckerBase;
-      virtual IocpSocket* OpImpl_GetIocpSocket(Device& dev) override {
-         return static_cast<AcceptedClient*>(&dev);
+   template <class SendAuxBase>
+   struct SendAux : public SendAuxBase {
+      using SendAuxBase::SendAuxBase;
+      SendAux() = delete;
+
+      static IocpSocket* GetImpl(AcceptedClient& dev) {
+         return &dev;
+      }
+      void AsyncSend(AcceptedClient&, SendChecker& sc, ObjHolderPtr<BufferList>&& pbuf) {
+         sc.AsyncSend(std::move(pbuf));
       }
    };
-   using SendCheckerMem = SendChecker<IocpSocket::SendCheckerMem>;
-   using SendCheckerBuf = SendChecker<IocpSocket::SendCheckerBuf>;
 
-   virtual SendResult SendASAP(const void* src, size_t size) override {
-      SendCheckerMem sc{src, size};
-      return sc.Send(*this, nullptr);
-   }
-   virtual SendResult SendASAP(BufferList&& src) override {
-      SendCheckerBuf sc{&src};
-      return sc.Send(*this, nullptr);
-   }
-   virtual SendResult SendBuffered(const void* src, size_t size) override {
-      DcQueueList    buffered;
-      SendCheckerMem sc{src, size};
-      return sc.Send(*this, &buffered);
-   }
-   virtual SendResult SendBuffered(BufferList&& src) override {
-      DcQueueList    buffered;
-      SendCheckerBuf sc{&src};
-      return sc.Send(*this, &buffered);
-   }
+   using Impl = DeviceImpl_IoBufferSend<AcceptedClient, IocpSocket>;
 };
 
 //--------------------------------------------------------------------------//
@@ -220,7 +213,7 @@ void IocpTcpListener::OnIocp_Done(OVERLAPPED* lpOverlapped, DWORD bytesTransfere
          if (setsockopt(soAccepted, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, reinterpret_cast<const char *>(&soListen), sizeof(soListen)) != 0)
             soRes = SocketResult{"SO_UPDATE_ACCEPT_CONTEXT"};
          else if (SessionSP sesAccepted = server.OnDevice_Accepted()) {
-            DeviceSP dev{devAccepted = new AcceptedClient(*this, std::move(this->ClientSocket_), std::move(sesAccepted), server.Manager_, soRes)};
+            DeviceSP dev{devAccepted = new AcceptedClient::Impl(*this, std::move(this->ClientSocket_), std::move(sesAccepted), server.Manager_, soRes)};
             if (soRes.IsSuccess()) {
                {
                   AcceptedClients::Locker devs{this->AcceptedClients_};

@@ -23,7 +23,6 @@ class SendBuffer {
    enum class Status {
       Empty,
       Sending,
-      ErrorClearAfterSent,
    };
    Status      Status_{Status::Empty};
    BufferList  Queue_;
@@ -35,46 +34,50 @@ public:
    bool IsEmpty() const {
       return this->Status_ == Status::Empty;
    }
-   void OpThr_ClearBuffer(const ErrC& errc) {
-      if (this->Status_ == Status::Sending)
-         this->Status_ = Status::ErrorClearAfterSent;
-      else
-         this->ForceClearBuffer(errc);
-   }
+
+   /// 無保護措施, 因為:
+   /// 通常在 IoBuffer 的衍生者或使用者(IocpSocket,FdrSocket)解構時呼叫.
    void ForceClearBuffer(const ErrC& errc) {
       this->Sending_.push_back(std::move(this->Queue_));
       this->Sending_.ConsumeErr(errc);
       this->Status_ = Status::Empty;
    }
 
-   using ALocker = DeviceOpQueue::ALockerForInvoke;
+   using ALocker = DeviceOpQueue::ALockerForInplace;
 
    /// 設定進入傳送中的狀態.
    /// \retval nullptr  現在正在傳送中, 設定失敗.
    /// \retval !nullptr 現在沒有在傳送, 成功進入 Sending 狀態:
    ///                  - 傳回值可用於填入資料後立即傳送.
-   ///                  - 返回前會先執行 alocker.UnlockForInvoke();
+   ///                  - 返回前會先執行 alocker.UnlockForInplace();
    DcQueueList* ToSendingAndUnlock(ALocker& alocker) {
-      if (!alocker.IsAllowInvoke_ || this->Status_ != Status::Empty)
+      if (!alocker.IsAllowInplace_ || this->Status_ != Status::Empty)
          return nullptr;
       this->Status_ = Status::Sending;
-      alocker.UnlockForInvoke();
+      alocker.UnlockForInplace();
       return &this->Sending_;
    }
-   DcQueueList* ContinueSend(size_t bytesSent) {
+   BufferList& GetQueueForPush(ALocker& alocker) {
+      (void)alocker;
+      assert(this->Status_ >= Status::Sending && alocker.owns_lock());
+      return this->Queue_;
+   }
+
+   /// 必須自行確定: (1) 在 op safe 狀態, 或 (2) 在 op thread 裡面 且 已禁止 writable 事件.
+   DcQueueList* OpImpl_ContinueSend(size_t bytesSent) {
       assert(this->Status_ == Status::Sending);
-      this->Sending_.PopConsumed(bytesSent);
+      if (bytesSent)
+         this->Sending_.PopConsumed(bytesSent);
+      return this->OpImpl_CheckSendQueue();
+   }
+   /// 必須自行確定: (1) 在 op safe 狀態, 或 (2) 在 op thread 裡面 且 已禁止 writable 事件.
+   DcQueueList* OpImpl_CheckSendQueue() {
+      assert(this->Status_ == Status::Sending);
       this->Sending_.push_back(std::move(this->Queue_));
       if (!this->Sending_.empty())
          return &this->Sending_;
       this->Status_ = Status::Empty;
       return nullptr;
-   }
-
-   BufferList& GetQueueForPush(ALocker& alocker) {
-      (void)alocker;
-      assert(this->Status_ >= Status::Sending && alocker.owns_lock());
-      return this->Queue_;
    }
 };
 fon9_WARN_POP;

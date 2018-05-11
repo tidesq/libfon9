@@ -26,7 +26,6 @@ std::string IocpSocket::GetErrorMessage(OVERLAPPED* lpOverlapped, DWORD eno) con
 }
 
 void IocpSocket::OnIocp_Error(OVERLAPPED* lpOverlapped, DWORD eno) {
-   fon9_LOG_TRACE("IocpSocket.OnIocp_Error|err=", this->GetOverlappedKind(lpOverlapped), ':', GetSysErrC(eno));
    if (this->Eno_ == 0)
       this->Eno_ = eno;
    this->OnIocpSocket_Error(lpOverlapped, eno);
@@ -51,8 +50,6 @@ bool IocpSocket::DropRecv() {
    return false;
 }
 void IocpSocket::OnIocp_Done(OVERLAPPED* lpOverlapped, DWORD bytesTransfered) {
-   //fon9_LOG_TRACE("IocpSocket.OnIocp_Done|", this->GetOverlappedKind(lpOverlapped),
-   //               ".byteTransfered=", bytesTransfered);
    if (fon9_LIKELY(lpOverlapped == &this->RecvOverlapped_)) {
       if (fon9_LIKELY(bytesTransfered > 0)) {
          DcQueueList& rxbuf = this->RecvBuffer_.SetDataReceived(bytesTransfered);
@@ -65,42 +62,6 @@ void IocpSocket::OnIocp_Done(OVERLAPPED* lpOverlapped, DWORD bytesTransfered) {
       this->OnIocpSocket_Writable(bytesTransfered);
    }
    this->IocpSocketReleaseRef();
-}
-void IocpSocket::ContinueSend(Device* const dev, DWORD bytesTransfered, FnOpImpl_IsSocketAlive fnIsSocketAlive) {
-   DcQueueList* qu;
-   if (dev) {
-      DeviceOpQueue::ALockerForInvoke alocker{dev->OpQueue_, AQueueTaskKind::Send};
-      if (alocker.IsAllowInvoke_) {
-         if (fnIsSocketAlive != nullptr && !fnIsSocketAlive(*dev, this))
-            // 取消 alocker 的保護, 取出 qu, 然後送出.
-            goto __GET_AND_CONTINUE_SEND;
-         if (fon9_LIKELY(IsAllowContinueSend(dev->OpImpl_GetState()))) {
-            // 在 alocker 的保護下, 取出 qu, 然後送出(送出時不用 alocker 保護).
-            if ((qu = this->SendBuffer_.ContinueSend(bytesTransfered)) != nullptr)
-               goto __CONTINUE_SEND;
-            dev->AsyncCheckSendEmpty(alocker);
-            return;
-         }
-      }
-      fon9_WARN_DISABLE_PADDING;
-      alocker.AddAsyncTask(DeviceAsyncOp{[this, bytesTransfered, fnIsSocketAlive](Device& dev) {
-         fon9_LOG_TRACE("Async.ContinueSend|bytesTransfered=", bytesTransfered);
-         if (DcQueueList* qu = this->SendBuffer_.ContinueSend(bytesTransfered)) {
-            this->IocpSocketAddRef();
-            this->SendAfterAddRef(*qu);
-         }
-         else if (fnIsSocketAlive == nullptr || fnIsSocketAlive(dev, this))
-            Device::OpThr_CheckSendEmpty(dev, std::string{});
-      }});
-      fon9_WARN_POP;
-      return;
-   }
-__GET_AND_CONTINUE_SEND:
-   if ((qu = this->SendBuffer_.ContinueSend(bytesTransfered)) == nullptr)
-      return;
-__CONTINUE_SEND:
-   this->IocpSocketAddRef();
-   this->SendAfterAddRef(*qu);
 }
 
 //--------------------------------------------------------------------------//
@@ -140,46 +101,6 @@ void IocpSocket::StartRecv(RecvBufferSize expectSize) {
       // 所以一律在 OnIocp_Done() 事件裡面處理即可.
    }
 }
-void IocpSocket::InvokeRecvEvent(Device& dev, DcQueueList& rxbuf, FnOpImpl_IsSocketAlive fnIsSocketAlive) {
-   RecvBufferSize contRecvSize;
-   for (;;) {
-      DeviceOpQueue::ALockerForInvoke alocker{dev.OpQueue_, AQueueTaskKind::Recv};
-      if (alocker.IsAllowInvoke_) {
-         if (dev.OpImpl_GetState() == State::LinkReady
-             && (fnIsSocketAlive == nullptr || fnIsSocketAlive(dev, this))) {
-            alocker.UnlockForInvoke();
-            contRecvSize = dev.Session_->OnDevice_Recv(dev, rxbuf);
-            goto __CONTINUE_RECV;
-         }
-         rxbuf.MoveOut();
-         goto __DROP_RECV;
-      }
-      this->RecvBuffer_.SetWaitingEventInvoke();
-      alocker.AddAsyncTask(DeviceAsyncOp{[this, &rxbuf, fnIsSocketAlive](Device& dev) {
-         fon9_LOG_TRACE("Async.Recv");
-         if (dev.OpImpl_GetState() == State::LinkReady
-             && (fnIsSocketAlive == nullptr || fnIsSocketAlive(dev, this)))
-            this->ContinueRecv(dev.Session_->OnDevice_Recv(dev, rxbuf));
-         else { // 到這兒才發現 this 被關閉, this 已經死掉了嗎? 此時要重啟 readable 偵測嗎?
-                // => this 應該已經在 IocpTcpClient::OpImpl_ResetImplSP()
-                //    或 OpImpl_Close() 裡面呼叫 shutdown(Send) 後
-                //    => 然後在 OnIocp_Error(SendOverlapped_, operation_cancel) 裡面死亡了!
-         }
-      }});
-      return;
-   }
-
-__CONTINUE_RECV:
-   // 離開 alocker 之後, 才處理 ContinueRecv(),
-   // 因為有可能在 this->ContinueRecv() 啟動 Recv 之後,
-   // alocker 解構(解除 OpQueue_ 的 Recv 旗標)之前,
-   // 就觸發了新的資料到達.
-   this->ContinueRecv(contRecvSize);
-   return;
-
-__DROP_RECV:
-   rxbuf.MoveOut();
-}
 
 //--------------------------------------------------------------------------//
 
@@ -208,40 +129,6 @@ Device::SendResult IocpSocket::SendAfterAddRef(DcQueueList& dcbuf) {
       // 所以一律在 OnIocp_Done() 事件裡面處理即可.
    }
    return Device::SendResult{0};
-}
-
-std::errc IocpSocket::SendChecker::CheckSend(Device& dev) {
-   if (fon9_UNLIKELY(dev.OpImpl_GetState() != State::LinkReady))
-      // 這裡呼叫 dev.OpImpl_GetState() 雖然不安全.
-      // 但因底下有 double check, 所以先排除「尚未連線」是可行的.
-      return std::errc::no_link;
-   DeviceOpQueue::ALockerForInvoke alocker{dev.OpQueue_, AQueueTaskKind::Send};
-   if (fon9_LIKELY(alocker.IsAllowInvoke_) // 此時為 op safe, 才能安全的使用 impl & GetState().
-       || alocker.IsWorkingSameTask() /* 不能 op safe 的原因是有其他人正在送(但已經unlock), 此時應放入 queue. */) {
-      if (fon9_UNLIKELY(dev.OpImpl_GetState() != State::LinkReady))
-         return std::errc::no_link;
-      this->IocpSocket_ = this->OpImpl_GetIocpSocket(dev);
-      this->ToSending_ = this->IocpSocket_->SendBuffer_.ToSendingAndUnlock(alocker);
-      if (this->ToSending_) {
-         assert(alocker.IsAllowInvoke_);
-         // 允許立即送出.
-         this->IocpSocket_->IocpSocketAddRef();
-         // SendBuffer 已進入 Sending 狀態, 此時 alocker 可解構, 然後送出.
-      }
-      else {
-         assert(alocker.IsWorkingSameTask());
-         // SendBuffer 不是空的, 則需放到 queue, 等候先前的傳送結束時, 再處理 queue.
-         this->PushTo(this->IocpSocket_->SendBuffer_.GetQueueForPush(alocker));
-      }
-   }
-   else { // 移到 op thread 傳送?
-      auto pbuf{MakeObjHolder<BufferList>()};
-      this->PushTo(*pbuf);
-      alocker.AddAsyncTask(DeviceAsyncOp{[pbuf](Device& dev) {
-         dev.SendASAP(std::move(*pbuf));
-      }});
-   }
-   return std::errc{};
 }
 
 } } // namespaces

@@ -234,9 +234,12 @@ public:
    ObjHolder() = default;
 };
 
+template <class ObjT>
+using ObjHolderPtr = intrusive_ptr<ObjHolder<ObjT>>;
+
 template <class ObjT, class... ArgsT>
-intrusive_ptr<ObjHolder<ObjT>> MakeObjHolder(ArgsT&&... args) {
-   return intrusive_ptr<ObjHolder<ObjT>>{new ObjHolder<ObjT>{std::forward<ArgsT>(args)...}};
+ObjHolderPtr<ObjT> MakeObjHolder(ArgsT&&... args) {
+   return ObjHolderPtr<ObjT>{new ObjHolder<ObjT>{std::forward<ArgsT>(args)...}};
 }
 
 } // namespace fon9//boost

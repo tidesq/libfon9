@@ -104,11 +104,11 @@ Socket::Socket() {
    // Socket建構, 與 SockInit_ 放在同一個.cpp檔案裡面, 確保 SockInit_ 可以先執行.
 }
 
-SocketErrC Socket::LoadSocketErrC(socket_t so) {
+int Socket::LoadSocketErrno(socket_t so) {
    int         eno;
    socklen_t   len = sizeof(eno);
    getsockopt(so, SOL_SOCKET, SO_ERROR, reinterpret_cast<char*>(&eno), &len);
-   return GetSocketErrC(eno);
+   return eno;
 }
 
 bool Socket::Bind(const SocketAddress& addr, SocketResult& soRes) const {

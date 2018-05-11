@@ -2,6 +2,7 @@
 /// \author fonwinz@gmail.com
 #include "fon9/io/TcpClientBase.hpp"
 #include "fon9/RevPrint.hpp"
+#include "fon9/Log.hpp"//todo: remove.
 
 namespace fon9 { namespace io {
 
@@ -32,12 +33,14 @@ void TcpClientBase::OnConnectTimeout(TimerEntry* timer, TimeStamp now) {
    }});
 }
 void TcpClientBase::OpImpl_ConnectToNext(StrView lastError) {
+   OpThr_SetDeviceId(*this, std::string{});
    if (this->NextAddrIndex_ >= this->AddrList_.size()) {
       // 全部的 addr 都嘗試過, 才進入 LinkError 狀態.
       this->NextAddrIndex_ = 0;
       if (lastError.empty())
          lastError = (this->AddrList_.empty() ? StrView{"No hosts."} : StrView{"All hosts cannot connect."});
-      this->OpImpl_SetState(State::LinkError, lastError);
+      this->OpImpl_SetState(this->OpImpl_GetState() == State::LinkReady
+                            ? State::LinkBroken : State::LinkError, lastError);
       return;
    }
    const SocketAddress& addr = this->AddrList_[this->NextAddrIndex_++];
@@ -107,16 +110,16 @@ void TcpClientBase::OpImpl_ReopenImpl() {
    else
       this->OpImpl_ConnectToNext(StrView{});
 }
-void TcpClientBase::OpImpl_Connected(const Socket& soCli) {
+void TcpClientBase::OpImpl_Connected(Socket::socket_t so) {
    this->ConnectTimer_.StopNoWait();
-   auto errc = soCli.LoadSocketErrC();
+   auto errc = Socket::LoadSocketErrC(so);
    if (errc) {
       OpThr_SetBrokenState(*this, RevPrintTo<std::string>("err=", errc));
       return;
    }
    SocketAddress  addrLocal;
    socklen_t      addrLen = sizeof(addrLocal);
-   getsockname(soCli.GetSocketHandle(), &addrLocal.Addr_, &addrLen);
+   getsockname(so, &addrLocal.Addr_, &addrLen);
    char     uidbuf[kMaxTcpConnectionUID];
    StrView  uidstr = MakeTcpConnectionUID(uidbuf, &this->RemoteAddress_, &addrLocal);
    if (this->RemoteAddress_ == addrLocal) {
@@ -132,7 +135,7 @@ void TcpClientBase::OpImpl_Connected(const Socket& soCli) {
 void TcpClientBase::OpImpl_Close(std::string cause) {
    this->OpImpl_TcpClearLinking();
    this->OpImpl_SetState(State::Closed, &cause);
-   OpThr_SetDeviceId(*this, std::string());
+   OpThr_SetDeviceId(*this, std::string{});
 }
 void TcpClientBase::OpImpl_StateChanged(const StateChangedArgs& e) {
    if (IsAllowContinueSend(e.Before_)) {
