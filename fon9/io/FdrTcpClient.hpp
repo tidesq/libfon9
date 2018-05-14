@@ -17,8 +17,7 @@ struct FdrTcpClientImpl : public FdrSocket, public intrusive_ref_counter<FdrTcpC
    virtual void OnFdrEvent_ReleaseRef() override;
    virtual void OnFdrEvent_Handling(FdrEventFlag evs) override;
    virtual void OnFdrEvent_StartSend() override;
-   virtual void OnFdrSocket_Error(StrView fnName, int eno) override;
-   bool CheckRead();
+   virtual void OnFdrSocket_Error(std::string errmsg) override;
 
 public:
    using OwnerDevice = TcpClientT<FdrServiceSP, FdrTcpClientImpl>;
@@ -35,40 +34,13 @@ public:
    }
    void OpImpl_Close();
    bool OpImpl_ConnectTo(const SocketAddress& addr, SocketResult& soRes);
-
-   struct ContinueSendAux : public FdrContinueSendAux {
-      static bool IsBufferAlive(Device& dev, IoBuffer* iobuf) {
-         return OwnerDevice::OpImpl_IsBufferAlive(dev, iobuf);
-      }
-   };
 };
 
 //--------------------------------------------------------------------------//
 
-class fon9_API FdrTcpClientDeviceBase : public FdrTcpClientImpl::OwnerDevice {
-   fon9_NON_COPY_NON_MOVE(FdrTcpClientDeviceBase);
-   using base = FdrTcpClientImpl::OwnerDevice;
-
-public:
-   using base::base;
-
-   template <class SendAuxBase>
-   struct SendAux : public SendAuxBase {
-      using SendAuxBase::SendAuxBase;
-      SendAux() = delete;
-
-      static FdrSocket* GetImpl(FdrTcpClientDeviceBase& dev) {
-         return dev.ImplSP_.get();
-      }
-      void AsyncSend(FdrTcpClientDeviceBase& dev, SendChecker& sc, ObjHolderPtr<BufferList>&& pbuf) {
-         sc.AsyncSend(std::move(pbuf), dev.ImplSP_.get(), &OpImpl_IsBufferAlive);
-      }
-   };
-};
-
 /// \ingroup io
 /// 使用 fd 的實作的 TcpClient.
-using FdrTcpClient = DeviceImpl_IoBufferSend<FdrTcpClientDeviceBase, FdrSocket>;
+using FdrTcpClient = DeviceImpl_DeviceStartSend<FdrTcpClientImpl::OwnerDevice, FdrSocket>;
 
 } } // namespaces
 #endif//__fon9_io_FdrTcpClient_hpp__

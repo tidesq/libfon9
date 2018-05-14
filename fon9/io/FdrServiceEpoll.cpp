@@ -57,24 +57,25 @@ void FdrThreadEpoll::ThrRunImpl(const ServiceThreadArgs& args) {
    Fdr::fdr_t  epFdr = this->FdrEpoll_.GetFD();
    const int   msTimeout = (IsBlockWait(args.HowWait_) ? -1 : 0);
    while (this->use_count() > 0) {
+      // 再次進入 epoll_wait() 之前, 必須先將 Pending Removes, Updates 處理完,
+      // 因為: 在 OnFdrEvent_Emit() 裡面關閉 readable, writable 偵測, 必須確實執行.
+      // 避免: 當 Device 必須回到 op thread 觸發 OnDevice_Recv() 或 執行 send,
+      //       如果沒有確實禁止 readable, writable, 則可能會發生非預期的結果.
+      if (fon9_UNLIKELY(this->WakeupRequests_.load(std::memory_order_relaxed) != 0)) {
+         this->ClearWakeup();
+         this->ProcessPendings(epFdr, evHandlers);
+      }
       struct epoll_event* pEvBeg = &*epEvents.begin();
       int epRes = epoll_wait(epFdr, pEvBeg, static_cast<int>(epEvents.size()), msTimeout);
-      if (fon9_LIKELY(epRes == 0)) { // 如果 !Block, 則 epRes==0 是常態!
-         if (args.HowWait_ == HowWait::Yield)
-            std::this_thread::yield();
-         continue;
-      }
       if (fon9_LIKELY(epRes > 0)) {
          for (int L = 0; L < epRes; ++L) {
-            if (fon9_UNLIKELY(pEvBeg->data.u32 == 0))
-               this->WakeupRequests_ = 1;
-            else if (EvHandler* pEvObj = evHandlers.GetObjPtr(pEvBeg->data.u32 - 1)) {
-               if (FdrEventHandler* hdr = pEvObj->get()) {
-                  const auto eflags = pEvBeg->events;
+            if (FdrEventHandler* hdr = static_cast<FdrEventHandler*>(pEvBeg->data.ptr)) {
+               if (fon9_LIKELY(hdr->GetFdrEventHandlerBookmark() > 0)) {
+                  const auto   eflags = pEvBeg->events;
                   FdrEventFlag evs = (eflags & EPOLLOUT) ? FdrEventFlag::Writable : FdrEventFlag::None;
                   if (eflags & (EPOLLIN | EPOLLPRI | EPOLLRDHUP))
                      evs |= FdrEventFlag::Readable;
-                  if (eflags & (EPOLLHUP | EPOLLERR)) {
+                  if (fon9_UNLIKELY(eflags & (EPOLLHUP | EPOLLERR))) {
                      evs |= FdrEventFlag::Error;
                      // 避免 hdr 處理 error 期間, 這裡會一直觸發 error, 所以一旦 error, 就移除 handler.
                      hdr->RemoveFdrEvent();
@@ -82,11 +83,9 @@ void FdrThreadEpoll::ThrRunImpl(const ServiceThreadArgs& args) {
                   this->OnFdrEvent_Emit(evs, hdr);
                }
             }
+            else
+               this->WakeupRequests_.store(1, std::memory_order_relaxed);
             ++pEvBeg;
-         }
-         if (fon9_UNLIKELY(this->WakeupRequests_ != 0)) {
-            this->ClearWakeup();
-            this->ProcessPendings(epFdr, evHandlers);
          }
          if (fon9_UNLIKELY(static_cast<size_t>(epRes) == epEvents.size())) {
             // epEvents 可能不足以容納一次的事件數量 => 擴充容量,
@@ -95,14 +94,16 @@ void FdrThreadEpoll::ThrRunImpl(const ServiceThreadArgs& args) {
             epEvents.resize(epEvents.capacity());
          }
       }
+      else if (fon9_LIKELY(epRes == 0)) { // 如果 !Block, 則 epRes==0 是常態!
+         if (args.HowWait_ == HowWait::Yield)
+            std::this_thread::yield();
+      }
       else if (epRes < 0) {
          int eno = errno;
          if (eno == EINTR)
             continue;
          fon9_LOG_FATAL("FdrThreadEpoll.ThrRun|fn=epoll_wait|err=", GetSysErrC(eno));
       }
-      if (args.HowWait_ == HowWait::Yield)
-         std::this_thread::yield();
    }
 }
 
@@ -117,11 +118,12 @@ void FdrThreadEpoll::ProcessPendings(Fdr::fdr_t epFdr, EvHandlers& evHandlers) {
       if (fon9_UNLIKELY(idx1 <= 0))
          continue;
       if (!evHandlers.RemoveObj(idx1 - 1, hdr))
-         fon9_LOG_ERROR("FdrServiceEpoll.Remove:|fd=", hdr->GetFD(), "|idx=", idx1, "|hdr=", ToPtr{hdr});
+         fon9_LOG_ERROR("FdrServiceEpoll.Remove|fd=", hdr->GetFD(), "|idx=", idx1, "|hdr=", ToPtr{hdr}, "|err=Not found");
       if (fon9_UNLIKELY(epoll_ctl(epFdr, EPOLL_CTL_DEL, hdr->GetFD(), &evc) < 0)) {
          int eno = errno; // 必須先將 errno 取出, 否則進入 fon9_LOG_ERROR() 可能會破壞 errno 的值.
-         fon9_LOG_ERROR("FdrServiceEpoll.DEL:|fd=", hdr->GetFD(), "|err=", GetSysErrC(eno));
+         fon9_LOG_ERROR("FdrServiceEpoll.DEL|fd=", hdr->GetFD(), "|err=", GetSysErrC(eno));
       }
+      // fon9_LOG_TRACE("FdrServiceEpoll.Remove|fd=", hdr->GetFD(), "|idx=", idx1, "|hdr=", ToPtr{hdr});
       this->SetFdrEventHandlerBookmark(hdr, 0);
    }
    reqs = this->MoveOutPendingImpl(this->PendingUpdates_);
@@ -156,12 +158,12 @@ void FdrThreadEpoll::ProcessPendings(Fdr::fdr_t epFdr, EvHandlers& evHandlers) {
       // if (IsEnumContains(evs, FdrEventFlag::Error))
       // 不論是否設定 FdrEventFlag::Error, 都要偵測錯誤事件.
          evc.events |= (EPOLLHUP | EPOLLERR);
-      evc.data.u64 = idx1;
+      evc.data.ptr = hdr;
       if (epoll_ctl(epFdr, op, hdr->GetFD(), &evc) < 0) {
          int eno = errno; // 必須先將 errno 取出, 否則進入 fon9_LOG_ERROR() 可能會破壞 errno 的值.
          fon9_LOG_ERROR(op == EPOLL_CTL_ADD
-                        ? StrView{"FdrServiceEpoll.ADD:|fd="}
-                        : StrView{"FdrServiceEpoll.MOD:|fd="},
+                        ? StrView{"FdrServiceEpoll.ADD|fd="}
+                        : StrView{"FdrServiceEpoll.MOD|fd="},
                         hdr->GetFD(),
                         "|evs=", evs,
                         "|err=", GetSysErrC(eno));

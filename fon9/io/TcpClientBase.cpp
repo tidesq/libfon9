@@ -1,8 +1,6 @@
 ﻿/// \file fon9/io/TcpClientBase.cpp
 /// \author fonwinz@gmail.com
 #include "fon9/io/TcpClientBase.hpp"
-#include "fon9/RevPrint.hpp"
-#include "fon9/Log.hpp"//todo: remove.
 
 namespace fon9 { namespace io {
 

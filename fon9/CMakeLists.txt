@@ -38,9 +38,9 @@ set(fon9src
  io/Session.cpp
  io/Manager.cpp
  io/Device.cpp
+ io/Server.cpp
  io/SendBuffer.cpp
  io/RecvBuffer.cpp
- io/IoBuffer.cpp
  io/IoServiceArgs.cpp
 
  io/SocketAddress.cpp
@@ -50,11 +50,13 @@ set(fon9src
  io/SocketServer.cpp
  io/SocketClient.cpp
  io/TcpClientBase.cpp
+ io/TcpServerBase.cpp
 
  io/FdrSocket.cpp
  io/FdrService.cpp
  io/FdrServiceEpoll.cpp
  io/FdrTcpClient.cpp
+ io/FdrTcpServer.cpp
 )
 add_library(fon9_s STATIC ${fon9src})
 target_link_libraries(fon9_s pthread rt)

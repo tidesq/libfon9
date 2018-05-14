@@ -94,13 +94,13 @@ class AQueue {
          this->WorkingTaskKind_ |= taskKind;
          return true;
       }
-      void ClearTaskKind(AQueueTaskKind taskKind) {
+      bool ClearTaskKind(AQueueTaskKind taskKind) {
          if (fon9_UNLIKELY(taskKind == AQueueTaskKind::Get)) {
             assert(this->CountGetter_ > 0);
             if (--this->CountGetter_ > 0)
-               return;
+               return false;
          }
-         this->WorkingTaskKind_ -= taskKind;
+         return (this->WorkingTaskKind_ -= taskKind) == AQueueTaskKind::Empty;
       }
    };
    using WorkController = MustLock<WorkContent, Mutex>;
@@ -134,14 +134,15 @@ public:
          , Owner_(owner) {
       }
       bool OnDtor_AfterInplace() {
-         if (this->IsAllowInplace_ && !this->InTakingCallThread_) {
+         if (fon9_LIKELY(this->IsAllowInplace_ && !this->InTakingCallThread_)) {
             if (!this->Worker_.owns_lock())
                this->Worker_.lock();
-            this->Worker_->ClearTaskKind(this->TaskKind_);
-            if (!this->Worker_->Tasks_.empty()) {
-               this->Owner_.AfterAddTask(this->Worker_);
-               return true;
-            }
+            if (!this->Worker_->ClearTaskKind(this->TaskKind_))
+               return false;
+            if (fon9_LIKELY(this->Worker_->Tasks_.empty()))
+               return false;
+            this->Owner_.AfterAddTask(this->Worker_);
+            return true;
          }
          return false;
       }
@@ -159,7 +160,7 @@ public:
       AQueue&              Owner_;
 
       ~ALockerBase() {
-         if (!this->OnDtor_AfterInplace())
+         if (fon9_UNLIKELY(!this->OnDtor_AfterInplace()))
             this->OnDtor_AfterAdd();
       }
 

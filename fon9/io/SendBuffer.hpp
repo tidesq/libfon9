@@ -12,11 +12,14 @@ fon9_WARN_DISABLE_PADDING;
 /// 傳送緩衝區: 如果情況允許, 則提供 **立即可送** 的返回值, 由呼叫端負責立即送出。
 /// - 所有的操作只能在 OpQueue safe 的狀態下進行.
 /// - 提供可讓 Overlapped I/O 可用的介面:
-///   - `ToSendingAndUnlock()` => `ContinueSend（)`
+///   - `ToSendingAndUnlock()` => `StartSend()`
 ///   - if (!SendBuffer_.IsEmpty()) 將資料填入 `GetQueueForPush()`
 /// - 提供一般消費函式 send(), write()... 使用的介面:
 ///   - ASAP
 ///   - Buffered
+/// - 通常且 socket、fd 會是 const: 在解構時才關閉.
+/// - 一旦進入關閉程序, 即使 SendBuffer 仍有資料, 也不會再送出.
+/// - 若有需要等候送完, 應使用 (Device::LingerClose + 系統的 linger) 機制.
 class SendBuffer {
    fon9_NON_COPY_NON_MOVE(SendBuffer);
 
@@ -35,8 +38,12 @@ public:
       return this->Status_ == Status::Empty;
    }
 
+   static SendBuffer& StaticCast(DcQueueList& toSend) {
+      return ContainerOf(toSend, &SendBuffer::Sending_);
+   }
+
    /// 無保護措施, 因為:
-   /// 通常在 IoBuffer 的衍生者或使用者(IocpSocket,FdrSocket)解構時呼叫.
+   /// 通常在使用者(IocpSocket,FdrSocket)解構時呼叫.
    void ForceClearBuffer(const ErrC& errc) {
       this->Sending_.push_back(std::move(this->Queue_));
       this->Sending_.ConsumeErr(errc);

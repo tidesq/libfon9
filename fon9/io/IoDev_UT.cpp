@@ -12,13 +12,12 @@ using TcpClient = fon9::io::IocpTcpClient;
 using TcpServer = fon9::io::IocpTcpServer;
 #else
 #include "fon9/io/FdrTcpClient.hpp"
-#include "fon9/io/Server.hpp"//#include "fon9/io/FdrTcpServer.hpp"
+#include "fon9/io/FdrTcpServer.hpp"
 #include "fon9/io/FdrServiceEpoll.hpp"
 using IoService = fon9::io::FdrServiceEpoll;
 using IoServiceSP = fon9::io::FdrServiceSP;
 using TcpClient = fon9::io::FdrTcpClient;
-//using TcpServer = fon9::io::FdrTcpServer;
-using TcpServer = fon9::io::FdrTcpClient;
+using TcpServer = fon9::io::FdrTcpServer;
 #endif
 
 using TimeUS = fon9::Decimal<uint64_t, 3>;
@@ -32,7 +31,7 @@ TimeUS GetTimeUS() {
 fon9_WARN_DISABLE_PADDING;
 class PingpongSession : public fon9::io::SessionServer {
    fon9_NON_COPY_NON_MOVE(PingpongSession);
-   bool IsEchoMode_;
+   bool IsEchoMode_{true};
 
    virtual fon9::io::RecvBufferSize OnDevice_LinkReady(fon9::io::Device&) override {
       return fon9::io::RecvBufferSize::Default;
@@ -63,9 +62,9 @@ __NEXT_CMD:
       default:
          return retval.empty() ? std::string{"Unknown ses command."} : retval;
       case 'e':
-         this->IsEchoMode_ = true;
          cmdln.SetBegin(cmdln.begin() + 1);
-         retval = "echo on";
+         this->IsEchoMode_ = (cmdln.Get1st() == -1) ? (!this->IsEchoMode_) : true;
+         retval = this->IsEchoMode_ ? "echo on" : "echo off";
          goto __NEXT_CMD;
       case 's':
          size = cmdln.size();
@@ -120,6 +119,7 @@ public:
    void PrintInfo() {
       if (this->RecvCount_ <= 0)
          return;
+      bool isEchoMode = this->IsEchoMode_;
       if (this->IsEchoMode_) {
          this->IsEchoMode_ = false;
          std::this_thread::sleep_for(std::chrono::milliseconds{500});
@@ -135,6 +135,7 @@ public:
                     "|throughput=", fon9::Decimal<uint64_t,3>(static_cast<double>(this->RecvBytes_) / (elapsed.To<double>() * 1024 * 1024)),
                     "(MB/s)");
       this->RecvBytes_ = this->RecvCount_ = 0;
+      this->IsEchoMode_ = isEchoMode;
    }
 };
 using PingpongSP = fon9::intrusive_ptr<PingpongSession>;
@@ -200,7 +201,7 @@ e.g.
 
    char cmdbuf[1024];
    while (fgets(cmdbuf, sizeof(cmdbuf), stdin)) {
-      fon9::StrView cmd{fon9::StrView_cstr(cmdbuf)};
+      fon9::StrView  cmd{fon9::StrView_cstr(cmdbuf)};
       fon9::StrTrim(&cmd);
       if (cmd.empty()) {
          ses->PrintInfo();
@@ -208,6 +209,14 @@ e.g.
       }
       if (cmd == "quit")
          break;
+      fon9::StrView cmdln{cmd};
+      fon9::StrView c1 = fon9::StrFetchTrim(cmdln, &fon9::isspace);
+      if (c1 == "log") {
+         if (!cmdln.empty())
+            fon9::LogLevel_ = static_cast<fon9::LogLevel>(fon9::StrTo(cmdln, 0u));
+         std::cout << "LogLevel=" << fon9::GetLevelStr(fon9::LogLevel_) << std::endl;
+         continue;
+      }
       auto dres = dev->DeviceCommand(cmd);
       if (!dres.empty())
          std::cout << dres << std::endl;

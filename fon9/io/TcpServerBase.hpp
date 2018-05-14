@@ -4,16 +4,27 @@
 #define __fon9_io_TcpServerBase_hpp__
 #include "fon9/io/Server.hpp"
 #include "fon9/io/SocketServer.hpp"
+#include "fon9/io/DeviceStartSend.hpp"
 
 namespace fon9 { namespace io {
+
+using AcceptedClientId = uint64_t;
+
+class fon9_API TcpListenerBase;
+using ListenerSP = intrusive_ptr<TcpListenerBase>;
 
 /// \ingroup io
 /// 透過 TcpServer 連入的 Device 基底.
 /// - 遠端連入後建立的對應 Device.
-/// - 一旦斷線(LinkBroken, LinkError, Close...) 就會觸發 Dispose 最終會刪除對應的 Device.
+/// - 一旦斷線(LinkBroken, LinkError, Close...):
+///   - 觸發 Dispose 最終會刪除對應的 Device.
+///   - 告知 Listener 移除 this.
 class fon9_API AcceptedClientDeviceBase : public Device {
    fon9_NON_COPY_NON_MOVE(AcceptedClientDeviceBase);
    using base = Device;
+
+   friend TcpListenerBase;
+   AcceptedClientId  AcceptedClientId_{0};
 
 protected:
    /// AcceptedClientDeviceBase 不可能執行到這兒, 所以這裡 do nothing.
@@ -23,16 +34,110 @@ protected:
    /// 在 Server 接受連線後, 會將 Device 設定好, 所以這裡的參數為 Server 提供的 deviceId.
    virtual void OpImpl_Open(std::string deviceId) override;
 
+   /// 判斷斷線 => this->Owner_->RemoveAcceptedClient(*this);
+   virtual void OpImpl_StateChanged(const StateChangedArgs& e) override;
+
    // virtual void OpImpl_Close(std::string cause) override {
    //    shutdown(this->Socket_.GetSocketHandle(), ...);
    //    OpThr_DisposeNoClose(*this, std::move(cause));
    // }
 
 public:
-   AcceptedClientDeviceBase(SessionSP ses, ManagerSP mgr)
-      : base(std::move(ses), std::move(mgr), Style::AcceptedClient) {
+   const ListenerSP  Owner_;
+   AcceptedClientDeviceBase(ListenerSP owner, SessionSP ses, ManagerSP mgr)
+      : base(std::move(ses), std::move(mgr), Style::AcceptedClient)
+      , Owner_{std::move(owner)} {
+   }
+   AcceptedClientId GetAcceptedClientId() const {
+      return this->AcceptedClientId_;
    }
 };
+
+/// \ingroup io
+/// - 協助 AcceptedClientBase 完成:
+///   - Device member function: `virtual bool IsSendBufferEmpty() const override;`
+/// - 協助完成 `DeviceImpl_DeviceStartSend<>` 所需要的 `struct SendAux`;
+template <class AcceptedClientBase>
+class AcceptedClientWithSend : public AcceptedClientBase {
+   fon9_NON_COPY_NON_MOVE(AcceptedClientWithSend);
+public:
+   using AcceptedClientBase::AcceptedClientBase;
+
+   virtual bool IsSendBufferEmpty() const override {
+      bool res;
+      this->OpQueue_.WaitInvoke(AQueueTaskKind::Send, DeviceAsyncOp{[&res](Device& dev) {
+         res = static_cast<AcceptedClientBase*>(&dev)->GetSendBuffer().IsEmpty();
+      }});
+      return res;
+   }
+
+   template <class SendAuxBase>
+   struct SendAux : public SendAuxBase {
+      using SendAuxBase::SendAuxBase;
+      SendAux() = delete;
+
+      static SendBuffer& GetSendBuffer(AcceptedClientBase& dev) {
+         return dev.GetSendBuffer();
+      }
+      void AsyncSend(AcceptedClientBase&, SendChecker& sc, ObjHolderPtr<BufferList>&& pbuf) {
+         sc.AsyncSend(std::move(pbuf));
+      }
+   };
+};
+
+fon9_WARN_DISABLE_PADDING;
+/// \ingroup io
+/// TcpListener 的基底, 負責管理 AcceptedClient.
+class fon9_API TcpListenerBase : public intrusive_ref_counter<TcpListenerBase> {
+   fon9_NON_COPY_NON_MOVE(TcpListenerBase);
+   friend AcceptedClientDeviceBase;
+
+   bool  IsDisposing_{false};
+
+   // 因為不確定: std::vector<AcceptedClientDeviceBaseSP> 是否能最佳化.
+   // - 例如: erase(iter); 只用 memmove(); 就足夠.
+   // - 所以, 自行呼叫:
+   //   - intrusive_ptr_add_ref(): 在 AddAcceptedClient(); 之後呼叫.
+   //   - intrusive_ptr_release(): 在 Dispose(); 及 RemoveAcceptedClient(); 呼叫
+   using AcceptedClientsImpl = std::vector<AcceptedClientDeviceBase*>;
+   static AcceptedClientsImpl::iterator FindAcceptedClients(AcceptedClientsImpl& devs, AcceptedClientId id);
+
+   using AcceptedClients = MustLock<AcceptedClientsImpl>;
+   mutable AcceptedClients  AcceptedClients_;
+
+   void RemoveAcceptedClient(AcceptedClientDeviceBase& devAccepted);
+   DeviceSP GetAcceptedClient(StrView* acceptedClientId);
+
+   virtual void OnListener_Dispose() = 0;
+
+protected:
+   void AddAcceptedClient(DeviceServer& server, AcceptedClientDeviceBase& devAccepted, StrView connId);
+   void SetAcceptedClientsReserved(size_t capacity) {
+      if (capacity) {
+         AcceptedClients::Locker devs{this->AcceptedClients_};
+         devs->reserve(capacity);
+      }
+   }
+
+public:
+   TcpListenerBase() {
+   }
+   virtual ~TcpListenerBase();
+
+   void Dispose(std::string cause);
+   bool IsDisposing() const {
+      return this->IsDisposing_;
+   }
+
+   size_t GetConnectionCount() const {
+      AcceptedClients::Locker devs{this->AcceptedClients_};
+      return devs->size();
+   }
+
+   void OpImpl_CloseAcceptedClient(StrView acceptedClientId);
+   void OpImpl_LingerCloseAcceptedClient(StrView acceptedClientId);
+};
+fon9_WARN_POP;
 
 /// \ingroup io
 /// TcpServer 使用基底.
@@ -48,7 +153,6 @@ class TcpServerBase : public DeviceServer {
    SocketServerConfig   Config_;
 
    friend Listener;//為了讓 Listener 可以取得 Config_; 及 Device 相關的保護操作.
-   using ListenerSP = intrusive_ptr<Listener>;
    ListenerSP  Listener_;
 
    void OpImpl_DisposeListener(std::string cause) {
@@ -91,17 +195,17 @@ class TcpServerBase : public DeviceServer {
       RevBufferList   rbuf{128 + sizeof(fon9::NumOutBuf)};
       if (this->Config_.ServiceArgs_.Capacity_ > 0)
          RevPrint(rbuf, '/', this->Config_.ServiceArgs_.Capacity_);
-      size_t curClientCount = (this->Listener_ ? this->Listener_->GetCurrentConnectionCount() : 0);
+      size_t curClientCount = (this->Listener_ ? this->Listener_->GetConnectionCount() : 0);
       RevPrint(rbuf, "|ClientCount=", curClientCount);
       BufferAppendTo(rbuf.MoveOut(), info);
    }
 
    static void OpThr_CloseAcceptedClient(Device& dev, std::string acceptedClientId) {
-      if (Listener* listener = static_cast<TcpServerBase*>(&dev)->Listener_.get())
+      if (auto* listener = static_cast<TcpServerBase*>(&dev)->Listener_.get())
          listener->OpImpl_CloseAcceptedClient(&acceptedClientId);
    }
    static void OpThr_LingerCloseAcceptedClient(Device& dev, std::string acceptedClientId) {
-      if (Listener* listener = static_cast<TcpServerBase*>(&dev)->Listener_.get())
+      if (auto* listener = static_cast<TcpServerBase*>(&dev)->Listener_.get())
          listener->OpImpl_LingerCloseAcceptedClient(&acceptedClientId);
    }
    /// aclose  acceptedClientId cause

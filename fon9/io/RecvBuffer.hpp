@@ -42,6 +42,10 @@ public:
       this->Clear();
    }
 
+   static RecvBuffer& StaticCast(DcQueueList& rxbuf) {
+      return ContainerOf(rxbuf, &RecvBuffer::Queue_);
+   }
+
    /// 當接收失敗 or 斷線 or 連線成功, 則透過這裡清除: 已收到但未處理的資料.
    void Clear();
 

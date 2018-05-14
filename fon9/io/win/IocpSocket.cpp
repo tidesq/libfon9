@@ -1,7 +1,6 @@
 ﻿/// \file fon9/io/win/IocpSocket.cpp
 /// \author fonwinz@gmail.com
 #include "fon9/io/win/IocpSocket.hpp"
-#include "fon9/Log.hpp"
 
 namespace fon9 { namespace io {
 
@@ -41,7 +40,7 @@ bool IocpSocket::DropRecv() {
    }
    int eno = WSAGetLastError();
    if (eno == WSAEWOULDBLOCK) {
-      this->StartRecv(RecvBufferSize::NoRecvEvent);
+      this->ContinueRecv(RecvBufferSize::NoRecvEvent);
       return true;
    }
    if (eno == 0 && bytesTransfered == 0) // 正常斷線, 沒有錯誤?!

@@ -50,16 +50,23 @@ void IocpTcpClientImpl::OnIocpSocket_Error(OVERLAPPED* lpOverlapped, DWORD eno) 
 }
 
 void IocpTcpClientImpl::OnIocpSocket_Received(DcQueueList& rxbuf) {
-   if (fon9_LIKELY(!this->IsClosing_))
-      this->OnRecvBufferReady(*this->Owner_, rxbuf, &OwnerDevice::OpImpl_IsBufferAlive);
+   if (fon9_LIKELY(!this->IsClosing_)) {
+      struct RecvAux : public IocpRecvAux {
+         static bool IsRecvBufferAlive(Device& dev, RecvBuffer& rbuf) {
+            return OwnerDevice::OpImpl_IsRecvBufferAlive(*static_cast<OwnerDevice*>(&dev), rbuf);
+         }
+      };
+      RecvAux aux;
+      DeviceRecvBufferReady(*this->Owner_, rxbuf, aux);
+   }
    else
       rxbuf.MoveOut();
 }
 void IocpTcpClientImpl::OnIocpSocket_Writable(DWORD bytesTransfered) {
    if (fon9_LIKELY(!this->IsClosing_)) {
       if (fon9_LIKELY(this->IsConnected_)) {
-         ContinueSendAux aux{bytesTransfered};
-         this->ContinueSend(*this->Owner_, aux);
+         OwnerDevice::ContinueSendAux aux{bytesTransfered};
+         DeviceContinueSend(*this->Owner_, this->SendBuffer_, aux);
       }
       else {
          this->IsConnected_ = true;

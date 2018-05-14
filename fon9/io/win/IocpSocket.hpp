@@ -4,7 +4,8 @@
 #define __fon9_io_win_IocpSocket_hpp__
 #include "fon9/io/win/IocpService.hpp"
 #include "fon9/io/Socket.hpp"
-#include "fon9/io/IoBufferSend.hpp"
+#include "fon9/io/DeviceStartSend.hpp"
+#include "fon9/io/DeviceRecvEvent.hpp"
 
 namespace fon9 { namespace io {
 
@@ -16,14 +17,18 @@ fon9_MSC_WARN_DISABLE_NO_PUSH(4623); /* 'IocpSendASAP_AuxMem' : default construc
 /// |-------:|--------------:|-----------------------|
 /// |  10240 | 1024*1024*100 | 57, 33, 30, 28...     |
 /// |      0 |             0 | 33,  3,  3,  3...     |
-class fon9_API IocpSocket : public IoBuffer, public IocpHandler {
+class fon9_API IocpSocket : public IocpHandler {
    fon9_NON_COPY_NON_MOVE(IocpSocket);
    bool DropRecv();
 
 protected:
-   WSAOVERLAPPED     SendOverlapped_;
-   WSAOVERLAPPED     RecvOverlapped_;
-   DWORD             Eno_{0}; // Eno_ 通常在 OnIocp_Error() 時設定, 在解構時清除 SendBuffer_ 使用.
+   WSAOVERLAPPED  SendOverlapped_;
+   SendBuffer     SendBuffer_;
+
+   WSAOVERLAPPED  RecvOverlapped_;
+   RecvBuffer     RecvBuffer_;
+
+   DWORD          Eno_{0}; // Eno_ 通常在 OnIocp_Error() 時設定, 在解構時清除 SendBuffer_ 使用.
 
    virtual void OnIocp_Error(OVERLAPPED* lpOverlapped, DWORD eno) override;
    virtual void OnIocp_Done(OVERLAPPED* lpOverlapped, DWORD bytesTransfered) override;
@@ -50,78 +55,101 @@ public:
 
    //--------------------------------------------------------------------------//
 
-   virtual void StartRecv(RecvBufferSize preallocSize) override;
+   void StartRecv(RecvBufferSize preallocSize);
+   void ContinueRecv(RecvBufferSize expectSize) {
+      this->StartRecv(expectSize);
+   }
+   RecvBuffer& GetRecvBuffer() {
+      return this->RecvBuffer_;
+   }
+   struct IocpRecvAux {
+      static void ContinueRecv(RecvBuffer& rbuf, RecvBufferSize expectSize) {
+         ContainerOf(rbuf, &IocpSocket::RecvBuffer_).ContinueRecv(expectSize);
+      }
+      static void DisableReadableEvent(RecvBuffer&) {
+         // IOCP socket 透過 WSARecv() 啟動「一次」readable, 所以不用額外取消 readable.
+      }
+   };
 
-   void StartSend(DcQueueList& toSend) {
+   //--------------------------------------------------------------------------//
+
+   SendBuffer& GetSendBuffer() {
+      return this->SendBuffer_;
+   }
+   void StartContinueSend(DcQueueList& toSend) {
       this->IocpSocketAddRef();
       this->SendAfterAddRef(toSend);
    }
    Device::SendResult SendAfterAddRef(DcQueueList& dcbuf);
 
-   //--------------------------------------------------------------------------//
-
-   struct SendAux_ImplProtector {
-      SendAux_ImplProtector(IocpSocket* impl) {
-         impl->IocpSocketAddRef();
+   struct SendAux_SendBufferProtector {
+      SendAux_SendBufferProtector(SendBuffer& sbuf) {
+         IocpSocket& impl = ContainerOf(sbuf, &IocpSocket::SendBuffer_);
+         impl.IocpSocketAddRef();
       }
    };
 
    struct SendASAP_AuxMem : public SendAuxMem {
       using SendAuxMem::SendAuxMem;
-      using ImplProtector = SendAux_ImplProtector;
+      using SendBufferProtector = SendAux_SendBufferProtector;
 
-      Device::SendResult Send(Device&, IocpSocket& impl, DcQueueList& toSend) {
+      Device::SendResult StartSend(Device&, DcQueueList& toSend) {
          toSend.Append(this->Src_, this->Size_);
+         IocpSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &IocpSocket::SendBuffer_);
          return impl.SendAfterAddRef(toSend);
       }
    };
 
    struct SendASAP_AuxBuf : public SendAuxBuf {
       using SendAuxBuf::SendAuxBuf;
-      using ImplProtector = SendAux_ImplProtector;
+      using SendBufferProtector = SendAux_SendBufferProtector;
 
-      Device::SendResult Send(Device&, IocpSocket& impl, DcQueueList& toSend) {
+      Device::SendResult StartSend(Device&, DcQueueList& toSend) {
          toSend.push_back(std::move(*this->Src_));
+         IocpSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &IocpSocket::SendBuffer_);
          return impl.SendAfterAddRef(toSend);
       }
    };
 
    struct SendBuffered_AuxMem : public SendAuxMem {
       using SendAuxMem::SendAuxMem;
-      using ImplProtector = SendAux_ImplProtector;
+      using SendBufferProtector = SendAux_SendBufferProtector;
 
-      Device::SendResult Send(Device&, IocpSocket& impl, DcQueueList& toSend) {
+      Device::SendResult StartSend(Device&, DcQueueList& toSend) {
          toSend.Append(this->Src_, this->Size_);
          DcQueueList emptyBuffer;
+         IocpSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &IocpSocket::SendBuffer_);
          return impl.SendAfterAddRef(emptyBuffer);
       }
    };
 
    struct SendBuffered_AuxBuf : public SendAuxBuf {
       using SendAuxBuf::SendAuxBuf;
-      using ImplProtector = SendAux_ImplProtector;
+      using SendBufferProtector = SendAux_SendBufferProtector;
 
-      Device::SendResult Send(Device&, IocpSocket& impl, DcQueueList& toSend) {
+      Device::SendResult StartSend(Device&, DcQueueList& toSend) {
          toSend.push_back(std::move(*this->Src_));
          DcQueueList emptyBuffer;
+         IocpSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &IocpSocket::SendBuffer_);
          return impl.SendAfterAddRef(emptyBuffer);
       }
    };
 
    //--------------------------------------------------------------------------//
 
-   struct IocpContinueSendAux {
+   struct ContinueSendAux {
       DWORD BytesTransfered_;
-      IocpContinueSendAux(DWORD bytesTransfered) : BytesTransfered_(bytesTransfered) {
+      ContinueSendAux(DWORD bytesTransfered) : BytesTransfered_(bytesTransfered) {
       }
       DcQueueList* GetToSend(SendBuffer& sbuf) const {
          return sbuf.OpImpl_ContinueSend(this->BytesTransfered_);
       }
-      static void DisableWritableEvent(IoBuffer&) {
-         // IOCP socket 透過 WSASend() 啟動「一次」Writable, 所以不用額外取消 writable.
+      static void DisableWritableEvent(SendBuffer&) {
+         // IOCP socket 透過 WSASend() 啟動「一次」writable, 所以不用額外取消 writable.
       }
-      void StartSend(Device&, IoBuffer& iobuf, DcQueueList& toSend) const {
-         static_cast<IocpSocket*>(&iobuf)->StartSend(toSend);
+      void StartContinueSend(Device&, DcQueueList& toSend) const {
+         IocpSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &IocpSocket::SendBuffer_);
+         impl.StartContinueSend(toSend);
       }
    };
 };

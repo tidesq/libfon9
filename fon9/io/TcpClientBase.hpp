@@ -2,13 +2,16 @@
 /// \author fonwinz@gmail.com
 #ifndef __fon9_io_TcpClientBase_hpp__
 #define __fon9_io_TcpClientBase_hpp__
-#include "fon9/io/Device.hpp"
 #include "fon9/io/Socket.hpp"
 #include "fon9/io/SocketClient.hpp"
 #include "fon9/io/SocketAddressDN.hpp"
+#include "fon9/io/DeviceStartSend.hpp"
 #include "fon9/Timer.hpp"
 
 namespace fon9 { namespace io {
+
+class SendBuffer;
+class RecvBuffer;
 
 /// \ingroup io
 /// TcpClient 基底, 衍生者: IocpTcpClient, FdrTcpClient;
@@ -61,7 +64,6 @@ public:
    ~TcpClientBase();
 };
 
-class IoBuffer;
 /// \ingroup io
 /// \tparam ClientImplT
 /// \code
@@ -80,8 +82,7 @@ class IoBuffer;
 ///   // 啟用「資料到達」事件.
 ///   void StartRecv(RecvBufferSize expectSize);
 ///
-///   // 判斷 SendBuffer 是否為空, 只能在 op safe 時呼叫.
-///   bool IsSendBufferEmpty() const;
+///   GetSendBuffer& GetSendBuffer();
 /// \endcode
 template <class IoServiceSP, class ClientImplT>
 class TcpClientT : public TcpClientBase {
@@ -125,15 +126,18 @@ public:
       , IoService_{std::move(iosv)} {
    }
 
-   static bool OpImpl_IsBufferAlive(Device& dev, IoBuffer* impl) {
-      return static_cast<TcpClientT*>(&dev)->ImplSP_.get() == impl;
+   static bool OpImpl_IsRecvBufferAlive(Device& dev, RecvBuffer& rbuf) {
+      return &(static_cast<TcpClientT*>(&dev)->ImplSP_->GetRecvBuffer()) == &rbuf;
+   }
+   static bool OpImpl_IsSendBufferAlive(Device& dev, SendBuffer& sbuf) {
+      return &(static_cast<TcpClientT*>(&dev)->ImplSP_->GetSendBuffer()) == &sbuf;
    }
 
    virtual bool IsSendBufferEmpty() const override {
       bool res;
       this->OpQueue_.WaitInvoke(AQueueTaskKind::Send, DeviceAsyncOp{[&res](Device& dev) {
          if (ClientImpl* impl = static_cast<TcpClientT*>(&dev)->ImplSP_.get())
-            res = impl->IsSendBufferEmpty();
+            res = impl->GetSendBuffer().IsEmpty();
          else
             res = true;
       }});
@@ -149,6 +153,7 @@ public:
             }
          }});
    }
+
    void OnSocketError(ClientImpl* impl, std::string errmsg) {
       DeviceOpQueue::ALockerForAsyncTask alocker{this->OpQueue_, AQueueTaskKind::Get};
       if (alocker.IsAllowInplace_) { // 檢查 Owner_ 是否仍在使用 this; 如果沒有在用 this, 則不用通知 Owner_;
@@ -160,6 +165,27 @@ public:
             static_cast<TcpClientT*>(&dev)->OpImpl_ConnectToNext(&errmsg);
       }});
    }
+
+   fon9_MSC_WARN_DISABLE(4623);//4623: '...': default constructor was implicitly defined as deleted
+   struct ContinueSendAux : public ClientImpl::ContinueSendAux {
+      using ClientImpl::ContinueSendAux::ContinueSendAux;
+      static bool IsSendBufferAlive(Device& dev, SendBuffer& sbuf) {
+         return TcpClientT::OpImpl_IsSendBufferAlive(*static_cast<TcpClientT*>(&dev), sbuf);
+      }
+   };
+
+   template <class SendAuxBase>
+   struct SendAux : public SendAuxBase {
+      using SendAuxBase::SendAuxBase;
+
+      static SendBuffer& GetSendBuffer(TcpClientT& dev) {
+         return dev.ImplSP_->GetSendBuffer();
+      }
+      void AsyncSend(TcpClientT& dev, SendChecker& sc, ObjHolderPtr<BufferList>&& pbuf) {
+         sc.AsyncSend(std::move(pbuf), dev.ImplSP_->GetSendBuffer(), &OpImpl_IsSendBufferAlive);
+      }
+   };
+   fon9_MSC_WARN_POP;
 };
 
 } } // namespaces
