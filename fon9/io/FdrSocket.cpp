@@ -19,7 +19,7 @@ void FdrSocket::SocketError(StrView fnName, int eno) {
    this->RemoveFdrEvent();
    std::string errmsg;
    if (eno)
-      errmsg = RevPrintTo<std::string>(fnName, ':', GetSysErrC(eno));
+      errmsg = RevPrintTo<std::string>(fnName, ':', GetSocketErrC(eno));
    else {
       fnName.AppendTo(errmsg);
       errmsg.append(":disconnected.");
@@ -27,33 +27,41 @@ void FdrSocket::SocketError(StrView fnName, int eno) {
    this->OnFdrSocket_Error(std::move(errmsg));
 }
 
-
-int FdrSocket::Sendv(Device& dev, DcQueueList& toSend) {
+int FdrSocket::Sendv(SendLocker& sc, DcQueueList& toSend) {
    struct iovec   bufv[IOV_MAX];
    size_t         bufCount = toSend.PeekBlockVector(bufv);
    ssize_t        wrsz = writev(this->GetFD(), bufv, static_cast<int>(bufCount));
    if (fon9_LIKELY(wrsz >= 0)) {
       toSend.PopConsumed(static_cast<size_t>(wrsz));
       if (fon9_LIKELY(toSend.empty()))
-         this->CheckSendQueueEmpty(dev);
+         this->CheckSendQueueEmpty(sc);
       else
          this->EnableEventBit(FdrEventFlag::Writable);
       return 0;
    }
-   int eno = errno;
-   this->SocketError("Sendv", eno);
-   return eno;
+   if (int eno = ErrorCannotRetry(errno)) {
+      this->SocketError("Sendv", eno);
+      return eno;
+   }
+   this->EnableEventBit(FdrEventFlag::Writable);
+   return 0;
 }
 
-void FdrSocket::CheckSendQueueEmpty(Device& dev) {
-   {
-      DeviceOpQueue::ALockerForInplace alocker{dev.OpQueue_, AQueueTaskKind::Send};
-      if (fon9_LIKELY(alocker.IsAllowInplace_ && !this->SendBuffer_.OpImpl_CheckSendQueue())) {
-         dev.AsyncCheckSendEmpty(alocker);
-         return;
-      }
+void FdrSocket::CheckSendQueueEmpty(SendLocker& sc) {
+   auto& alocker = sc.GetALocker();
+   alocker.Relock();
+   if (fon9_LIKELY(!this->SendBuffer_.OpImpl_CheckSendQueue())) {
+      sc.GetDevice().AsyncCheckSendEmpty(alocker);
+      return;
    }
-   // StartSendInFdrThread() 不需要 alocker, 所以在沒有 alocker 的情況下啟動, 避免佔用 alocker 太久.
+   // 因為 this->StartSendInFdrThread(); 裡面通常會有 mutex 保護.
+   //   - 為了避免 [sc保護 + FdrThread保護] 的多重 lock
+   //   - 讓 sc 能盡快釋放資源.
+   // 所以此處執行 sc.Destroy();
+   // 但在 sc.Destroy() 之後, this 有可能會死亡, e.g. FdrTcpClient: ImplSP_.reset();
+   // 所以使用 protectedThis 先將 this 保護起來, 再呼叫 this->StartSendInFdrThread();
+   FdrEventHandlerSP protectedThis{this};
+   sc.Destroy();
    this->StartSendInFdrThread();
 }
 
@@ -128,8 +136,11 @@ bool FdrSocket::CheckRead(Device& dev, bool (*fnIsRecvBufferAlive)(Device& dev, 
    return false;
 
 __READ_ERROR:
-   this->SocketError("Recv", errno);
-   return false;
+   if (int eno = ErrorCannotRetry(errno)) {
+      this->SocketError("Recv", eno);
+      return false;
+   }
+   return true;
 }
 
 } } // namespaces

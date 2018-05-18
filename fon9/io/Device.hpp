@@ -73,7 +73,7 @@ public:
       this->OpQueue_.AddTask(DeviceAsyncOp(&Device::OpThr_LingerClose, std::move(cause)));
    }
    void AsyncCheckSendEmpty(DeviceOpQueue::ALockerBase& alocker) {
-      if (this->OpImpl_GetState() == State::Lingering)
+      if (fon9_UNLIKELY(this->OpImpl_GetState() == State::Lingering))
          alocker.AddAsyncTask(DeviceAsyncOp(&Device::OpThr_CheckSendEmpty, std::string{}));
    }
    static void OpThr_CheckSendEmpty(Device& dev, std::string cause);

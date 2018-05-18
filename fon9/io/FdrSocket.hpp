@@ -10,15 +10,17 @@
 namespace fon9 { namespace io {
 
 class FdrSocket : public FdrEventHandler {
-   void SocketError(StrView fnName, int eno);
-   virtual void OnFdrSocket_Error(std::string errmsg) = 0;
-
 protected:
    using FdrEventFlagU = std::underlying_type<FdrEventFlag>::type;
    std::atomic<FdrEventFlagU> EnabledEvents_{0};
    RecvBufferSize             RecvSize_;
    RecvBuffer                 RecvBuffer_;
    SendBuffer                 SendBuffer_;
+
+   /// 建立錯誤訊息字串, 觸發事件:
+   /// `this->OnFdrSocket_Error("fnName:" + GetSocketErrC(eno));`
+   void SocketError(StrView fnName, int eno);
+   virtual void OnFdrSocket_Error(std::string errmsg) = 0;
 
    virtual FdrEventFlag GetRequiredFdrEventFlag() const override;
 
@@ -33,7 +35,7 @@ protected:
 
    /// \retval 0     success;  返回前, 若已無資料則: CheckSendQueueEmpty(); 若仍有資料則: 啟動 writable 偵測.
    /// \retval else  errno;    返回前, 已先呼叫 this->OnFdrSocket_Error("fn=Sendv|err=", retval);
-   int Sendv(Device& dev, DcQueueList& toSend);
+   int Sendv(SendLocker& sc, DcQueueList& toSend);
    
    bool SetDisableEventBit(FdrEventFlag ev) {
       return (this->EnabledEvents_.fetch_and(~static_cast<FdrEventFlagU>(ev), std::memory_order_relaxed)
@@ -100,43 +102,42 @@ public:
    SendBuffer& GetSendBuffer() {
       return this->SendBuffer_;
    }
+   void CheckSendQueueEmpty(SendLocker& sc);
 
    struct ContinueSendAux : public FdrEventAux {
       void DisableWritableEvent(SendBuffer& sbuf) {
          this->DisableEvent(ContainerOf(sbuf, &FdrSocket::SendBuffer_), FdrEventFlag::Writable);
       }
-      static DcQueueList* GetToSend(SendBuffer& sbuf) {
+      static DcQueueList* GetContinueToSend(SendBuffer& sbuf) {
          return sbuf.OpImpl_CheckSendQueue();
       }
-      void StartContinueSend(Device& dev, DcQueueList& toSend) const {
+      void ContinueToSend(ContinueSendChecker& sc, DcQueueList& toSend) const {
+         sc.GetALocker().UnlockForInplace();
+         // 可能的呼叫點:
+         // - 在 io thread 的 writable 事件裡面呼叫.
+         // - DisableWritableEvent() 之後, 在 op thread 的 Async.
          SendBuffer& sbuf = SendBuffer::StaticCast(toSend);
          FdrSocket&  impl = ContainerOf(sbuf, &FdrSocket::SendBuffer_);
-         impl.Sendv(dev, toSend);
+         impl.Sendv(sc, toSend);
       }
    };
 
-   void CheckSendQueueEmpty(Device& dev);
-
-   struct SendBufferProtectorImpl {
-      FdrEventHandlerSP ImplSP_;
-      SendBufferProtectorImpl(SendBuffer& sbuf) : ImplSP_{&ContainerOf(sbuf, &FdrSocket::SendBuffer_)} {
-      }
-   };
    struct SendASAP_AuxMem : public SendAuxMem {
       using SendAuxMem::SendAuxMem;
-      using SendBufferProtector = SendBufferProtectorImpl;
 
-      Device::SendResult StartSend(Device& dev, DcQueueList& toSend) {
-         FdrSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &FdrSocket::SendBuffer_);
-         ssize_t wrsz = write(impl.GetFD(), this->Src_, this->Size_);
+      Device::SendResult StartToSend(StartSendChecker& sc, DcQueueList& toSend) {
+         FdrSocket&  impl = ContainerOf(SendBuffer::StaticCast(toSend), &FdrSocket::SendBuffer_);
+         auto        wrsz = write(impl.GetFD(), this->Src_, this->Size_);
          if (fon9_UNLIKELY(wrsz < 0)) {
-            int eno = errno;
-            impl.SocketError("Send", eno);
-            return GetSysErrC(eno);
+            if (int eno = ErrorCannotRetry(errno)) {
+               impl.SocketError("Send", eno);
+               return GetSysErrC(eno);
+            }
+            wrsz = 0;
          }
 
          if (fon9_LIKELY(static_cast<size_t>(wrsz) >= this->Size_))
-            impl.CheckSendQueueEmpty(dev);
+            impl.CheckSendQueueEmpty(sc);
          else {
             toSend.Append(reinterpret_cast<const char*>(this->Src_) + wrsz, this->Size_ - wrsz);
             impl.EnableEventBit(FdrEventFlag::Writable);
@@ -147,12 +148,11 @@ public:
 
    struct SendASAP_AuxBuf : public SendAuxBuf {
       using SendAuxBuf::SendAuxBuf;
-      using SendBufferProtector = SendBufferProtectorImpl;
 
-      Device::SendResult StartSend(Device& dev, DcQueueList& toSend) {
+      Device::SendResult StartToSend(StartSendChecker& sc, DcQueueList& toSend) {
+         FdrSocket&  impl = ContainerOf(SendBuffer::StaticCast(toSend), &FdrSocket::SendBuffer_);
          toSend.push_back(std::move(*this->Src_));
-         FdrSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &FdrSocket::SendBuffer_);
-         if (int eno = impl.Sendv(dev, toSend))
+         if (int eno = impl.Sendv(sc, toSend))
             return GetSysErrC(eno);
          return Device::SendResult{0};
       }
@@ -160,11 +160,10 @@ public:
 
    struct SendBuffered_AuxMem : public SendAuxMem {
       using SendAuxMem::SendAuxMem;
-      using SendBufferProtector = SendBufferProtectorImpl;
 
-      Device::SendResult StartSend(Device&, DcQueueList& toSend) {
+      Device::SendResult StartToSend(StartSendChecker&, DcQueueList& toSend) {
          toSend.Append(this->Src_, this->Size_);
-         FdrSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &FdrSocket::SendBuffer_);
+         FdrSocket&  impl = ContainerOf(SendBuffer::StaticCast(toSend), &FdrSocket::SendBuffer_);
          impl.StartSendInFdrThread();
          return Device::SendResult{0};
       }
@@ -172,11 +171,10 @@ public:
 
    struct SendBuffered_AuxBuf : public SendAuxBuf {
       using SendAuxBuf::SendAuxBuf;
-      using SendBufferProtector = SendBufferProtectorImpl;
 
-      Device::SendResult StartSend(Device&, DcQueueList& toSend) {
+      Device::SendResult StartToSend(StartSendChecker&, DcQueueList& toSend) {
          toSend.push_back(std::move(*this->Src_));
-         FdrSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &FdrSocket::SendBuffer_);
+         FdrSocket&  impl = ContainerOf(SendBuffer::StaticCast(toSend), &FdrSocket::SendBuffer_);
          impl.StartSendInFdrThread();
          return Device::SendResult{0};
       }

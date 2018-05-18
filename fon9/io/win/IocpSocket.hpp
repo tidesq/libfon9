@@ -76,61 +76,58 @@ public:
    SendBuffer& GetSendBuffer() {
       return this->SendBuffer_;
    }
-   void StartContinueSend(DcQueueList& toSend) {
+   void ContinueToSend(DcQueueList& toSend) {
       this->IocpSocketAddRef();
       this->SendAfterAddRef(toSend);
    }
    Device::SendResult SendAfterAddRef(DcQueueList& dcbuf);
 
-   struct SendAux_SendBufferProtector {
-      SendAux_SendBufferProtector(SendBuffer& sbuf) {
-         IocpSocket& impl = ContainerOf(sbuf, &IocpSocket::SendBuffer_);
-         impl.IocpSocketAddRef();
-      }
-   };
-
    struct SendASAP_AuxMem : public SendAuxMem {
       using SendAuxMem::SendAuxMem;
-      using SendBufferProtector = SendAux_SendBufferProtector;
 
-      Device::SendResult StartSend(Device&, DcQueueList& toSend) {
-         toSend.Append(this->Src_, this->Size_);
+      Device::SendResult StartToSend(StartSendChecker& sc, DcQueueList& toSend) {
          IocpSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &IocpSocket::SendBuffer_);
+         impl.IocpSocketAddRef();
+         sc.Destroy();
+         toSend.Append(this->Src_, this->Size_);
          return impl.SendAfterAddRef(toSend);
       }
    };
 
    struct SendASAP_AuxBuf : public SendAuxBuf {
       using SendAuxBuf::SendAuxBuf;
-      using SendBufferProtector = SendAux_SendBufferProtector;
 
-      Device::SendResult StartSend(Device&, DcQueueList& toSend) {
-         toSend.push_back(std::move(*this->Src_));
+      Device::SendResult StartToSend(StartSendChecker& sc, DcQueueList& toSend) {
          IocpSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &IocpSocket::SendBuffer_);
+         impl.IocpSocketAddRef();
+         sc.Destroy();
+         toSend.push_back(std::move(*this->Src_));
          return impl.SendAfterAddRef(toSend);
       }
    };
 
    struct SendBuffered_AuxMem : public SendAuxMem {
       using SendAuxMem::SendAuxMem;
-      using SendBufferProtector = SendAux_SendBufferProtector;
 
-      Device::SendResult StartSend(Device&, DcQueueList& toSend) {
+      Device::SendResult StartToSend(StartSendChecker& sc, DcQueueList& toSend) {
+         IocpSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &IocpSocket::SendBuffer_);
+         impl.IocpSocketAddRef();
+         sc.Destroy();
          toSend.Append(this->Src_, this->Size_);
          DcQueueList emptyBuffer;
-         IocpSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &IocpSocket::SendBuffer_);
          return impl.SendAfterAddRef(emptyBuffer);
       }
    };
 
    struct SendBuffered_AuxBuf : public SendAuxBuf {
       using SendAuxBuf::SendAuxBuf;
-      using SendBufferProtector = SendAux_SendBufferProtector;
 
-      Device::SendResult StartSend(Device&, DcQueueList& toSend) {
+      Device::SendResult StartToSend(StartSendChecker& sc, DcQueueList& toSend) {
+         IocpSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &IocpSocket::SendBuffer_);
+         impl.IocpSocketAddRef();
+         sc.Destroy();
          toSend.push_back(std::move(*this->Src_));
          DcQueueList emptyBuffer;
-         IocpSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &IocpSocket::SendBuffer_);
          return impl.SendAfterAddRef(emptyBuffer);
       }
    };
@@ -141,15 +138,16 @@ public:
       DWORD BytesTransfered_;
       ContinueSendAux(DWORD bytesTransfered) : BytesTransfered_(bytesTransfered) {
       }
-      DcQueueList* GetToSend(SendBuffer& sbuf) const {
+      DcQueueList* GetContinueToSend(SendBuffer& sbuf) const {
          return sbuf.OpImpl_ContinueSend(this->BytesTransfered_);
       }
       static void DisableWritableEvent(SendBuffer&) {
          // IOCP socket 透過 WSASend() 啟動「一次」writable, 所以不用額外取消 writable.
       }
-      void StartContinueSend(Device&, DcQueueList& toSend) const {
+      void ContinueToSend(ContinueSendChecker& sc, DcQueueList& toSend) const {
+         sc.Destroy();
          IocpSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &IocpSocket::SendBuffer_);
-         impl.StartContinueSend(toSend);
+         impl.ContinueToSend(toSend);
       }
    };
 };

@@ -65,7 +65,7 @@ public:
 
    virtual bool IsSendBufferEmpty() const override {
       bool res;
-      this->OpQueue_.WaitInvoke(AQueueTaskKind::Send, DeviceAsyncOp{[&res](Device& dev) {
+      this->OpQueue_.InplaceOrWait(AQueueTaskKind::Send, DeviceAsyncOp{[&res](Device& dev) {
          res = static_cast<AcceptedClientBase*>(&dev)->GetSendBuffer().IsEmpty();
       }});
       return res;
@@ -79,7 +79,7 @@ public:
       static SendBuffer& GetSendBuffer(AcceptedClientBase& dev) {
          return dev.GetSendBuffer();
       }
-      void AsyncSend(AcceptedClientBase&, SendChecker& sc, ObjHolderPtr<BufferList>&& pbuf) {
+      void AsyncSend(AcceptedClientBase&, StartSendChecker& sc, ObjHolderPtr<BufferList>&& pbuf) {
          sc.AsyncSend(std::move(pbuf));
       }
    };

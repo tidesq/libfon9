@@ -5,6 +5,7 @@
 #include "fon9/Worker.hpp"
 #include "fon9/SpinMutex.hpp"
 #include "fon9/CountDownLatch.hpp"
+#include "fon9/DyObj.hpp"
 #include <vector>
 
 namespace fon9 {
@@ -124,7 +125,6 @@ public:
 
    protected:
       WorkLocker  Worker_;
-      unsigned    AddCount_{0};
 
       ALockerBase(AQueue& owner, AQueueTaskKind taskKind)
          : Worker_{owner.WorkController_}
@@ -132,25 +132,6 @@ public:
          , IsAllowInplace_{InTakingCallThread_ || Worker_->CheckAndSet(taskKind)}
          , TaskKind_{taskKind}
          , Owner_(owner) {
-      }
-      bool OnDtor_AfterInplace() {
-         if (fon9_LIKELY(this->IsAllowInplace_ && !this->InTakingCallThread_)) {
-            if (!this->Worker_.owns_lock())
-               this->Worker_.lock();
-            if (!this->Worker_->ClearTaskKind(this->TaskKind_))
-               return false;
-            if (fon9_LIKELY(this->Worker_->Tasks_.empty()))
-               return false;
-            this->Owner_.AfterAddTask(this->Worker_);
-            return true;
-         }
-         return false;
-      }
-      bool OnDtor_AfterAdd() {
-         if (this->AddCount_ <= 0)
-            return false;
-         this->Owner_.AfterAddTask(this->Worker_);
-         return true;
       }
 
    public:
@@ -160,14 +141,24 @@ public:
       AQueue&              Owner_;
 
       ~ALockerBase() {
-         if (fon9_UNLIKELY(!this->OnDtor_AfterInplace()))
-            this->OnDtor_AfterAdd();
+         if (fon9_LIKELY(this->IsAllowInplace_)) {
+            if (fon9_UNLIKELY(this->InTakingCallThread_))
+               // InTakingCallThread_ == true:
+               // (1)建構時沒有設定 taskKind => 所以不用 ClearTaskKind();
+               // (2)由 TakeCall() 負責檢查 Worker_->Tasks_.empty();
+               return;
+            if (!this->Worker_.owns_lock())
+               this->Worker_.lock();
+            if (this->Worker_->ClearTaskKind(this->TaskKind_) && !this->Worker_->Tasks_.empty())
+               this->Owner_.AfterAddTask(this->Worker_);
+         }
+         else if (!this->Worker_->Tasks_.empty())
+            this->Owner_.AfterAddTask(this->Worker_);
       }
 
       void AddAsyncTask(Task task) {
          assert(this->Worker_.owns_lock());
          this->Worker_->Tasks_.emplace_back(std::move(task));
-         ++this->AddCount_;
       }
 
       bool IsWorkingSameTask() const {
@@ -176,6 +167,10 @@ public:
 
       bool owns_lock() const {
          return this->Worker_.owns_lock();
+      }
+      void Relock() {
+         assert(!this->owns_lock);
+         this->Worker_.lock();
       }
    };
 
@@ -253,29 +248,17 @@ public:
    ///      }};
    /// }
    /// \endcode
-   void WaitInvoke(AQueueTaskKind taskKind, Task task) {
-      class ALockerForInplaceOrWait : public ALockerBase {
-         fon9_NON_COPY_NON_MOVE(ALockerForInplaceOrWait);
-      public:
-         ALockerForInplaceOrWait(AQueue& owner, AQueueTaskKind taskKind)
-            : ALockerBase{owner, taskKind} {
-            if (this->IsAllowInplace_)
-               this->Worker_.unlock();
-         }
-         void WaitTask(Task& task) {
-            assert(!this->IsAllowInplace_);
-            CountDownLatch waiter{1};
-            this->Worker_->Tasks_.emplace_back(this->Owner_.TaskInvoker_.MakeWaiterTask(task, waiter));
-            this->Owner_.AfterAddTask(this->Worker_);
-            this->Worker_.unlock();
-            waiter.Wait();
-         }
-      };
-      ALockerForInplaceOrWait alocker{*this, taskKind};
-      if (alocker.IsAllowInplace_)
+   void InplaceOrWait(AQueueTaskKind taskKind, Task task) {
+      DyObj<ALockerForInplace> alocker;
+      alocker.emplace(*this, taskKind);
+      if (alocker->CheckUnlockForInplace())
          this->TaskInvoker_.Invoke(task);
-      else
-         alocker.WaitTask(task);
+      else {
+         CountDownLatch waiter{1};
+         alocker->AddAsyncTask(this->TaskInvoker_.MakeWaiterTask(task, waiter));
+         alocker.clear();
+         waiter.Wait();
+      }
    }
 
    void TakeCall() {

@@ -157,8 +157,8 @@ bool Device::OpImpl_SetState(State afst, StrView stmsg) {
 
 std::string Device::WaitGetDeviceId() {
    std::string res;
-   this->OpQueue_.WaitInvoke(AQueueTaskKind::Get,
-                             DeviceAsyncOp{[&res](Device& dev) {
+   this->OpQueue_.InplaceOrWait(AQueueTaskKind::Get,
+                                DeviceAsyncOp{[&res](Device& dev) {
       res = dev.DeviceId_;
    }});
    return res;
@@ -171,8 +171,8 @@ std::string Device::WaitGetDeviceInfo() {
    std::string res;
    res.reserve(300);
    res.append("|tm=");
-   this->OpQueue_.WaitInvoke(AQueueTaskKind::Get,
-                             DeviceAsyncOp{[&res](Device& dev) {
+   this->OpQueue_.InplaceOrWait(AQueueTaskKind::Get,
+                                DeviceAsyncOp{[&res](Device& dev) {
       if (const char* tmstr = ToStrRev_Full(UtcNow()))
          res.append(tmstr, kDateTimeStrWidth);
       res.append("|st=");

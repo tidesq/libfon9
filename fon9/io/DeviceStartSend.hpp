@@ -3,21 +3,35 @@
 #ifndef __fon9_io_DeviceStartSend_hpp__
 #define __fon9_io_DeviceStartSend_hpp__
 #include "fon9/io/SendBuffer.hpp"
-#include "fon9/DyObj.hpp"
 #include "fon9/Log.hpp"
 
 namespace fon9 { namespace io {
 
-/// \ingroup io
-/// 實際使用請參考 DeviceStartSend();
-/// 此為一次性物件, 不可重複使用.
-struct SendChecker {
+struct SendLocker {
    using ALocker = DeviceOpQueue::ALockerForInplace;
-   typedef bool (*FnOpImpl_IsSendBufferAlive)(Device& owner, SendBuffer& sbuf);
 
+   void Create(Device& dev) {
+      this->ALocker_.emplace(dev.OpQueue_, AQueueTaskKind::Send);
+   }
    void Destroy() {
       this->ALocker_.clear();
    }
+   Device& GetDevice() const {
+      return Device::StaticCast(this->ALocker_.get()->Owner_);
+   }
+   ALocker& GetALocker() {
+      return *this->ALocker_;
+   }
+protected:
+   DyObj<ALocker> ALocker_;
+};
+
+/// \ingroup io
+/// 實際使用請參考 DeviceStartSend();
+/// 此為一次性物件, 不可重複使用.
+struct StartSendChecker : public SendLocker {
+   typedef bool (*FnOpImpl_IsSendBufferAlive)(Device& owner, SendBuffer& sbuf);
+
    bool IsLinkReady(Device& dev) {
       // 這裡呼叫 dev.OpImpl_GetState() 雖然不安全.
       // 但因底下有 double check, 所以先排除「尚未連線」是可行的.
@@ -54,8 +68,6 @@ struct SendChecker {
          dev.SendASAP(std::move(*pbuf));
       }});
    }
-private:
-   DyObj<ALocker> ALocker_;
 };
 
 //--------------------------------------------------------------------------//
@@ -86,21 +98,6 @@ struct SendAuxBuf {
 
 /// \ingroup io
 /// struct Aux {
-///   // 取出 ToSending 成功後, SendBuffer 已進入 Sending 狀態, 此時可解構 alocker, 然後送出.
-///   // 在 alocker 死亡前, 必須先將 sbuf 保護起來.
-///   // 因為 TcpClient 的 ImplSP_ 隨時可能會死亡,
-///   // 如果不保護, 則 sbuf 可能會隨著 ImplSP_ 一起死.
-///   // => [傳送準備(執行必要的保護措施), 避免 alocker 解構後相關物件的死亡]
-///   // - TcpClient: 需要 AddRef()
-///   //   - IOCP: WSASend() 完成後, 在 OnIocp_Done() 或 OnIocp_Error() 解除保護.
-///   //   - Fdr:  writev() 或 EnableEventBit(Writable); 之後解除保護.
-///   // - TcpAcceptedClient:
-///   //   - IOCP: 需要 AddRef(): WSASend() 之前不用再 AddRef();
-///   //   - Fdr:  直接 writev() 或 EnableEventBit(Writable); 不用額外的 AddRef(), Release();
-///   struct SendBufferProtector {
-///      SendBufferProtector(SendBuffer&);
-///   };
-///
 ///   // dev 不是 State::LinkReady.
 ///   // 在 !sc.IsLinkReady() 時呼叫, 通常清除要求送出的 src buffer:
 ///   // `BufferListConsumeErr(std::move(src), std::errc::no_link);`
@@ -108,19 +105,23 @@ struct SendAuxBuf {
 ///
 ///   SendBuffer& GetSendBuffer(DeviceT& dev);
 ///
-///   // 在沒有 alocker 的情況下呼叫, [ASAP: 立即送] or [Buffered: 啟動 Writable 偵測, 在 Writable 時送].
+///   // 在 sc.IsAllowInplace() && sc.ToSendingAndUnlock(sbuf) 的情況下呼叫.
+///   // [ASAP: 立即送] or [Buffered: 啟動 Writable 偵測, 在 Writable 時送].
 ///   // - ASAP:
-///   //   - IOCP: 先將要送出的資料填入 toSend, 然後送出(WSASend), 然後在 OnIocp_Done() 繼續送.
-///   //   - Fdr:  直接送出(send, write)
-///   //           - 若有剩餘資料, 則放入 toSend, 然後啟動 writable 偵測.
-///   //           - 若無剩餘資料, 開啟 alocker:
-///   //             - 若 sbuf.Queue_ 為空: dev.AsyncCheckSendEmpty(alocker);
-///   //             - 若有資料: StartSendInFdrThread();
+///   //   - IOCP:
+///   //     - IocpSocketAddRef()
+///   //     - sc.Destroy();
+///   //     - 要送出的資料填入 toSend, 
+///   ///    - SendAfterAddRef(): 透過 WSASend(), 然後在 OnIocp_Done() 繼續送.
+///   //   - Fdr:
+///   //     - 直接送出(send, write).
+///   //     - 若有剩餘資料, 則放入 toSend, 然後啟動 writable 偵測.
+///   //     - 若無剩餘資料, 則應檢查 SendBuffer 是否有新資料:
+///   //       - 若 SendBuffer_.IsEmpty():  dev.AsyncCheckSendEmpty();
+///   //       - 若 !SendBuffer_.IsEmpty(): StartSendInFdrThread();
 ///   // - Buffered:
 ///   //   - 將要送出的資料填入 toSend, 然後啟動 Writable 事件.
-///   // (2) OR send(data) & push remain to (*toSend) & enable Writable event.
-///   // (3) if (!sbuf.Queue_.empty()) enable Writable event.
-///   Device::SendResult StartSend(DeviceT& dev, DcQueueList& toSend);
+///   Device::SendResult StartToSend(StartSendChecker& sc, DcQueueList& toSend);
 ///
 ///   // 使用時機, 以下 2 種情況之一:
 ///   // (1) 取出 ToSending 失敗: SendBuffer 不是空的, 需放到 queue, 等候先前的傳送結束時處理.
@@ -130,19 +131,16 @@ struct SendAuxBuf {
 ///   void PushTo(BufferList& buf);
 ///
 ///   // 把 pbuf 移到 op thread 傳送.
-///   void AsyncSend(DeviceT& dev, SendChecker& sc, ObjHolderPtr<BufferList>&& pbuf);
+///   void AsyncSend(DeviceT& dev, StartSendChecker& sc, ObjHolderPtr<BufferList>&& pbuf);
 /// };
 template <class DeviceT, class Aux>
 Device::SendResult DeviceStartSend(DeviceT& dev, Aux& aux) {
-   SendChecker sc;
+   StartSendChecker sc;
    if (fon9_LIKELY(sc.IsLinkReady(dev))) {
       if (fon9_LIKELY(sc.IsAllowInplace())) {
          auto&  sbuf = aux.GetSendBuffer(dev);
-         if (DcQueueList* toSend = sc.ToSendingAndUnlock(sbuf)) {
-            typename Aux::SendBufferProtector   sbufProtector{sbuf}; // 因為 sc.Destroy() 之後 sbuf 就沒有保障了!
-            sc.Destroy();
-            return aux.StartSend(dev, *toSend);
-         }
+         if (DcQueueList* toSend = sc.ToSendingAndUnlock(sbuf))
+            return aux.StartToSend(sc, *toSend);
          aux.PushTo(sc.GetQueueForPush(sbuf));
       }
       else { // 移到 op thread 傳送.
@@ -199,6 +197,18 @@ public:
 
 //-////////////////////////////////////////////////////////////////////////-//
 
+struct ContinueSendChecker : public SendLocker {
+   bool IsAllowContinueSend(Device& dev) {
+      if (fon9_LIKELY(fon9::io::IsAllowContinueSend(dev.OpImpl_GetState()))) {
+         this->ALocker_.emplace(dev.OpQueue_, AQueueTaskKind::Send);
+         if (fon9_LIKELY(fon9::io::IsAllowContinueSend(dev.OpImpl_GetState())))
+            return true;
+         this->Destroy();
+      }
+      return false;
+   }
+};
+
 /// 您必須自行確保一次只能有一個 thread 呼叫 DeviceContinueSend()
 /// - io thread: at Writable event.
 /// - op thread: at Async send request.
@@ -209,11 +219,12 @@ public:
 ///      // 若有需要等候送完, 應使用 (Device::LingerClose + 系統的 linger) 機制.
 ///      bool IsSendBufferAlive(DeviceT& dev, SendBuffer& sbuf);
 ///
-///      // 在 alocker 的保護下, 取出 toSend, 然後送出, 送出時不用 alocker 保護:
-///      // => 因為 sbuf 已進入 Sending 狀態.
-///      // => 其他傳送要求在 sbuf.ToSendingAndUnlock(alocker) 會被阻擋
-///      //    => 然後該次要求會放到 sbuf.Queue_ 裡面.
-///      DcQueueList* GetToSend(SendBuffer& sbuf) const;
+///      // 在 alocker 的保護下, 取出繼續傳送用的緩衝物件:
+///      // - IOCP 使用 sbuf.OpImpl_ContinueSend(bytesTransfered_); 取出
+///      // - Fdr  使用 sbuf.OpImpl_CheckSendQueue(); 取出
+///      // - retval != nullptr 則表示還有要送的, 接下來: aux.ContinueToSend(&sc, retval);
+///      // - retval == nullptr 表示傳送緩衝已空, 接下來: dev.AsyncCheckSendEmpty(alocker);
+///      DcQueueList* GetContinueToSend(SendBuffer& sbuf) const;
 ///
 ///      // 在 AddAsyncTask(task) 之前, 取消 writable 偵測.
 ///      // => 取消 writable 偵測的原因:
@@ -224,53 +235,51 @@ public:
 ///      //       => task 可能會開啟 writable 偵測.
 ///      //    => 若在 AddAsyncTask() 之後才取消 writable 偵測,
 ///      //       則可能會關掉 task 開啟的 writable 偵測!
-///      // => 可是要注意: 現在還是 alocker 的狀態!
+///      // => 注意: 現在還是 alocker 的狀態!
 ///      void DisableWritableEvent(SendBuffer& sbuf);
 ///
-///      // 在安全可立即送出的情況下, 會呼叫此處傳送.
-///      // 安全檢查及確保方法:
-///      // - 從 sbuf 安全的取出 toSend, 且 alocker 已解構.
-///      //   您必須自行確保 DeviceContinueSend() 返回前 sbuf 不會死亡,
-///      //   這樣才可以在沒 alocker 且沒其他保護的情況下呼叫 StartSend();
-///      // - 或在 op thread 使用 aux.IsSendBufferAlive() 確定 sbuf 仍然存活時.
-///      void StartContinueSend(DeviceT& dev, DcQueueList& toSend) const;
+///      // - IOCP: sc->Destroy(); WSASend(iocp);
+///      //   - 因為 WSASend() 返回前, 可能會在另一 thread 觸發 OnIocp_Done(); 然後重進入 DeviceContinueSend();
+///      //   - 所以 WSASend() 之前, 要先 sc->Destroy(); 避免重進入的 DeviceContinueSend(); 進入 Async 程序.
+///      // - Fdr:
+///      //   - DeviceContinueSend() 必定是在 io thread 的 writable 事件裡面呼叫.
+///      //   - 
+///      void ContinueToSend(ContinueSendChecker& sc, DcQueueList& toSend) const;
 ///   };
 /// \endcode
 template <class DeviceT, class Aux>
 void DeviceContinueSend(DeviceT& dev, SendBuffer& sbuf, Aux& aux) {
-   DcQueueList* toSend;
-   for (;;) {
-      DeviceOpQueue::ALockerForInplace alocker{dev.OpQueue_, AQueueTaskKind::Send};
-      if (alocker.IsAllowInplace_) {
-         if (!aux.IsSendBufferAlive(dev, sbuf))
-            return;
+   ContinueSendChecker sc;
+   if (fon9_UNLIKELY(!sc.IsAllowContinueSend(dev)))
+      return;
 
-         if (fon9_LIKELY(IsAllowContinueSend(dev.OpImpl_GetState()))) {
-            if ((toSend = aux.GetToSend(sbuf)) != nullptr)
-               goto __START_SEND;
-            dev.AsyncCheckSendEmpty(alocker);
-         }
+   if (fon9_LIKELY(sc.GetALocker().IsAllowInplace_)) {
+      if (!aux.IsSendBufferAlive(dev, sbuf))
          return;
-      }
-
+      if (DcQueueList* toSend = aux.GetContinueToSend(sbuf))
+         aux.ContinueToSend(sc, *toSend);
+      else
+         dev.AsyncCheckSendEmpty(sc.GetALocker());
+   }
+   else {
       aux.DisableWritableEvent(sbuf);
+
       fon9_WARN_DISABLE_PADDING;
-      alocker.AddAsyncTask(DeviceAsyncOp{[&sbuf, aux](Device& adev) {
-         fon9_LOG_WARN("Async.DeviceContinueSend|dev=", ToPtr{&adev});
-         if (fon9_LIKELY(aux.IsSendBufferAlive(adev, sbuf)))
-            if (fon9_LIKELY(IsAllowContinueSend(adev.OpImpl_GetState()))) {
-               if (DcQueueList* aToSend = aux.GetToSend(sbuf))
-                  aux.StartContinueSend(*static_cast<DeviceT*>(&adev), *aToSend);
-               else
-                  Device::OpThr_CheckSendEmpty(adev, std::string{});
-            }
+      fon9_GCC_WARN_DISABLE_NO_PUSH("-Wshadow");
+      sc.GetALocker().AddAsyncTask(DeviceAsyncOp{[&sbuf, aux](Device& dev) {
+         fon9_LOG_WARN("Async.DeviceContinueSend|dev=", ToPtr{&dev});
+         if (fon9_LIKELY(IsAllowContinueSend(dev.OpImpl_GetState()))
+             && fon9_LIKELY(aux.IsSendBufferAlive(dev, sbuf))) {
+            ContinueSendChecker sc;
+            sc.Create(dev);
+            if (DcQueueList* toSend = aux.GetContinueToSend(sbuf))
+               aux.ContinueToSend(sc, *toSend);
+            else
+               Device::OpThr_CheckSendEmpty(dev, std::string{});
+         }
       }});
       fon9_WARN_POP;
-      return;
    }
-
-__START_SEND:
-   aux.StartContinueSend(dev, *toSend);
 }
 
 } } // namespaces

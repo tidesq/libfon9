@@ -68,7 +68,7 @@ void FdrThreadEpoll::ThrRunImpl(const ServiceThreadArgs& args) {
       struct epoll_event* pEvBeg = &*epEvents.begin();
       int epRes = epoll_wait(epFdr, pEvBeg, static_cast<int>(epEvents.size()), msTimeout);
       if (fon9_LIKELY(epRes > 0)) {
-         for (int L = 0; L < epRes; ++L) {
+         for (int L = 0; L < epRes; ++L, ++pEvBeg) {
             if (FdrEventHandler* hdr = static_cast<FdrEventHandler*>(pEvBeg->data.ptr)) {
                if (fon9_LIKELY(hdr->GetFdrEventHandlerBookmark() > 0)) {
                   const auto   eflags = pEvBeg->events;
@@ -85,7 +85,6 @@ void FdrThreadEpoll::ThrRunImpl(const ServiceThreadArgs& args) {
             }
             else
                this->WakeupRequests_.store(1, std::memory_order_relaxed);
-            ++pEvBeg;
          }
          if (fon9_UNLIKELY(static_cast<size_t>(epRes) == epEvents.size())) {
             // epEvents 可能不足以容納一次的事件數量 => 擴充容量,
@@ -99,10 +98,8 @@ void FdrThreadEpoll::ThrRunImpl(const ServiceThreadArgs& args) {
             std::this_thread::yield();
       }
       else if (epRes < 0) {
-         int eno = errno;
-         if (eno == EINTR)
-            continue;
-         fon9_LOG_FATAL("FdrThreadEpoll.ThrRun|fn=epoll_wait|err=", GetSysErrC(eno));
+         if (int eno = ErrorCannotRetry(errno))
+            fon9_LOG_FATAL("FdrThreadEpoll.ThrRun|fn=epoll_wait|err=", GetSysErrC(eno));
       }
    }
 }

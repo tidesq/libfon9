@@ -52,7 +52,7 @@ public:
 
    using ALocker = DeviceOpQueue::ALockerForInplace;
 
-   /// 設定進入傳送中的狀態.
+   /// 如果現在沒有在傳送, 則將狀態設定為「傳送中」, 並返回可用於儲存傳送資料的緩衝物件.
    /// \retval nullptr  現在正在傳送中, 設定失敗.
    /// \retval !nullptr 現在沒有在傳送, 成功進入 Sending 狀態:
    ///                  - 傳回值可用於填入資料後立即傳送.

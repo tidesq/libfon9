@@ -6,6 +6,7 @@
 
 #ifdef fon9_POSIX
 #include <fcntl.h>
+#include <errno.h>
 #endif
 
 namespace fon9 {
@@ -50,6 +51,19 @@ public:
    }
    #endif
 };
+
+/// \ingroup Misc
+/// 針對 O_NONBLOCK 的 read/write 操作,
+/// 有些錯誤代碼表示還要再試一次, 並不是「錯誤」此時傳回 0.
+inline int ErrorCannotRetry(int eno) {
+   switch (eno) {
+   case EAGAIN:
+   case EINTR:
+      return 0;
+   default:
+      return eno;
+   }
+}
 
 /// \ingroup Misc
 /// 解構時會自動呼叫 close() 或 CloseHandle()

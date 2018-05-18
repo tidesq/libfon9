@@ -135,7 +135,7 @@ public:
 
    virtual bool IsSendBufferEmpty() const override {
       bool res;
-      this->OpQueue_.WaitInvoke(AQueueTaskKind::Send, DeviceAsyncOp{[&res](Device& dev) {
+      this->OpQueue_.InplaceOrWait(AQueueTaskKind::Send, DeviceAsyncOp{[&res](Device& dev) {
          if (ClientImpl* impl = static_cast<TcpClientT*>(&dev)->ImplSP_.get())
             res = impl->GetSendBuffer().IsEmpty();
          else
@@ -181,7 +181,7 @@ public:
       static SendBuffer& GetSendBuffer(TcpClientT& dev) {
          return dev.ImplSP_->GetSendBuffer();
       }
-      void AsyncSend(TcpClientT& dev, SendChecker& sc, ObjHolderPtr<BufferList>&& pbuf) {
+      void AsyncSend(TcpClientT& dev, StartSendChecker& sc, ObjHolderPtr<BufferList>&& pbuf) {
          sc.AsyncSend(std::move(pbuf), dev.ImplSP_->GetSendBuffer(), &OpImpl_IsSendBufferAlive);
       }
    };
