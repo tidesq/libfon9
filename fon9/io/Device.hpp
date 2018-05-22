@@ -277,5 +277,12 @@ inline void DeviceAsyncOpInvoker::Invoke(DeviceAsyncOp& task) {
       task.AsyncTask_(dev);
 }
 
+inline void DeviceOpLocker::Create(Device& dev, AQueueTaskKind taskKind) {
+   this->ALocker_.emplace(dev.OpQueue_, taskKind);
+}
+inline Device& DeviceOpLocker::GetDevice() const {
+   return Device::StaticCast(this->ALocker_.get()->Owner_);
+}
+
 } } // namespaces
 #endif//__fon9_io_Device_hpp__

@@ -7,6 +7,31 @@
 
 namespace fon9 { namespace io {
 
+enum SendDirectResult {
+   SendError,
+   Sent,
+   Queue,
+   NeedsAsync,
+   NoLink,
+};
+class RecvDirectArgs {
+   fon9_NON_COPY_NON_MOVE(RecvDirectArgs);
+   RecvDirectArgs() = delete;
+public:
+   DeviceOpLocker&   OpLocker_;
+   Device&           Device_;
+   DcQueueList&      RecvBuffer_;
+   RecvDirectArgs(DeviceOpLocker& opLocker, Device& dev, DcQueueList& rxbuf)
+      : OpLocker_(opLocker)
+      , Device_(dev)
+      , RecvBuffer_(rxbuf) {
+   }
+
+   virtual bool IsRecvBufferAlive() const = 0;
+   virtual SendDirectResult SendDirect(BufferList&& txbuf) = 0;
+};
+using FnOnDevice_RecvDirect = RecvBufferSize (*)(RecvDirectArgs& e);
+
 fon9_WARN_DISABLE_PADDING;
 /// \ingroup io
 /// 通訊「處理程序」基底.
@@ -17,7 +42,19 @@ fon9_WARN_DISABLE_PADDING;
 class fon9_API Session : public intrusive_ref_counter<Session> {
    fon9_NON_COPY_NON_MOVE(Session);
 public:
-   Session() = default;
+   /// 在處理收到訊息時(e.g. DeviceRecvBufferReady()),
+   /// 若此處非 nullptr 則叫用此函式處理訊息.
+   /// - 若此處為 nullptr 則使用 OnDevice_Recv() 處理收到的訊息.
+   /// - 此時的 e.OpLocker_ 尚未建立 ALocker.
+   /// - 根據傳回值決定後續動作.
+   /// - 收到資料後, 立即觸發此事件, 此時不保證 op queue 為空.
+   /// - 此事件適用於類似 web server 短連線:
+   ///   - 收到 request, 立即處理並回覆結果, 不會有其他 thread 呼叫 send.
+   const FnOnDevice_RecvDirect   FnOnDevice_RecvDirect_;
+
+   Session(FnOnDevice_RecvDirect fnOnDevice_RecvDirect = nullptr) : FnOnDevice_RecvDirect_{fnOnDevice_RecvDirect} {
+   }
+
    virtual ~Session();
 
    /// Device::Initialized() 初始化通知, 預設: do nothing.

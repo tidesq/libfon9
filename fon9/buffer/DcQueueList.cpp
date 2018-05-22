@@ -19,18 +19,6 @@ void DcQueueList::FrontToCurrBlock() {
       front = this->BlockList_.front();
    }
 }
-BufferList DcQueueList::MoveOut() {
-   BufferNode* front = this->BlockList_.front();
-   if (front == nullptr) {
-      assert(this->MemCurrent_ == nullptr);
-      return BufferList{};
-   }
-   assert(this->MemCurrent_ != nullptr);
-   if(BufferNodeSize szUsed = static_cast<BufferNodeSize>(this->MemCurrent_ - front->GetDataBegin()))
-      front->MoveDataBeginOffset(szUsed);
-   this->ClearCurrBlock();
-   return std::move(this->BlockList_);
-}
 bool DcQueueList::DcQueuePeekMore(byte* tmpbuf, size_t sz) {
    if (const BufferNode* node = this->BlockList_.front()) {
       while ((node = node->GetNext()) != nullptr) {

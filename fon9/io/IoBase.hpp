@@ -17,6 +17,7 @@ using DeviceSPT = intrusive_ptr<DeviceT>;
 /// Device 的指標, 一般而言在收到 fon9::io::State::Disposing 事件時, 必須要 reset();
 using DeviceSP = DeviceSPT<Device>;
 class DeviceServer;
+struct DeviceOpLocker;
 
 class Session;
 template <class SessionT>
@@ -148,6 +149,12 @@ enum class RecvBufferSize : int32_t {
    /// 關閉接收端, 在 Socket Device 可能觸發 shutdown(so, SHUT_RD);
    CloseRecv = -2,
 
+   /// FnOnDevice_RecvDirect_() 處理過程發現斷線, 或 rxbuf 已經無效.
+   NoLink = -3,
+   /// FnOnDevice_RecvDirect_() 處理過程發現必須使用 Device Async 操作接收事件.
+   /// 應到 op thread 觸發 OnDevice_Recv() 事件.
+   AsyncRecvEvent = -4,
+
    /// 交給 Device 自行決定接收緩衝區大小.
    Default = 0,
    /// 最少 128 bytes.
@@ -160,6 +167,7 @@ enum class RecvBufferSize : int32_t {
    B8K = B1K * 8,
    B64K = B1K * 64,
 };
+class RecvBuffer;
 
 } } // namespaces
 #endif//__fon9_io_IoBase_hpp__

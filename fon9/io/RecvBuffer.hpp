@@ -76,7 +76,7 @@ public:
    /// 重複使用接收緩衝區: 通常在已不需要「收到資料事件」時使用。
    template <typename T>
    size_t ReuseRecvBlockVector(T (&vect)[2]) {
-      assert(this->RecvSt_ == RecvBufferState::Receiving);
+      assert(this->State_ == RecvBufferState::Receiving);
       T* piov = vect;
       if (this->NodeBack_)
          fon9_PutIoVectorElement(piov++, this->NodeBack_->GetDataEnd(), this->NodeBack_->GetRemainSize());
@@ -90,12 +90,9 @@ public:
    DcQueueList& SetDataReceived(size_t rxsz);
 
    /// 僅能在 OnDevice_Recv() 事件之後呼叫一次.
-   /// 傳回之前的狀態.
-   RecvBufferState SetContinueRecv() {
+   void SetContinueRecv() {
       assert(this->IsInvokingEvent());
-      RecvBufferState bfst = this->State_;
       this->State_ = RecvBufferState::NotInUse;
-      return bfst;
    }
 
    void SetWaitingEventInvoke() {

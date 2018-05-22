@@ -63,12 +63,14 @@ public:
       return this->RecvBuffer_;
    }
    struct IocpRecvAux {
-      static void ContinueRecv(RecvBuffer& rbuf, RecvBufferSize expectSize) {
+      static void ContinueRecv(RecvBuffer& rbuf, RecvBufferSize expectSize, bool isEnableReadable) {
+         (void)isEnableReadable;
          ContainerOf(rbuf, &IocpSocket::RecvBuffer_).ContinueRecv(expectSize);
       }
       static void DisableReadableEvent(RecvBuffer&) {
          // IOCP socket 透過 WSARecv() 啟動「一次」readable, 所以不用額外取消 readable.
       }
+      static SendDirectResult SendDirect(RecvDirectArgs& e, BufferList&& txbuf);
    };
 
    //--------------------------------------------------------------------------//
@@ -85,7 +87,7 @@ public:
    struct SendASAP_AuxMem : public SendAuxMem {
       using SendAuxMem::SendAuxMem;
 
-      Device::SendResult StartToSend(StartSendChecker& sc, DcQueueList& toSend) {
+      Device::SendResult StartToSend(DeviceOpLocker& sc, DcQueueList& toSend) {
          IocpSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &IocpSocket::SendBuffer_);
          impl.IocpSocketAddRef();
          sc.Destroy();
@@ -97,7 +99,7 @@ public:
    struct SendASAP_AuxBuf : public SendAuxBuf {
       using SendAuxBuf::SendAuxBuf;
 
-      Device::SendResult StartToSend(StartSendChecker& sc, DcQueueList& toSend) {
+      Device::SendResult StartToSend(DeviceOpLocker& sc, DcQueueList& toSend) {
          IocpSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &IocpSocket::SendBuffer_);
          impl.IocpSocketAddRef();
          sc.Destroy();
@@ -109,7 +111,7 @@ public:
    struct SendBuffered_AuxMem : public SendAuxMem {
       using SendAuxMem::SendAuxMem;
 
-      Device::SendResult StartToSend(StartSendChecker& sc, DcQueueList& toSend) {
+      Device::SendResult StartToSend(DeviceOpLocker& sc, DcQueueList& toSend) {
          IocpSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &IocpSocket::SendBuffer_);
          impl.IocpSocketAddRef();
          sc.Destroy();
@@ -122,7 +124,7 @@ public:
    struct SendBuffered_AuxBuf : public SendAuxBuf {
       using SendAuxBuf::SendAuxBuf;
 
-      Device::SendResult StartToSend(StartSendChecker& sc, DcQueueList& toSend) {
+      Device::SendResult StartToSend(DeviceOpLocker& sc, DcQueueList& toSend) {
          IocpSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &IocpSocket::SendBuffer_);
          impl.IocpSocketAddRef();
          sc.Destroy();

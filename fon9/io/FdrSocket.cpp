@@ -10,11 +10,6 @@ FdrEventFlag FdrSocket::GetRequiredFdrEventFlag() const {
    return static_cast<FdrEventFlag>(this->EnabledEvents_.load(std::memory_order_relaxed));
 }
 
-void FdrSocket::StartRecv(RecvBufferSize expectSize) {
-   this->RecvSize_ = expectSize;
-   this->EnableEventBit(FdrEventFlag::Readable);
-}
-
 void FdrSocket::SocketError(StrView fnName, int eno) {
    this->RemoveFdrEvent();
    std::string errmsg;
@@ -27,7 +22,7 @@ void FdrSocket::SocketError(StrView fnName, int eno) {
    this->OnFdrSocket_Error(std::move(errmsg));
 }
 
-int FdrSocket::Sendv(SendLocker& sc, DcQueueList& toSend) {
+int FdrSocket::Sendv(DeviceOpLocker& sc, DcQueueList& toSend) {
    struct iovec   bufv[IOV_MAX];
    size_t         bufCount = toSend.PeekBlockVector(bufv);
    ssize_t        wrsz = writev(this->GetFD(), bufv, static_cast<int>(bufCount));
@@ -47,11 +42,15 @@ int FdrSocket::Sendv(SendLocker& sc, DcQueueList& toSend) {
    return 0;
 }
 
-void FdrSocket::CheckSendQueueEmpty(SendLocker& sc) {
+void FdrSocket::CheckSendQueueEmpty(DeviceOpLocker& sc) {
    auto& alocker = sc.GetALocker();
    alocker.Relock();
    if (fon9_LIKELY(!this->SendBuffer_.OpImpl_CheckSendQueue())) {
       sc.GetDevice().AsyncCheckSendEmpty(alocker);
+      // 雖然返回後會 sc 就會死亡, 但是因為已經 Relock(),
+      // 所以會有許多 call stack 的 local variables 也在 lock 的範圍內.
+      // 會造成 unlock() 時 memory barrier 的負擔, 因此在這兒就先將 sc.Destroy(), 可以加快一些速度.
+      sc.Destroy();
       return;
    }
    // 因為 this->StartSendInFdrThread(); 裡面通常會有 mutex 保護.
@@ -68,19 +67,19 @@ void FdrSocket::CheckSendQueueEmpty(SendLocker& sc) {
 bool FdrSocket::CheckRead(Device& dev, bool (*fnIsRecvBufferAlive)(Device& dev, RecvBuffer& rbuf)) {
    size_t   totrd = 0;
    if (fon9_LIKELY(this->RecvSize_ >= RecvBufferSize::Default)) {
-      size_t expectSize = (this->RecvSize_ == RecvBufferSize::Default
-                           ? 1024 * 4
-                           : static_cast<size_t>(this->RecvSize_));
-      if (expectSize < 64)
-         expectSize = 64;
-
       for (;;) {
+         size_t expectSize = (this->RecvSize_ == RecvBufferSize::Default
+                              ? 1024 * 4
+                              : static_cast<size_t>(this->RecvSize_));
+         if (expectSize < 64)
+            expectSize = 64;
+
          struct iovec   bufv[2];
          bufv[1].iov_len = 0;
 
          size_t   bufCount = this->RecvBuffer_.GetRecvBlockVector(bufv, expectSize);
          ssize_t  bytesTransfered = readv(this->GetFD(), bufv, static_cast<int>(bufCount));
-         if (bytesTransfered > 0) {
+         if (fon9_LIKELY(bytesTransfered > 0)) {
             DcQueueList&   rxbuf = this->RecvBuffer_.SetDataReceived(bytesTransfered);
 
             struct RecvAux : public FdrRecvAux {
@@ -141,6 +140,31 @@ __READ_ERROR:
       return false;
    }
    return true;
+}
+
+//--------------------------------------------------------------------------//
+
+SendDirectResult FdrSocket::FdrRecvAux::SendDirect(RecvDirectArgs& e, BufferList&& txbuf) {
+   FdrSocket&  so = ContainerOf(RecvBuffer::StaticCast(e.RecvBuffer_), &FdrSocket::RecvBuffer_);
+   if (fon9_LIKELY(so.SendBuffer_.IsEmpty())) {
+      // 使用 SendDirect() 不考慮另一 thread 同時送.
+      DcQueueList    toSend{std::move(txbuf)};
+      struct iovec   bufv[IOV_MAX];
+      size_t         bufCount = toSend.PeekBlockVector(bufv);
+      ssize_t        wrsz = writev(so.GetFD(), bufv, static_cast<int>(bufCount));
+      if (fon9_LIKELY(wrsz >= 0)) {
+         toSend.PopConsumed(static_cast<size_t>(wrsz));
+         if (fon9_LIKELY(toSend.empty()))
+            return SendDirectResult::Sent;
+         txbuf.push_back(toSend.MoveOut());
+      }
+      else if (int eno = ErrorCannotRetry(errno)) {
+         toSend.ConsumeErr(GetSysErrC(eno));
+         return SendDirectResult::SendError;
+      }
+   }
+   SendASAP_AuxBuf  aux{txbuf};
+   return DeviceSendDirect(e, so.SendBuffer_, aux);
 }
 
 } } // namespaces

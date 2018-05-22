@@ -35,7 +35,7 @@ protected:
 
    /// \retval 0     success;  返回前, 若已無資料則: CheckSendQueueEmpty(); 若仍有資料則: 啟動 writable 偵測.
    /// \retval else  errno;    返回前, 已先呼叫 this->OnFdrSocket_Error("fn=Sendv|err=", retval);
-   int Sendv(SendLocker& sc, DcQueueList& toSend);
+   int Sendv(DeviceOpLocker& sc, DcQueueList& toSend);
    
    bool SetDisableEventBit(FdrEventFlag ev) {
       return (this->EnabledEvents_.fetch_and(~static_cast<FdrEventFlagU>(ev), std::memory_order_relaxed)
@@ -77,20 +77,26 @@ public:
       }
    };
       
-   void StartRecv(RecvBufferSize expectSize);
-   void ContinueRecv(RecvBufferSize expectSize) {
-      this->StartRecv(expectSize);
+   void StartRecv(RecvBufferSize expectSize) {
+      this->RecvSize_ = expectSize;
+      this->EnableEventBit(FdrEventFlag::Readable);
+   }
+   void ContinueRecv(RecvBufferSize expectSize, bool isEnableReadable) {
+      this->RecvSize_ = expectSize;
+      if (isEnableReadable)
+         this->EnableEventBit(FdrEventFlag::Readable);
    }
    RecvBuffer& GetRecvBuffer() {
       return this->RecvBuffer_;
    }
    struct FdrRecvAux : public FdrEventAux {
-      static void ContinueRecv(RecvBuffer& rbuf, RecvBufferSize expectSize) {
-         ContainerOf(rbuf, &FdrSocket::RecvBuffer_).ContinueRecv(expectSize);
+      static void ContinueRecv(RecvBuffer& rbuf, RecvBufferSize expectSize, bool isEnableReadable) {
+         ContainerOf(rbuf, &FdrSocket::RecvBuffer_).ContinueRecv(expectSize, isEnableReadable);
       }
       void DisableReadableEvent(RecvBuffer& rbuf) {
          this->DisableEvent(ContainerOf(rbuf, &FdrSocket::RecvBuffer_), FdrEventFlag::Readable);
       }
+      static SendDirectResult SendDirect(RecvDirectArgs& e, BufferList&& txbuf);
    };
 
    /// \retval true  成功完成 read.
@@ -102,7 +108,7 @@ public:
    SendBuffer& GetSendBuffer() {
       return this->SendBuffer_;
    }
-   void CheckSendQueueEmpty(SendLocker& sc);
+   void CheckSendQueueEmpty(DeviceOpLocker& sc);
 
    struct ContinueSendAux : public FdrEventAux {
       void DisableWritableEvent(SendBuffer& sbuf) {
@@ -125,7 +131,7 @@ public:
    struct SendASAP_AuxMem : public SendAuxMem {
       using SendAuxMem::SendAuxMem;
 
-      Device::SendResult StartToSend(StartSendChecker& sc, DcQueueList& toSend) {
+      Device::SendResult StartToSend(DeviceOpLocker& sc, DcQueueList& toSend) {
          FdrSocket&  impl = ContainerOf(SendBuffer::StaticCast(toSend), &FdrSocket::SendBuffer_);
          auto        wrsz = write(impl.GetFD(), this->Src_, this->Size_);
          if (fon9_UNLIKELY(wrsz < 0)) {
@@ -149,7 +155,7 @@ public:
    struct SendASAP_AuxBuf : public SendAuxBuf {
       using SendAuxBuf::SendAuxBuf;
 
-      Device::SendResult StartToSend(StartSendChecker& sc, DcQueueList& toSend) {
+      Device::SendResult StartToSend(DeviceOpLocker& sc, DcQueueList& toSend) {
          FdrSocket&  impl = ContainerOf(SendBuffer::StaticCast(toSend), &FdrSocket::SendBuffer_);
          toSend.push_back(std::move(*this->Src_));
          if (int eno = impl.Sendv(sc, toSend))
@@ -161,7 +167,7 @@ public:
    struct SendBuffered_AuxMem : public SendAuxMem {
       using SendAuxMem::SendAuxMem;
 
-      Device::SendResult StartToSend(StartSendChecker&, DcQueueList& toSend) {
+      Device::SendResult StartToSend(DeviceOpLocker&, DcQueueList& toSend) {
          toSend.Append(this->Src_, this->Size_);
          FdrSocket&  impl = ContainerOf(SendBuffer::StaticCast(toSend), &FdrSocket::SendBuffer_);
          impl.StartSendInFdrThread();
@@ -172,7 +178,7 @@ public:
    struct SendBuffered_AuxBuf : public SendAuxBuf {
       using SendAuxBuf::SendAuxBuf;
 
-      Device::SendResult StartToSend(StartSendChecker&, DcQueueList& toSend) {
+      Device::SendResult StartToSend(DeviceOpLocker&, DcQueueList& toSend) {
          toSend.push_back(std::move(*this->Src_));
          FdrSocket&  impl = ContainerOf(SendBuffer::StaticCast(toSend), &FdrSocket::SendBuffer_);
          impl.StartSendInFdrThread();

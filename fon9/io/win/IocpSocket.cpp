@@ -130,4 +130,12 @@ Device::SendResult IocpSocket::SendAfterAddRef(DcQueueList& dcbuf) {
    return Device::SendResult{0};
 }
 
+//--------------------------------------------------------------------------//
+
+SendDirectResult IocpSocket::IocpRecvAux::SendDirect(RecvDirectArgs& e, BufferList&& txbuf) {
+   IocpSocket&      so = ContainerOf(RecvBuffer::StaticCast(e.RecvBuffer_), &IocpSocket::RecvBuffer_);
+   SendASAP_AuxBuf  aux{txbuf};
+   return DeviceSendDirect(e, so.SendBuffer_, aux);
+}
+
 } } // namespaces

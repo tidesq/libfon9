@@ -75,5 +75,24 @@ struct DeviceAsyncOpInvoker {
 
 using DeviceOpQueue = AQueue<DeviceAsyncOp, DeviceAsyncOpInvoker>;
 
+struct DeviceOpLocker {
+   using ALocker = DeviceOpQueue::ALockerForInplace;
+
+   void Create(Device& dev, AQueueTaskKind taskKind);
+
+   void Destroy() {
+      this->ALocker_.clear();
+   }
+
+   Device& GetDevice() const;
+
+   ALocker& GetALocker() {
+      return *this->ALocker_;
+   }
+
+protected:
+   DyObj<ALocker> ALocker_;
+};
+
 } } // namespaces
 #endif//__fon9_io_DeviceAsyncOp_hpp__

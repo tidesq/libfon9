@@ -169,7 +169,7 @@ public:
          return this->Worker_.owns_lock();
       }
       void Relock() {
-         assert(!this->owns_lock);
+         assert(!this->owns_lock());
          this->Worker_.lock();
       }
    };

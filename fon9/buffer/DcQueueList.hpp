@@ -26,12 +26,12 @@ class fon9_API DcQueueList : public DcQueue {
 protected:
    BufferList  BlockList_;
 
-   void NodeConsumed(BufferNode* node) {
+   static void NodeConsumed(BufferNode* node) {
       if (BufferNodeVirtual* vnode = BufferNodeVirtual::CastFrom(node))
          vnode->OnBufferConsumed();
       FreeNode(node);
    }
-   void NodeConsumed(BufferNode* node, const ErrC& errc, BufferNodeSize errSize) {
+   static void NodeConsumed(BufferNode* node, const ErrC& errc, BufferNodeSize errSize) {
       (void)errSize; // node 使用失敗的資料量.
       if (BufferNodeVirtual* vnode = BufferNodeVirtual::CastFrom(node))
          vnode->OnBufferConsumedErr(errc);
@@ -81,7 +81,17 @@ public:
       return this->BlockList_.front();
    }
    /// 移出 BufferList.
-   BufferList MoveOut();
+   BufferList MoveOut() {
+      if (BufferNode* front = this->BlockList_.front()) {
+         assert(this->MemCurrent_ != nullptr);
+         if (BufferNodeSize szUsed = static_cast<BufferNodeSize>(this->MemCurrent_ - front->GetDataBegin()))
+            front->MoveDataBeginOffset(szUsed);
+         this->ClearCurrBlock();
+         return std::move(this->BlockList_);
+      }
+      assert(this->MemCurrent_ == nullptr);
+      return BufferList{};
+   }
 
    virtual size_t CalcSize() const override {
       if (const BufferNode* node = this->BlockList_.front())

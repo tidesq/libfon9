@@ -31,20 +31,10 @@ TimeUS GetTimeUS() {
 fon9_WARN_DISABLE_PADDING;
 class PingpongSession : public fon9::io::SessionServer {
    fon9_NON_COPY_NON_MOVE(PingpongSession);
+   using base = fon9::io::SessionServer;
    bool IsEchoMode_{true};
-
+   
    virtual fon9::io::RecvBufferSize OnDevice_LinkReady(fon9::io::Device&) override {
-      return fon9::io::RecvBufferSize::Default;
-   }
-   virtual fon9::io::RecvBufferSize OnDevice_Recv(fon9::io::Device& dev, fon9::DcQueueList& rxbuf) override {
-      this->LastRecvTime_ = fon9::UtcNow();
-      size_t rxsz = fon9::CalcDataSize(rxbuf.cfront());
-      this->RecvBytes_ += rxsz;
-      ++this->RecvCount_;
-      if (this->IsEchoMode_)
-         dev.Send(rxbuf.MoveOut());
-      else
-         rxbuf.MoveOut();
       return fon9::io::RecvBufferSize::Default;
    }
    virtual std::string SessionCommand(fon9::io::Device& dev, fon9::StrView cmdln) override {
@@ -105,7 +95,25 @@ __NEXT_CMD:
       return std::string{};
    }
 public:
-   PingpongSession() = default;
+   // 建構時如果有指定 OnDevice_RecvDirect, 則會優先呼叫 OnDevice_RecvDirect();
+   PingpongSession(bool isUseDirectIO) : base{isUseDirectIO ? &OnDevice_RecvDirect : nullptr} {
+   }
+
+   static fon9::io::RecvBufferSize OnDevice_RecvDirect(fon9::io::RecvDirectArgs& e) {
+      e.SendDirect(e.RecvBuffer_.MoveOut());
+      return fon9::io::RecvBufferSize::Default;
+   }
+   virtual fon9::io::RecvBufferSize OnDevice_Recv(fon9::io::Device& dev, fon9::DcQueueList& rxbuf) override {
+      this->LastRecvTime_ = fon9::UtcNow();
+      size_t rxsz = fon9::CalcDataSize(rxbuf.cfront());
+      this->RecvBytes_ += rxsz;
+      ++this->RecvCount_;
+      if (this->IsEchoMode_)
+         dev.Send(rxbuf.MoveOut());
+      else
+         rxbuf.MoveOut();
+      return fon9::io::RecvBufferSize::Default;
+   }
 
    fon9::io::SessionSP OnDevice_Accepted(fon9::io::DeviceServer&) {
       return this;
@@ -163,10 +171,12 @@ e.g.
    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
    char chMode;
+   bool isUseDirectIO = false;
    switch (chMode = argv[1][0]) {
    default:
       goto __USAGE;
    case 'c': case 's':
+      isUseDirectIO = (argv[1][1] == 'd');
       break;
    }
 
@@ -190,7 +200,7 @@ e.g.
       goto __USAGE;
 
    fon9::io::ManagerSP mgr{new fon9::io::SimpleManager{}};
-   PingpongSP          ses{new PingpongSession{}};
+   PingpongSP          ses{new PingpongSession{isUseDirectIO}};
    fon9::io::DeviceSP  dev;
    if (chMode == 'c')
       dev.reset(new TcpClient(iosv, ses, mgr));

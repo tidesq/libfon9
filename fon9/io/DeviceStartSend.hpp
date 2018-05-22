@@ -7,29 +7,15 @@
 
 namespace fon9 { namespace io {
 
-struct SendLocker {
-   using ALocker = DeviceOpQueue::ALockerForInplace;
-
-   void Create(Device& dev) {
-      this->ALocker_.emplace(dev.OpQueue_, AQueueTaskKind::Send);
-   }
-   void Destroy() {
-      this->ALocker_.clear();
-   }
-   Device& GetDevice() const {
-      return Device::StaticCast(this->ALocker_.get()->Owner_);
-   }
-   ALocker& GetALocker() {
-      return *this->ALocker_;
-   }
-protected:
-   DyObj<ALocker> ALocker_;
-};
+inline bool IsAllowInplaceSend(DeviceOpLocker::ALocker& alocker) {
+   return alocker.IsAllowInplace_     // 此時為 op safe, 才能安全的使用 dev & sbuf.
+      || alocker.IsWorkingSameTask(); // 不能 op safe 的原因是有其他人正在送(但已經unlock), 此時應放入 queue.
+}
 
 /// \ingroup io
 /// 實際使用請參考 DeviceStartSend();
 /// 此為一次性物件, 不可重複使用.
-struct StartSendChecker : public SendLocker {
+struct StartSendChecker : public DeviceOpLocker {
    typedef bool (*FnOpImpl_IsSendBufferAlive)(Device& owner, SendBuffer& sbuf);
 
    bool IsLinkReady(Device& dev) {
@@ -45,9 +31,7 @@ struct StartSendChecker : public SendLocker {
    }
    /// 允許立即送出 or 放入 queue.
    bool IsAllowInplace() {
-      ALocker* alocker = this->ALocker_.get();
-      return alocker->IsAllowInplace_     // 此時為 op safe, 才能安全的使用 dev & sbuf.
-         || alocker->IsWorkingSameTask(); // 不能 op safe 的原因是有其他人正在送(但已經unlock), 此時應放入 queue.
+      return IsAllowInplaceSend(*this->ALocker_);
    }
    DcQueueList* ToSendingAndUnlock(SendBuffer& sbuf) {
       return sbuf.ToSendingAndUnlock(*this->ALocker_);
@@ -121,7 +105,7 @@ struct SendAuxBuf {
 ///   //       - 若 !SendBuffer_.IsEmpty(): StartSendInFdrThread();
 ///   // - Buffered:
 ///   //   - 將要送出的資料填入 toSend, 然後啟動 Writable 事件.
-///   Device::SendResult StartToSend(StartSendChecker& sc, DcQueueList& toSend);
+///   Device::SendResult StartToSend(DeviceOpLocker& sc, DcQueueList& toSend);
 ///
 ///   // 使用時機, 以下 2 種情況之一:
 ///   // (1) 取出 ToSending 失敗: SendBuffer 不是空的, 需放到 queue, 等候先前的傳送結束時處理.
@@ -197,7 +181,7 @@ public:
 
 //-////////////////////////////////////////////////////////////////////////-//
 
-struct ContinueSendChecker : public SendLocker {
+struct ContinueSendChecker : public DeviceOpLocker {
    bool IsAllowContinueSend(Device& dev) {
       if (fon9_LIKELY(fon9::io::IsAllowContinueSend(dev.OpImpl_GetState()))) {
          this->ALocker_.emplace(dev.OpQueue_, AQueueTaskKind::Send);
@@ -209,6 +193,7 @@ struct ContinueSendChecker : public SendLocker {
    }
 };
 
+/// \ingroup io
 /// 您必須自行確保一次只能有一個 thread 呼叫 DeviceContinueSend()
 /// - io thread: at Writable event.
 /// - op thread: at Async send request.
@@ -260,26 +245,45 @@ void DeviceContinueSend(DeviceT& dev, SendBuffer& sbuf, Aux& aux) {
          aux.ContinueToSend(sc, *toSend);
       else
          dev.AsyncCheckSendEmpty(sc.GetALocker());
+      return;
    }
-   else {
-      aux.DisableWritableEvent(sbuf);
 
-      fon9_WARN_DISABLE_PADDING;
-      fon9_GCC_WARN_DISABLE_NO_PUSH("-Wshadow");
-      sc.GetALocker().AddAsyncTask(DeviceAsyncOp{[&sbuf, aux](Device& dev) {
-         fon9_LOG_WARN("Async.DeviceContinueSend|dev=", ToPtr{&dev});
-         if (fon9_LIKELY(IsAllowContinueSend(dev.OpImpl_GetState()))
-             && fon9_LIKELY(aux.IsSendBufferAlive(dev, sbuf))) {
-            ContinueSendChecker sc;
-            sc.Create(dev);
-            if (DcQueueList* toSend = aux.GetContinueToSend(sbuf))
-               aux.ContinueToSend(sc, *toSend);
-            else
-               Device::OpThr_CheckSendEmpty(dev, std::string{});
+   fon9_WARN_DISABLE_PADDING;
+   fon9_GCC_WARN_DISABLE_NO_PUSH("-Wshadow");
+   aux.DisableWritableEvent(sbuf);
+   sc.GetALocker().AddAsyncTask(DeviceAsyncOp{[&sbuf, aux](Device& dev) {
+      fon9_LOG_WARN("Async.DeviceContinueSend|dev=", ToPtr{&dev});
+      if (fon9_LIKELY(IsAllowContinueSend(dev.OpImpl_GetState()))
+          && fon9_LIKELY(aux.IsSendBufferAlive(dev, sbuf))) {
+         ContinueSendChecker sc;
+         sc.Create(dev, AQueueTaskKind::Send);
+         if (DcQueueList* toSend = aux.GetContinueToSend(sbuf))
+            aux.ContinueToSend(sc, *toSend);
+         else
+            Device::OpThr_CheckSendEmpty(dev, std::string{});
+      }
+   }});
+   fon9_WARN_POP;
+}
+
+//-////////////////////////////////////////////////////////////////////////-//
+
+/// \ingroup io
+template <class Aux>
+SendDirectResult DeviceSendDirect(RecvDirectArgs& e, SendBuffer& sbuf, Aux& aux) {
+   e.OpLocker_.Create(e.Device_, AQueueTaskKind::Send);
+   if (e.IsRecvBufferAlive() && e.Device_.OpImpl_GetState() == State::LinkReady) {
+      if (IsAllowInplaceSend(e.OpLocker_.GetALocker())) {
+         if (DcQueueList* toSend = sbuf.ToSendingAndUnlock(e.OpLocker_.GetALocker())) {
+            aux.StartToSend(e.OpLocker_, *toSend);
+            return SendDirectResult::Sent;
          }
-      }});
-      fon9_WARN_POP;
+         aux.PushTo(sbuf.GetQueueForPush(e.OpLocker_.GetALocker()));
+         return SendDirectResult::Queue;
+      }
+      return SendDirectResult::NeedsAsync;
    }
+   return SendDirectResult::NoLink;
 }
 
 } } // namespaces
