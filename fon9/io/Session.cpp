@@ -26,6 +26,9 @@ RecvBufferSize Session::OnDevice_Recv(Device& dev, DcQueueList& rxbuf) {
    (void)dev; (void)rxbuf;
    return RecvBufferSize::Default;
 }
+void Session::OnDevice_CommonTimer(Device& dev, TimeStamp now) {
+   (void)dev; (void)now;
+}
 //void Session::OnDevice_SendBufferEmpty(Device& dev) {
 //   (void)dev;
 //}

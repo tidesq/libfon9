@@ -181,6 +181,7 @@ e.g.
    }
 
    fon9::AutoPrintTestInfo utinfo("IoDev");
+   std::cout << "sizeof|Device=" << sizeof(fon9::io::Device) << "|Timer=" << sizeof(fon9::TimerEntry) << std::endl;
 
    IoServiceSP iosv;
    if (argc >= 4) {

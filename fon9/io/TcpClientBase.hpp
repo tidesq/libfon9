@@ -6,7 +6,6 @@
 #include "fon9/io/SocketClient.hpp"
 #include "fon9/io/SocketAddressDN.hpp"
 #include "fon9/io/DeviceStartSend.hpp"
-#include "fon9/Timer.hpp"
 
 namespace fon9 { namespace io {
 
@@ -32,11 +31,9 @@ protected:
    DnQueryReqId         DnReqId_{};
    SocketAddress        RemoteAddress_;
 
-   static void OnConnectTimeout(TimerEntry* timer, TimeStamp now);
-   using Timer = DataMemberEmitOnTimer<&TcpClientBase::OnConnectTimeout>;
-   Timer ConnectTimer_;
+   virtual void OnCommonTimer(TimeStamp now) override;
    void StartConnectTimer() {
-      this->ConnectTimer_.RunAfter(TimeInterval_Second(this->Config_.TimeoutSecs_));
+      this->CommonTimerRunAfter(TimeInterval_Second(this->Config_.TimeoutSecs_));
    }
 
    void OpImpl_ConnectToNext(StrView lastError);
@@ -58,8 +55,7 @@ protected:
 
 public:
    TcpClientBase(SessionSP ses, ManagerSP mgr)
-      : base(std::move(ses), std::move(mgr), Style::Client)
-      , ConnectTimer_{GetDefaultTimerThread()} {
+      : base(std::move(ses), std::move(mgr), Style::Client) {
    }
    ~TcpClientBase();
 };

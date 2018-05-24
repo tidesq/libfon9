@@ -52,8 +52,8 @@ class FdrTcpListener::AcceptedClient : public AcceptedClientDeviceBase, public F
    }
 
 public:
-   AcceptedClient(FdrTcpListener& owner, Socket soAccepted, SessionSP ses, ManagerSP mgr)
-      : base(&owner, std::move(ses), std::move(mgr))
+   AcceptedClient(FdrTcpListener& owner, Socket soAccepted, SessionSP ses, ManagerSP mgr, const DeviceOptions& optsDefault)
+      : base(&owner, std::move(ses), std::move(mgr), &optsDefault)
       , FdrSocket(*owner.Server_->IoServiceSP_, std::move(soAccepted)) {
    }
 
@@ -136,9 +136,13 @@ void FdrTcpListener::OnFdrEvent_Handling(FdrEventFlag evs) {
       if (cfg.ServiceArgs_.Capacity_ > 0 && this->GetConnectionCount() >= cfg.ServiceArgs_.Capacity_)
          // 如果超過了 MaxConnections, 要等一個 AcceptedClient 斷線後, 才允許接受新的連線.
          soRes = SocketResult{"OverMaxConnections", std::errc::too_many_files_open};
-      else if (soAccepted.SetSocketOptions(cfg.AcceptedClientOptions_, soRes)) {
+      else if (soAccepted.SetSocketOptions(cfg.AcceptedSocketOptions_, soRes)) {
          if (SessionSP sesAccepted = server.OnDevice_Accepted()) {
-            DeviceSP dev{devAccepted = new AcceptedClient::Impl(*this, std::move(soAccepted), std::move(sesAccepted), server.Manager_)};
+            DeviceSP dev{devAccepted = new AcceptedClient::Impl(*this,
+                                                                std::move(soAccepted),
+                                                                std::move(sesAccepted),
+                                                                server.Manager_,
+                                                                cfg.AcceptedClientOptions_)};
             this->AddAcceptedClient(server, *devAccepted, strConnUID);
          }
          else

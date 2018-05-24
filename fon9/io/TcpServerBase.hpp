@@ -44,8 +44,8 @@ protected:
 
 public:
    const ListenerSP  Owner_;
-   AcceptedClientDeviceBase(ListenerSP owner, SessionSP ses, ManagerSP mgr)
-      : base(std::move(ses), std::move(mgr), Style::AcceptedClient)
+   AcceptedClientDeviceBase(ListenerSP owner, SessionSP ses, ManagerSP mgr, const DeviceOptions* optsDefault)
+      : base(std::move(ses), std::move(mgr), Style::AcceptedClient, optsDefault)
       , Owner_{std::move(owner)} {
    }
    AcceptedClientId GetAcceptedClientId() const {
@@ -136,6 +136,10 @@ public:
 
    void OpImpl_CloseAcceptedClient(StrView acceptedClientId);
    void OpImpl_LingerCloseAcceptedClient(StrView acceptedClientId);
+
+   /// 預設 do nothing.
+   /// 必須啟動 dev.CommonTimerRunAfter(); 才會有此事件.
+   virtual void OnTcpServer_OnCommonTimer();
 };
 fon9_WARN_POP;
 
@@ -220,6 +224,13 @@ class TcpServerBase : public DeviceServer {
       return std::string{};
    }
 
+   virtual void OnCommonTimer(TimeStamp) override {
+      if (this->Listener_)
+         this->OpQueue_.AddTask(DeviceAsyncOp{[](Device& dev) {
+            if (static_cast<TcpServerBase*>(&dev)->Listener_)
+               static_cast<TcpServerBase*>(&dev)->Listener_->OnTcpServer_OnCommonTimer();
+         }});
+   }
 public:
    const IoServiceSP IoServiceSP_;
 

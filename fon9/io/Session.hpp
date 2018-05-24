@@ -4,6 +4,7 @@
 #define __fon9_io_Session_hpp__
 #include "fon9/io/IoBase.hpp"
 #include "fon9/buffer/DcQueueList.hpp"
+#include "fon9/TimeStamp.hpp"
 
 namespace fon9 { namespace io {
 
@@ -101,6 +102,11 @@ public:
    /// \retval ==RecvBufferSize::NoRecvEvent 不用再收任何資料.
    /// \retval ==RecvBufferSize::CloseRecv   關閉接收端.
    virtual RecvBufferSize OnDevice_Recv(Device& dev, DcQueueList& rxbuf);
+
+   /// 在 LinkReady 時, 若有啟動 dev CommonTimer, 則透過此處通知 Session.
+   /// 注意: 此時是在 timer thread, 並不是 op safe.
+   /// 如果需要 op safe, 則必須自行使用 dev.OpQueue_ 來處理.
+   virtual void OnDevice_CommonTimer(Device& dev, TimeStamp now);
 
    /*
    幾經思考, 似乎已無必要提供此事件:

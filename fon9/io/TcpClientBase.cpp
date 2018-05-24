@@ -7,7 +7,6 @@ namespace fon9 { namespace io {
 //--------------------------------------------------------------------------//
 
 TcpClientBase::~TcpClientBase() {
-   this->ConnectTimer_.StopAndWait();
 }
 
 void TcpClientBase::OpImpl_TcpClearLinking() {
@@ -15,12 +14,11 @@ void TcpClientBase::OpImpl_TcpClearLinking() {
    ZeroStruct(this->RemoteAddress_);
    this->NextAddrIndex_ = 0;
    this->AddrList_.clear();
-   this->ConnectTimer_.StopNoWait();
+   this->CommonTimer_.StopNoWait();
 }
-void TcpClientBase::OnConnectTimeout(TimerEntry* timer, TimeStamp now) {
+void TcpClientBase::OnCommonTimer(TimeStamp now) {
    (void)now;
-   TcpClientBase& rthis = ContainerOf(*static_cast<Timer*>(timer), &TcpClientBase::ConnectTimer_);
-   rthis.OpQueue_.AddTask(DeviceAsyncOp{[](Device& dev) {
+   this->OpQueue_.AddTask(DeviceAsyncOp{[](Device& dev) {
       TcpClientBase*  pthis = static_cast<TcpClientBase*>(&dev);
       if (pthis->DnReqId_) {
          AsyncDnQuery_CancelAndWait(&pthis->DnReqId_);
@@ -109,7 +107,6 @@ void TcpClientBase::OpImpl_ReopenImpl() {
       this->OpImpl_ConnectToNext(StrView{});
 }
 void TcpClientBase::OpImpl_Connected(Socket::socket_t so) {
-   this->ConnectTimer_.StopNoWait();
    auto errc = Socket::LoadSocketErrC(so);
    if (errc) {
       OpThr_SetBrokenState(*this, RevPrintTo<std::string>("err=", errc));

@@ -5,6 +5,7 @@
 #define __fon9_io_IoBase_hpp__
 #include "fon9/StrView.hpp"
 #include "fon9/intrusive_ref_counter.hpp"
+#include "fon9/Utility.hpp"
 
 #include <memory>
 
@@ -32,6 +33,8 @@ using DeviceFactoryParkSP = intrusive_ptr<DeviceFactoryPark>;
 
 struct SessionFactoryPark;
 using SessionFactoryParkSP = intrusive_ptr<SessionFactoryPark>;
+
+//--------------------------------------------------------------------------//
 
 /// \ingroup io
 /// Device 的類型.
@@ -110,6 +113,8 @@ inline bool IsAllowContinueSend(State st) {
    return st == State::LinkReady || st == State::Lingering;
 }
 
+//--------------------------------------------------------------------------//
+
 /// \ingroup io
 /// OnDevice_StateChanged() 事件的參數.
 struct StateChangedArgs {
@@ -140,6 +145,8 @@ struct StateUpdatedArgs {
 };
 fon9_WARN_POP;
 
+//--------------------------------------------------------------------------//
+
 /// \ingroup io
 /// 接收緩衝區大小.
 /// 若要自訂大小, 可自行使用 static_cast<RecvBufferSize>(2048);
@@ -168,6 +175,36 @@ enum class RecvBufferSize : int32_t {
    B64K = B1K * 64,
 };
 class RecvBuffer;
+
+//--------------------------------------------------------------------------//
+
+enum class DeviceFlag {
+   SendASAP = 0x01,
+   /// 若 `RecvBufferSize OnDevice_LinkReady();` 或 `RecvBufferSize OnDevice_Recv();`
+   /// 傳回 RecvBufferSize::NoRecvEvent, 則會關閉 OnDevice_Recv() 事件.
+   NoRecvEvent = 0x02,
+};
+fon9_ENABLE_ENUM_BITWISE_OP(DeviceFlag);
+
+fon9_WARN_DISABLE_PADDING;
+struct DeviceOptions {
+   DeviceFlag  Flags_{DeviceFlag::SendASAP};
+
+   // ms, =0 表示 LinkError 時, 不用 reopen, 預設為 15 秒.
+   uint32_t    LinkErrorRetryInterval_{15000};
+   // ms, =0 表示 LinkBroken 時, 不用 reopen, 預設為 3 秒.
+   uint32_t    LinkBrokenReopenInterval_{3000};
+
+   /// 設定屬性參數:
+   /// - SendASAP=N        預設值為 'Y'，只要不是 'N' 就會設定成 Yes(若未設定，初始值為 Yes)。
+   /// - RetryInterval=n   LinkError 之後重新嘗試的延遲時間, 預設值為 15 秒, 0=不要 retry.
+   /// - ReopenInterval=n  LinkBroken 或 ListenBroken 之後, 重新嘗試的延遲時間, 預設值為 3 秒, 0=不要 reopen.
+   ///   使用 TimeInterval 格式設定, 延遲最小單位為 ms, e.g.
+   ///   "RetryInterval=3"    表示連線失敗後, 延遲  3 秒後重新連線.
+   ///   "ReopenInterval=0.5" 表示斷線後, 延遲  0.5 秒後重新連線.
+   std::string ParseOption(StrView tag, StrView value);
+};
+fon9_WARN_POP;
 
 } } // namespaces
 #endif//__fon9_io_IoBase_hpp__

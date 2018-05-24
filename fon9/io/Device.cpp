@@ -8,6 +8,7 @@ namespace fon9 { namespace io {
 
 Device::~Device() {
    this->State_ = State::Destructing;
+   this->CommonTimer_.StopAndWait();
    this->Session_->OnDevice_Destructing(*this);
    if (this->Manager_)
       this->Manager_->OnDevice_Destructing(*this);
@@ -83,11 +84,12 @@ void Device::OpThr_SetLinkReady(Device& dev, std::string stmsg) {
    // 避免在處理 OnDevice_StateChanged() 之後 State_ 被改變(例:特殊情況下關閉了 Device),
    // 所以在此再判斷一次 State_, 必需仍為 LinkReady, 才需觸發 OnDevice_LinkReady() 事件.
    if (dev.State_ == State::LinkReady) {
+      dev.CommonTimer_.StopAndWait();
       RecvBufferSize preallocSize = dev.Session_->OnDevice_LinkReady(dev);
       if (preallocSize == RecvBufferSize::NoRecvEvent)
-         dev.CommonOptions_ |= DeviceCommonOption::NoRecvEvent;
+         dev.Options_.Flags_ |= DeviceFlag::NoRecvEvent;
       else
-         dev.CommonOptions_ -= DeviceCommonOption::NoRecvEvent;
+         dev.Options_.Flags_ -= DeviceFlag::NoRecvEvent;
       dev.OpImpl_StartRecv(preallocSize);
    }
 }
@@ -152,6 +154,14 @@ bool Device::OpImpl_SetState(State afst, StrView stmsg) {
    this->Session_->OnDevice_StateChanged(*this, e);
    if (this->Manager_)
       this->Manager_->OnDevice_StateChanged(*this, e);
+   if (afst == State::LinkBroken || afst == State::ListenBroken) {
+      if (this->Options_.LinkBrokenReopenInterval_ > 0)
+         this->CommonTimer_.RunAfter(TimeInterval_Millisecond(this->Options_.LinkBrokenReopenInterval_));
+   }
+   else if (afst == State::LinkError) {
+      if (this->Options_.LinkErrorRetryInterval_ > 0)
+         this->CommonTimer_.RunAfter(TimeInterval_Millisecond(this->Options_.LinkErrorRetryInterval_));
+   }
    return true;
 }
 
@@ -204,15 +214,9 @@ std::string Device::OpImpl_SetPropertyList(StrView propList) {
    }
    return std::string();
 }
+
 std::string Device::OpImpl_SetProperty(StrView tag, StrView value) {
-   if (tag == "SendASAP") {
-      if (toupper(value.Get1st()) == 'N')
-         this->CommonOptions_ -= DeviceCommonOption::SendASAP;
-      else
-         this->CommonOptions_ |= DeviceCommonOption::SendASAP;
-      return std::string();
-   }
-   return tag.ToString("unknown property name:");
+   return this->Options_.ParseOption(tag, value);
 }
 
 std::string Device::OnDevice_Command(StrView cmd, StrView param) {
@@ -236,6 +240,66 @@ std::string Device::OnDevice_Command(StrView cmd, StrView param) {
 std::string Device::DeviceCommand(StrView cmdln) {
    StrView cmd = StrFetchTrim(cmdln, &isspace);
    return this->OnDevice_Command(cmd, StrTrim(&cmdln));
+}
+
+//--------------------------------------------------------------------------//
+
+enum class StateTimerAct {
+   Ignore,
+   Reopen,
+   ToDerived,
+   ToSession,
+};
+static StateTimerAct GetStateTimerAct(State st) {
+   switch (st) {
+   case State::Initializing:
+   case State::Initialized:
+   case State::ConfigError:
+   case State::Disposing:
+   case State::Destructing:
+      return StateTimerAct::Ignore;
+
+   case State::LinkError:
+   case State::LinkBroken:
+   case State::ListenBroken:
+      return StateTimerAct::Reopen;
+
+   case State::LinkReady:
+      return StateTimerAct::ToSession;
+
+   default:
+   case State::Lingering:
+   case State::Opening:
+   case State::WaitingLinkIn:
+   case State::Linking:
+   case State::Listening:
+   case State::Closing:
+   case State::Closed:
+      return StateTimerAct::ToDerived;
+   }
+}
+void Device::EmitOnCommonTimer(TimerEntry* timer, TimeStamp now) {
+   Device& rthis = ContainerOf(*static_cast<CommonTimer*>(timer), &Device::CommonTimer_);
+   switch (GetStateTimerAct(rthis.State_)) {
+   default:
+   case StateTimerAct::Ignore:
+      break;
+   case StateTimerAct::Reopen:
+      rthis.OpQueue_.AddTask(DeviceAsyncOp{[](Device& dev) {
+         if(GetStateTimerAct(dev.State_) == StateTimerAct::Reopen)
+            dev.OpImpl_Reopen();
+      }});
+      break;
+   case StateTimerAct::ToDerived:
+      rthis.OnCommonTimer(now);
+      break;
+   case StateTimerAct::ToSession:
+      rthis.Session_->OnDevice_CommonTimer(rthis, now);
+      break;
+   }
+}
+void Device::OnCommonTimer(TimeStamp now) {
+   (void)now;
 }
 
 } } // namespaces

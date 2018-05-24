@@ -49,8 +49,8 @@ class IocpTcpListener::AcceptedClient : public AcceptedClientDeviceBase, public 
    }
 
 public:
-   AcceptedClient(IocpTcpListener& owner, Socket soAccepted, SessionSP ses, ManagerSP mgr, SocketResult& soRes)
-      : base(&owner, std::move(ses), std::move(mgr))
+   AcceptedClient(IocpTcpListener& owner, Socket soAccepted, SessionSP ses, ManagerSP mgr, const DeviceOptions& optsDefault, SocketResult& soRes)
+      : base(&owner, std::move(ses), std::move(mgr), &optsDefault)
       , IocpSocket(owner.IocpService_, std::move(soAccepted), soRes) {
    }
 
@@ -184,12 +184,17 @@ void IocpTcpListener::OnIocp_Done(OVERLAPPED* lpOverlapped, DWORD bytesTransfere
       if (cfg.ServiceArgs_.Capacity_ > 0 && this->GetConnectionCount() >= cfg.ServiceArgs_.Capacity_)
          // 如果超過了 MaxConnections, 要等一個 AcceptedClient 斷線後, 才允許接受新的連線.
          soRes = SocketResult{"OverMaxConnections", std::errc::too_many_files_open};
-      else if (this->ClientSocket_.SetSocketOptions(cfg.AcceptedClientOptions_, soRes)) {
+      else if (this->ClientSocket_.SetSocketOptions(cfg.AcceptedSocketOptions_, soRes)) {
          SOCKET soListen = this->ListenSocket_.GetSocketHandle();
          if (setsockopt(soAccepted, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, reinterpret_cast<const char *>(&soListen), sizeof(soListen)) != 0)
             soRes = SocketResult{"SO_UPDATE_ACCEPT_CONTEXT"};
          else if (SessionSP sesAccepted = server.OnDevice_Accepted()) {
-            DeviceSP dev{devAccepted = new AcceptedClient::Impl(*this, std::move(this->ClientSocket_), std::move(sesAccepted), server.Manager_, soRes)};
+            DeviceSP dev{devAccepted = new AcceptedClient::Impl(*this,
+                                                                std::move(this->ClientSocket_),
+                                                                std::move(sesAccepted),
+                                                                server.Manager_,
+                                                                cfg.AcceptedClientOptions_,
+                                                                soRes)};
             if (soRes.IsSuccess())
                this->AddAcceptedClient(server, *devAccepted, strConnUID);
          }
@@ -217,8 +222,12 @@ void IocpTcpListener::ResetupAccepter() {
    SocketResult soRes;
    if (!this->SetupAccepter(soRes)) {
       fon9_LOG_ERROR("IocpTcpListener.ResetupAccepter|err=", soRes);
-      if (0);// todo: retry.
+      this->Server_->CommonTimerRunAfter(TimeInterval_Millisecond(this->Server_->OpImpl_GetOptions().LinkErrorRetryInterval_));
    }
+}
+void IocpTcpListener::OnTcpServer_OnCommonTimer() {
+   if (!this->ClientSocket_.IsSocketReady() && this->Server_->OpImpl_GetState() == State::Listening)
+      this->ResetupAccepter();
 }
 
 fon9_WARN_POP;

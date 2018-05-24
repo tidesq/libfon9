@@ -12,7 +12,8 @@ inline static unsigned GetDefaultServerThreadCount() {
 
 void SocketServerConfig::SetDefaults() {
    this->ListenConfig_.SetDefaults();
-   this->AcceptedClientOptions_.SetDefaults();
+   this->AcceptedSocketOptions_.SetDefaults();
+   this->AcceptedClientOptions_ = DeviceOptions{};
    this->ListenConfig_.Options_.SO_REUSEADDR_ = 1;
    this->ListenConfig_.Options_.SO_REUSEPORT_ = 1;
    this->ListenBacklog_ = 5;
@@ -31,8 +32,12 @@ StrView SocketServerConfig::ParseConfig(StrView cfgstr, FnOnTagValue fnUnknownFi
             this->ListenBacklog_ = 5;
       }
       else if (tag == "ClientOptions") {
-         if (0); // TODO: 要處理 AcceptedClient.DeviceCommonOption
-         StrView cres = this->AcceptedClientOptions_.ParseConfig(FetchFirstBr(value), fnClientOptionsUnknownField);
+         StrView cres = this->AcceptedSocketOptions_.ParseConfig(FetchFirstBr(value),
+                                                                 [this, &fnClientOptionsUnknownField](StrView atag, StrView avalue) {
+            if (fnClientOptionsUnknownField(atag, avalue))
+               return true;
+            return this->AcceptedClientOptions_.ParseOption(atag, avalue).empty();
+         });
          if (clires.empty())
             clires = cres;
       }

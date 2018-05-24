@@ -90,5 +90,8 @@ void TcpListenerBase::OpImpl_LingerCloseAcceptedClient(StrView acceptedClientId)
    if (DeviceSP dev = this->GetAcceptedClient(&acceptedClientId))
       dev->AsyncLingerClose(acceptedClientId.ToString());
 }
+void TcpListenerBase::OnTcpServer_OnCommonTimer() {
+}
+
 
 } } // namespaces

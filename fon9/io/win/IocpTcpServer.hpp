@@ -32,12 +32,14 @@ class fon9_API IocpTcpListener : public TcpListenerBase, public IocpHandler {
    void ResetupAccepter();
    bool SetupAccepter(SocketResult& soRes);
    virtual void OnListener_Dispose() override;
+   virtual void OnTcpServer_OnCommonTimer() override;
 
    IocpTcpListener(IocpServiceSP&& iosv, IocpTcpServerSP&& server, Socket&& soListen);
 
 public:
    const IocpTcpServerSP   Server_;
    static ListenerSP CreateListener(IocpTcpServerSP server, SocketResult& soRes);
+
 };
 
 } } // namespaces

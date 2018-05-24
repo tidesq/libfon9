@@ -6,30 +6,23 @@
 #include "fon9/io/Session.hpp"
 #include "fon9/io/DeviceAsyncOp.hpp"
 #include "fon9/Outcome.hpp"
+#include "fon9/Timer.hpp"
 
 namespace fon9 { namespace io {
 
 using Bookmark = uintmax_t;
-
-enum class DeviceCommonOption {
-   SendASAP = 0x01,
-   /// 若 `RecvBufferSize OnDevice_LinkReady();` 或 `RecvBufferSize OnDevice_Recv();`
-   /// 傳回 RecvBufferSize::NoRecvEvent, 則會關閉 OnDevice_Recv() 事件.
-   NoRecvEvent = 0x02,
-};
-fon9_ENABLE_ENUM_BITWISE_OP(DeviceCommonOption);
 
 /// \ingroup io
 /// 通訊設備基底.
 class fon9_API Device : public intrusive_ref_counter<Device> {
    fon9_NON_COPY_NON_MOVE(Device);
 
-   State                State_;
-   Bookmark             SessionBookmark_{0};
-   Bookmark             ManagerBookmark_{0};
-   std::string          DeviceId_;
-   DeviceCommonOption   CommonOptions_{DeviceCommonOption::SendASAP};
-
+   State          State_;
+   Bookmark       SessionBookmark_{0};
+   Bookmark       ManagerBookmark_{0};
+   std::string    DeviceId_;
+   DeviceOptions  Options_;
+   
 public:
    const Style       Style_;
    const SessionSP   Session_;
@@ -38,12 +31,15 @@ public:
    /// - 建構者必須在建構完畢, 取得一個 DeviceSP 之後, 立即呼叫 Initialize();
    /// - 必須提供有效的 ses, 運行過程中不會再檢查 this->Session_ 是否有效.
    /// - mgr 可以為 nullptr.
-   Device(SessionSP ses, ManagerSP mgr, Style style)
+   Device(SessionSP ses, ManagerSP mgr, Style style, const DeviceOptions* optsDefault = nullptr)
       : State_{State::Initializing}
       , Style_{style}
       , Session_{std::move(ses)}
-      , Manager_{std::move(mgr)} {
+      , Manager_{std::move(mgr)}
+      , CommonTimer_{GetDefaultTimerThread()} {
       assert(this->Session_);
+      if (optsDefault)
+         this->Options_ = *optsDefault;
    }
 
    /// 初始化 Device, 返回後才能呼叫 AsyncOpen() 及其他 methods.
@@ -112,12 +108,12 @@ public:
    }
 
    SendResult Send(const void* src, size_t size) {
-      return IsEnumContains(this->CommonOptions_, DeviceCommonOption::SendASAP)
+      return IsEnumContains(this->Options_.Flags_, DeviceFlag::SendASAP)
          ? this->SendASAP(src, size)
          : this->SendBuffered(src, size);
    }
    SendResult Send(BufferList&& src) {
-      return IsEnumContains(this->CommonOptions_, DeviceCommonOption::SendASAP)
+      return IsEnumContains(this->Options_.Flags_, DeviceFlag::SendASAP)
          ? this->SendASAP(std::move(src))
          : this->SendBuffered(std::move(src));
    }
@@ -144,11 +140,26 @@ public:
 
    /// 設定 device 的屬性參數, Device 支援:
    /// - SendASAP=N  預設值為 'Y'，只要不是 'N' 就會設定成 Yes(若未設定，初始值為 Yes)。
+   /// - RetryInterval=n   LinkError 之後重新嘗試的延遲時間, 預設值為 15 秒, 0=不要 retry.
+   /// - ReopenInterval=n  LinkBroken 或 ListenBroken 之後, 重新嘗試的延遲時間, 預設值為 3 秒, 0=不要 reopen.
+   ///   使用 TimeInterval 格式設定, 延遲最小單位為 ms, e.g.
+   ///   "RetryInterval=3"    表示連線失敗後, 延遲  3 秒後重新連線.
+   ///   "ReopenInterval=0.5" 表示斷線後, 延遲  0.5 秒後重新連線.
    std::string WaitSetProperty(StrView strTagValueList);
 
-   /// 取得現在狀態, 必須在 op safe 狀態下才能確保正確.
+   /// 取得現在狀態, 必須在 op safe 狀態下才能確保正確, 否則僅供參考.
    State OpImpl_GetState() const {
       return this->State_;
+   }
+   const DeviceOptions&  OpImpl_GetOptions() const {
+      return this->Options_;
+   }
+
+   /// - Device 本身會針對 LinkError, LinkBroken, ListenBroken 啟動 Timer, 呼叫 Reopen()
+   /// - 在 LinkReady 時, 提供 Session 使用, 透過 OnDevice_CommonTimer(); 通知.
+   /// - 其他情況提供衍生者使用.
+   void CommonTimerRunAfter(TimeInterval ti) {
+      this->CommonTimer_.RunAfter(ti);
    }
 
    /// 執行特定命令.
@@ -171,6 +182,12 @@ public:
    mutable DeviceOpQueue  OpQueue_;
 
 protected:
+   /// 預設 do nothing. 提供給衍生者使用.
+   virtual void OnCommonTimer(TimeStamp now);
+   static void EmitOnCommonTimer(TimerEntry*, TimeStamp now);
+   using CommonTimer = DataMemberEmitOnTimer<&EmitOnCommonTimer>;
+   CommonTimer CommonTimer_;
+
    friend struct DeviceAsyncOpInvoker;
 
    /// 預設使用 GetDefaultThreadPool() 執行 OpQueue_.
@@ -259,7 +276,7 @@ protected:
    virtual std::string OpImpl_SetProperty(StrView tag, StrView value);
 
    void SetNoRecvEvent() {
-      this->CommonOptions_ |= DeviceCommonOption::NoRecvEvent;
+      this->Options_.Flags_ |= DeviceFlag::NoRecvEvent;
    }
 };
 

@@ -14,7 +14,8 @@ struct fon9_API SocketServerConfig {
    SocketConfig   ListenConfig_;
 
    /// 使用 "ClientOptions={configs}" 提供設定.
-   SocketOptions  AcceptedClientOptions_;
+   SocketOptions  AcceptedSocketOptions_;
+   DeviceOptions  AcceptedClientOptions_;
 
    /// listen() 的 backlog 參數, 使用 "ListenBacklog=n" 設定.
    /// - SetDefaults() = 5
