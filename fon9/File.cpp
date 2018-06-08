@@ -65,7 +65,7 @@ void FileModeToStrAppend(FileMode fm, std::string& out) {
          i.Name_.AppendTo(out);
          if ((fm -= i.Mode_) == FileMode{})
             break;
-         out.append(1, '+');
+         out.push_back('+');
       }
    }
 }

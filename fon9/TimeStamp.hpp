@@ -147,7 +147,7 @@ constexpr TimeStamp EpochSecondsToTimeStamp(TimeStamp::OrigType epochSeconds) {
 ///   - 若沒提供 HHMMSS 則使用 000000
 ///   - HHMMSS 之後可包含小數位 `.uuuuuu`
 /// - 分隔符號前後允許任意空白.
-fon9_API TimeStamp StrTo(const StrView& str, TimeStamp value = TimeStamp::Null(), const char** endptr = nullptr);
+fon9_API TimeStamp StrTo(StrView str, TimeStamp value = TimeStamp::Null(), const char** endptr = nullptr);
 
 enum {
    /// YYYYMMDDHHMMSS.uuuuuu 字串緩衝區大小(不含EOS).
@@ -270,7 +270,7 @@ fon9_API TimeZoneOffset GetTimeZoneOffsetByName(StrView tzName);
 /// - 'TimeZoneName' 前方的「+-」會被忽略.
 ///   - 若 TimeZoneName 有空白則必須加上「'」單引號.
 ///   - 若 TimeZoneName 沒空白則可以不用加上「'」單引號, 用 isspace() 當作 TimeZoneName 的結束.
-fon9_API TimeZoneOffset StrTo(const StrView& str, TimeZoneOffset value = TimeZoneOffset{}, const char** endptr = nullptr);
+fon9_API TimeZoneOffset StrTo(StrView str, TimeZoneOffset value = TimeZoneOffset{}, const char** endptr = nullptr);
 
 /// \ingroup AlNum
 /// 輸出 TimeZoneOffset 時間調整字串: "+h" or "+h:mm" or "-h" or "-h:mm"

@@ -142,7 +142,7 @@ fon9_MSC_WARN_DISABLE(4100);// warning C4100: 'ex': unreferenced formal paramete
 template <typename SrcT, typename ResultT = ToImax_t<SrcT>, class AdjustDecScaleEx = AdjustDecScaleExDefault>
 inline ResultT AdjustDecScale(SrcT src, DecScaleT srcScale, DecScaleT reScale, AdjustDecScaleEx ex = AdjustDecScaleEx{}) {
    if (reScale == srcScale)
-      return src;
+      return ex.template OnAfterRound<ResultT>(src);
    using srcmax_t = ToImax_t<SrcT>;
    if (reScale < srcScale)
       return ex.template OnAfterRound<ResultT>(Round(static_cast<srcmax_t>(src), static_cast<DecScaleT>(srcScale - reScale)));

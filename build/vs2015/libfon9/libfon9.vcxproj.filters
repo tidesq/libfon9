@@ -84,6 +84,24 @@
     <Filter Include="Source Files\io\_fdr">
       <UniqueIdentifier>{9f253e36-b0f3-4033-83b9-18588919a053}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\seed">
+      <UniqueIdentifier>{629ffcc5-e47d-49cf-9bcd-51594edf94b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\seed">
+      <UniqueIdentifier>{06ca35f5-439d-4f48-a7f2-f588a540326a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\seed\_base">
+      <UniqueIdentifier>{1cb537bf-95ee-4aa6-b607-5467a6216075}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\seed\_base">
+      <UniqueIdentifier>{d5657bd5-c2c7-41b9-b1b2-02726bc0a9fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\seed\_fields">
+      <UniqueIdentifier>{ae33abe7-b58d-42a7-a8d7-29672d83ee38}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\seed\_fields">
+      <UniqueIdentifier>{96dc55c5-7be5-443c-92a2-1b2de4a7a509}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\sys\Config.h">
@@ -380,6 +398,78 @@
     <ClInclude Include="..\..\..\fon9\io\FdrTcpServer.hpp">
       <Filter>Header Files\io\_fdr</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\Blob.h">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\Layout.hpp">
+      <Filter>Header Files\seed\_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\Named.hpp">
+      <Filter>Header Files\seed\_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\NamedIx.hpp">
+      <Filter>Header Files\seed\_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\SeedBase.hpp">
+      <Filter>Header Files\seed\_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\Raw.hpp">
+      <Filter>Header Files\seed\_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\RawRd.hpp">
+      <Filter>Header Files\seed\_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\RawWr.hpp">
+      <Filter>Header Files\seed\_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\Unaligned.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\ByteVector.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\Endian.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\CharVector.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\FieldTimeStamp.hpp">
+      <Filter>Header Files\seed\_fields</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\FieldValueFmt.hpp">
+      <Filter>Header Files\seed\_fields</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\FieldBytes.hpp">
+      <Filter>Header Files\seed\_fields</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\FieldChars.hpp">
+      <Filter>Header Files\seed\_fields</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\FieldInt.hpp">
+      <Filter>Header Files\seed\_fields</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\FieldMaker.hpp">
+      <Filter>Header Files\seed\_fields</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\FieldString.hpp">
+      <Filter>Header Files\seed\_fields</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\FieldDyBlob.hpp">
+      <Filter>Header Files\seed\_fields</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\Base64.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\FieldDecimal.hpp">
+      <Filter>Header Files\seed\_fields</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\Field.hpp">
+      <Filter>Header Files\seed\_fields</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\Tab.hpp">
+      <Filter>Header Files\seed\_base</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -391,6 +481,9 @@
     </None>
     <None Include="..\..\..\fon9\io\README.md">
       <Filter>Header Files\io</Filter>
+    </None>
+    <None Include="..\..\..\fon9\seed\README.md">
+      <Filter>Header Files\seed</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -564,6 +657,45 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\io\FdrTcpServer.cpp">
       <Filter>Source Files\io\_fdr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\Blob.c">
+      <Filter>Source Files\_base\_Tools / Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\seed\Layout.cpp">
+      <Filter>Source Files\seed\_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\seed\Named.cpp">
+      <Filter>Source Files\seed\_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\seed\SeedBase.cpp">
+      <Filter>Source Files\seed\_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\seed\Raw.cpp">
+      <Filter>Source Files\seed\_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\ByteVector.cpp">
+      <Filter>Source Files\_base\_Tools / Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\seed\FieldMaker.cpp">
+      <Filter>Source Files\seed\_fields</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\seed\FieldChars.cpp">
+      <Filter>Source Files\seed\_fields</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\seed\FieldDyBlob.cpp">
+      <Filter>Source Files\seed\_fields</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\Base64.cpp">
+      <Filter>Source Files\_base\_Tools / Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\seed\FieldBytes.cpp">
+      <Filter>Source Files\seed\_fields</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\seed\Field.cpp">
+      <Filter>Source Files\seed\_fields</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\seed\Tab.cpp">
+      <Filter>Source Files\seed\_base</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -120,5 +120,20 @@ struct AutoPrintTestInfo {
    }
 };
 
+//--------------------------------------------------------------------------//
+
+inline void CheckTestResult(const char* testItem, const char* fileLn, bool ok) {
+   std::cout << (ok ? "[OK   ]" : "[ERROR]") << " TestItem=" << testItem;
+   if (ok) {
+      std::cout << std::endl;
+      return;
+   }
+   std::cout << "|err=@" << fileLn << std::endl;
+   abort();
+}
+
+#define fon9_CheckTestResult(testItem, ok) \
+   fon9::CheckTestResult(testItem, __FILE__ ":" fon9_CTXTOCSTR(__LINE__), (ok))
+
 } // namespace
 #endif//__fon9_TestTools_hpp__

@@ -498,7 +498,7 @@ StrToTimeStampAux::ResultT StrToTimeStampAux::MakeResult(TempResultT res, StrToN
    return base::MakeResult(res, cur);
 }
 
-fon9_API TimeStamp StrTo(const StrView& str, TimeStamp value, const char** endptr) {
+fon9_API TimeStamp StrTo(StrView str, TimeStamp value, const char** endptr) {
    return StrTo<TimeStamp, StrToTimeStampAux>(str, value, endptr);
 }
 
@@ -628,7 +628,7 @@ TimeZoneOffset::StrToAux::ResultT TimeZoneOffset::StrToAux::MakeResult(TempResul
    return base::MakeResult(res, cur);
 }
 
-fon9_API TimeZoneOffset StrTo(const StrView& str, TimeZoneOffset value, const char** endptr) {
+fon9_API TimeZoneOffset StrTo(StrView str, TimeZoneOffset value, const char** endptr) {
    return StrTo<TimeZoneOffset, TimeZoneOffset::StrToAux>(str, value, endptr);
 }
 

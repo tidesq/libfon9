@@ -41,6 +41,8 @@ struct DecimalAuxUInt {
 template <typename IntTypeT>
 using DecimalAux = conditional_t<std::is_signed<IntTypeT>::value, DecimalAuxSInt<IntTypeT>, DecimalAuxUInt<IntTypeT>>;
 
+//--------------------------------------------------------------------------//
+
 /// \ingroup AlNum
 /// 使用 [IntTypeT 整數儲存數字] 加上 [ScaleN 固定小數位], 組成的數字.
 ///
@@ -245,6 +247,8 @@ public:
    }
 };
 
+//--------------------------------------------------------------------------//
+
 /// \ingroup AlNum
 /// Decimal數字轉成浮點數.
 template <typename F, typename IntTypeT, DecScaleT ScaleN>
@@ -267,6 +271,26 @@ inline char* ToStrRev(char* pout, const Decimal<IntTypeT, ScaleN>& value, const 
 template <typename IntTypeT, DecScaleT ScaleN, class AuxT = StrToDecIntAux<IntTypeT>, class ResultT = Decimal<IntTypeT, ScaleN>>
 inline ResultT StrTo(const StrView& str, ResultT value = ResultT::Null(), const char** endptr = nullptr) {
    return ResultT::Make<ScaleN>(StrToDec(str, ScaleN, value.GetOrigValue(), endptr));
+}
+
+//--------------------------------------------------------------------------//
+
+fon9_WARN_DISABLE_PADDING;
+template <typename IntTypeT>
+struct IntScale {
+   IntTypeT    OrigValue_;
+   DecScaleT   Scale_;
+};
+fon9_WARN_POP;
+
+template <typename IntTypeT>
+inline char* ToStrRev(char* pout, const IntScale<IntTypeT>& value) {
+   return DecToStrRev(pout, value.OrigValue_, value.Scale_);
+}
+
+template <typename IntTypeT>
+inline char* ToStrRev(char* pout, const IntScale<IntTypeT>& value, const FmtDef& fmt) {
+   return DecToStrRev(pout, abs_cast(value.OrigValue_), value.OrigValue_ < 0, value.Scale_, fmt);
 }
 
 } // namespaces

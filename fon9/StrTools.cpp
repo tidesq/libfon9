@@ -108,6 +108,7 @@ static constexpr StrBrPair DefaultBrPair[]{
    {'(', ')', true},
    {'\'', '\'', false},
    {'"', '"', false},
+   {'`', '`', false},
 };
 const StrBrArg StrBrArg::Default_{DefaultBrPair};
 const StrBrArg StrBrArg::DefaultNoCurly_{DefaultBrPair + 1, numofele(DefaultBrPair) - 1};
@@ -187,6 +188,96 @@ fon9_API StrView FetchFirstBr(StrView& src, const StrBrArg& brArg) {
       }
    }
    return StrView{nullptr};
+}
+
+//--------------------------------------------------------------------------//
+
+fon9_API void StrView_ToNormalizeStr(std::string& dst, StrView src) {
+   const char* pbeg = src.begin();
+   const char* pend = src.end();
+   if (pbeg == pend)
+      return;
+   while (const char* pspl = StrView::traits_type::find(pbeg, static_cast<size_t>(pend - pbeg), '\\')) {
+      if (pspl != pbeg) // 先把 '\\' 之前的字串放到 outstr.
+         dst.append(pbeg, pspl);
+      if (++pspl >= pend)// 若 '\\' 之後已到結尾, 則拋棄最後這個 '\\'
+         break;
+      switch (char ch = *pspl) {
+      case 'a':   dst.push_back('\a'); break;
+      case 'b':   dst.push_back('\b'); break;
+      case 'f':   dst.push_back('\f'); break;
+      case 'n':   dst.push_back('\n'); break;
+      case 'r':   dst.push_back('\r'); break;
+      case 't':   dst.push_back('\t'); break;
+      case 'v':   dst.push_back('\v'); break;
+      case 'x':   // xn 或 xnn: 一個 16 進位字元.
+         ch = Alpha2Hex(*(++pspl));
+         if (static_cast<uint8_t>(ch) <= 0x0f) {
+            unsigned char uch2 = static_cast<unsigned char>(Alpha2Hex(*(++pspl)));
+            if (uch2 <= 0x0f) {
+               ch = static_cast<char>(ch << 4 | uch2);
+               ++pspl;
+            }
+         }
+         dst.push_back(ch);
+         pbeg = pspl;
+         continue;
+      default:
+         if (static_cast<unsigned char>(ch - '0') < 8) {
+            // 指定數字的字元(與 C 的定義相同: 一律使用8進位).
+            unsigned char uch2 = static_cast<unsigned char>(*++pspl - '0');
+            if (uch2 < 8) {
+               ch = static_cast<char>(ch << 3 | uch2);
+               uch2 = static_cast<unsigned char>(*++pspl - '0');
+               if (uch2 < 8) {
+                  ch = static_cast<char>(ch << 3 | uch2);
+                  ++pspl;
+               }
+            }
+            dst.push_back(ch);
+            pbeg = pspl;
+            continue;
+         }
+         // 不認識的 '\?', 直接把 '?' 放進 dst.
+         dst.push_back(ch);
+         break;
+      }
+      pbeg = pspl + 1;
+   }
+   dst.append(pbeg, pend);
+}
+
+fon9_API void StrView_ToEscapeStr(std::string& dst, StrView src, StrView chSpecials) {
+   const char* pbeg = src.begin();
+   const char* pend = src.end();
+   size_t      szSpecials = chSpecials.size();
+   while (pbeg != pend) {
+      char ch = *pbeg;
+      switch (ch) {
+      case '\\':
+      case '\'':
+      case '\"':  dst.push_back('\\'); break;
+      case '\a':  dst.push_back('\\'); ch = 'a'; break;//0x07, audible bell.
+      case '\b':  dst.push_back('\\'); ch = 'b'; break;//0x08, backspace
+      case '\f':  dst.push_back('\\'); ch = 'f'; break;//0x0c, form feed - new page
+      case '\n':  dst.push_back('\\'); ch = 'n'; break;//0x0a, line feed - new line
+      case '\r':  dst.push_back('\\'); ch = 'r'; break;//0x0d, carriage return
+      case '\t':  dst.push_back('\\'); ch = 't'; break;//0x09, horizontal tab
+      case '\v':  dst.push_back('\\'); ch = 'v'; break;//0x0b, vertical tab
+      default:
+         if (fon9_UNLIKELY(static_cast<unsigned char>(ch) <= '\x1f')) {
+            // "\xHH", 為了避免 "xH" 之後的字元可能剛好是 'a..f', 所以這裡強制使用2碼HH輸出.
+            dst.append((ch & 0xf0) ? "\\x1" : "\\x0", 3);
+            ch = "0123456789abcdef"[ch & 0x0f];
+         }
+         else if (fon9_UNLIKELY(szSpecials > 0)
+                  && fon9_UNLIKELY(StrView::traits_type::find(chSpecials.begin(), szSpecials, ch)))
+            dst.push_back('\\');
+         break;
+      }
+      dst.push_back(ch);
+      ++pbeg;
+   }
 }
 
 } // namespace fon9

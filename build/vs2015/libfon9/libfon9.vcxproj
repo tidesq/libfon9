@@ -76,6 +76,8 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\Appender.hpp" />
     <ClInclude Include="..\..\..\fon9\AQueue.hpp" />
+    <ClInclude Include="..\..\..\fon9\Base64.hpp" />
+    <ClInclude Include="..\..\..\fon9\Blob.h" />
     <ClInclude Include="..\..\..\fon9\buffer\BufferList.hpp" />
     <ClInclude Include="..\..\..\fon9\buffer\BufferListBuilder.hpp" />
     <ClInclude Include="..\..\..\fon9\buffer\BufferNode.hpp" />
@@ -87,8 +89,11 @@
     <ClInclude Include="..\..\..\fon9\buffer\MemBlockImpl.hpp" />
     <ClInclude Include="..\..\..\fon9\buffer\RevBuffer.hpp" />
     <ClInclude Include="..\..\..\fon9\buffer\RevBufferList.hpp" />
+    <ClInclude Include="..\..\..\fon9\ByteVector.hpp" />
     <ClInclude Include="..\..\..\fon9\CharAry.hpp" />
+    <ClInclude Include="..\..\..\fon9\CharVector.hpp" />
     <ClInclude Include="..\..\..\fon9\DyObj.hpp" />
+    <ClInclude Include="..\..\..\fon9\Endian.hpp" />
     <ClInclude Include="..\..\..\fon9\ErrC.hpp" />
     <ClInclude Include="..\..\..\fon9\Fdr.hpp" />
     <ClInclude Include="..\..\..\fon9\FdrNotify.hpp" />
@@ -143,6 +148,24 @@
     <ClInclude Include="..\..\..\fon9\intrusive_ptr.hpp" />
     <ClInclude Include="..\..\..\fon9\intrusive_ref_counter.hpp" />
     <ClInclude Include="..\..\..\fon9\MustLock.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\Tab.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\Field.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\FieldDecimal.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\FieldDyBlob.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\FieldBytes.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\FieldChars.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\FieldInt.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\FieldMaker.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\FieldString.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\FieldTimeStamp.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\FieldValueFmt.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\Layout.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\Named.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\NamedIx.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\Raw.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\RawRd.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\RawWr.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\SeedBase.hpp" />
     <ClInclude Include="..\..\..\fon9\SleepPolicy.hpp" />
     <ClInclude Include="..\..\..\fon9\SortedVector.hpp" />
     <ClInclude Include="..\..\..\fon9\SpinMutex.hpp" />
@@ -169,6 +192,7 @@
     <ClInclude Include="..\..\..\fon9\ToStrFmt.hpp" />
     <ClInclude Include="..\..\..\fon9\Trie.hpp" />
     <ClInclude Include="..\..\..\fon9\TypeName.hpp" />
+    <ClInclude Include="..\..\..\fon9\Unaligned.hpp" />
     <ClInclude Include="..\..\..\fon9\Utility.hpp" />
     <ClInclude Include="..\..\..\fon9\WaitPolicy.hpp" />
     <ClInclude Include="..\..\..\fon9\Worker.hpp" />
@@ -176,6 +200,7 @@
   <ItemGroup>
     <None Include="..\..\..\fon9\buffer\README.md" />
     <None Include="..\..\..\fon9\io\README.md" />
+    <None Include="..\..\..\fon9\seed\README.md" />
     <None Include="..\..\..\Overview\ThreadTools.md" />
     <None Include="..\..\..\README.md" />
   </ItemGroup>
@@ -184,12 +209,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\fon9\Appender.cpp" />
+    <ClCompile Include="..\..\..\fon9\Base64.cpp" />
+    <ClCompile Include="..\..\..\fon9\Blob.c" />
     <ClCompile Include="..\..\..\fon9\buffer\BufferList.cpp" />
     <ClCompile Include="..\..\..\fon9\buffer\BufferNode.cpp" />
     <ClCompile Include="..\..\..\fon9\buffer\BufferNodeWaiter.cpp" />
     <ClCompile Include="..\..\..\fon9\buffer\DcQueue.cpp" />
     <ClCompile Include="..\..\..\fon9\buffer\DcQueueList.cpp" />
     <ClCompile Include="..\..\..\fon9\buffer\MemBlock.cpp" />
+    <ClCompile Include="..\..\..\fon9\ByteVector.cpp" />
     <ClCompile Include="..\..\..\fon9\ErrC.cpp" />
     <ClCompile Include="..\..\..\fon9\FdrNotify.cpp" />
     <ClCompile Include="..\..\..\fon9\File.cpp" />
@@ -228,6 +256,16 @@
     <ClCompile Include="..\..\..\fon9\CyclicBarrier.cpp" />
     <ClCompile Include="..\..\..\fon9\DecBase.cpp" />
     <ClCompile Include="..\..\..\fon9\FmtDef.cpp" />
+    <ClCompile Include="..\..\..\fon9\seed\Tab.cpp" />
+    <ClCompile Include="..\..\..\fon9\seed\Field.cpp" />
+    <ClCompile Include="..\..\..\fon9\seed\FieldBytes.cpp" />
+    <ClCompile Include="..\..\..\fon9\seed\FieldChars.cpp" />
+    <ClCompile Include="..\..\..\fon9\seed\FieldDyBlob.cpp" />
+    <ClCompile Include="..\..\..\fon9\seed\FieldMaker.cpp" />
+    <ClCompile Include="..\..\..\fon9\seed\Layout.cpp" />
+    <ClCompile Include="..\..\..\fon9\seed\Named.cpp" />
+    <ClCompile Include="..\..\..\fon9\seed\Raw.cpp" />
+    <ClCompile Include="..\..\..\fon9\seed\SeedBase.cpp" />
     <ClCompile Include="..\..\..\fon9\StrTo.cpp" />
     <ClCompile Include="..\..\..\fon9\StrTools.cpp" />
     <ClCompile Include="..\..\..\fon9\sys\OnWindowsMainExit.cpp" />

@@ -12,7 +12,7 @@
 
 namespace fon9 {
 
-/// \ingroup Others
+/// \ingroup Misc
 /// - Linux:   使用 eventfd() 實現.
 /// - 非linux: 使用 pipe() 實現.
 class fon9_API FdrNotify {

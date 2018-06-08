@@ -144,7 +144,7 @@ std::string FilePath::MergePath(StrView curPath, StrView newPath) {
       default: // 加在現有路徑之後.
          result = curPath.ToString();
          if (!result.empty() && result.back() != '/')
-            result.append(1, '/');
+            result.push_back('/');
          newPath.AppendTo(result);
          break;
       }
@@ -237,7 +237,7 @@ std::string FilePath::MergePathList(const StrList& plist) {
    auto iend = plist.end();
    auto i = plist.begin();
    while (++i != iend) {
-      res.append(1, '/');
+      res.push_back('/');
       i->AppendTo(res);
    }
    return res;

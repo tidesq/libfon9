@@ -371,7 +371,48 @@ fon9_API StrView FetchField(StrView& src, char chDelim, const StrBrArg& brArg = 
 ///   - src = 移除開頭空白後的字串.
 fon9_API StrView FetchFirstBr(StrView& src, const StrBrArg& brArg = StrBrArg::Default_);
 
+/// \ingroup AlNum
+/// 移除前後空白後, 如果有引號(單引號 or 雙引號 or 反引號), 則移除引號.
+inline StrView TrimRemoveQuotes(StrView src, char* pQuote = nullptr) {
+   switch (int ch = StrTrim(&src).Get1st()) {
+   case '\'': case '\"': case '`':
+      src.SetBegin(src.begin() + 1);
+      if (!src.empty() && *(src.end() - 1) == ch)
+         src.SetEnd(src.end() - 1);
+      if (pQuote)
+         *pQuote = static_cast<char>(ch);
+      break;
+   default:
+      if (pQuote)
+         *pQuote = 0;
+      break;
+   }
+   return src;
+}
+
 //--------------------------------------------------------------------------//
+
+/// \ingroup AlNum
+/// 正規化成標準的 C 字串(http://en.cppreference.com/w/c/language/escape): 將「`\xxx`」轉成指定的字元.
+fon9_API void StrView_ToNormalizeStr(std::string& dst, StrView src);
+inline std::string StrView_ToNormalizeStr(StrView src) {
+   std::string dst;
+   StrView_ToNormalizeStr(dst, src);
+   return dst;
+}
+
+/// \ingroup AlNum
+/// 將字串 src 轉成使用 '\' 字元表達特殊字元的字串, 附加到 dst 的尾端.
+/// - 例如: '\\n', '\\r', '\'', '\"',
+/// - 若字元<='\\x1f' 則用 '\\xhh' 表示, hh=固定2碼小寫16進位數字.
+/// - 頭尾不包含引號.
+/// - 可自訂一組特殊字元 chSpecials, 當發現特殊字元, 會使用 '\' + ch 表示.
+fon9_API void StrView_ToEscapeStr(std::string& dst, StrView src, StrView chSpecials = StrView{});
+inline std::string StrView_ToEscapeStr(StrView src, StrView chSpecials = StrView{}) {
+   std::string dst;
+   StrView_ToEscapeStr(dst, src, chSpecials);
+   return dst;
+}
 
 /// \ingroup AlNum
 /// 如果 utf8str 長度超過 expectLen 則切除超過的部分,

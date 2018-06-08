@@ -107,5 +107,18 @@ inline StrT RevPrintTo(ArgsT&&... args) {
    return dst;
 }
 
+//--------------------------------------------------------------------------//
+
+/// \ingroup AlNum
+/// - 當 fmt.begin()==nullptr: 轉呼叫 RevPrint(out, std::forward<T>(value));
+/// - 當 fmt.begin()!=nullptr: 轉呼叫 RevPrint(out, std::forward<T>(value), AutoFmt<T>{fmt});
+template <class RevBuffer, class T>
+inline void FmtRevPrint(StrView fmt, RevBuffer& rbuf, T&& value) {
+   if (fmt.begin() == nullptr)
+      RevPrint(rbuf, std::forward<T>(value));
+   else
+      RevPrint(rbuf, std::forward<T>(value), AutoFmt<T>{fmt});
+}
+
 } // namespace
 #endif//__fon9_RevPrint_hpp__

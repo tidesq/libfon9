@@ -226,7 +226,10 @@ using sp_adl_block::thread_safe_counter;
 
 template <class ObjT>
 class ObjHolder : public intrusive_ref_counter<ObjHolder<ObjT>>, public ObjT {
-   fon9_NON_COPY_NON_MOVE(ObjHolder);
+   ObjHolder(const ObjHolder& r) = delete;
+   ObjHolder& operator=(const ObjHolder& r) = delete;
+   ObjHolder(const ObjHolder&& r) = delete;
+   ObjHolder& operator=(const ObjHolder&& r) = delete;
 public:
    template <class... ArgsT>
    ObjHolder(ArgsT&&... args) : ObjT{std::forward<ArgsT>(args)...} {

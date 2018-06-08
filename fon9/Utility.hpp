@@ -98,7 +98,8 @@ constexpr make_unsigned_t<T> unsigned_cast(T value) {
 
 template <typename T>
 constexpr enable_if_t<std::is_signed<T>::value, make_unsigned_t<T>> abs_cast(T value) {
-   return unsigned_cast(value < 0 ? -value : value);
+   using UT = make_unsigned_t<T>;
+   return unsigned_cast(value < 0 ? static_cast<UT>(-value) : static_cast<UT>(value));
 }
 template <typename T>
 constexpr enable_if_t<std::is_unsigned<T>::value, make_unsigned_t<T>> abs_cast(T value) {

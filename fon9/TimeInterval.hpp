@@ -83,7 +83,7 @@ fon9_API char* ToStrRev_TimeIntervalDec(char* pout, uintmax_t& value, FmtDef fmt
 
 /// \ingroup AlNum
 /// 字串轉成 TimeInterval, 支援的格式參考 \ref char* ToStrRev(char* pout, TimeInterval ti);
-fon9_API TimeInterval StrTo(const StrView& str, TimeInterval value = TimeInterval::Null(), const char** endptr = nullptr);
+fon9_API TimeInterval StrTo(StrView str, TimeInterval value = TimeInterval::Null(), const char** endptr = nullptr);
 
 } // namespaces
 #endif//__fon9_TimeInterval_hpp__

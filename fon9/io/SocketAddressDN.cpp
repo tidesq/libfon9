@@ -49,10 +49,10 @@ void DomainNameParser::Parse(StrView dnPort, DomainNameParseResult& res) {
          if (this->AddrHints_.ai_family == AF_INET6)
             res.ErrMsg_.push_back(']');
          if (!dnPort.empty()) {
-            res.ErrMsg_.append(1, ':');
+            res.ErrMsg_.push_back(':');
             dnPort.AppendTo(res.ErrMsg_);
          }
-         res.ErrMsg_.append(1, '=');
+         res.ErrMsg_.push_back('=');
          NumOutBuf nbuf;
          res.ErrMsg_.append(SIntToStrRev(nbuf.end(), eno), nbuf.end());
          res.ErrMsg_.push_back(':');

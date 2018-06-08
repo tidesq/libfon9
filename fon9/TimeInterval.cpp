@@ -257,7 +257,7 @@ StrToTimeIntervalAux::ResultT StrToTimeIntervalAux::MakeResult(TempResultT res, 
    return TimeInterval::Make<TimeInterval::Scale>(isNeg ? -retval : retval);
 }
 
-fon9_API TimeInterval StrTo(const StrView& str, TimeInterval value, const char** endptr) {
+fon9_API TimeInterval StrTo(StrView str, TimeInterval value, const char** endptr) {
    return StrTo<TimeInterval, StrToTimeIntervalAux>(str, value, endptr);
 }
 

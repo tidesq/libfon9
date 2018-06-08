@@ -136,7 +136,7 @@ __ERROR_cstrErrFieldName:
       cstrErrFieldName = "ListenConfig_.AddrBind_";
       goto __ERROR_cstrErrFieldName;
    }
-   if (memcmp(&sercfg.AcceptedClientOptions_, &clicfg.Options_, sizeof(clicfg.Options_)) != 0) {
+   if (memcmp(&sercfg.AcceptedSocketOptions_, &clicfg.Options_, sizeof(clicfg.Options_)) != 0) {
       cstrErrFieldName = "AcceptedClientOptions_";
       goto __ERROR_cstrErrFieldName;
    }

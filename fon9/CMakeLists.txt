@@ -18,6 +18,9 @@ set(fon9src
  Log.cpp
  ErrC.cpp
  Outcome.cpp
+ Blob.c
+ ByteVector.cpp
+ Base64.cpp
 
  File.cpp
  FilePath.cpp
@@ -57,16 +60,39 @@ set(fon9src
  io/FdrServiceEpoll.cpp
  io/FdrTcpClient.cpp
  io/FdrTcpServer.cpp
+
+ seed/SeedBase.cpp
+ seed/Tab.cpp
+ seed/Layout.cpp
+ seed/Named.cpp
+ seed/Raw.cpp
+
+ seed/Field.cpp
+ seed/FieldMaker.cpp
+ seed/FieldBytes.cpp
+ seed/FieldChars.cpp
+ seed/FieldDyBlob.cpp
 )
 add_library(fon9_s STATIC ${fon9src})
 target_link_libraries(fon9_s pthread rt)
+
 add_library(fon9 SHARED ${fon9src})
 target_link_libraries(fon9 pthread rt dl)
 
-# unit tests: Container / Algorithm
+add_executable(Fon9Co seed/Fon9Co.cpp)
+target_link_libraries(Fon9Co pthread fon9)
+
+# unit tests: Tools / Utility
 add_executable(Subr_UT Subr_UT.cpp)
 target_link_libraries(Subr_UT pthread)
 
+add_executable(Base64_UT Base64_UT.cpp)
+target_link_libraries(Base64_UT fon9_s)
+
+add_executable(Endian_UT Endian_UT.cpp)
+target_link_libraries(Endian_UT fon9_s)
+
+# unit tests: Container / Algorithm
 add_executable(Trie_UT Trie_UT.cpp)
 target_link_libraries(Trie_UT fon9_s)
 
@@ -85,6 +111,9 @@ target_link_libraries(TimeStamp_UT fon9_s)
 
 add_executable(RevPrint_UT RevPrint_UT.cpp)
 target_link_libraries(RevPrint_UT fon9_s)
+
+add_executable(CharVector_UT CharVector_UT.cpp)
+target_link_libraries(CharVector_UT fon9_s)
 
 # unit tests: Thread Tools
 add_executable(ThreadController_UT ThreadController_UT.cpp)
@@ -119,3 +148,7 @@ target_link_libraries(Socket_UT fon9_s)
 
 add_executable(IoDev_UT io/IoDev_UT.cpp)
 target_link_libraries(IoDev_UT fon9_s)
+
+# unit tests: seed
+add_executable(Seed_UT seed/Seed_UT.cpp)
+target_link_libraries(Seed_UT fon9_s)

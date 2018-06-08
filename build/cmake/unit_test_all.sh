@@ -17,8 +17,12 @@ set -x
 
 OUTPUT_DIR=${OUTPUT_DIR:-${BUILD_DIR}/${BUILD_TYPE}/fon9}
 
-# unit tests: Container / Algorithm
+# unit tests: Tools / Utility
 $OUTPUT_DIR/Subr_UT
+$OUTPUT_DIR/Base64_UT
+$OUTPUT_DIR/Endian_UT
+
+# unit tests: Container / Algorithm
 $OUTPUT_DIR/Trie_UT
 
 # unit tests: AlNum
@@ -27,6 +31,7 @@ $OUTPUT_DIR/StrTo_UT
 $OUTPUT_DIR/ToStr_UT
 $OUTPUT_DIR/TimeStamp_UT
 $OUTPUT_DIR/RevPrint_UT
+$OUTPUT_DIR/CharVector_UT
 
 # unit tests: Thread Tools
 $OUTPUT_DIR/ThreadController_UT
@@ -48,3 +53,6 @@ $OUTPUT_DIR/LogFile_UT
 
 # unit tests: io
 $OUTPUT_DIR/Socket_UT
+
+# unit tests: seed
+$OUTPUT_DIR/Seed_UT
