@@ -33,7 +33,7 @@ fon9_API const char* GetOpResultMessage(OpResult res) {
       case_return(not_supported_add_pod);
       case_return(not_supported_remove_pod);
       case_return(not_supported_remove_seed);
-      case_return(not_supported_key_list);
+      case_return(not_supported_grid_view);
       case_return(not_supported_tree_op);
 
       case_return(not_found_key);

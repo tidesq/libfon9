@@ -17,10 +17,15 @@ fon9_MSC_WARN_DISABLE(4820);
 class fon9_API Layout : public intrusive_ref_counter<Layout> {
    fon9_NON_COPY_NON_MOVE(Layout);
 public:
-   Layout() {}
+   /// KeyField 不列入 Tab::Fields_.
+   const FieldSPT<const Field>  KeyField_;
+
+   Layout(FieldSP keyField) : KeyField_{std::move(keyField)} {
+   }
+
    virtual ~Layout();
-   virtual TabSP GetTab(StrView name) const = 0;
-   virtual TabSP GetTab(size_t index) const = 0;
+   virtual Tab* GetTab(StrView name) const = 0;
+   virtual Tab* GetTab(size_t index) const = 0;
    virtual size_t GetTabCount() const = 0;
 };
 fon9_MSC_WARN_POP;
@@ -31,10 +36,10 @@ class fon9_API Layout1 : public Layout {
    fon9_NON_COPY_NON_MOVE(Layout1);
 public:
    const TabSP   KeyTab_;
-   Layout1(TabSP&& keyTab) : KeyTab_(keyTab) {
-   }
-   virtual TabSP GetTab(StrView name) const override;
-   virtual TabSP GetTab(size_t index) const override;
+   Layout1(FieldSP&& keyField, TabSP&& keyTab);
+   ~Layout1();
+   virtual Tab* GetTab(StrView name) const override;
+   virtual Tab* GetTab(size_t index) const override;
    virtual size_t GetTabCount() const override;
 };
 
@@ -46,12 +51,15 @@ class fon9_API LayoutN : public Layout {
    void InitTabIndex();
 public:
    template <class... ArgsT>
-   LayoutN(ArgsT&&... args) : Tabs_{std::forward<ArgsT>(args)...} {
+   LayoutN(FieldSP&& keyField, ArgsT&&... args)
+      : Layout{std::move(keyField)}
+      , Tabs_{std::forward<ArgsT>(args)...} {
       this->InitTabIndex();
    }
+   ~LayoutN();
    virtual size_t GetTabCount() const override;
-   virtual TabSP GetTab(StrView name) const override;
-   virtual TabSP GetTab(size_t index) const override;
+   virtual Tab* GetTab(StrView name) const override;
+   virtual Tab* GetTab(size_t index) const override;
 };
 
 /// \ingroup seed
@@ -68,13 +76,15 @@ using TabsDy = NamedIxMapNoRemove<TabSP>;
 class fon9_API LayoutDy : public Layout, public MustLock<TabsDy> {
    fon9_NON_COPY_NON_MOVE(LayoutDy);
 public:
-   LayoutDy() = default;
-   LayoutDy(TabSP&& keyTab) {
+   LayoutDy(FieldSP&& keyField) : Layout{std::move(keyField)} {
+   }
+   LayoutDy(FieldSP&& keyField, TabSP&& keyTab) : Layout{std::move(keyField)} {
       Locker locker(*this);
       locker->Add(std::move(keyTab));
    }
-   virtual TabSP GetTab(StrView name) const override;
-   virtual TabSP GetTab(size_t index) const override;
+   ~LayoutDy();
+   virtual Tab* GetTab(StrView name) const override;
+   virtual Tab* GetTab(size_t index) const override;
    virtual size_t GetTabCount() const override;
 };
 

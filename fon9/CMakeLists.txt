@@ -66,6 +66,9 @@ set(fon9src
  seed/Layout.cpp
  seed/Named.cpp
  seed/Raw.cpp
+ seed/Tree.cpp
+ seed/TreeOp.cpp
+ seed/PodOp.cpp
 
  seed/Field.cpp
  seed/FieldMaker.cpp
@@ -152,3 +155,6 @@ target_link_libraries(IoDev_UT fon9_s)
 # unit tests: seed
 add_executable(Seed_UT seed/Seed_UT.cpp)
 target_link_libraries(Seed_UT fon9_s)
+
+add_executable(Tree_UT seed/Tree_UT.cpp)
+target_link_libraries(Tree_UT fon9_s)

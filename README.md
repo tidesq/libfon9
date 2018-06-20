@@ -45,6 +45,7 @@
 * [SortedVector](fon9/SortedVector.hpp)
 * [SinglyLinkedList](fon9/SinglyLinkedList.hpp)
 * [Trie](Overview/Trie.md)
+* [LevelArray](fon9/LevelArray.hpp)
 
 ### [文數字轉換](Overview/AlNum.md)
 * 產出資料的 [串列 Buffer 機制](fon9/buffer)

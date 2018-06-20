@@ -8,7 +8,7 @@
   * 執行特定任務。
   * 管理 AP。
 * 盡量在不影響既有程式的情況下提供功能。
-  * 只要能完成 TreeOp、PodOp、SeedOp 就能納入管理。
+  * 只要能完成 TreeOp、PodOp... 就能納入管理。
 
 ---------------------------------------
 
@@ -32,18 +32,17 @@ class Deal {
 ```
 * 資料型別(例如上述例子的 `class Deal;`)不一定要繼承 `class Raw;`。
 * 繼承 `class Raw;` 的目的是提供動態欄位：
-  * 不用寫在 struct 裡面，可根據設定建立動態欄位。
-  * 但資料物件，必須使用 `MakeDyMemRaw();` 來建立，建立時分配所需的額外空間。
+  * 不必像上述的 class Deal，欄位不用寫在 class 或 struct 裡面，可根據設定建立動態欄位。
+  * 但擁有動態欄位的資料物件，必須使用 `MakeDyMemRaw();` 來建立，建立時分配所需的額外儲存空間。
 
 #### Seed
 * raw 的容器：Seed 負責管理 Raw，不同類型的 Seed 可能會有 0 到多個 Raw，例如：
-  * `class 委託書;` 包含多個 `class 委託異動明細 : public Raw;`
-* Seed 只是一個概念，實際上並 **沒有** `class Seed;`，只在需要時透過 SeedOp 來操作這個概念。
-* 管理 0 或 1 個 Sapling，如果 Seed 會長成一個樹，例如：
-  * `class 帳號庫存;` 包含一個 `class 商品庫存表;`
+  * `class 委託書;` 用多個 `class 委託異動明細 : public Raw;` 來記錄異動歷史。
+* Seed 只是一個概念，實際上並 **沒有** `class Seed;`，只在需要時透過 PodOp 來操作這個概念。
+* 管理 0 或 1 個 Sapling，如果 Seed 會長成一個樹。
 
 #### Pod
-* seed 的容器：Pod 只是一個概念，實際上並 **沒有** `class Pod;`，只在需要時透過 PodOp 來操作這個概念。
+* seed 的容器：Pod 只是一個概念，實際上並 **沒有** `class Pod;`，只在需要時透過 TreeOp、PodOp 來操作這個概念。
 * Pod 將一組 Seed 打包起來，然後經由 Tree，透過一個 Key 取得。
 * 透過 Layout 的描述，可以知道一個 Pod 裡面有幾個 Seed，及其對應的 Tab。
 * e.g. 底下的 Ivac 就是一個 Pod 的概念
@@ -68,6 +67,8 @@ struct Ivac {
 #### Layout
 * 描述 Tree 所建立的 Pod。
 * Layout 包含 1 到多個 Tab。
+* Layout 包含 1 個 KeyField。
+
 
 #### Tab
 * 用來描述 Seed(Raw)。
@@ -89,6 +90,6 @@ struct Ivac {
 
 ### 操作
 
-#### 查看 Tree、Pod、Seed、Raw、Cell
-#### 修改、新增、刪除
+#### TreeOp、PodOp
+#### 查看、修改、新增、刪除 Tree、Pod、Seed、Raw、Cell
 #### 執行指令

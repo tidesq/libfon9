@@ -5,6 +5,7 @@
 #define __fon9_seed_SeedBase_hpp__
 #include "fon9/StrView.hpp"
 #include "fon9/intrusive_ref_counter.hpp"
+#include <memory> // std::unique_ptr<>
 
 namespace fon9 { namespace seed {
 
@@ -13,6 +14,9 @@ class RawWr;
 class Raw;
 
 class Field;
+template <class F>
+using FieldSPT = std::unique_ptr<F>;
+using FieldSP = FieldSPT<Field>;
 
 class Tab;
 using TabSP = intrusive_ptr<Tab>;
@@ -59,16 +63,16 @@ enum class OpResult {
    not_supported_remove_pod = -123,
 
    /// 有些 tree 僅允許移除整個 pod, 不允許移除 pod 裡面的一個 seed.
-   /// - 在 TreeOp::RemoveSeed(StrView strKeyText, StrView strTabName, FnPodOp fnCallback)
-   /// - 若有指定 strTabName, 且不允許移除單一 seed 時, 就會回覆此結果.
+   /// - 在 TreeOp::RemoveSeed(StrView strKeyText, Tab* tab, FnPodOp fnCallback)
+   /// - 若有指定 tab, 且不允許移除單一 seed 時, 就會回覆此結果.
    not_supported_remove_seed = -124,
 
-   not_supported_key_list    = -130,
+   not_supported_grid_view   = -130,
    not_supported_tree_op     = -131,
 
    not_found_key      = -200,
    /// 指定的 tabName 找不到, 或 tabIndex 有誤.
-   not_found_tab = -201,
+   not_found_tab      = -201,
    /// 指定的 tab 正確, 但裡面沒有 seed.
    not_found_seed     = -202,
    not_found_sapling  = -203,

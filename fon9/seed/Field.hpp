@@ -20,6 +20,9 @@ enum class FieldSource : uint8_t {
    /// Field 存取的是 data member.
    DataMember,
 
+   /// 透過 RawRd::UserDefine_ 存取自訂欄位.
+   UserDefine,
+
    /// 欄位內容儲存在「透過 MakeDyMemRaw() 建構時，額外動態分配的」記憶體之中.
    DyMem,
    /// 動態分配的Blob欄位.
@@ -143,10 +146,6 @@ public:
    virtual OpResult Copy(const RawWr& wr, const RawRd& rd) const = 0;
 };
 fon9_WARN_POP;
-
-template <class F>
-using FieldSPT = std::unique_ptr<F>;
-using FieldSP = FieldSPT<Field>;
 
 /// \ingroup seed
 /// 針對 const data member Field 的額外包裝.

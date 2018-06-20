@@ -27,9 +27,9 @@ public:
    template <typename ValueType>
    void PutCellValue(const Field& fld, const ValueType& value) const {
       assert(fld.Size_ == sizeof(ValueType));
-      if (fon9_LIKELY(fld.Source_ < FieldSource::DyMem))
+      if (fon9_LIKELY(fld.Source_ == FieldSource::DataMember))
          *reinterpret_cast<ValueType*>(const_cast<byte*>(this->RawBase_) + fld.Offset_) = value;
-      else {
+      else if (fon9_LIKELY(fld.Source_ >= FieldSource::DyMem)) {
          int32_t  ofs = fld.Offset_;
          if (fon9_LIKELY(this->DyMemSize_ >= ofs + sizeof(ValueType))) {
             ofs += this->DyMemPos_;
@@ -38,12 +38,19 @@ public:
          else /// DyMemSize 不足: 擁有動態欄位的 Raw 沒有使用 MakeDyMemRaw() 來建立?
             Raise<OpRawError>("Raw.PutCellValue: Bad raw.DyMemSize or fld.Offset");
       }
+      else {
+         assert(fld.Source_ == FieldSource::UserDefine);
+         this->UserDefineRaw_->PutCellValue(fld, &value);
+      }
    }
 
    /// 用 Field 取得資料內容的位置, 不保證記憶體對齊.
    template <typename RtnType>
    RtnType* GetCellPtr(const Field& fld) const {
-      return const_cast<RtnType*>(base::GetCellPtr<RtnType>(fld));
+      if (const RtnType* retval = this->GetCellPtrImpl<RtnType>(fld))
+         return const_cast<RtnType*>(retval);
+      assert(fld.Source_ == FieldSource::UserDefine);
+      return reinterpret_cast<RtnType*>(this->UserDefineRaw_->GetCellMemberPtrWr(fld));
    }
 
    /// 用於只能是 data member 的欄位.
@@ -51,8 +58,10 @@ public:
    template <typename RtnType>
    RtnType& GetMemberCell(const Field& fld) const {
       assert(sizeof(RtnType) == fld.Size_);
-      assert(fon9_LIKELY(fld.Source_ == FieldSource::DataMember));
-      return *reinterpret_cast<RtnType*>(const_cast<byte*>(this->RawBase_) + fld.Offset_);
+      if (fon9_LIKELY(fld.Source_ == FieldSource::DataMember))
+         return *reinterpret_cast<RtnType*>(const_cast<byte*>(this->RawBase_) + fld.Offset_);
+      assert(fld.Source_ == FieldSource::UserDefine);
+      return *reinterpret_cast<RtnType*>(this->UserDefineRaw_->GetCellMemberPtrWr(fld));
    }
 };
 
@@ -62,6 +71,10 @@ public:
    SimpleRawWr(byte* rawBase) : RawWr(rawBase) {
    }
    SimpleRawWr(Raw* raw) : RawWr(raw) {
+   }
+
+   template <class Seed>
+   SimpleRawWr(Seed& seed) : RawWr(CastToRawPointer(&seed)) {
    }
 };
 

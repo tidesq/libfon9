@@ -10,13 +10,18 @@ Layout::~Layout() {
 
 //--------------------------------------------------------------------------//
 
-TabSP Layout1::GetTab(StrView name) const {
-   if (name == StrView{&this->KeyTab_->Name_})
-      return this->KeyTab_;
-   return TabSP{};
+Layout1::Layout1(FieldSP&& keyField, TabSP&& keyTab) : Layout{std::move(keyField)}, KeyTab_(keyTab) {
+   this->KeyTab_->SetIndex(0);
 }
-TabSP Layout1::GetTab(size_t index) const {
-   return index == 0 ? this->KeyTab_ : TabSP{};
+Layout1::~Layout1() {
+}
+Tab* Layout1::GetTab(StrView name) const {
+   if (name == StrView{&this->KeyTab_->Name_})
+      return this->KeyTab_.get();
+   return nullptr;
+}
+Tab* Layout1::GetTab(size_t index) const {
+   return index == 0 ? this->KeyTab_.get() : nullptr;
 }
 size_t Layout1::GetTabCount() const {
    return 1;
@@ -24,6 +29,8 @@ size_t Layout1::GetTabCount() const {
 
 //--------------------------------------------------------------------------//
 
+LayoutN::~LayoutN() {
+}
 void LayoutN::InitTabIndex() {
    size_t index = 0;
    for (TabSP& tab : this->Tabs_)
@@ -33,25 +40,27 @@ void LayoutN::InitTabIndex() {
 size_t LayoutN::GetTabCount() const {
    return this->Tabs_.size();
 }
-TabSP LayoutN::GetTab(StrView name) const {
+Tab* LayoutN::GetTab(StrView name) const {
    for (const TabSP& sp : this->Tabs_) {
       if (Tab* tab = sp.get())
          if (name == StrView{&tab->Name_})
-            return tab->shared_from_this();
+            return tab;
    }
-   return TabSP{};
+   return nullptr;
 }
-TabSP LayoutN::GetTab(size_t index) const {
-   return(index < this->Tabs_.size() ? this->Tabs_[index] : TabSP{});
+Tab* LayoutN::GetTab(size_t index) const {
+   return(index < this->Tabs_.size() ? this->Tabs_[index].get() : nullptr);
 }
 
 //--------------------------------------------------------------------------//
 
-TabSP LayoutDy::GetTab(StrView name) const {
+LayoutDy::~LayoutDy() {
+}
+Tab* LayoutDy::GetTab(StrView name) const {
    ConstLocker lockedTabs(*this);
    return lockedTabs->Get(name);
 }
-TabSP LayoutDy::GetTab(size_t index) const {
+Tab* LayoutDy::GetTab(size_t index) const {
    ConstLocker lockedTabs(*this);
    return lockedTabs->Get(index);
 }

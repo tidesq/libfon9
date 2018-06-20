@@ -470,6 +470,18 @@
     <ClInclude Include="..\..\..\fon9\seed\Tab.hpp">
       <Filter>Header Files\seed\_base</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\Tree.hpp">
+      <Filter>Header Files\seed\_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\TreeOp.hpp">
+      <Filter>Header Files\seed\_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\PodOp.hpp">
+      <Filter>Header Files\seed\_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\LevelArray.hpp">
+      <Filter>Header Files\_base\_Container / Algorithm</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -695,6 +707,15 @@
       <Filter>Source Files\seed\_fields</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\seed\Tab.cpp">
+      <Filter>Source Files\seed\_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\seed\Tree.cpp">
+      <Filter>Source Files\seed\_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\seed\TreeOp.cpp">
+      <Filter>Source Files\seed\_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\seed\PodOp.cpp">
       <Filter>Source Files\seed\_base</Filter>
     </ClCompile>
   </ItemGroup>

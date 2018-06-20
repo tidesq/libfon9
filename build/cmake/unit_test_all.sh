@@ -56,3 +56,4 @@ $OUTPUT_DIR/Socket_UT
 
 # unit tests: seed
 $OUTPUT_DIR/Seed_UT
+$OUTPUT_DIR/Tree_UT

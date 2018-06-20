@@ -13,26 +13,6 @@
 
 namespace fon9 { namespace seed {
 
-template <class DerivedRaw>
-constexpr auto CastToRawPointer(DerivedRaw* d) -> enable_if_t<std::is_base_of<Raw, DerivedRaw>::value, Raw*> {
-   return d;
-}
-
-template <class DerivedRaw>
-constexpr auto CastToRawPointer(const DerivedRaw* d) -> enable_if_t<std::is_base_of<Raw, DerivedRaw>::value, const Raw*> {
-   return d;
-}
-
-template <class DerivedRaw>
-constexpr auto CastToRawPointer(DerivedRaw* d) -> enable_if_t<!std::is_base_of<Raw, DerivedRaw>::value, byte*> {
-   return static_cast<byte*>(static_cast<void*>(d));
-}
-
-template <class DerivedRaw>
-constexpr auto CastToRawPointer(const DerivedRaw* d) -> enable_if_t<!std::is_base_of<Raw, DerivedRaw>::value, const byte*> {
-   return static_cast<const byte*>(static_cast<const void*>(d));
-}
-
 /// \ingroup seed
 // 避免使用 offsetof() 時, gcc 的善意提醒: offsetof within non-standard-layout type ‘...’ is undefined
 #define fon9_OffsetOf(DerivedRaw, Member_) \
