@@ -14,5 +14,13 @@
 ## Serialize/Deserialize
 
 ## InnFile
+* [`fon9/InnFile.hpp`](../fon9/InnFile.hpp)
+* 著重功能：
+  * 房間的建立、取得。
+  * 讀取房間內容。
+  * 寫入房間內容。
+* 進階功能：由 InnDbf 提供。
 
-## 資料同步機制
+## InnDbf
+### 資料表的連結
+### 資料同步機制

@@ -102,6 +102,12 @@
     <Filter Include="Header Files\seed\_fields">
       <UniqueIdentifier>{96dc55c5-7be5-443c-92a2-1b2de4a7a509}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\_base\_Inn">
+      <UniqueIdentifier>{2f1ce5cc-8750-497b-b8bf-c40d8a72df75}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\_base\_Inn">
+      <UniqueIdentifier>{09f01b7f-354b-4472-b568-469b30a64644}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\sys\Config.h">
@@ -482,6 +488,9 @@
     <ClInclude Include="..\..\..\fon9\LevelArray.hpp">
       <Filter>Header Files\_base\_Container / Algorithm</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\InnFile.hpp">
+      <Filter>Header Files\_base\_Inn</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -717,6 +726,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\seed\PodOp.cpp">
       <Filter>Source Files\seed\_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\InnFile.cpp">
+      <Filter>Source Files\_base\_Inn</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

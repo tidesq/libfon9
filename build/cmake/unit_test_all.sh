@@ -45,6 +45,7 @@ $OUTPUT_DIR/MemBlock_UT
 # unit tests: file
 $OUTPUT_DIR/File_UT
 $OUTPUT_DIR/TimedFileName_UT
+$OUTPUT_DIR/InnFile_UT
 
 rm -rf ./logs
 rm -rf /tmp/*log

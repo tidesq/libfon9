@@ -12,7 +12,7 @@ namespace fon9 {
 /// 透過一層間接呼叫, 可讓 compiler 更容易最佳化: 會丟出異常的 function.
 template <class E, class... ArgsT>
 [[noreturn]] void Raise(ArgsT&&... args) {
-   throw E{std::forward<ArgsT>(args)...};
+   throw E(std::forward<ArgsT>(args)...);
 }
 /// \ingroup Misc
 /// 丟出異常.
@@ -21,7 +21,7 @@ template <class E, class... ArgsT>
 /// - 這在 constexpr function 裡面很常用到。
 template <class ReturnT, class E, class... ArgsT>
 [[noreturn]] ReturnT Raise(ArgsT&&... args) {
-   throw E{std::forward<ArgsT>(args)...};
+   throw E(std::forward<ArgsT>(args)...);
 }
 
 fon9_MSC_WARN_DISABLE(4623); // 4623: 'fon9::BufferOverflow': default constructor was implicitly defined as deleted

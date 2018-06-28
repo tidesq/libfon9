@@ -100,6 +100,7 @@
     <ClInclude Include="..\..\..\fon9\File.hpp" />
     <ClInclude Include="..\..\..\fon9\FileAppender.hpp" />
     <ClInclude Include="..\..\..\fon9\FilePath.hpp" />
+    <ClInclude Include="..\..\..\fon9\InnFile.hpp" />
     <ClInclude Include="..\..\..\fon9\io\Device.hpp" />
     <ClInclude Include="..\..\..\fon9\io\DeviceAsyncOp.hpp" />
     <ClInclude Include="..\..\..\fon9\io\FdrService.hpp" />
@@ -227,6 +228,7 @@
     <ClCompile Include="..\..\..\fon9\File.cpp" />
     <ClCompile Include="..\..\..\fon9\FileAppender.cpp" />
     <ClCompile Include="..\..\..\fon9\FilePath.cpp" />
+    <ClCompile Include="..\..\..\fon9\InnFile.cpp" />
     <ClCompile Include="..\..\..\fon9\io\Device.cpp" />
     <ClCompile Include="..\..\..\fon9\io\FdrService.cpp" />
     <ClCompile Include="..\..\..\fon9\io\FdrServiceEpoll.cpp" />

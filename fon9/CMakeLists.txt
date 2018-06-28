@@ -29,6 +29,7 @@ set(fon9src
  FileAppender.cpp
  LogFile.cpp
  FdrNotify.cpp
+ InnFile.cpp
  
  buffer/MemBlock.cpp
  buffer/BufferNode.cpp
@@ -144,6 +145,9 @@ target_link_libraries(TimedFileName_UT fon9_s)
 
 add_executable(LogFile_UT LogFile_UT.cpp)
 target_link_libraries(LogFile_UT fon9_s)
+
+add_executable(InnFile_UT InnFile_UT.cpp)
+target_link_libraries(InnFile_UT fon9_s)
 
 # unit tests: io
 add_executable(Socket_UT io/Socket_UT.cpp)
