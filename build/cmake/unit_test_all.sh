@@ -21,6 +21,7 @@ OUTPUT_DIR=${OUTPUT_DIR:-${BUILD_DIR}/${BUILD_TYPE}/fon9}
 $OUTPUT_DIR/Subr_UT
 $OUTPUT_DIR/Base64_UT
 $OUTPUT_DIR/Endian_UT
+$OUTPUT_DIR/Bitv_UT
 
 # unit tests: Container / Algorithm
 $OUTPUT_DIR/Trie_UT

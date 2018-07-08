@@ -76,7 +76,12 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\Appender.hpp" />
     <ClInclude Include="..\..\..\fon9\AQueue.hpp" />
+    <ClInclude Include="..\..\..\fon9\Archive.hpp" />
     <ClInclude Include="..\..\..\fon9\Base64.hpp" />
+    <ClInclude Include="..\..\..\fon9\Bitv.h" />
+    <ClInclude Include="..\..\..\fon9\BitvArchive.hpp" />
+    <ClInclude Include="..\..\..\fon9\BitvEncode.hpp" />
+    <ClInclude Include="..\..\..\fon9\BitvDecode.hpp" />
     <ClInclude Include="..\..\..\fon9\Blob.h" />
     <ClInclude Include="..\..\..\fon9\buffer\BufferList.hpp" />
     <ClInclude Include="..\..\..\fon9\buffer\BufferListBuilder.hpp" />
@@ -100,7 +105,9 @@
     <ClInclude Include="..\..\..\fon9\File.hpp" />
     <ClInclude Include="..\..\..\fon9\FileAppender.hpp" />
     <ClInclude Include="..\..\..\fon9\FilePath.hpp" />
+    <ClInclude Include="..\..\..\fon9\HostId.hpp" />
     <ClInclude Include="..\..\..\fon9\InnFile.hpp" />
+    <ClInclude Include="..\..\..\fon9\InnRow.hpp" />
     <ClInclude Include="..\..\..\fon9\io\Device.hpp" />
     <ClInclude Include="..\..\..\fon9\io\DeviceAsyncOp.hpp" />
     <ClInclude Include="..\..\..\fon9\io\FdrService.hpp" />
@@ -185,6 +192,7 @@
     <ClInclude Include="..\..\..\fon9\sys\FileWin32.hpp" />
     <ClInclude Include="..\..\..\fon9\sys\OnWindowsMainExit.hpp" />
     <ClInclude Include="..\..\..\fon9\TestTools.hpp" />
+    <ClInclude Include="..\..\..\fon9\TextArchive.hpp" />
     <ClInclude Include="..\..\..\fon9\ThreadController.hpp" />
     <ClInclude Include="..\..\..\fon9\ThreadId.hpp" />
     <ClInclude Include="..\..\..\fon9\DefaultThreadPool.hpp" />
@@ -215,6 +223,8 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\fon9\Appender.cpp" />
     <ClCompile Include="..\..\..\fon9\Base64.cpp" />
+    <ClCompile Include="..\..\..\fon9\BitvEncode.cpp" />
+    <ClCompile Include="..\..\..\fon9\BitvDecode.cpp" />
     <ClCompile Include="..\..\..\fon9\Blob.c" />
     <ClCompile Include="..\..\..\fon9\buffer\BufferList.cpp" />
     <ClCompile Include="..\..\..\fon9\buffer\BufferNode.cpp" />
@@ -228,7 +238,9 @@
     <ClCompile Include="..\..\..\fon9\File.cpp" />
     <ClCompile Include="..\..\..\fon9\FileAppender.cpp" />
     <ClCompile Include="..\..\..\fon9\FilePath.cpp" />
+    <ClCompile Include="..\..\..\fon9\HostId.cpp" />
     <ClCompile Include="..\..\..\fon9\InnFile.cpp" />
+    <ClCompile Include="..\..\..\fon9\InnRow.cpp" />
     <ClCompile Include="..\..\..\fon9\io\Device.cpp" />
     <ClCompile Include="..\..\..\fon9\io\FdrService.cpp" />
     <ClCompile Include="..\..\..\fon9\io\FdrServiceEpoll.cpp" />

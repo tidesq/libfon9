@@ -10,6 +10,7 @@ namespace fon9 {
 /// - 當 key 使用時, 可用來取代 std::string
 /// - 在資料量 <= ByteVector::kMaxBinsSize 時, 不用分配記憶體.
 struct CharVector : public ByteVector {
+   using value_type = char;
    using ByteVector::ByteVector;
 
    static const CharVector MakeRef(const StrView& str) {

@@ -9,12 +9,15 @@ set(fon9src
  TimeStamp.cpp
  RevFormat.cpp
 
+ BitvEncode.cpp
+ BitvDecode.cpp
+
  CountDownLatch.cpp
  CyclicBarrier.cpp
  ThreadId.cpp
  Timer.cpp
  DefaultThreadPool.cpp
- 
+
  Log.cpp
  ErrC.cpp
  Outcome.cpp
@@ -30,6 +33,7 @@ set(fon9src
  LogFile.cpp
  FdrNotify.cpp
  InnFile.cpp
+ HostId.cpp
  
  buffer/MemBlock.cpp
  buffer/BufferNode.cpp
@@ -118,6 +122,10 @@ target_link_libraries(RevPrint_UT fon9_s)
 
 add_executable(CharVector_UT CharVector_UT.cpp)
 target_link_libraries(CharVector_UT fon9_s)
+
+# unit tests: Bitv/Serialize/Deserialize
+add_executable(Bitv_UT Bitv_UT.cpp)
+target_link_libraries(Bitv_UT fon9_s)
 
 # unit tests: Thread Tools
 add_executable(ThreadController_UT ThreadController_UT.cpp)

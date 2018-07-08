@@ -65,6 +65,7 @@ public:
       return this->Storage_.GetOpenName();
    }
 
+   /// \copydoc File::Sync();
    void Sync() {
       this->Storage_.Sync();
    }

@@ -178,7 +178,7 @@ static inline auto PutLittleEndian(void* address, T value) -> enable_if_t<IsBigE
 //--------------------------------------------------------------------------//
 
 template <typename T>
-static inline T GetPackedLittleEndian(const byte* address, byte count) {
+static inline enable_if_t<sizeof(T) != 1, T> GetPackedLittleEndian(const byte* address, byte count) {
    assert(count <= sizeof(T));
    if (count <= 0)
       return 0;
@@ -186,6 +186,14 @@ static inline T GetPackedLittleEndian(const byte* address, byte count) {
    while (--count > 0)
       value = (value << 8) | static_cast<T>(*--address);
    return value;
+}
+
+template <typename T>
+static inline enable_if_t<sizeof(T) == 1, T> GetPackedLittleEndian(const byte* address, byte count) {
+   assert(count <= sizeof(T));
+   if (count <= 0)
+      return 0;
+   return static_cast<T>(*address);
 }
 
 template <typename T, bool sign = std::is_signed<T>::value>
@@ -198,7 +206,8 @@ struct PackLittleEndianAux<T, false> {
       do {
          *address++ = static_cast<byte>(value);
          ++count;
-      } while (value >>= 8);
+         value = static_cast<T>(value >> 8);
+      } while (value);
       return count;
    }
 };
@@ -218,21 +227,35 @@ struct PackLittleEndianAux<T, true> {
 /// 資料由 *address++ 往後除儲存.
 /// \return 用了多少 bytes 儲存 value, 最少 1 byte, 最多 sizeof(value);
 template <typename T>
-static inline byte PackLittleEndian(void* address, T value) {
+static inline enable_if_t<sizeof(T) != 1, byte> PackLittleEndian(void* address, T value) {
    return PackLittleEndianAux<T>::Put(reinterpret_cast<byte*>(address), value);
+}
+
+template <typename T>
+static inline enable_if_t<sizeof(T) == 1, byte> PackLittleEndian(void* address, T value) {
+   *reinterpret_cast<T*>(address) = value;
+   return 1;
 }
 
 //--------------------------------------------------------------------------//
 
 template <typename T>
-static inline T GetPackedBigEndian(const byte* address, byte count) {
+static inline enable_if_t<sizeof(T) != 1, T> GetPackedBigEndian(const byte* address, byte count) {
    assert(count <= sizeof(T));
    if (count <= 0)
       return 0;
    T value = static_cast<T>(*address);
    while (--count > 0)
-      value = (value << 8) | static_cast<T>(*++address);
+      value = static_cast<T>(static_cast<T>(value << 8) | static_cast<T>(*++address));
    return value;
+}
+
+template <typename T>
+static inline enable_if_t<sizeof(T) == 1, T> GetPackedBigEndian(const byte* address, byte count) {
+   assert(count <= sizeof(T));
+   if (count <= 0)
+      return 0;
+   return static_cast<T>(*address);
 }
 
 template <typename T, bool sign = std::is_signed<T>::value>
@@ -245,7 +268,8 @@ struct PackBigEndianAuxRev<T, false> {
       do {
          *--address = static_cast<byte>(value);
          ++count;
-      } while (value >>= 8);
+         value = static_cast<T>(value >> 8);
+      } while (value);
       return count;
    }
 };
@@ -265,8 +289,14 @@ struct PackBigEndianAuxRev<T, true> {
 /// 資料由 *--address 往前除儲存.
 /// \return 用了多少 bytes 儲存 value, 最少 1 byte, 最多 sizeof(value);
 template <typename T>
-static inline byte PackBigEndianRev(void* address, T value) {
+static inline enable_if_t<sizeof(T) != 1, byte> PackBigEndianRev(void* address, T value) {
    return PackBigEndianAuxRev<T>::Put(reinterpret_cast<byte*>(address), value);
+}
+
+template <typename T>
+static inline enable_if_t<sizeof(T) == 1, byte> PackBigEndianRev(void* address, T value) {
+   *(reinterpret_cast<T*>(address) - 1) = value;
+   return 1;
 }
 
 } // namespace

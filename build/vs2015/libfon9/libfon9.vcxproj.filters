@@ -108,6 +108,12 @@
     <Filter Include="Source Files\_base\_Inn">
       <UniqueIdentifier>{09f01b7f-354b-4472-b568-469b30a64644}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\_base\_Bitv / Serialize">
+      <UniqueIdentifier>{363f58a9-4409-46a8-8434-fde316e27904}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\_base\_Bitv / Serialize">
+      <UniqueIdentifier>{42d24f89-3851-48e9-93fc-f4b9fd03c70d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\sys\Config.h">
@@ -491,6 +497,30 @@
     <ClInclude Include="..\..\..\fon9\InnFile.hpp">
       <Filter>Header Files\_base\_Inn</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\HostId.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\Bitv.h">
+      <Filter>Header Files\_base\_Bitv / Serialize</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\BitvEncode.hpp">
+      <Filter>Header Files\_base\_Bitv / Serialize</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\BitvDecode.hpp">
+      <Filter>Header Files\_base\_Bitv / Serialize</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\Archive.hpp">
+      <Filter>Header Files\_base\_Bitv / Serialize</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\TextArchive.hpp">
+      <Filter>Header Files\_base\_Bitv / Serialize</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\BitvArchive.hpp">
+      <Filter>Header Files\_base\_Bitv / Serialize</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\InnRow.hpp">
+      <Filter>Header Files\_base\_Inn</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -728,6 +758,18 @@
       <Filter>Source Files\seed\_base</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\InnFile.cpp">
+      <Filter>Source Files\_base\_Inn</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\HostId.cpp">
+      <Filter>Source Files\_base\_Tools / Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\BitvEncode.cpp">
+      <Filter>Source Files\_base\_Bitv / Serialize</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\BitvDecode.cpp">
+      <Filter>Source Files\_base\_Bitv / Serialize</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\InnRow.cpp">
       <Filter>Source Files\_base\_Inn</Filter>
     </ClCompile>
   </ItemGroup>

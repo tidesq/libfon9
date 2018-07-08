@@ -7,13 +7,15 @@
 namespace fon9 {
 
 /// \ingroup AlNum
-/// 因為 `const char ChID_[n];` 無法在建構時設定內容,
+/// 因為 `const char CaID_[n];` 無法在建構時設定內容,
 /// 所以設計此型別 `const CharAry<n> CaID_;`
 /// 在建構時可用底下方式設定 CaID_ 的內容:
 ///   `MyObj::MyObj() : CaID_("MyID") {}`
 /// 當然也是可以在一般無 const 的情況下使用.
 template <size_t arysz, typename CharT = char>
 struct CharAry : public Comparable<CharAry<arysz, CharT>> {
+   using value_type = CharT;
+
    /// 字元陣列.
    CharT  Chars_[arysz];
 
@@ -52,6 +54,11 @@ struct CharAry : public Comparable<CharAry<arysz, CharT>> {
    const char* end() const { return this->Chars_ + sizeof(this->Chars_); }
    char* begin() { return this->Chars_; }
    char* end() { return this->Chars_ + sizeof(this->Chars_); }
+   
+   char* data() { return this->Chars_; }
+
+   constexpr size_t size() const { return arysz; }
+   constexpr size_t max_size() const { return arysz; }
 };
 
 /// 用 StrView 來表達 CharAry<>.

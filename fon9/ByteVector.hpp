@@ -57,6 +57,7 @@ protected:
    }
 
 public:
+   using value_type = byte;
    enum {
       kMaxBinsSize = offsetof(Key, BinsSize_)
    };

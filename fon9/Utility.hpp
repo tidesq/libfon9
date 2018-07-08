@@ -85,7 +85,7 @@ template<typename EnumT>
 using underlying_type_t = typename std::underlying_type<EnumT>::type;
 
 /// \ingroup Misc
-/// 同 C++14 的 std::enable_if_t<>
+/// 同 C++14 的 std::make_unsigned_t<>
 template<typename T>
 using make_unsigned_t = typename std::make_unsigned<T>::type;
 
@@ -126,6 +126,13 @@ template<class T>
 inline void ZeroStruct(T& r) {
    ZeroStruct(&r);
 }
+
+/// \ingroup Misc
+/// 判斷 T 是否為 char, byte, int8_t, uint8_t 之類的 1 byte 傳統型別.
+template <class T>
+struct IsTrivialByte {
+   enum { value = (sizeof(decay_t<T>) == 1 && std::is_trivial<decay_t<T>>::value) };
+};
 
 /// \ingroup Misc
 /// 取得包含此 data member 的物件.
