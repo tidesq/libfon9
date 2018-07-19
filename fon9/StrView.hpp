@@ -5,7 +5,9 @@
 #include "fon9/sys/Config.hpp"
 #include "fon9/Comparable.hpp"
 
+fon9_BEFORE_INCLUDE_STD;
 #include <string>
+fon9_AFTER_INCLUDE_STD;
 
 namespace fon9 {
 

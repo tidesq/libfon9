@@ -102,7 +102,7 @@ void InnFile::CheckRoomPos(RoomPosT pos, const char* exNotOpen, const char* exBa
 
 void InnFile::RoomHeaderToRoomKeyInfo(const byte* roomHeader, RoomKey::Info& roomKeyInfo) {
    roomKeyInfo.RoomSize_ = this->CalcRoomSize(GetBigEndian<SizeT>(roomHeader + kOffset_BlockCount));
-   roomKeyInfo.RoomType_ = GetBigEndian<InnRoomType>(roomHeader + kOffset_RoomType);
+   roomKeyInfo.CurrentRoomType_ = roomKeyInfo.PendingRoomType_ = GetBigEndian<InnRoomType>(roomHeader + kOffset_RoomType);
    roomKeyInfo.DataSize_ = GetBigEndian<SizeT>(roomHeader + kOffset_DataSize);
 }
 
@@ -121,17 +121,19 @@ InnFile::RoomKey InnFile::MakeRoomKey(RoomPosT roomPos, void* exRoomHeader, Size
       sz = kRoomHeaderSize;
    auto res = this->Storage_.Read(roomPos, roomHeader, sz);
    CheckIoSize(res, sz,
-               "InnFile.MakeRoomKey: read room header error.",
-               "InnFile.MakeRoomKey: read room header error size.");
+               "InnFile.MakeRoomKey: read RoomHeader error.",
+               "InnFile.MakeRoomKey: read RoomHeader error size.");
 
    RoomKey::Info info;
    info.RoomPos_ = roomPos;
    this->RoomHeaderToRoomKeyInfo(roomHeader, info);
-   if (info.DataSize_ < exRoomHeaderSize)
-      Raise<InnFileError>(std::errc::bad_message, "InnFile.MakeRoomKey: DataSize < exRoomHeaderSize.");
+   //因為在 MakeRoomKey() 時, 還不確定 exRoomHeader 是否為期望的(可能需要判斷 RoomType).
+   //所以此處不判斷 DataSize_ 是否正確, 交給返回後的使用者自行處理.
+   //if (info.DataSize_ < exRoomHeaderSize)
+   //   Raise<InnFileError>(std::errc::bad_message, "InnFile.MakeRoomKey: DataSize < exRoomHeaderSize.");
    if (info.DataSize_ > info.RoomSize_ || info.RoomSize_ <= 0
        || info.RoomPos_ + info.RoomSize_ + kRoomHeaderSize > this->FileSize_)
-      Raise<InnFileError>(std::errc::bad_message, "InnFile.MakeRoomKey: bad room header.");
+      Raise<InnFileError>(std::errc::bad_message, "InnFile.MakeRoomKey: bad RoomHeader.");
 
    if (sz == kRoomHeaderSize) {
       if (exRoomHeaderSize) {
@@ -149,8 +151,7 @@ InnFile::RoomKey InnFile::MakeRoomKey(RoomPosT roomPos, void* exRoomHeader, Size
 InnFile::RoomKey InnFile::MakeNextRoomKey(const RoomKey& roomKey, void* exRoomHeader, SizeT exRoomHeaderSize) {
    if (!roomKey)
       Raise<InnRoomPosError>("InnFile.MakeNextRoomKey: invalid current RoomKey.");
-   return MakeRoomKey(roomKey.Info_.RoomPos_ + roomKey.Info_.RoomSize_ + kRoomHeaderSize,
-                      exRoomHeader, exRoomHeaderSize);
+   return MakeRoomKey(roomKey.GetNextRoomPos(), exRoomHeader, exRoomHeaderSize);
 }
 
 InnFile::RoomKey InnFile::MakeNewRoom(InnRoomType roomType, SizeT size) {
@@ -160,13 +161,13 @@ InnFile::RoomKey InnFile::MakeNewRoom(InnRoomType roomType, SizeT size) {
    RoomKey::Info info;
    info.RoomPos_ = this->FileSize_;
    SizeT blockCount = static_cast<SizeT>(static_cast<size_t>(size) + kRoomHeaderSize + this->BlockSize_ - 1) / this->BlockSize_;
-   info.RoomType_ = roomType;
+   info.CurrentRoomType_ = info.PendingRoomType_ = roomType;
    info.DataSize_ = 0;
    info.RoomSize_ = this->CalcRoomSize(blockCount);
 
    byte   roomHeader[kRoomHeaderSize];
    PutBigEndian(roomHeader + kOffset_BlockCount, blockCount);
-   PutBigEndian(roomHeader + kOffset_RoomType, info.RoomType_);
+   PutBigEndian(roomHeader + kOffset_RoomType, info.CurrentRoomType_);
    PutBigEndian(roomHeader + kOffset_DataSize, info.DataSize_);
 
    auto res = this->Storage_.SetFileSize(this->FileSize_ = info.RoomPos_ + blockCount * this->BlockSize_);
@@ -180,42 +181,48 @@ __RETURN_RESTORE_FILE:
 
    res = this->Storage_.Write(info.RoomPos_, roomHeader, kRoomHeaderSize);
    if (!res) {
-      exWhat = "InnFile.MakeNewRoom: write room header error.";
+      exWhat = "InnFile.MakeNewRoom: write RoomHeader error.";
       goto __RETURN_RESTORE_FILE;
    }
    if (res.GetResult() != kRoomHeaderSize) {
       res = std::errc::bad_message;
-      exWhat = "InnFile.MakeNewRoom: write room header error size.";
+      exWhat = "InnFile.MakeNewRoom: write RoomHeader error size.";
       goto __RETURN_RESTORE_FILE;
    }
    return RoomKey{info};
 }
 
-InnFile::RoomKey InnFile::ClearRoom(RoomPosT roomPos, InnRoomType roomType, SizeT size) {
-   this->CheckRoomPos(roomPos, "InnFile.ClearRoom: not opened.", "InnFile.ClearRoom: bad roomPos.");
-   SizeT blockCount;
-   auto  res = this->Storage_.Read(roomPos, &blockCount, sizeof(blockCount));
-   blockCount = GetBigEndian<SizeT>(&blockCount);
-   CheckIoSize(res, sizeof(blockCount),
-               "InnFile.ClearRoom: read room header error.",
-               "InnFile.ClearRoom: read room header error size.");
+void InnFile::UpdateRoomHeader(RoomKey::Info& info, SizeT newsz, const char* exResError, const char* exSizeError) {
+   if (info.CurrentRoomType_ == info.PendingRoomType_) {
+      if (info.DataSize_ != newsz) {
+         PutBigEndian(&newsz, info.DataSize_ = newsz);
+         CheckIoSize(this->Storage_.Write(info.RoomPos_ + kOffset_DataSize, &newsz, sizeof(newsz)),
+                     sizeof(newsz), exResError, exSizeError);
+      }
+   }
+   else {
+      static_assert(kOffset_DataSize == kOffset_RoomType + 1, "RoomHeader format error.");
+      byte roomHeader[sizeof(InnRoomType) + sizeof(SizeT)];
+      PutBigEndian(roomHeader, info.CurrentRoomType_ = info.PendingRoomType_);
+      size_t wrsz;
+      if (info.DataSize_ == newsz)
+         wrsz = 1;
+      else {
+         wrsz = sizeof(roomHeader);
+         PutBigEndian(roomHeader + sizeof(info.CurrentRoomType_), info.DataSize_ = newsz);
+      }
+      CheckIoSize(this->Storage_.Write(info.RoomPos_ + kOffset_RoomType, roomHeader, wrsz),
+                  wrsz, exResError, exSizeError);
+   }
+}
 
-   RoomKey::Info info;
-   info.RoomSize_ = this->CalcRoomSize(blockCount);
-   if (info.RoomSize_ < size)
-      Raise<InnRoomSizeError>("InnFile.ClearRoom: room size error.");
-
-   static_assert(kOffset_RoomType == sizeof(blockCount) && kOffset_DataSize == kOffset_RoomType + 1,
-                 "room header format error.");
-   byte clearRoomHeader[kRoomHeaderSize - sizeof(blockCount)];
-   clearRoomHeader[0] = info.RoomType_ = roomType;
-   PutBigEndian(clearRoomHeader + sizeof(roomType), info.DataSize_ = 0);
-   res = this->Storage_.Write((info.RoomPos_ = roomPos) + kOffset_RoomType, clearRoomHeader, sizeof(clearRoomHeader));
-   CheckIoSize(res, sizeof(clearRoomHeader),
-               "InnFile.ClearRoom: update room header error.",
-               "InnFile.ClearRoom: update room header error size.");
-
-   return RoomKey{info};
+void InnFile::ClearRoom(RoomKey& roomKey, SizeT requiredSize) {
+   this->CheckRoomPos(roomKey.GetRoomPos(), "InnFile.ClearRoom: not opened.", "InnFile.ClearRoom: bad roomPos.");
+   if (roomKey.GetRoomSize() < requiredSize)
+      Raise<InnRoomSizeError>("InnFile.ClearRoom: requiredSize too big.");
+   this->UpdateRoomHeader(roomKey.Info_, 0,
+                          "InnFile.ClearRoom: update RoomHeader error.",
+                          "InnFile.ClearRoom: update RoomHeader error size.");
 }
 
 void InnFile::Reduce(RoomKey& roomKey, SizeT newDataSize, const void* exRoomHeader, SizeT exRoomHeaderSize) {
@@ -225,18 +232,26 @@ void InnFile::Reduce(RoomKey& roomKey, SizeT newDataSize, const void* exRoomHead
    if (roomKey.GetDataSize() < newDataSize) // Reduce() 資料量可以縮減(或不變), 不能增加.
       Raise<InnFileError>(std::errc::invalid_argument, "InnFile.Reduce: oldDataSize < newDataSize");
 
-   if (roomKey.GetDataSize() != newDataSize) {
-      char roomHeader[sizeof(newDataSize) + 128];
-      PutBigEndian(roomHeader, roomKey.Info_.DataSize_ = newDataSize);
-      SizeT wrsz = sizeof(newDataSize);
-      if (0 < exRoomHeaderSize && exRoomHeaderSize <= sizeof(roomHeader) - sizeof(newDataSize)) {
-         memcpy(roomHeader + sizeof(newDataSize), exRoomHeader, exRoomHeaderSize);
+   if (exRoomHeaderSize <= 0) {
+      this->UpdateRoomHeader(roomKey.Info_, newDataSize,
+                             "InnFile.Reduce: update RoomHeader error.",
+                             "InnFile.Reduce: update RoomHeader error size.");
+      return;
+   }
+   if (roomKey.GetCurrentRoomType() != roomKey.GetPendingRoomType() || roomKey.GetDataSize() != newDataSize) {
+      char roomHeader[sizeof(InnRoomType) + sizeof(newDataSize) + 128];
+      PutBigEndian(roomHeader, roomKey.Info_.CurrentRoomType_ = roomKey.Info_.PendingRoomType_);
+      PutBigEndian(roomHeader + sizeof(InnRoomType), roomKey.Info_.DataSize_ = newDataSize);
+      static_assert(kOffset_DataSize + sizeof(newDataSize) == kOffset_DataBegin, "RoomHeader format error.");
+      SizeT wrsz = sizeof(InnRoomType) + sizeof(newDataSize);
+      if (0 < exRoomHeaderSize && exRoomHeaderSize <= sizeof(roomHeader) - wrsz) {
+         memcpy(roomHeader + wrsz, exRoomHeader, exRoomHeaderSize);
          wrsz += exRoomHeaderSize;
          exRoomHeaderSize = 0;
       }
-      CheckIoSize(this->Storage_.Write(roomKey.Info_.RoomPos_ + kOffset_DataSize, roomHeader, wrsz), wrsz,
-                  "InnFile.Reduce: update room DataSize error.",
-                  "InnFile.Reduce: update room DataSize error size.");
+      CheckIoSize(this->Storage_.Write(roomKey.Info_.RoomPos_ + kOffset_RoomType, roomHeader, wrsz), wrsz,
+                  "InnFile.Reduce: update RoomHeader2 error.",
+                  "InnFile.Reduce: update RoomHeader2 error size.");
    }
    if (exRoomHeaderSize > 0) {
       CheckIoSize(this->Storage_.Write(roomKey.Info_.RoomPos_ + kRoomHeaderSize, exRoomHeader, exRoomHeaderSize),
@@ -298,12 +313,6 @@ InnFile::SizeT InnFile::ReadAll(const RoomKey& roomKey, void* buf, SizeT bufsz) 
 
 //--------------------------------------------------------------------------//
 
-void InnFile::UpdateDataSize(RoomKey& roomKey, InnFile::SizeT newsz, const char* exResError, const char* exSizeError) {
-   PutBigEndian(&newsz, roomKey.Info_.DataSize_ = newsz);
-   CheckIoSize(this->Storage_.Write(roomKey.Info_.RoomPos_ + kOffset_DataSize, &newsz, sizeof(newsz)),
-               sizeof(newsz), exResError, exSizeError);
-}
-
 void WriteRoom(File& fd, File::PosType pos, size_t wrsz, DcQueue& buf, const char* exResError, const char* exSizeError) {
    for (;;) {
       auto blk = buf.PeekCurrBlock();
@@ -323,13 +332,12 @@ InnFile::SizeT InnFile::Rewrite(RoomKey& roomKey, DcQueue& buf) {
    size_t bufsz = buf.CalcSize();
    if (bufsz > roomKey.GetRoomSize())
       Raise<InnRoomSizeError>("InnFile.Rewrite: request size > RoomSize.");
+   this->UpdateRoomHeader(roomKey.Info_, static_cast<SizeT>(bufsz),
+                          "InnFile.Rewrite: update RoomHeader error.",
+                          "InnFile.Rewrite: update RoomHeader error size.");
    WriteRoom(this->Storage_, pos + kRoomHeaderSize, bufsz, buf,
              "InnFile.Rewrite: write error.",
              "InnFile.Rewrite: write error size.");
-   if (roomKey.Info_.DataSize_ != static_cast<SizeT>(bufsz))
-      this->UpdateDataSize(roomKey, static_cast<SizeT>(bufsz),
-                           "InnFile.Rewrite: update DataSize error.",
-                           "InnFile.Rewrite: update DataSize error size.");
    return roomKey.Info_.DataSize_;
 }
 
@@ -338,7 +346,7 @@ InnFile::SizeT InnFile::Write(RoomKey& roomKey, const SizeT offset, const SizeT 
    this->CheckRoomPos(pos, "InnFile.Write: not opened.", "InnFile.Write: bad roomPos.");
    if (offset > roomKey.GetDataSize())
       Raise<InnRoomSizeError>("InnFile.Write: bad offset.");
-   if (offset + size > roomKey.GetRoomSize())
+   if (static_cast<size_t>(offset) + size > roomKey.GetRoomSize())
       Raise<InnRoomSizeError>("InnFile.Write: bad request size.");
 
    if (size <= 0)
@@ -349,10 +357,11 @@ InnFile::SizeT InnFile::Write(RoomKey& roomKey, const SizeT offset, const SizeT 
              "InnFile.Write: write error.",
              "InnFile.Write: write error size.");
    SizeT newsz = offset + size;
-   if (roomKey.Info_.DataSize_ < newsz)
-      this->UpdateDataSize(roomKey, newsz,
-                           "InnFile.Write: update DataSize error.",
-                           "InnFile.Write: update DataSize error size.");
+   if (newsz < roomKey.Info_.DataSize_)
+      newsz = roomKey.Info_.DataSize_;
+   this->UpdateRoomHeader(roomKey.Info_, newsz,
+                          "InnFile.Write: update RoomHeader error.",
+                          "InnFile.Write: update RoomHeader error size.");
    return size;
 }
 

@@ -14,6 +14,7 @@ BUILD_TYPE=${BUILD_TYPE:-release}
 ulimit -c unlimited
 
 set -x
+set -e
 
 OUTPUT_DIR=${OUTPUT_DIR:-${BUILD_DIR}/${BUILD_TYPE}/fon9}
 
@@ -43,10 +44,11 @@ $OUTPUT_DIR/AQueue_UT
 $OUTPUT_DIR/Buffer_UT
 $OUTPUT_DIR/MemBlock_UT
 
-# unit tests: file
+# unit tests: file / inn
 $OUTPUT_DIR/File_UT
 $OUTPUT_DIR/TimedFileName_UT
 $OUTPUT_DIR/InnFile_UT
+$OUTPUT_DIR/InnDbf_UT
 
 rm -rf ./logs
 rm -rf /tmp/*log

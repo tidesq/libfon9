@@ -94,6 +94,14 @@ public:
    reference vindex(size_type pos) { return this->Container()->operator[](pos); }
    const_reference vindex(size_type pos) const { return this->ConstContainer()->operator[](pos); }
 
+   template <class KeyT>
+   reference kindex(const KeyT& key) {
+      iterator ifind = this->lower_bound(key);
+      if (ifind != this->end() && ifind->first == key)
+         return *ifind;
+      return *this->insert(value_type{key, mapped_type{}}).first;
+   }
+
    reference back() { return this->Container()->back(); }
    const_reference back() const { return this->ConstContainer()->back(); }
    void pop_back() { this->Container_.pop_back(); }

@@ -46,9 +46,9 @@ size_t TestMakeNewRoom(fon9::InnFile& inn, const fon9::InnFile::OpenArgs& args, 
    return blkcount;
 }
 void CheckRoomKey(const fon9::InnFile::RoomKey& rkey, fon9::InnFile::SizeT exsz) {
-   if (rkey.GetRoomType() == 0 && rkey.GetDataSize() == 0 && rkey.GetRoomSize() >= exsz)
+   if (rkey.GetCurrentRoomType() == 0 && rkey.GetDataSize() == 0 && rkey.GetRoomSize() >= exsz)
       return;
-   std::cout << "[ERROR] RoomKey|roomType=" << static_cast<unsigned>(rkey.GetRoomType())
+   std::cout << "[ERROR] RoomKey|roomType=" << static_cast<unsigned>(rkey.GetCurrentRoomType())
       << "|dataSize=" << rkey.GetDataSize()
       << "|roomSize=" << rkey.GetRoomSize()
       << "|expectRoomSize=" << exsz
@@ -59,7 +59,7 @@ void TestErrorMakeRoomKey(fon9::InnFile& inn, fon9::InnFile::RoomPosT pos) {
    try {
       auto rkey = inn.MakeRoomKey(pos, nullptr, 0);
       std::cout << "[ERROR] MakeRoomKey|pos=" << pos
-         << "|roomType=" << static_cast<unsigned>(rkey.GetRoomType())
+         << "|roomType=" << static_cast<unsigned>(rkey.GetCurrentRoomType())
          << "|dataSize=" << rkey.GetDataSize()
          << "|roomSize=" << rkey.GetRoomSize()
          << std::endl;
@@ -108,7 +108,7 @@ void TestInnOpen() {
    CheckRoomKey(rkey, 64 - inn.kRoomHeaderSize);
    rkey = inn.MakeNextRoomKey(rkey, nullptr, 0);
    if (rkey) {
-      std::cout << "[ERROR] Last.RoomKey|roomType=" << static_cast<unsigned>(rkey.GetRoomType())
+      std::cout << "[ERROR] Last.RoomKey|roomType=" << static_cast<unsigned>(rkey.GetCurrentRoomType())
          << "|dataSize=" << rkey.GetDataSize()
          << "|roomSize=" << rkey.GetRoomSize()
          << std::endl;
@@ -145,9 +145,9 @@ void CheckRooms(fon9::InnFile& inn, bool useBufferList) {
             "room#=" << L << "|dataSize=" << rkey.GetDataSize() << std::endl;
          abort();
       }
-      if (rkey.GetRoomType() != static_cast<fon9::InnRoomType>(L)) {
+      if (rkey.GetCurrentRoomType() != static_cast<fon9::InnRoomType>(L)) {
          std::cout << "\r" "[ERROR] InnFile.Read|err=Invalid room type|"
-            "room#=" << L << "|roomType=" << static_cast<unsigned>(rkey.GetRoomType()) << std::endl;
+            "room#=" << L << "|roomType=" << static_cast<unsigned>(rkey.GetCurrentRoomType()) << std::endl;
          abort();
       }
       fon9::InnFile::SizeT res;
@@ -203,10 +203,10 @@ void TestInnFunc() {
    // 檢查 FreeRoom() 的結果.
    rkey = inn.MakeRoomKey(0, nullptr, 0);
    for (size_t L = 0; L < sizeof(membuf); ++L) {
-      if (rkey.GetDataSize() != 0 || rkey.GetRoomType() != kRoomTypeFreed) {
+      if (rkey.GetDataSize() != 0 || rkey.GetCurrentRoomType() != kRoomTypeFreed) {
          std::cout << "\r" "[ERROR] InnFile.ClearRoom"
             "|room#=" << L <<
-            "|roomType=" << static_cast<unsigned>(rkey.GetRoomType()) <<
+            "|roomType=" << static_cast<unsigned>(rkey.GetCurrentRoomType()) <<
             "|dataSize=" << rkey.GetDataSize() << std::endl;
          abort();
       }
@@ -250,11 +250,11 @@ void TestInnFunc() {
    rkey = inn.MakeRoomKey(0, &exRoomHeader, sizeof(exRoomHeader));
    for (size_t L = 0; L < sizeof(membuf); ++L) {
       if (rkey.GetDataSize() != sizeof(L)
-          || rkey.GetRoomType() != static_cast<fon9::InnRoomType>(L)
+          || rkey.GetCurrentRoomType() != static_cast<fon9::InnRoomType>(L)
           || exRoomHeader != L) {
          std::cout << "\r" "[ERROR] InnFile.Reduce"
             "|room#=" << L <<
-            "|roomType=" << static_cast<unsigned>(rkey.GetRoomType()) <<
+            "|roomType=" << static_cast<unsigned>(rkey.GetCurrentRoomType()) <<
             "|dataSize=" << rkey.GetDataSize() <<
             "|exRoomHeader=" << exRoomHeader <<
             std::endl;

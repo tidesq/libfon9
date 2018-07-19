@@ -8,6 +8,7 @@ set(fon9src
  TimeInterval.cpp
  TimeStamp.cpp
  RevFormat.cpp
+ HostId.cpp
 
  BitvEncode.cpp
  BitvDecode.cpp
@@ -32,8 +33,11 @@ set(fon9src
  FileAppender.cpp
  LogFile.cpp
  FdrNotify.cpp
+
  InnFile.cpp
- HostId.cpp
+ InnSyncer.cpp
+ InnSyncerFile.cpp
+ InnDbf.cpp
  
  buffer/MemBlock.cpp
  buffer/BufferNode.cpp
@@ -156,6 +160,9 @@ target_link_libraries(LogFile_UT fon9_s)
 
 add_executable(InnFile_UT InnFile_UT.cpp)
 target_link_libraries(InnFile_UT fon9_s)
+
+add_executable(InnDbf_UT InnDbf_UT.cpp)
+target_link_libraries(InnDbf_UT fon9_s)
 
 # unit tests: io
 add_executable(Socket_UT io/Socket_UT.cpp)

@@ -512,13 +512,25 @@
     <ClInclude Include="..\..\..\fon9\Archive.hpp">
       <Filter>Header Files\_base\_Bitv / Serialize</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\TextArchive.hpp">
-      <Filter>Header Files\_base\_Bitv / Serialize</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\fon9\BitvArchive.hpp">
       <Filter>Header Files\_base\_Bitv / Serialize</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\InnRow.hpp">
+    <ClInclude Include="..\..\..\fon9\InnSyncKey.hpp">
+      <Filter>Header Files\_base\_Inn</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\InnDbfRoom.hpp">
+      <Filter>Header Files\_base\_Inn</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\InnDbfTable.hpp">
+      <Filter>Header Files\_base\_Inn</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\InnDbf.hpp">
+      <Filter>Header Files\_base\_Inn</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\InnSyncer.hpp">
+      <Filter>Header Files\_base\_Inn</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\InnSyncerFile.hpp">
       <Filter>Header Files\_base\_Inn</Filter>
     </ClInclude>
   </ItemGroup>
@@ -769,7 +781,13 @@
     <ClCompile Include="..\..\..\fon9\BitvDecode.cpp">
       <Filter>Source Files\_base\_Bitv / Serialize</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\fon9\InnRow.cpp">
+    <ClCompile Include="..\..\..\fon9\InnDbf.cpp">
+      <Filter>Source Files\_base\_Inn</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\InnSyncer.cpp">
+      <Filter>Source Files\_base\_Inn</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\InnSyncerFile.cpp">
       <Filter>Source Files\_base\_Inn</Filter>
     </ClCompile>
   </ItemGroup>

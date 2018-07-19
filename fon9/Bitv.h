@@ -111,6 +111,8 @@ enum fon9_BitvV fon9_ENUM_underlying(uint8_t) {
    fon9_BitvV_NumberNull = fon9_BitvT_Null + 1,
    fon9_BitvV_ContainerEmpty = fon9_BitvT_Null + 2,
    fon9_BitvV_BoolTrue = fon9_BitvT_Null + 3,
+
+   fon9_BitvV_NullReserve = fon9_BitvT_Null + 7, // 0xff
 };
 
 enum fon9_BitvNumT {

@@ -30,12 +30,15 @@
 
 ## InnDbf
 * [`fon9/InnDbf.hpp`](../fon9/InnDbf.hpp)
-* 啟動 InnDbf 前，必須先將 TableHandler 綁好，
-  啟動時會載入全部的 Row 並透過 TableHandler 重建「記憶體中的資料表」。
+* 透過 `InnDbf::LinkTable()` 將 TableHandler 綁好
+* 然後 `InnDbf::LoadAll()` 載入全部的 Row(包含 deleted row) 透過 TableHandler 重建「記憶體中的資料表」。
 * InnDbf 若有綁定 Syncer，則在收到同步資料時，
   也會透過 TableHandler「更新、新增、刪除」記憶體中的資料表。
 
 ### 資料表的連結
+* [`fon9/InnDbfTable.hpp`](../fon9/InnDbfTable.hpp)
+* InnDbfTableLink：負責與 InnDbf 溝通。
+* InnDbfTableHandler：負責與 使用者的資料表 溝通。
 
 ### 資料同步機制
 * 前提
@@ -53,4 +56,4 @@
     * 或是必須處理的較新異動訊息。
   * 對於刪除的資料，因為已從「記憶體中的資料表」刪除，所以必須額外記住刪除時的 SyncKey，
     避免收到較舊的異動 (異動的 SyncKey < 刪除的 SyncKey)。
-*
+* TODO: 清除「Deleted 紀錄」的時機。

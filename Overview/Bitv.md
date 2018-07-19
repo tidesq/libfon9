@@ -21,15 +21,15 @@ value 不定長度，由 type 及 nnn 決定 value 的長度及內容。
 |1 1111 nnn|
 +----------+
 ```
-* nnn=000: empty byte array (byte array length = 0)
-* nnn=001: null number
+* nnn=000: 0xf8: empty byte array (byte array length = 0)
+* nnn=001: 0xf9: null number
 
 ## byte array
 * 儲存可變長度的：
   * 字串
   * bytes
   * 自訂資料
-* 長度為 0, 使用 empty  byte array 表示法 `fon9_BitvV_ByteArrayEmpty`
+* 長度 = 0: 使用 empty  byte array 表示法 `fon9_BitvV_ByteArrayEmpty = 0xf8`
 ```
 +- 1 byte -+
 |1 1111 000|
@@ -38,7 +38,7 @@ value 不定長度，由 type 及 nnn 決定 value 的長度及內容。
 * 長度 = 1..128:
 ```
 +- 1 byte -+-----------+
-|0 nnnnnnn |byte array|
+|0 nnnnnnn |byte array |
 +----------+-----------+
 bytes array: 長度 = (nnnnnnn)+1 = 1..128
 ```

@@ -9,9 +9,25 @@
 
 namespace fon9 {
 
-/// \ingroup Misc
+/// \ingroup Inn
 /// InnFile 不解釋 InnRoomType 的值, 由使用者自行解釋.
 using InnRoomType = byte;
+using InnRoomSize = uint32_t;
+
+/// 這裡的定義, 只是讓使用 InnFile 的人, 可以有共同的依據.
+enum : InnRoomType {
+   /// 被釋放的, 沒有使用的 Room.
+   /// InnFile 沒有特別針對此 RoomType 做處理,
+   /// 所以依然可以 MakeRoomKey(), MakeNextRoomKey().
+   kInnRoomType_Free = 0x7f,
+
+   /// 加上此旗標, 表示 exRoomHeader 的第一個欄位是 NextRoomPos.
+   kInnRoomType_HasNextRoomPos_Flag = 0x80,
+
+   /// 通常放在第1間房, 記錄此 InnFile 額外的訊息.
+   /// e.g. InnDbf 用第1間房紀錄 TableName list.
+   kInnRoomType_ExFileHeader = kInnRoomType_HasNextRoomPos_Flag | 0x01,
+};
 
 fon9_WARN_DISABLE_PADDING;
 fon9_MSC_WARN_DISABLE_NO_PUSH(4623 /* default constructor was implicitly defined as deleted */);
@@ -26,7 +42,7 @@ public:
    }
 };
 
-/// \ingroup Misc
+/// \ingroup Inn
 /// 檔案空間, 採用類似 memory alloc 的管理方式, 分配空間 & 釋放空間.
 /// - InnFile 不理會分配出去的空間如何使用, InnFile 僅提供最基本的功能.
 ///   - 所有操作都 **不是** thread safe.
@@ -72,7 +88,7 @@ public:
 
    //--------------------------------------------------------------------------//
 
-   using SizeT = uint32_t;
+   using SizeT = InnRoomSize;
    using RoomPosT = File::PosType;
 
    static constexpr FileMode  kDefaultFileMode = FileMode::Read | FileMode::Write | FileMode::DenyWrite | FileMode::CreatePath;
@@ -113,19 +129,12 @@ public:
    ///   則仍會保留您儲存的內容, 當載入時會還原您的資料.
    class RoomKey {
       fon9_NON_COPYABLE(RoomKey);
-      struct Info {
-         RoomPosT    RoomPos_;
-         SizeT       RoomSize_;
-         SizeT       DataSize_;
-         InnRoomType RoomType_;
-      };
-      Info  Info_;
-      friend class InnFile;
-
-      RoomKey(const Info& info) : Info_(info) {
-      }
-
    public:
+      using NoteT = uint16_t;
+
+      RoomKey() {
+         ZeroStruct(this->Info_);
+      }
       RoomKey(RoomKey&& rhs) : Info_(rhs.Info_) {
          rhs.Info_.RoomPos_ = 0;
       }
@@ -138,9 +147,31 @@ public:
       RoomPosT GetRoomPos() const {
          return this->Info_.RoomPos_;
       }
-      InnRoomType GetRoomType() const {
-         return this->Info_.RoomType_;
+      RoomPosT GetNextRoomPos() const {
+         return this->Info_.RoomPos_ + this->Info_.RoomSize_ + kRoomHeaderSize;
       }
+
+      InnRoomType GetCurrentRoomType() const {
+         return this->Info_.CurrentRoomType_;
+      }
+
+      /// 設定下次寫入(Write,Rewrite,Reduce...)時將要更新的 RoomType.
+      void SetPendingRoomType(InnRoomType value) {
+         this->Info_.PendingRoomType_ = value;
+      }
+      InnRoomType GetPendingRoomType() const {
+         return this->Info_.PendingRoomType_;
+      }
+
+      /// 設定使用者自訂的額外註記.
+      /// e.g. InnDbf 用來記錄: 寫入此房的資料, 是否需要同時寫入同步?
+      void SetNote(NoteT value) {
+         this->Info_.Note_ = value;
+      }
+      NoteT GetNote() const {
+         return this->Info_.Note_;
+      }
+
       SizeT GetDataSize() const {
          return this->Info_.DataSize_;
       }
@@ -148,6 +179,10 @@ public:
       SizeT GetRoomSize() const {
          return this->Info_.RoomSize_;
       }
+      SizeT GetRemainSize() const {
+         return this->Info_.RoomSize_ - this->Info_.DataSize_;
+      }
+
       /// 判斷是否為無效的 RoomKey.
       bool operator!() const {
          return this->Info_.RoomPos_ == 0;
@@ -155,12 +190,32 @@ public:
       explicit operator bool() const {
          return this->Info_.RoomPos_ > 0;
       }
+
+   private:
+      struct Info {
+         RoomPosT    RoomPos_;
+         SizeT       RoomSize_;
+         SizeT       DataSize_;
+         InnRoomType CurrentRoomType_;
+         InnRoomType PendingRoomType_;
+         uint16_t    Note_;
+      };
+      Info  Info_;
+      friend class InnFile;
+
+      RoomKey(const Info& info) : Info_(info) {
+      }
    };
 
    /// 使用 roomPos 建立 RoomKey, 若 roomPos 不符合規則, 則會拋出 InnRoomPosError 異常!
-   /// 若 roomPos==0 則表示 first room.
-   /// 如果 roomPos 已到 inn 的最後, 則 (!retval) == true;
+   /// - 若 roomPos==0 則表示 first room.
+   /// - 如果 roomPos 已到 inn 的最後, 則 (!retval) == true;
+   /// - 若需要讀入 exRoomHeader, 此處並沒有考慮 room's data size 是否滿足, 這部分需要要您自行在返回後判斷:
+   ///   `if (!roomKey || roomKey.GetDataSize() < exRoomHeaderSize) { 此房無效; }`
    RoomKey MakeRoomKey(RoomPosT roomPos, void* exRoomHeader, SizeT exRoomHeaderSize);
+   RoomKey MakeRoomKey(RoomPosT roomPos) {
+      return this->MakeRoomKey(roomPos, nullptr, 0);
+   }
 
    /// 取得 roomKey 的下一個房間, 此時的 roomKey 必須是有效的.
    /// 如果 roomKey 無效, 則會拋出 InnRoomPosError 異常!
@@ -172,6 +227,9 @@ public:
    ///   }
    /// \endcode
    RoomKey MakeNextRoomKey(const RoomKey& roomKey, void* exRoomHeader, SizeT exRoomHeaderSize);
+   RoomKey MakeNextRoomKey(const RoomKey& roomKey) {
+      return this->MakeNextRoomKey(roomKey, nullptr, 0);
+   }
 
    /// 在檔案尾端新增一個 room.
    RoomKey MakeNewRoom(InnRoomType roomType, SizeT size);
@@ -179,16 +237,20 @@ public:
    //--------------------------------------------------------------------------//
 
    /// 重新分配一個 room (e.g. free room => 分配使用).
-   /// - 若 room 的空間 < size, 則會拋出 InnRoomSizeError 異常!
-   /// - size=需要的大小, room 的實際可用大小必定 >= size.
-   /// - size 在此僅作為檢查 RoomSize 使用.
-   RoomKey ReallocRoom(RoomPosT roomPos, InnRoomType roomType, SizeT size) {
-      return this->ClearRoom(roomPos, roomType, size);
+   /// - 若 room 的空間 < requiredSize, 則會拋出 InnRoomSizeError 異常!
+   /// - requiredSize=需要的大小, room 的實際可用大小必定 >= requiredSize.
+   /// - requiredSize 在此僅作為檢查 RoomSize 使用.
+   RoomKey ReallocRoom(RoomPosT roomPos, InnRoomType roomType, SizeT requiredSize) {
+      RoomKey roomKey = this->MakeRoomKey(roomPos, nullptr, 0);
+      roomKey.Info_.PendingRoomType_ = roomType;
+      this->ClearRoom(roomKey, requiredSize);
+      return roomKey;
    }
 
    /// 歸還一個 room (e.g. 不再使用 => free room), 返回時 roomKey 會變成無效.
    void FreeRoom(RoomKey& roomKey, InnRoomType roomType) {
-      this->ClearRoom(roomKey.Info_.RoomPos_, roomType, 0);
+      roomKey.Info_.PendingRoomType_ = roomType;
+      this->ClearRoom(roomKey, 0);
       ZeroStruct(roomKey.Info_);
    }
 
@@ -251,13 +313,13 @@ private:
       return blockCount ? static_cast<SizeT>(this->BlockSize_ * blockCount - kRoomHeaderSize) : 0;
    }
    bool IsGoodRoomPos(RoomPosT pos) const {
-      return (pos >= this->HeaderSize_) && (pos % this->BlockSize_) == 0;
+      return (pos >= this->HeaderSize_) && ((pos - this->HeaderSize_) % this->BlockSize_) == 0;
    }
    void RoomHeaderToRoomKeyInfo(const byte* roomHeader, RoomKey::Info& roomKeyInfo);
    void CheckRoomPos(RoomPosT pos, const char* exNotOpen, const char* exBadPos) const;
-   void UpdateDataSize(RoomKey& roomKey, SizeT newsz, const char* exResError, const char* exSizeError);
+   void UpdateRoomHeader(RoomKey::Info& info, SizeT newsz, const char* exResError, const char* exSizeError);
    RoomPosT CheckReadArgs(const RoomKey& roomKey, SizeT offset, SizeT& size);
-   RoomKey ClearRoom(RoomPosT roomPos, InnRoomType roomType, SizeT size);
+   void ClearRoom(RoomKey& roomKey, SizeT requiredSize);
 
    File  Storage_;
    SizeT BlockSize_{0};

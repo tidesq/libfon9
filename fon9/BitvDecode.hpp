@@ -264,16 +264,34 @@ inline void ContainerReserve(...) {
 }
 
 template <class Container>
-auto BitvTo(DcQueue& buf, Container& c)
--> enable_if_t<sizeof(*c.begin()) != 1, decltype(c.clear(), c.insert(c.end(), *c.begin()), void())> {
-   c.clear();
-   if (size_t sz = BitvToContainerElementCount(buf)) {
-      ContainerReserve(c, sz);
+auto BitvToContainer(DcQueue& buf, Container& c, size_t sz)
+-> decltype(BitvToValue(buf, &*c.begin()), void()) {
+   if (sz > 0) {
+      do {
+         c.insert(c.end(), BitvToValue(buf, static_cast<typename Container::value_type*>(nullptr)));
+      } while (--sz > 0);
+   }
+}
+
+template <class Container>
+auto BitvToContainer(DcQueue& buf, Container& c, size_t sz)
+-> decltype(BitvTo(buf, *c.begin()), void()) {
+   if (sz > 0) {
       decay_t<decltype(*c.begin())> v{};
       do {
          BitvTo(buf, v);
          c.insert(c.end(), std::move(v));
       } while (--sz > 0);
+   }
+}
+
+template <class Container>
+auto BitvTo(DcQueue& buf, Container& c)
+-> enable_if_t<sizeof(*c.begin()) != 1, decltype(c.clear(), c.insert(c.end(), *c.begin()), void())> {
+   c.clear();
+   if (size_t sz = BitvToContainerElementCount(buf)) {
+      ContainerReserve(c, sz);
+      BitvToContainer(buf, c, sz);
    }
 }
 

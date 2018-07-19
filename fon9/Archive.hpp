@@ -148,10 +148,10 @@ fon9_WARN_DISABLE_PADDING;
 /// 輔助儲存、取出有版本訊息的資料.
 /// 使用範例:
 /// \code
-///   template <Archive>
+///   template <class Archive>
 ///   void SerializeVer(Archive& ar, ArchiveWorker<Archive, MyObject>& rec, unsigned ver);
 ///
-///   template <Archive>
+///   template <class Archive>
 ///   void Serialize(Archive& ar, ArchiveWorker<Archive, MyObject>& rec) {
 ///      CompositeVer<decltype(rec)> ver{rec, 1};
 ///      ar(vrec);

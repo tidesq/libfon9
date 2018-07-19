@@ -193,6 +193,12 @@ public:
    size_t size() const {
       return this->Count_;
    }
+
+   void swap(SinglyLinkedList& rhs) noexcept {
+      SinglyLinkedList tmp{std::move(*this)};
+      *this = std::move(rhs);
+      rhs = std::move(tmp);
+   }
 };
 
 /// \ingroup Misc
@@ -259,6 +265,12 @@ public:
    Node* ReleaseList() {
       this->Back_ = nullptr;
       return base::ReleaseList();
+   }
+
+   void swap(SinglyLinkedList2& rhs) noexcept {
+      SinglyLinkedList2 tmp{std::move(*this)};
+      *this = std::move(rhs);
+      rhs = std::move(tmp);
    }
 };
 

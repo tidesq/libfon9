@@ -1,16 +1,14 @@
-﻿/// \file fon9/InnDbfRow.hpp
+﻿/// \file fon9/InnSyncKey.hpp
 /// \author fonwinz@gmail.com
-#ifndef __fon9_InnDbfRow_hpp__
-#define __fon9_InnDbfRow_hpp__
-#include "fon9/InnFile.hpp"
+#ifndef __fon9_InnSyncKey_hpp__
+#define __fon9_InnSyncKey_hpp__
 #include "fon9/HostId.hpp"
+#include "fon9/TimeStamp.hpp"
 #include "fon9/Archive.hpp"
 
 namespace fon9 {
 
-class InnTableLink;
-
-/// \ingroup Misc
+/// \ingroup Inn
 /// 用來判斷同步資料是否有效(是否為過期的舊資料? 是否為新的有效資料).
 /// - 這裡沒有提供嚴謹的同步機制, 不能拿來當作交易使用.
 /// - 僅使用 TimeStamp_ 來判斷資料資料的新舊
@@ -31,11 +29,21 @@ struct InnSyncKey : public Comparable<InnSyncKey> {
    /// 當本地資料異動後, 設定 SyncKey.
    /// 後續再由呼叫端: 連同異動的內容, 寫入同步資料.
    void SetLocalModified() {
-      // TODO: 如果 UtcNow() <= this->TimeStamp_
-      // => 如何 reset SyncKey?
-      this->ModifyTime_ = UtcNow();
       ++this->ModifySeq_;
       this->OrigHostId_ = LocalHostId_;
+      TimeStamp now = UtcNow();
+      if (fon9_LIKELY(this->ModifyTime_ < now))
+         this->ModifyTime_ = now;
+      else {
+         // 本機現在時間有錯 or 上次異動的 Host 時間有錯.
+         // 此次異動, 為了要讓同步生效(其他主機判斷此次異動為新):
+         // (1) 如果 ModifySeq_ 比異動前大, 則不改變時間.
+         // (2) 如果 ModifySeq_ 比異動前小(overflow), 則將時間增加一點點.
+         // => 若 A,B 兩主機在尚未完成同步前同時異動,
+         //    則使用 HostId_ 來決定使用 A 或 B 的版本.
+         if (fon9_UNLIKELY(this->ModifySeq_ <= 0))
+            this->ModifyTime_ += TimeInterval::Make<TimeInterval::Scale>(1);
+      }
    }
 
    /// 檢查 rhs 是否為較新的資料.
@@ -62,25 +70,5 @@ struct InnSyncKey : public Comparable<InnSyncKey> {
    }
 };
 
-//--------------------------------------------------------------------------//
-
-/// \ingroup Misc
-class InnDbfRow {
-   fon9_NON_COPYABLE(InnDbfRow);
-   InnDbfRow() = delete;
-   friend class InnTableLink;
-   InnFile::RoomKey  RoomKey_;
-   InnSyncKey        SyncKey_;
-public:
-   InnDbfRow(InnFile::RoomKey&& roomKey) : RoomKey_{std::move(roomKey)} {
-   }
-   InnDbfRow(InnFile::RoomKey&& roomKey, const InnSyncKey& syncKey)
-      : RoomKey_{std::move(roomKey)}
-      , SyncKey_{syncKey} {
-   }
-
-   InnDbfRow(InnDbfRow&&) = default;
-};
-
 } // namespaces
-#endif//__fon9_InnDbfRow_hpp__
+#endif//__fon9_InnSyncKey_hpp__

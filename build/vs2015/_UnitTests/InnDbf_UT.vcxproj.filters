@@ -11,7 +11,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\fon9\InnFile_UT.cpp">
+    <ClCompile Include="..\..\..\fon9\InnDbf_UT.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

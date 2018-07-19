@@ -147,11 +147,15 @@ inline size_t ByteArrayToBitv(RevBuffer& rbuf, const void* byteArray, size_t byt
    return RevPutBitv(rbuf, fon9_BitvV_ByteArrayEmpty);
 }
 
-/// char[], byte[], int8_t[], uint8_t[]...
+/// byte[], int8_t[], uint8_t[]...
 template <typename T, size_t arysz>
 inline enable_if_t<IsTrivialByte<T>::value, size_t>
 ToBitv(RevBuffer& rbuf, const T (&ary)[arysz]) {
    return ByteArrayToBitv(rbuf, ary, arysz);
+}
+template <size_t arysz>
+inline size_t ToBitv(RevBuffer& rbuf, const char (&ary)[arysz]) {
+   return ByteArrayToBitv(rbuf, ary, arysz - (ary[arysz - 1] == 0));
 }
 
 template <typename T, size_t arysz>

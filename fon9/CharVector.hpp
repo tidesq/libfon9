@@ -47,8 +47,9 @@ struct CharVector : public ByteVector {
    char* begin() { return reinterpret_cast<char*>(ByteVector::begin()); }
    char* end() { return reinterpret_cast<char*>(ByteVector::end()); }
 
-   void AppendTo(std::string& out) const {
+   std::string& AppendTo(std::string& out) const {
       out.append(this->begin(), this->size());
+      return out;
    }
    std::string ToString() const {
       return std::string{this->begin(), this->size()};

@@ -10,9 +10,7 @@ libfon9 TODO list
 ## 檔案/儲存/載入
 * Serialize/Deserialize
   * Text
-  * Bitv
-* InnFile
-* 資料同步機制
+* 資料同步機制: 清除「Deleted 紀錄」的時機。
 ---------------------------------------
 ## 系統管理工具
 * 盡量從 [非侵入式] 方向思考:
