@@ -420,5 +420,14 @@ inline std::string StrView_ToEscapeStr(StrView src, StrView chSpecials = StrView
 /// \return 傳回切割後的字串, 不會變動 utf8str.
 fon9_API StrView StrView_TruncUTF8(StrView utf8str, size_t expectLen);
 
+//--------------------------------------------------------------------------//
+
+/// \ingroup AlNum
+/// 在 fullstr 裡面尋找 substr, 參數範例:
+/// - fullstr = "aaa bbb ccc ddd"
+/// - substr = "ccc"
+/// - chSplitter = ' '
+fon9_API const char* SearchSubstr(StrView fullstr, StrView substr, char chSplitter);
+
 } // namespace fon9
 #endif//__fon9_StrTools_hpp__

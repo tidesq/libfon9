@@ -1,6 +1,7 @@
 ﻿// \file fon9/StrTools.cpp
 // \author fonwinz@gmail.com
 #include "fon9/StrTools.hpp"
+#include <algorithm> // std::search()
 
 namespace fon9 {
 
@@ -278,6 +279,20 @@ fon9_API void StrView_ToEscapeStr(std::string& dst, StrView src, StrView chSpeci
       dst.push_back(ch);
       ++pbeg;
    }
+}
+
+//--------------------------------------------------------------------------//
+
+fon9_API const char* SearchSubstr(StrView fullstr, StrView substr, char chSplitter) {
+   const char* pfind = std::search(fullstr.begin(), fullstr.end(), substr.begin(), substr.end());
+   if (pfind == fullstr.end())
+      return nullptr;
+   if (pfind == fullstr.begin() || *(pfind - 1) == chSplitter) {
+      const char* pend = pfind + substr.size();
+      if (pend == fullstr.end() || *pend == chSplitter)
+         return pfind;
+   }
+   return nullptr;
 }
 
 } // namespace fon9

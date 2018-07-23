@@ -8,7 +8,7 @@
 
 namespace fon9 { namespace seed {
 
-fon9_MSC_WARN_DISABLE(4820);
+fon9_WARN_DISABLE_PADDING;
 /// \ingroup seed
 /// 透過 Layout 描述 Tree 所產的 Pod(Seed).
 /// - 一個 Layout 包含 1~N 個 Tab
@@ -28,7 +28,7 @@ public:
    virtual Tab* GetTab(size_t index) const = 0;
    virtual size_t GetTabCount() const = 0;
 };
-fon9_MSC_WARN_POP;
+fon9_WARN_POP;
 
 /// \ingroup seed
 /// 每個 Pod 僅包含一顆 Seed.

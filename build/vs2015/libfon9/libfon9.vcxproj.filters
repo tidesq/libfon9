@@ -114,6 +114,24 @@
     <Filter Include="Source Files\_base\_Bitv / Serialize">
       <UniqueIdentifier>{42d24f89-3851-48e9-93fc-f4b9fd03c70d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\seed\_trees">
+      <UniqueIdentifier>{05cd311f-6492-42c7-ad85-bba8318466fc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\seed\_trees">
+      <UniqueIdentifier>{d21489d3-9df3-408c-b52c-70ada9e58cca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\auth">
+      <UniqueIdentifier>{cf1b4673-8a09-4352-adf5-32391f0e448f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\auth">
+      <UniqueIdentifier>{46fb5112-62b9-43b5-a2b3-333b9853f9e3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\crypto">
+      <UniqueIdentifier>{ec73b8ea-a273-42a8-8742-6a77f11c8637}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\crypto">
+      <UniqueIdentifier>{673d59af-28c0-4524-88fd-e96240847767}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\sys\Config.h">
@@ -533,6 +551,39 @@
     <ClInclude Include="..\..\..\fon9\InnSyncerFile.hpp">
       <Filter>Header Files\_base\_Inn</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\MaTree.hpp">
+      <Filter>Header Files\seed\_trees</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\auth\AuthMgr.hpp">
+      <Filter>Header Files\auth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\auth\AuthBase.h">
+      <Filter>Header Files\auth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\auth\AuthBase.hpp">
+      <Filter>Header Files\auth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\auth\SaslClient.hpp">
+      <Filter>Header Files\auth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\auth\SaslScramSha256Client.hpp">
+      <Filter>Header Files\auth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\Random.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\auth\SaslScram.hpp">
+      <Filter>Header Files\auth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\auth\SaslScramSha256.hpp">
+      <Filter>Header Files\auth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\crypto\Sha256.hpp">
+      <Filter>Header Files\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\crypto\CryptoTools.hpp">
+      <Filter>Header Files\crypto</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -789,6 +840,27 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\InnSyncerFile.cpp">
       <Filter>Source Files\_base\_Inn</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\seed\MaTree.cpp">
+      <Filter>Source Files\seed\_trees</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\auth\AuthMgr.cpp">
+      <Filter>Source Files\auth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\auth\SaslClient.cpp">
+      <Filter>Source Files\auth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\auth\SaslScramSha256Client.cpp">
+      <Filter>Source Files\auth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\Random.cpp">
+      <Filter>Source Files\_base\_Tools / Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\auth\SaslScramSha256.cpp">
+      <Filter>Source Files\auth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\crypto\Sha256.cpp">
+      <Filter>Source Files\crypto</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

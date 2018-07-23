@@ -82,6 +82,7 @@ struct GridViewResult {
    /// GridView_ 裡面最後行距離 end 多遠?
    /// 如果不支援計算距離, 則為 GridViewResult::kNotSupported;
    size_t      DistanceEnd_{kNotSupported};
+   size_t      ContainerSize_{kNotSupported};
 
    GridViewResult(Tree& sender) : Sender_(sender), OpResult_(OpResult::no_error) {
    }
@@ -101,6 +102,15 @@ struct GridViewResult {
       kCellSplitter = '\x01',
       kRowSplitter = '\n'
    };
+
+   template <class Container>
+   auto SetContainerSize(Container& container) -> decltype(container.size(), void()) {
+      this->ContainerSize_ = container.size();
+   }
+   template <class Container>
+   void SetContainerSize(...) {
+      this->ContainerSize_ = kNotSupported;
+   }
 };
 using FnGridViewOp = std::function<void(GridViewResult& result)>;
 
@@ -118,7 +128,8 @@ using FnGridViewOp = std::function<void(GridViewResult& result)>;
 class fon9_API TreeOp {
    fon9_NON_COPY_NON_MOVE(TreeOp);
 protected:
-   ~TreeOp();
+   ~TreeOp() {
+   }
 
    TreeOp(Tree& tree) : Tree_(tree) {
    }
@@ -155,6 +166,13 @@ public:
       else
          return false;
       return true;
+   }
+   template <class Container, class FnStrToKey, class Iterator = typename Container::iterator, class KeyT = typename Container::key_type>
+   static Iterator GetStartIterator(Container& container, StrView strKeyText, FnStrToKey fnStrToKey) {
+      Iterator ivalue;
+      if (GetStartIterator(container, ivalue, strKeyText.begin()))
+         return ivalue;
+      return container.lower_bound(fnStrToKey(strKeyText));
    }
 
    virtual void GridView(const GridViewRequest& req, FnGridViewOp fnCallback);
@@ -272,6 +290,7 @@ template <class Container, class Iterator, class FnRowAppender>
 void MakeGridView(Container& container, Iterator istart,
                   const GridViewRequest& req, GridViewResult& res,
                   FnRowAppender&& fnRowAppender) {
+   res.SetContainerSize(container);
    MakeGridViewRange(istart, container.begin(), container.end(),
                      req, res, std::forward<FnRowAppender>(fnRowAppender));
 }

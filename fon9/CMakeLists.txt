@@ -25,6 +25,7 @@ set(fon9src
  Blob.c
  ByteVector.cpp
  Base64.cpp
+ Random.cpp
 
  File.cpp
  FilePath.cpp
@@ -78,12 +79,18 @@ set(fon9src
  seed/Tree.cpp
  seed/TreeOp.cpp
  seed/PodOp.cpp
-
+ seed/MaTree.cpp
  seed/Field.cpp
  seed/FieldMaker.cpp
  seed/FieldBytes.cpp
  seed/FieldChars.cpp
  seed/FieldDyBlob.cpp
+
+ crypto/Sha256.cpp
+ auth/AuthMgr.cpp
+ auth/SaslClient.cpp
+ auth/SaslScramSha256.cpp
+ auth/SaslScramSha256Client.cpp
 )
 add_library(fon9_s STATIC ${fon9src})
 target_link_libraries(fon9_s pthread rt)
@@ -177,3 +184,7 @@ target_link_libraries(Seed_UT fon9_s)
 
 add_executable(Tree_UT seed/Tree_UT.cpp)
 target_link_libraries(Tree_UT fon9_s)
+
+# unit tests: crypto
+add_executable(Crypto_UT crypto/Crypto_UT.cpp)
+target_link_libraries(Crypto_UT fon9_s)

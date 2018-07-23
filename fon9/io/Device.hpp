@@ -197,7 +197,7 @@ protected:
    // - OpThr 通常為 OpQueue_.AddTask() 的進入點, 在檢查狀態後, 再決定如何呼叫 OpImpl.
    // - OpImpl 皆為 virtual, 交給衍生者實作.
 
-   /// - 透過 OpThr_Open() 而來的呼叫, 必定: !cfgstr.IsNullOrEmpty(); && st<State::Disposing
+   /// - 透過 OpThr_Open() 而來的呼叫, 必定: !cfgstr.empty(); && st<State::Disposing
    virtual void OpImpl_Open(std::string cfgstr) = 0;
    /// 透過 OpThr_Open() 而來的呼叫, 此時必定:
    /// - st < State::Disposing && st != State::ConfigError && st != Ready(LinkReady,Listening,WaitingLinkIn)

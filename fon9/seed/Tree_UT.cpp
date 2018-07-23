@@ -6,6 +6,7 @@
 #include "fon9/seed/PodOp.hpp"
 #include "fon9/LevelArray.hpp"
 #include "fon9/TestTools.hpp"
+#include "fon9/Timer.hpp"
 #include <map>
 
 //--------------------------------------------------------------------------//
@@ -209,10 +210,8 @@ public:
       TreeOp(IvacSymbTree& tree) : base(tree) {
       }
       IvacSymbMap::iterator GetStartIterator(fon9::StrView strKeyText) {
-         IvacSymbMap::iterator ivalue;
-         if (!base::GetStartIterator(static_cast<IvacSymbTree*>(&this->Tree_)->Symbs_, ivalue, strKeyText.begin()))
-            ivalue = static_cast<IvacSymbTree*>(&this->Tree_)->Symbs_.lower_bound(SymbId::MakeRef(strKeyText));
-         return ivalue;
+         return base::GetStartIterator(static_cast<IvacSymbTree*>(&this->Tree_)->Symbs_, strKeyText,
+                                       [](const fon9::StrView& strKey) { return SymbId::MakeRef(strKey); });
       }
       void Get(fon9::StrView strKeyText, fon9::seed::FnPodOp fnCallback) override {
          GetPod(*static_cast<IvacSymbTree*>(&this->Tree_),
@@ -536,13 +535,18 @@ public:
 //--------------------------------------------------------------------------//
 
 void CheckGridView(fon9::seed::TreeOp* op, fon9::seed::Tab* tab, fon9::StrView expectResult) {
-   const std::string& name = (tab ? tab->Name_
-                              : op->Tree_.LayoutSP_->KeyField_->Name_);
-   std::cout << '\n' << name << ":\n";
+   const std::string& name = (tab ? tab->Name_ : op->Tree_.LayoutSP_->KeyField_->Name_);
+   std::cout << '\n' << name;
    fon9::seed::GridViewRequest req{fon9::seed::TreeOp::TextBegin()};
    req.Tab_ = tab;
    op->GridView(req, [expectResult](fon9::seed::GridViewResult& res) {
-      std::cout << res.GridView_ << '\n';
+      std::cout << "|RowCount=" << res.RowCount_;
+      std::cout << "|ContainerSize=";
+      if (res.ContainerSize_ != res.kNotSupported)
+         std::cout << res.ContainerSize_;
+      else
+         std::cout << "NotSupported";
+      std::cout << '\n' << res.GridView_ << '\n';
       if (expectResult != fon9::ToStrView(res.GridView_)) {
          std::cout << "[ERROR] Expect is:\n" << expectResult.begin() << std::endl;
          abort();
@@ -557,6 +561,8 @@ int main(int argc, char** args) {
    //_CrtSetBreakAlloc(176);
 #endif
    fon9::AutoPrintTestInfo utinfo{"Tree/TreeOp"};
+   fon9::GetDefaultTimerThread();
+   std::this_thread::sleep_for(std::chrono::milliseconds{10});
 
    fon9::seed::TreeSPT<BrkTree>  brks{new BrkTree};
    fon9::seed::TreeSP            b9901Ivacs;

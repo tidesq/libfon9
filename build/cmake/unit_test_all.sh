@@ -61,3 +61,6 @@ $OUTPUT_DIR/Socket_UT
 # unit tests: seed
 $OUTPUT_DIR/Seed_UT
 $OUTPUT_DIR/Tree_UT
+
+# unit tests: crypt
+$OUTPUT_DIR/Crypt_UT

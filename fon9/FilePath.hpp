@@ -81,7 +81,7 @@ public:
    /// 把 fname 拆解成路徑陣列, 用 '/' 分隔.
    /// - 移除多餘的 "./" or "/"
    /// - 遇到 "../" 則移除前一個路徑, 如果沒有前一個路徑, 則會返回 empty() 且 fname.begin() == "../fileanme"
-   /// - 返回時如果 !fname.IsNullOrEmpty() 則表示有錯, fname.begin() 為錯誤發生的位置.
+   /// - 返回時如果 !fname.empty() 則表示有錯, fname.begin() 為錯誤發生的位置.
    /// - 返回值不包含 '/', 但如果有用括號、引號包含的字串, 則不會進行拆解, 例: '123/456', "123/456", {123/456}
    static StrList SplitPathList(StrView& fname);
 
@@ -92,7 +92,7 @@ public:
    /// 把 fname 正規化.
    /// - 移除多餘的 "./" or "/"
    /// - 若有包含 "../" 則移到前一個路徑, 如果沒有前一個路徑, 則會返回 empty() 且 fname.begin() == "../fileanme"
-   /// - 返回時如果 !fname.IsNullOrEmpty() 則表示有錯, fname.begin() 為錯誤發生的位置.
+   /// - 返回時如果 !fname.empty() 則表示有錯, fname.begin() 為錯誤發生的位置.
    /// - 返回值 **頭尾不包含'/'**
    static std::string NormalizeFileName(StrView& fname) {
       return MergePathList(SplitPathList(fname));

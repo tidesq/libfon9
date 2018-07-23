@@ -44,7 +44,7 @@ fon9_ENABLE_ENUM_BITWISE_OP(TreeFlag);
 
 /// \ingroup seed
 /// - 這裡提供的是 **管理用** 介面.
-/// - 實際應用時, 您應該會先找到需要的 Tree or Seed, 然後直接操作 (例: NsTree, DllMgr)
+/// - 實際應用時, 您應該會先找到需要的 Tree or Seed, 然後直接操作 (例: MaTree, DllMgr)
 class fon9_API Tree : public intrusive_ref_counter<Tree> {
    fon9_NON_COPY_NON_MOVE(Tree);
 protected:
