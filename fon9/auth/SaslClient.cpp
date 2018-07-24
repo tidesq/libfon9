@@ -73,9 +73,9 @@ AuthR SaslScramClient::OnChallenge(StrView message) {
             break;
          if (pSaltEnd[1] != 'i' || pSaltEnd[2] != '=')
             break;
-         StrView        sp{pSaltEnd + 3, message.end()};
-         const size_t   iter = StrTo(sp, static_cast<size_t>(0));
-         if (!sp.empty())
+         const char*    pend;
+         const size_t   iter = StrTo(StrView{pSaltEnd + 3, message.end()}, static_cast<size_t>(0), &pend);
+         if (pend != message.end())
             break;
          byte  salt[128];
          auto  saltSize = Base64Decode(salt, sizeof(salt), pSalt, static_cast<size_t>(pSaltEnd - pSalt));

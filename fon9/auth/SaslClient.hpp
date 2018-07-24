@@ -18,6 +18,9 @@ public:
    const std::string& GetFirstMessage() const {
       return this->ClientFirstMessage_;
    }
+   void SetFirstMessage(std::string v) {
+      this->ClientFirstMessage_ = std::move(v);
+   }
 
    /// message = server challenge message.
    virtual AuthR OnChallenge(StrView message) = 0;
@@ -55,6 +58,8 @@ protected:
    virtual void MakeClientFinalMessage(byte salt[], size_t saltSize, size_t iter, StrView authMessage, std::string& clientFinalMessage) = 0;
 
 public:
+   /// 若 authz.empty()  則會提供: "n,,n=authc,r=nonce"
+   /// 若 !authz.empty() 則會提供: "n,,a=authz,n=authc,r=nonce"
    SaslScramClient(StrView authz, StrView authc, StrView pass);
 
    /// message = server challenge message.
