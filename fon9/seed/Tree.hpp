@@ -15,7 +15,7 @@ fon9_WARN_DISABLE_PADDING;
 struct TreeOpResult {
    /// 此值必定有效, 不會是 nullptr.
    Tree*    Sender_;
-   OpResult Result_;
+   OpResult OpResult_;
 };
 fon9_WARN_POP;
 
@@ -83,6 +83,27 @@ public:
    /// \endcode
    virtual void OnParentSeedClear();
 };
+
+//--------------------------------------------------------------------------//
+
+template <class Tree, class Container>
+inline auto OnTreeClearSeeds(Tree& owner, Container& c)
+-> decltype(c.begin()->OnParentTreeClear(owner), void()) {
+   for (auto& seed : c)
+      seed.OnParentTreeClear(owner);
+}
+template <class Tree, class Container>
+inline auto OnTreeClearSeeds(Tree& owner, Container& c)
+-> decltype(c.begin()->second.OnParentTreeClear(owner), void()) {
+   for (auto& seed : c)
+      seed.second.OnParentTreeClear(owner);
+}
+template <class Tree, class Container>
+inline auto OnTreeClearSeeds(Tree& owner, Container& c)
+-> decltype(c.begin()->second->OnParentTreeClear(owner), void()) {
+   for (auto& seed : c)
+      seed.second->OnParentTreeClear(owner);
+}
 
 } } // namespaces
 #endif//__fon9_seed_Tree_hpp__

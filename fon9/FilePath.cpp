@@ -32,23 +32,37 @@ static FindSplResult FindLastSpl(const std::string& fname) {
 }
 
 std::string FilePath::AppendPathTail(StrView path) {
+   if (path.empty())
+      return "./";
    std::string res{NormalizePathName(path)};
-   res = RemovePathTail(&res).ToString();
-   res.push_back('/');
+   auto        tailRemoved = RemovePathTail(&res);
+   if (res.size() == tailRemoved.size())
+      res.push_back('/');
+   else
+      res.erase(tailRemoved.size() + 1);
    return res;
 }
 
 StrView FilePath::RemovePathTail(StrView path) {
+   if (path.empty())
+      return StrView{"."};
    const char*       end = path.end();
    const char* const begin = path.begin();
    if (begin == end)
       return path;
    while (*--end == '/') {
       if (begin == end)
-         return StrView{begin, end};
+         return StrView{begin, begin};
    }
    return StrView{begin, end + 1};
 }
+
+StrView FilePath::RemovePathHead(StrView path) {
+   while (path.Get1st() == '/')
+      path.SetBegin(path.begin() + 1);
+   return path;
+}
+
 
 std::string FilePath::NormalizePathName(StrView fname) {
    std::string  result = fname.ToString();

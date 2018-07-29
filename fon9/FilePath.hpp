@@ -39,11 +39,19 @@ public:
    /// 把 '\\' 轉成 '/';
    static std::string NormalizePathName(StrView fname);
 
+   /// 若 path.empty() 則返回 "./"
    /// 把 '\\' 轉成 '/', 且若 path 尾端沒有 '/' 則加上;
    static std::string AppendPathTail(StrView path);
 
    /// 移除 path 尾端的 '/'; 不會先做 NormalizePathName()!
+   /// - 若 path.empty() 則返回 ".";
+   /// - 若 path 全部都是 '/', 則會返回 StrView{path.begin(), path.begin()};
    static StrView RemovePathTail(StrView path);
+
+   /// 移除 path 開頭的 '/';
+   /// - 若 path.empty() 則返回 path;
+   /// - 若 path 全部都是 '/', 則會返回 StrView{path.end(), path.end()};
+   static StrView RemovePathHead(StrView path);
 
    /// 從檔名 fname 之中, 抽取出路徑名稱.
    /// - 不含尾端的分隔號.

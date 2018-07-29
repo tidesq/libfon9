@@ -3,9 +3,24 @@
 #ifndef __fon9_auth_AuthBase_hpp__
 #define __fon9_auth_AuthBase_hpp__
 #include "fon9/auth/AuthBase.h"
-#include "fon9/StrView.hpp"
+#include "fon9/seed/PodOp.hpp"
+#include "fon9/CharVector.hpp"
 
 namespace fon9 { namespace auth {
+
+class fon9_API AuthMgr;
+using AuthMgrSP = intrusive_ptr<AuthMgr>;
+
+class fon9_API AuthSession;
+using AuthSessionSP = intrusive_ptr<AuthSession>;
+
+class fon9_API RoleMgr;
+using RoleMgrSP = intrusive_ptr<RoleMgr>;
+
+using PolicyName = CharVector;
+using PolicyId = CharVector;
+using RoleId = PolicyId;
+using UserId = PolicyId;
 
 fon9_WARN_DISABLE_PADDING;
 /// \ingroup auth
@@ -37,6 +52,17 @@ struct AuthR {
    }
 };
 fon9_MSC_WARN_POP;
+
+/// \ingroup auth
+/// 登入成功後根據 RoleId 取得的使用者政策列表.
+using PolicyKeys = std::map<PolicyName, PolicyId>;
+
+/// \ingroup auth
+/// 使用者的角色設定.
+struct RoleConfig {
+   RoleId      RoleId_;
+   PolicyKeys  PolicyKeys_;
+};
 
 } } // namespaces
 #endif//__fon9_auth_AuthBase_hpp__

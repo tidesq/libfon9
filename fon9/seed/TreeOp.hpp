@@ -20,6 +20,9 @@ struct PodOpResult {
    PodOpResult(Tree& sender, OpResult res, const StrView& key)
       : Sender_{&sender}, OpResult_{res}, KeyText_{key} {
    }
+   PodOpResult(OpResult res, const StrView& key)
+      : Sender_{nullptr}, OpResult_{res}, KeyText_{key} {
+   }
 };
 
 class fon9_API PodOp;
@@ -29,6 +32,10 @@ struct PodRemoveResult : public PodOpResult {
    PodRemoveResult(Tree& sender, OpResult res, const StrView& key, Tab* tab)
       : PodOpResult{sender, res, key}
       , Tab_{tab} {
+   }
+   PodRemoveResult(OpResult res, const StrView& key)
+      : PodOpResult{res, key}
+      , Tab_{nullptr} {
    }
    /// 若為 nullptr 表示 Remove Pod 的結果.
    /// 若為 !nullptr 表示 Remove Seed 的結果.
@@ -67,7 +74,7 @@ struct GridViewRequest {
 struct GridViewResult {
    fon9_NON_COPY_NON_MOVE(GridViewResult);
 
-   Tree&       Sender_;
+   Tree*       Sender_;
    OpResult    OpResult_;
 
       /// 使用 "\n"(kRowSplitter) 分隔行, 使用 "\x01"(kCellSplitter) 分隔 cell.
@@ -84,14 +91,14 @@ struct GridViewResult {
    size_t      DistanceEnd_{kNotSupported};
    size_t      ContainerSize_{kNotSupported};
 
-   GridViewResult(Tree& sender) : Sender_(sender), OpResult_(OpResult::no_error) {
+   GridViewResult(Tree& sender, OpResult res)
+      : Sender_(&sender)
+      , OpResult_{res} {
+   }
+   GridViewResult(Tree& sender) : GridViewResult(sender, OpResult::no_error) {
    }
 
-   GridViewResult(Tree& sender, OpResult res)
-      : Sender_(sender)
-      , OpResult_(res)
-      , DistanceBegin_{kNotSupported}
-      , DistanceEnd_{kNotSupported} {
+   GridViewResult(OpResult res) : Sender_{nullptr}, OpResult_{res} {
    }
 
    enum : size_t {
@@ -99,7 +106,7 @@ struct GridViewResult {
       kNotSupported = static_cast<size_t>(-1)
    };
    enum : char {
-      kCellSplitter = '\x01',
+      kCellSplitter = '\t',
       kRowSplitter = '\n'
    };
 
@@ -177,6 +184,13 @@ public:
 
    virtual void GridView(const GridViewRequest& req, FnGridViewOp fnCallback);
 
+   template <class Container, class FnStrToKey, class Iterator = typename Container::iterator, class KeyT = typename Container::key_type>
+   static Iterator GetFindIterator(Container& container, StrView strKeyText, FnStrToKey fnStrToKey) {
+      Iterator ivalue;
+      if (GetStartIterator(container, ivalue, strKeyText.begin()))
+         return ivalue;
+      return container.find(fnStrToKey(strKeyText));
+   }
    /// 增加一個 pod.
    /// - 當 key 存在時, 視為成功, 會呼叫: fnCallback(OpResult::key_exists, op);
    /// - 有些 tree 不允許從管理介面加入 pod, 此時會呼叫: fnCallback(OpResult::not_supported_add_pod, nullptr);
@@ -337,6 +351,35 @@ void MakeGridViewArrayRange(Iterator istart, Iterator iend,
             break;
       }
    }
+}
+
+//--------------------------------------------------------------------------//
+
+template <class TreeOp, class MustLockContainer, class FnRowAppender>
+void TreeOp_GridView_MustLock(TreeOp& op, MustLockContainer& c,
+                              const GridViewRequest& req, FnGridViewOp&& fnCallback,
+                              FnRowAppender&& fnRowAppender) {
+   GridViewResult res{op.Tree_};
+   {
+      typename MustLockContainer::Locker container{c};
+      MakeGridView(*container, op.GetStartIterator(*container, req.OrigKey_),
+                   req, res, std::move(fnRowAppender));
+   } // unlock.
+   fnCallback(res);
+}
+
+template <class PodOp, class TreeOp, class MustLockContainer>
+void TreeOp_Get_MustLock(TreeOp& treeOp, MustLockContainer& c, StrView strKeyText, FnPodOp&& fnCallback) {
+   {
+      typename MustLockContainer::Locker container{c};
+      auto   ifind = treeOp.GetStartIterator(*container, strKeyText);
+      if (ifind != container->end()) {
+         PodOp podOp{*ifind, treeOp.Tree_, OpResult::no_error, strKeyText, container};
+         fnCallback(podOp, &podOp);
+         return;
+      }
+   } // unlock.
+   fnCallback(PodOpResult{treeOp.Tree_, OpResult::not_found_key, strKeyText}, nullptr);
 }
 
 } } // namespaces

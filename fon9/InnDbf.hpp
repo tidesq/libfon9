@@ -46,7 +46,8 @@ public:
    /// \retval false tableName 已經有 handler.
    /// \retval true  成功與 tableName 建立關聯,
    ///               若已經呼叫過 LoadAll(); 則在返回前會自動載入.
-   bool LinkTable(StrView tableName, InnDbfTableHandlerSP handler, InnRoomSize minRoomSize);
+   ///               handler 必須在死亡前主動呼叫 DelinkTable();
+   bool LinkTable(StrView tableName, InnDbfTableHandler& handler, InnRoomSize minRoomSize);
    /// Open() => LinkTable() 之後, 載入全部的 rooms.
    /// 只能在 Open() 之後呼叫一次, 若尚未開啟則會拋出異常!
    /// 載入完成後, 會建立與 Syncer 的關聯.
@@ -54,7 +55,7 @@ public:
 
    /// 通常在載入模組提前卸載時會呼叫此處.
    /// 表示不再處理寫入、同步, 之後的同步訊息都將丟失!
-   void DelinkTable(InnDbfTableHandlerSP handler);
+   void DelinkTable(InnDbfTableHandler& handler);
 
    void Close();
 

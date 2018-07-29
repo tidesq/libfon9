@@ -62,5 +62,6 @@ $OUTPUT_DIR/Socket_UT
 $OUTPUT_DIR/Seed_UT
 $OUTPUT_DIR/Tree_UT
 
-# unit tests: crypt
-$OUTPUT_DIR/Crypt_UT
+# unit tests: crypt / auth
+$OUTPUT_DIR/Crypto_UT
+$OUTPUT_DIR/AuthMgr_UT

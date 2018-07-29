@@ -9,6 +9,8 @@ namespace fon9 { namespace seed {
 NamedSeed::~NamedSeed() {
 }
 void NamedSeed::OnParentTreeClear(Tree&) {
+   if (TreeSP sapling = this->GetSapling())
+      sapling->OnParentSeedClear();
 }
 void NamedSeed::OnNamedSeedReleased() {
    if (this->use_count() == 0)
@@ -38,24 +40,24 @@ TreeSP NamedSapling::GetSapling() {
 
 //--------------------------------------------------------------------------//
 
-MaTree::MaTree(std::string coatName)
+MaTree::MaTree(std::string tabName)
    : base{new Layout1(fon9_MakeField(Named{"Name"}, NamedSeed, Name_),
-                      new Tab{Named{std::move(coatName)}, NamedSeed::MakeDefaultFields()})} {
+                      new Tab{Named{std::move(tabName)}, NamedSeed::MakeDefaultFields()})} {
 }
 
-void MaTree::OnMaTree_AfterAdd(NamedSeed& /*seed*/) {
+void MaTree::OnMaTree_AfterAdd(Locker&, NamedSeed&) {
 }
-void MaTree::OnMaTree_AfterRemove(NamedSeed& /*seed*/) {
+void MaTree::OnMaTree_AfterRemove(Locker&, NamedSeed&) {
 }
 void MaTree::OnMaTree_AfterClear() {
 }
 
 bool MaTree::Add(NamedSeedSP seed, StrView logErrHeader) {
    {
-      Locker children{this->Children_};
-      auto   ires = children->insert(ContainerImpl::value_type{&seed->Name_, std::move(seed)});
+      Locker container{this->Container_};
+      auto   ires = container->insert(ContainerImpl::value_type{&seed->Name_, std::move(seed)});
       if (ires.second) {
-         this->OnMaTree_AfterAdd(*ires.first->second);
+         this->OnMaTree_AfterAdd(container, *ires.first->second);
          return true;
       }
    } // unlock.
@@ -66,9 +68,9 @@ bool MaTree::Add(NamedSeedSP seed, StrView logErrHeader) {
 
 std::vector<NamedSeedSP> MaTree::GetList(StrView nameHead) const {
    std::vector<NamedSeedSP>   res;
-   ConstLocker                children{this->Children_};
-   auto                       ifind{children->lower_bound(nameHead)};
-   while (ifind != children->end()
+   ConstLocker                container{this->Container_};
+   auto                       ifind{container->lower_bound(nameHead)};
+   while (ifind != container->end()
           && ifind->first.size() >= nameHead.size()
           && memcmp(ifind->first.begin(), nameHead.begin(), nameHead.size()) == 0) {
       res.emplace_back(ifind->second);
@@ -78,101 +80,66 @@ std::vector<NamedSeedSP> MaTree::GetList(StrView nameHead) const {
 }
 
 NamedSeedSP MaTree::Remove(StrView name) {
-   Locker   children{this->Children_};
-   auto     ifind{children->find(name)};
-   if (ifind == children->end())
+   Locker   container{this->Container_};
+   auto     ifind{container->find(name)};
+   if (ifind == container->end())
       return nullptr;
    NamedSeedSP seed = ifind->second;
-   children->erase(ifind);
-   this->OnMaTree_AfterRemove(*seed);
+   container->erase(ifind);
+   this->OnMaTree_AfterRemove(container, *seed);
    return seed;
 }
 
-void MaTree::ClearSeeds() {
-   ContainerImpl temp;
-   {
-      Locker children{this->Children_};
-      children->swap(temp);
-      this->OnMaTree_AfterClear();
-   }
-   // unlock 之後 temp 死亡時自動清理 children, 清理前需要通知 child.
-   for (auto& seed : temp)
-      seed.second->OnParentTreeClear(*this);
+void MaTree::OnParentSeedClear() {
+   base::OnParentSeedClear();
+   this->OnMaTree_AfterClear();
 }
 
 //--------------------------------------------------------------------------//
 
 fon9_WARN_DISABLE_PADDING;
-fon9_MSC_WARN_DISABLE_NO_PUSH(4265 /* class has virtual functions, but destructor is not virtual. */);
-struct MaTree::PodOp : public PodOpDefault {
+fon9_MSC_WARN_DISABLE_NO_PUSH(4265 /* class has virtual functions, but destructor is not virtual. */
+                              4355 /* 'this' : used in base member initializer list*/);
+struct MaTree::PodOp : public PodOpLocker<PodOp, Locker> {
    fon9_NON_COPY_NON_MOVE(PodOp);
-   using base = PodOpDefault;
-
-   NamedSeed&  Seed_;
-   PodOp(NamedSeed& seed, Tree& sender, OpResult res, const StrView& key)
-      : base{sender, res, key}
-      , Seed_(seed) {
+   using base = PodOpLocker<PodOp, Locker>;
+   NamedSeed*  Seed_;
+   PodOp(ContainerImpl::value_type& v, Tree& sender, OpResult res, const StrView& key, Locker& locker)
+      : base{*this, sender, res, key, locker}
+      , Seed_{v.second.get()} {
    }
-
-   template <class RawRW, class FnOp>
-   void BeginRW(Tab& tab, FnOp&& fnCallback) {
-      assert(this->Sender_->LayoutSP_->GetTab(static_cast<size_t>(tab.GetIndex())) == &tab);
-      this->Tab_ = &tab;
-      RawRW op{this->Seed_};
-      this->OpResult_ = OpResult::no_error;
-      fnCallback(*this, &op);
+   NamedSeed& GetSeedRW(Tab&) {
+      return *this->Seed_;
    }
-   void BeginRead(Tab& tab, FnReadOp fnCallback) override {
-      this->BeginRW<SimpleRawRd>(tab, std::move(fnCallback));
+   TreeSP HandleGetSapling(Tab&) {
+      return this->Seed_->GetSapling();
    }
-   void BeginWrite(Tab& tab, FnWriteOp fnCallback) override {
-      this->BeginRW<SimpleRawWr>(tab, std::move(fnCallback));
-   }
-   virtual TreeSP GetSapling(Tab&) {
-      return this->Seed_.GetSapling();
-   }
-   virtual void OnSeedCommand(Tab* tab, StrView cmd, FnCommandResultHandler resHandler) {
-      this->Tab_ = tab;
-      this->Seed_.OnSeedCommand(*this, cmd, std::move(resHandler));
+   void HandleSeedCommand(SeedOpResult& res, StrView cmd, FnCommandResultHandler&& resHandler) {
+      this->Seed_->OnSeedCommand(res, cmd, std::move(resHandler));
    }
 };
+
 struct MaTree::TreeOp : public fon9::seed::TreeOp {
    fon9_NON_COPY_NON_MOVE(TreeOp);
    using base = fon9::seed::TreeOp;
+   using base::base;
    TreeOp(MaTree& tree) : base(tree) {
    }
 
-   static ContainerImpl::iterator GetStartIterator(ContainerImpl& children, StrView strKeyText) {
-      return base::GetStartIterator(children, strKeyText, [](const fon9::StrView& strKey) { return strKey; });
+   static ContainerImpl::iterator GetStartIterator(ContainerImpl& container, StrView strKeyText) {
+      return base::GetStartIterator(container, strKeyText, [](const fon9::StrView& strKey) { return strKey; });
    }
-   virtual void GridView(const GridViewRequest& req, FnGridViewOp fnCallback) {
-      GridViewResult res{this->Tree_};
-      {
-         Locker children{static_cast<MaTree*>(&this->Tree_)->Children_};
-         MakeGridView(*children, this->GetStartIterator(*children, req.OrigKey_),
-                      req, res, &SimpleMakeRowView<ContainerImpl::iterator>);
-      } // unlock.
-      fnCallback(res);
+   void GridView(const GridViewRequest& req, FnGridViewOp fnCallback) override {
+      TreeOp_GridView_MustLock(*this, static_cast<MaTree*>(&this->Tree_)->Container_,
+                               req, std::move(fnCallback), &SimpleMakeRowView<ContainerImpl::iterator>);
    }
 
-   virtual void Get(StrView strKeyText, FnPodOp fnCallback) override {
-      NamedSeedSP seed;
-      {
-         Locker children{static_cast<MaTree*>(&this->Tree_)->Children_};
-         auto   ifind = this->GetStartIterator(*children, strKeyText);
-         if (ifind != children->end())
-            seed = ifind->second;
-      } // unlock.
-      if (!seed)
-         fnCallback(PodOpResult{this->Tree_, OpResult::not_found_key, strKeyText}, nullptr);
-      else {
-         PodOp op{*seed, this->Tree_, OpResult::no_error, strKeyText};
-         fnCallback(op, &op);
-      }
+   void Get(StrView strKeyText, FnPodOp fnCallback) override {
+      TreeOp_Get_MustLock<PodOp>(*this, static_cast<MaTree*>(&this->Tree_)->Container_, strKeyText, std::move(fnCallback));
    }
    // MaTree 不支援透過 Op 來 Add(), Remove();
-   // virtual void Add(StrView strKeyText, FnPodOp fnCallback) override;
-   // virtual void Remove(StrView strKeyText, Tab* tab, FnPodRemoved fnCallback) override;
+   // void Add(StrView strKeyText, FnPodOp fnCallback) override;
+   // void Remove(StrView strKeyText, Tab* tab, FnPodRemoved fnCallback) override;
 };
 fon9_WARN_POP;
 

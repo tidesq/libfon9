@@ -155,9 +155,9 @@ private:
          rec->RoomKey_ = std::move(this->EvArgs_.RoomKey_);
          fon9::BitvInArchive{*this->EvArgs_.Buffer_}(*rec);
       }
-      void UpdateLoad(DeletedMap& deletedMap, DeletedMap::iterator* ideleted) {
-         if (ideleted)
-            (*ideleted)->second = std::move(this->EvArgs_.RoomKey_);
+      void UpdateLoad(DeletedMap& deletedMap, DeletedMap::iterator* iDeleted) {
+         if (iDeleted)
+            (*iDeleted)->second = std::move(this->EvArgs_.RoomKey_);
          else
             deletedMap[this->Key_] = std::move(this->EvArgs_.RoomKey_);
       }
@@ -192,10 +192,10 @@ private:
          this->PendingWriteRoomKey_ = &rec->RoomKey_;
          fon9::BitvOutArchive{this->PendingWriteBuf_}(this->Key_, *rec);
       }
-      void UpdateSync(DeletedMap& deletedMap, DeletedMap::iterator* ideleted) {
+      void UpdateSync(DeletedMap& deletedMap, DeletedMap::iterator* iDeleted) {
          assert(this->EvArgs_.RoomType_ == fon9::InnDbfRoomType::RowDeleted);
-         if (ideleted)
-            this->PendingWriteRoomKey_ = &((*ideleted)->second);
+         if (iDeleted)
+            this->PendingWriteRoomKey_ = &((*iDeleted)->second);
          else {
             this->PendingWriteRoomKey_ = &deletedMap[this->Key_];
             *this->PendingWriteRoomKey_ = std::move(this->PendingFreeRoomKey_);
@@ -223,7 +223,7 @@ private:
          this->FreeRoom(std::move(v.second));
    }
 };
-using UserTableSP = fon9::intrusive_ptr<UserTable>;
+using UserTableSP = std::unique_ptr<UserTable>;
 
 //--------------------------------------------------------------------------//
 
@@ -232,6 +232,7 @@ static fon9::InnRoomSize   kMinUserRoomSize = 32;
 static fon9::InnRoomSize   kInnBlockSize = 64;
 
 struct TestDbf {
+   fon9_NON_COPYABLE(TestDbf);
    fon9::InnSyncerSP Syncer_;
    fon9::InnDbfSP    Dbf_;
    UserTableSP       UserTable_{new UserTable};
@@ -263,13 +264,13 @@ struct TestDbf {
    void OpenLinkLoad(fon9::StrView dbfFileName) {
       this->UserTable_->Clear();
       this->Open(dbfFileName);
-      this->Dbf_->LinkTable("User", this->UserTable_, kMinUserRoomSize);
+      this->Dbf_->LinkTable("User", *this->UserTable_, kMinUserRoomSize);
       this->Dbf_->LoadAll();
    }
    void Close() {
       if (this->Syncer_)
          this->Syncer_->StopSync();
-      this->Dbf_->DelinkTable(this->UserTable_);
+      this->Dbf_->DelinkTable(*this->UserTable_);
       this->Dbf_->Close();
    }
 };
@@ -340,10 +341,10 @@ void TestInnDbf() {
 
       std::cout << "[TEST ] LinkTable() * N";
       for (unsigned tableId = 2; tableId < 1000; ++tableId) {
-         dbf1.Dbf_->DelinkTable(dbf1.UserTable_);
+         dbf1.Dbf_->DelinkTable(*dbf1.UserTable_);
          fon9::RevBufferFixedSize<128> tableName;
          fon9::RevPrint(tableName, "Table", tableId, fon9::FmtDef{"08"});
-         dbf1.Dbf_->LinkTable(fon9::StrView(tableName.GetCurrent(), tableName.GetMemEnd()), dbf1.UserTable_, kMinUserRoomSize);
+         dbf1.Dbf_->LinkTable(fon9::StrView(tableName.GetCurrent(), tableName.GetMemEnd()), *dbf1.UserTable_, kMinUserRoomSize);
       }
       std::cout << "\r" "[OK   ]" << std::endl;
 
@@ -354,7 +355,7 @@ void TestInnDbf() {
       TestDbf test;
       test.Open(kDbfFileName1);
       test.Dbf_->LoadAll();
-      test.Dbf_->LinkTable("User", test.UserTable_, kMinUserRoomSize);
+      test.Dbf_->LinkTable("User", *test.UserTable_, kMinUserRoomSize);
       if (!test.UserTable_->IsEqual(*dbf1.UserTable_))
          break;
       if (!test.UserTable_->IsEqualRoomCount()) {

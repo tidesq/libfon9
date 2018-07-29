@@ -10,6 +10,16 @@ AuthSession::~AuthSession() {
 
 //--------------------------------------------------------------------------//
 
+AuthMgr::AuthMgr(seed::MaTreeSP ma, std::string name, InnDbfSP storage)
+   : base{name}
+   , MaRoot_{std::move(ma)}
+   , Agents_{new seed::MaTree{"Agents"}}
+   , Storage_{std::move(storage)}
+   , RoleMgr_{new RoleMgr{"RoleMgr"}} {
+   this->RoleMgr_->LinkStorage(*this->Storage_);
+   this->Agents_->Add(this->RoleMgr_);
+}
+
 seed::TreeSP AuthMgr::GetSapling() {
    return this->Agents_;
 }

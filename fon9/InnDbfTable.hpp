@@ -34,7 +34,7 @@ public:
 
 private:
    friend class InnDbf;
-   InnDbfTableHandlerSP Handler_;
+   InnDbfTableHandler*  Handler_{nullptr};
    InnRoomSize          MinRoomSize_{0};
    size_t               RoomCount_{0};
 };
@@ -58,7 +58,7 @@ struct InnDbfSyncEventArgs {
    DcQueue*       Buffer_;
 };
 
-class fon9_API InnDbfTableHandler : public intrusive_ref_counter<InnDbfTableHandler> {
+class fon9_API InnDbfTableHandler {
    friend class InnDbf;
    InnDbfTableLinkSP Table_;
 public:
@@ -167,8 +167,8 @@ InnSyncCheckResult OnInnDbfLoad_Update(Map& map, LoadHandler& handler) {
 ///   struct LoadHandler : public HandlerBase, public fon9::InnDbfLoadHandler {
 ///      fon9_NON_COPY_NON_MOVE(LoadHandler);
 ///      using InnDbfLoadHandler::InnDbfLoadHandler;
-///      void UpdateLoad(MainMap&    mainMap,    MainMap::iterator*    imain);
-///      void UpdateLoad(DeletedMap& deletedMap, DeletedMap::iterator* ideleted);
+///      void UpdateLoad(MainMap&    mainMap,    MainMap::iterator*    iMain);
+///      void UpdateLoad(DeletedMap& deletedMap, DeletedMap::iterator* iDeleted);
 ///   };
 /// \endcode
 template <class MainMap, class DeletedMap, class LoadHandler>
@@ -200,6 +200,10 @@ struct InnDbfSyncHandler {
       if (this->PendingFreeRoomKey_)
          this->Handler_.FreeRoom(std::move(this->PendingFreeRoomKey_));
    }
+   template <class Map>
+   static void BeforeErase(Map& map, typename Map::iterator imap) {
+      (void)map; (void)imap;
+   }
 };
 
 template <class Map, class SyncHandler>
@@ -211,6 +215,7 @@ InnSyncCheckResult OnInnDbfSync_Erase(Map& map, SyncHandler& handler) {
       break;
    case InnSyncCheckResult::SyncIsNewer:
       handler.PendingFreeRoomKey_ = std::move(handler.GetRoomKey(*imap));
+      handler.BeforeErase(map, imap);
       map.erase(imap);
       break;
    case InnSyncCheckResult::SyncIsOlder:
@@ -248,8 +253,8 @@ InnSyncCheckResult OnInnDbfSync_Update(Map& map, SyncHandler& handler) {
 ///   struct SyncHandler : public HandlerBase, public fon9::InnDbfSyncHandler {
 ///      fon9_NON_COPY_NON_MOVE(SyncHandler);
 ///      using InnDbfSyncHandler::InnDbfSyncHandler;
-///      void UpdateSync(MainMap&    mainMap,    MainMap::iterator*    imain);
-///      void UpdateSync(DeletedMap& deletedMap, DeletedMap::iterator* ideleted);
+///      void UpdateSync(MainMap&    mainMap,    MainMap::iterator*    iMain);
+///      void UpdateSync(DeletedMap& deletedMap, DeletedMap::iterator* iDeleted);
 ///   };
 /// \endcode
 template <class MainMap, class DeletedMap, class SyncHandler>

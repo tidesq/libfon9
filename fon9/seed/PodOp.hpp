@@ -61,6 +61,14 @@ public:
 
    void BeginRead(Tab& tab, FnReadOp fnCallback) override;
    void BeginWrite(Tab& tab, FnWriteOp fnCallback) override;
+
+   template <class FnOp, class RawRW>
+   void BeginRW(Tab& tab, FnOp&& fnCallback, RawRW&& op) {
+      assert(this->Sender_->LayoutSP_->GetTab(static_cast<size_t>(tab.GetIndex())) == &tab);
+      this->Tab_ = &tab;
+      this->OpResult_ = OpResult::no_error;
+      fnCallback(*this, &op);
+   }
 };
 
 } } // namespaces

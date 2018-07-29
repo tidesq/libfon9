@@ -80,6 +80,10 @@
     <ClInclude Include="..\..\..\fon9\auth\AuthBase.h" />
     <ClInclude Include="..\..\..\fon9\auth\AuthBase.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\AuthMgr.hpp" />
+    <ClInclude Include="..\..\..\fon9\auth\PolicyAgent.hpp" />
+    <ClInclude Include="..\..\..\fon9\auth\PolicyTable.hpp" />
+    <ClInclude Include="..\..\..\fon9\auth\PolicyTree.hpp" />
+    <ClInclude Include="..\..\..\fon9\auth\RoleMgr.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\SaslClient.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\SaslScram.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\SaslScramSha256.hpp" />
@@ -114,6 +118,7 @@
     <ClInclude Include="..\..\..\fon9\File.hpp" />
     <ClInclude Include="..\..\..\fon9\FileAppender.hpp" />
     <ClInclude Include="..\..\..\fon9\FilePath.hpp" />
+    <ClInclude Include="..\..\..\fon9\framework\Framework.hpp" />
     <ClInclude Include="..\..\..\fon9\HostId.hpp" />
     <ClInclude Include="..\..\..\fon9\InnDbf.hpp" />
     <ClInclude Include="..\..\..\fon9\InnDbfTable.hpp" />
@@ -174,6 +179,7 @@
     <ClInclude Include="..\..\..\fon9\MustLock.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\MaTree.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\PodOp.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\SeedSearcher.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\Tab.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\Field.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\FieldDecimal.hpp" />
@@ -193,6 +199,7 @@
     <ClInclude Include="..\..\..\fon9\seed\RawWr.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\SeedBase.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\Tree.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\TreeLockContainerT.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\TreeOp.hpp" />
     <ClInclude Include="..\..\..\fon9\SleepPolicy.hpp" />
     <ClInclude Include="..\..\..\fon9\SortedVector.hpp" />
@@ -238,6 +245,9 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\fon9\Appender.cpp" />
     <ClCompile Include="..\..\..\fon9\auth\AuthMgr.cpp" />
+    <ClCompile Include="..\..\..\fon9\auth\PolicyTable.cpp" />
+    <ClCompile Include="..\..\..\fon9\auth\PolicyTree.cpp" />
+    <ClCompile Include="..\..\..\fon9\auth\RoleMgr.cpp" />
     <ClCompile Include="..\..\..\fon9\auth\SaslClient.cpp" />
     <ClCompile Include="..\..\..\fon9\auth\SaslScramSha256.cpp" />
     <ClCompile Include="..\..\..\fon9\auth\SaslScramSha256Client.cpp" />
@@ -258,6 +268,7 @@
     <ClCompile Include="..\..\..\fon9\File.cpp" />
     <ClCompile Include="..\..\..\fon9\FileAppender.cpp" />
     <ClCompile Include="..\..\..\fon9\FilePath.cpp" />
+    <ClCompile Include="..\..\..\fon9\framework\Framework.cpp" />
     <ClCompile Include="..\..\..\fon9\HostId.cpp" />
     <ClCompile Include="..\..\..\fon9\InnFile.cpp" />
     <ClCompile Include="..\..\..\fon9\InnDbf.cpp" />
@@ -299,6 +310,7 @@
     <ClCompile Include="..\..\..\fon9\FmtDef.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\MaTree.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\PodOp.cpp" />
+    <ClCompile Include="..\..\..\fon9\seed\SeedSearcher.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\Tab.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\Field.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\FieldBytes.cpp" />

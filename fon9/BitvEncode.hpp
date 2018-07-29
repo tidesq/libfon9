@@ -195,6 +195,12 @@ inline void ElementCountToBitv(RevBuffer&, ...) {
    // 固定大小的陣列, 不用紀錄 element count.
 }
 
+template <class Key, class Value>
+void ToBitv(RevBuffer& rbuf, const std::pair<const Key, Value>& v) {
+   ToBitv(rbuf, v.second);
+   ToBitv(rbuf, v.first);
+}
+
 template <class Container>
 auto ToBitv(RevBuffer& rbuf, const Container& c) -> enable_if_t<sizeof(*std::begin(c)) != 1> {
    const auto ibeg = std::begin(c);

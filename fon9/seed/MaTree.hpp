@@ -2,10 +2,8 @@
 /// \author fonwinz@gmail.com
 #ifndef __fon9_seed_MaTree_hpp__
 #define __fon9_seed_MaTree_hpp__
-#include "fon9/seed/Tree.hpp"
-#include "fon9/seed/PodOp.hpp"
+#include "fon9/seed/TreeLockContainerT.hpp"
 #include "fon9/seed/Named.hpp"
-#include "fon9/MustLock.hpp"
 #include <map>
 
 namespace fon9 { namespace seed {
@@ -25,11 +23,6 @@ class fon9_API NamedSeed : public intrusive_ref_counter<NamedSeed>, public Named
    using base = Named;
 
 protected:
-   // 讓 MaTree::ClearSeeds() 可以呼叫 OnParentTreeClear();
-   friend class MaTree;
-   /// 預設 do nothing.
-   virtual void OnParentTreeClear(Tree&);
-
    /// 在最後一個 NamedSeedSP 死亡時會呼叫此處, 所以此時已沒有任何人擁有 this!
    /// 預設: if (this->use_count() == 0) delete this;
    virtual void OnNamedSeedReleased();
@@ -45,6 +38,10 @@ public:
 
    virtual TreeSP GetSapling();
    virtual void OnSeedCommand(SeedOpResult& res, StrView cmd, FnCommandResultHandler resHandler);
+
+   /// 應在 Parent Tree 收到 OnParentSeedClear() 時呼叫.
+   /// 預設: sapling->OnParentSeedClear();
+   virtual void OnParentTreeClear(Tree&);
 };
 
 /// \ingroup seed
@@ -54,50 +51,42 @@ class fon9_API NamedSapling : public NamedSeed {
    using base = NamedSeed;
 public:
    const TreeSP Sapling_;
+
    template <class... ArgsT>
    NamedSapling(TreeSP sapling, ArgsT&&... args)
       : base{std::forward<ArgsT>(args)...}
       , Sapling_{std::move(sapling)} {
    }
+
    virtual TreeSP GetSapling() override;
 };
 
 template <class NamedSeedBaseT>
 using NamedSeedSPT = intrusive_ptr<NamedSeedBaseT>;
 using NamedSeedSP = NamedSeedSPT<NamedSeed>;
+using NamedSeedContainerImpl = std::map<StrView, NamedSeedSP>;
 
 /// \ingroup seed
 /// Container of NamedSeedSP.
-class fon9_API MaTree : public Tree {
+class fon9_API MaTree : public TreeLockContainerT<NamedSeedContainerImpl> {
    fon9_NON_COPY_NON_MOVE(MaTree);
-   using base = Tree;
+   using base = TreeLockContainerT<NamedSeedContainerImpl>;
    struct TreeOp;
    struct PodOp;
 protected:
-   using ContainerImpl = std::map<StrView, NamedSeedSP>;
-   using Container = MustLock<ContainerImpl>;
-   using Locker = Container::Locker;
-   using ConstLocker = Container::ConstLocker;
-   Container   Children_;
-
    /// 在 Add() 成功返回前(尚未解鎖) 的事件通知.
-   virtual void OnMaTree_AfterAdd(NamedSeed& seed);
+   virtual void OnMaTree_AfterAdd(Locker&, NamedSeed& seed);
    /// 在 Remove() 成功返回前(尚未解鎖) 的事件通知.
-   virtual void OnMaTree_AfterRemove(NamedSeed& seed);
-   /// 在 ClearSeeds() 成功返回前(尚未解鎖) 的事件通知.
+   virtual void OnMaTree_AfterRemove(Locker&, NamedSeed& seed);
+   /// 在 OnParentSeedClear() 成功返回前(已解鎖) 的事件通知.
    virtual void OnMaTree_AfterClear();
 
 public:
    /// 預設建構, 預設的Layout = Layout1: 包含一個 Tab: 內含3個欄位: Name, Title, Description;
-   MaTree(std::string coatName);
+   MaTree(std::string tabName);
    MaTree(LayoutSP layout) : base{std::move(layout)} {
    }
 
-   size_t size() const {
-      ConstLocker children{this->Children_};
-      return children->size();
-   }
-   
    NamedSeedSP Remove(StrView name);
 
    /// \retval false  seed->Name_ 已存在, 如果 !logErrHeader.empty() 則在帆回前會先記錄 log.
@@ -123,9 +112,9 @@ public:
    /// 請注意 thread safe: 除了 retval->Name_ 是 thread safe,
    /// 其他的 retval->GetDisplayText(); retval->GetDescription(); 都不是 thread safe!
    NamedSeedSP Get(StrView name) const {
-      ConstLocker children{this->Children_};
-      auto        ifind{children->find(name)};
-      return ifind == children->end() ? NamedSeedSP{} : ifind->second;
+      ConstLocker container{this->Container_};
+      auto        ifind{container->find(name)};
+      return ifind == container->end() ? NamedSeedSP{} : ifind->second;
    }
    template <class T>
    intrusive_ptr<T> Get(StrView name) const {
@@ -137,7 +126,7 @@ public:
    /// 清除全部的元素(Seeds).
    /// - 避免循環相依造成的 resource leak
    /// - 清理時透過 NamedSeed::OnParentTreeClear() 通知 seed.
-   virtual void ClearSeeds();
+   virtual void OnParentSeedClear() override;
 
    virtual void OnTreeOp(FnTreeOp fnCallback) override;
 };

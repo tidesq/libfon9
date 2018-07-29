@@ -11,6 +11,8 @@
 
 //--------------------------------------------------------------------------//
 
+#define kSPL   "\t"
+
 // 因為在 64 位元系統裡面, 保證在 23 bytes 之內不用分配記憶體.
 // 而商品 Id、姓名之類的字串，一般而言也不會太長.
 using ShortStr = fon9::CharVector;
@@ -394,7 +396,7 @@ public:
                : (istart + maxDefaultCount);
             fon9::seed::MakeGridViewArrayRange(istart, iend, req, res,
                                                [&res](IvacNo ivalue, fon9::seed::Tab* tab, fon9::RevBuffer& rbuf) {
-               const Pod* pod = static_cast<IvacTree*>(&res.Sender_)->Ivacs_.Get(ivalue);
+               const Pod* pod = static_cast<IvacTree*>(res.Sender_)->Ivacs_.Get(ivalue);
                if (pod == nullptr || pod->IvacNo_ == kInvalidIvacNo)
                   return false;
                if (tab)
@@ -596,9 +598,9 @@ int main(int argc, char** args) {
          });
       }
       CheckGridView(op, tab,
-                    "10" "\x1" "Show"   "\x1" "90000" "\x1" "91000" "\x1" "92000" "\n"
-                    "21" "\x1" "Fonwin" "\x1" "10000" "\x1" "0"     "\x1" "0" "\n"
-                    "32" "\x1" "Tony"   "\x1" "20000" "\x1" "21000" "\x1" "22000" // 最後一筆尾端無換行!
+                    "10" kSPL "Show"   kSPL "90000" kSPL "91000" kSPL "92000" "\n"
+                    "21" kSPL "Fonwin" kSPL "10000" kSPL "0"     kSPL "0" "\n"
+                    "32" kSPL "Tony"   kSPL "20000" kSPL "21000" kSPL "22000" // 最後一筆尾端無換行!
                   );
 
    });
@@ -642,14 +644,14 @@ int main(int argc, char** args) {
             op->Add("1101", [](const fon9::seed::PodOpResult&, fon9::seed::PodOp*) {});
 
             CheckGridView(op, r.Sender_->LayoutSP_->GetTab(IvacSymbTree::kTabBal),
-                          "1101" "\x1" "0" "\x1" "0" "\x1" "0" "\x1" "0" "\x1" "0" "\n"
-                          "2317" "\x1" "1" "\x1" "2" "\x1" "3" "\x1" "4" "\x1" "5" "\n"
-                          "2330" "\x1" "5" "\x1" "4" "\x1" "3" "\x1" "2" "\x1" "1" // 最後一筆尾端無換行!
+                          "1101" kSPL "0" kSPL "0" kSPL "0" kSPL "0" kSPL "0" "\n"
+                          "2317" kSPL "1" kSPL "2" kSPL "3" kSPL "4" kSPL "5" "\n"
+                          "2330" kSPL "5" kSPL "4" kSPL "3" kSPL "2" kSPL "1" // 最後一筆尾端無換行!
                           );
             CheckGridView(op, r.Sender_->LayoutSP_->GetTab(IvacSymbTree::kTabVol),
                           "1101" /* 空資料 */ "\n"
-                          "2317" "\x1" "6" "\x1" "7" "\x1" "8" "\x1" "9" "\x1" "0" "\x1" "0" "\x1" "0" "\x1" "0" "\n"
-                          "2330" "\x1" "9" "\x1" "8" "\x1" "7" "\x1" "6" "\x1" "0" "\x1" "0" "\x1" "0" "\x1" "0"
+                          "2317" kSPL "6" kSPL "7" kSPL "8" kSPL "9" kSPL "0" kSPL "0" kSPL "0" kSPL "0" "\n"
+                          "2330" kSPL "9" kSPL "8" kSPL "7" kSPL "6" kSPL "0" kSPL "0" kSPL "0" kSPL "0"
                           );
          });
       });

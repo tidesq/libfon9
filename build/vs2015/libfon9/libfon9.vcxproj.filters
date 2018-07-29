@@ -132,6 +132,12 @@
     <Filter Include="Header Files\crypto">
       <UniqueIdentifier>{673d59af-28c0-4524-88fd-e96240847767}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\framework">
+      <UniqueIdentifier>{9106f2b8-5e11-4394-aa37-162b798a9004}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\framework">
+      <UniqueIdentifier>{a5aaa3c3-42d1-4a3a-a33b-86b6b1a691f6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\sys\Config.h">
@@ -584,6 +590,27 @@
     <ClInclude Include="..\..\..\fon9\crypto\CryptoTools.hpp">
       <Filter>Header Files\crypto</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\auth\PolicyTable.hpp">
+      <Filter>Header Files\auth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\auth\PolicyTree.hpp">
+      <Filter>Header Files\auth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\framework\Framework.hpp">
+      <Filter>Header Files\framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\auth\RoleMgr.hpp">
+      <Filter>Header Files\auth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\TreeLockContainerT.hpp">
+      <Filter>Header Files\seed\_trees</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\auth\PolicyAgent.hpp">
+      <Filter>Header Files\auth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\SeedSearcher.hpp">
+      <Filter>Header Files\seed\_base</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -861,6 +888,21 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\crypto\Sha256.cpp">
       <Filter>Source Files\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\auth\PolicyTable.cpp">
+      <Filter>Source Files\auth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\auth\PolicyTree.cpp">
+      <Filter>Source Files\auth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\framework\Framework.cpp">
+      <Filter>Source Files\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\auth\RoleMgr.cpp">
+      <Filter>Source Files\auth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\seed\SeedSearcher.cpp">
+      <Filter>Source Files\seed\_base</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

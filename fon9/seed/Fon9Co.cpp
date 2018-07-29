@@ -3,8 +3,7 @@
 // fon9 console
 //
 // \author fonwinz@gmail.com
-#include "fon9/seed/MaTree.hpp"
-#include "fon9/auth/AuthMgr.hpp"
+#include "fon9/framework/Framework.hpp"
 
 #if !defined(fon9_WINDOWS)
 #include <sys/mman.h> // mlockall()
@@ -24,18 +23,15 @@ void FixBug_use_std_thread(pthread_t* thread, void *(*start_routine) (void *)) {
 
 //--------------------------------------------------------------------------//
 
+
 //--------------------------------------------------------------------------//
 
-int main(int argc, char** args) {
+int main(int argc, char** argv) {
 #if defined(_MSC_VER) && defined(_DEBUG)
    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
    //_CrtSetBreakAlloc(176);
 #endif
-
-   (void)argc; (void)args;
-
-   fon9::seed::MaTreeSP MaTree_{new fon9::seed::MaTree{"MaRoot"}};
-   if (auto authmgr = fon9::auth::AuthMgr::Plant(MaTree_)) {
-   }
-   MaTree_->ClearSeeds();
+   fon9::Framework   fon9sys;
+   fon9sys.Initialize(argc, argv);
+   fon9sys.Dispose();
 }

@@ -105,8 +105,8 @@ InnDbf::OpenResult InnDbf::OpenImpl(OpenArgs& oargs) {
 
 //--------------------------------------------------------------------------//
 
-bool InnDbf::LinkTable(const StrView tableName, InnDbfTableHandlerSP handler, InnRoomSize minRoomSize) {
-   if (handler->Table_)
+bool InnDbf::LinkTable(const StrView tableName, InnDbfTableHandler& handler, InnRoomSize minRoomSize) {
+   if (handler.Table_)
       return false;
    InnDbfTableLink*  table;
    TableMap::Locker  tableMap{this->TableMap_};
@@ -135,8 +135,8 @@ bool InnDbf::LinkTable(const StrView tableName, InnDbfTableHandlerSP handler, In
       isNewTable = true;
       tableNeedsLoad.reset(table);
    }
-   handler->Table_.reset(table);
-   table->Handler_ = std::move(handler);
+   handler.Table_.reset(table);
+   table->Handler_ = &handler;
    table->MinRoomSize_ = minRoomSize;
    tableMap.unlock();
 
@@ -256,18 +256,18 @@ void InnDbf::Close() {
    this->Clear();
    this->InnFile_.Close();
 }
-void InnDbf::DelinkTable(InnDbfTableHandlerSP handler) {
+void InnDbf::DelinkTable(InnDbfTableHandler& handler) {
    TableMap::Locker tableMap{this->TableMap_};
-   if (!handler->Table_)
+   if (!handler.Table_)
       return;
 
-   InnDbfTableId  tableIndex = handler->Table_->TableId_ - 1;
+   InnDbfTableId  tableIndex = handler.Table_->TableId_ - 1;
    if (tableIndex < tableMap->TableList_.size()
-       && handler->Table_ == tableMap->TableList_[tableIndex]) {
+       && handler.Table_ == tableMap->TableList_[tableIndex]) {
       // table 並沒有從 dbf 移除, 只是移除 handler, 所以 TableList 必須留存.
       // tableMap->TableList_[tableIndex] = nullptr;
-      handler->Table_->Handler_.reset();
-      handler->Table_.reset();
+      handler.Table_->Handler_ = nullptr;
+      handler.Table_.reset();
    }
 }
 
@@ -477,7 +477,7 @@ void InnDbf::OnInnSyncReceived(InnSyncer& syncer, DcQueue&& buf) {
    BitvInArchive        iar{buf};
    iar(evArgs.RoomType_, tableName, evArgs.SyncKey_);
 
-   InnDbfTableHandlerSP handler;
+   InnDbfTableHandler*  handler;
    {
       TableMap::Locker  tables{this->TableMap_};
       auto ifind = tables->find(ToStrView(tableName));

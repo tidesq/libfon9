@@ -2,37 +2,9 @@
 /// \author fonwinz@gmail.com
 #ifndef __fon9_auth_AuthMgr_hpp__
 #define __fon9_auth_AuthMgr_hpp__
-#include "fon9/auth/AuthBase.hpp"
-#include "fon9/seed/MaTree.hpp"
-#include "fon9/CharVector.hpp"
-#include "fon9/InnDbf.hpp"
+#include "fon9/auth/RoleMgr.hpp"
 
 namespace fon9 { namespace auth {
-
-class fon9_API AuthMgr;
-using AuthMgrSP = intrusive_ptr<AuthMgr>;
-
-class fon9_API AuthSession;
-using AuthSessionSP = intrusive_ptr<AuthSession>;
-
-using PolicyName = CharVector;
-using PolicyId = CharVector;
-using RoleId = PolicyId;
-using UserId = PolicyId;
-
-//--------------------------------------------------------------------------//
-
-/// \ingroup auth
-/// 登入成功後根據 RoleId 取得的使用者政策列表.
-using PolicyKeys = std::map<PolicyName, PolicyId>;
-
-/// \ingroup auth
-/// 使用者的角色設定.
-struct RoleConfig {
-   RoleId      RoleId_;
-   std::string RoleName_;
-   PolicyKeys  PolicyKeys_;
-};
 
 /// \ingroup auth
 /// 認證結果.
@@ -136,16 +108,17 @@ using AuthAgentSP = intrusive_ptr<AuthAgent>;
 class fon9_API AuthMgr : public seed::NamedSeed {
    fon9_NON_COPY_NON_MOVE(AuthMgr);
    using base = seed::NamedSeed;
-public:
-   using Agents = seed::MaTreeSP;
-   Agents               Agents_;
-   const seed::MaTreeSP MaRoot_;
 
-   AuthMgr(seed::MaTreeSP ma, std::string name)
-      : base{name}
-      , Agents_{new seed::MaTree{"Agents"}}
-      , MaRoot_{std::move(ma)} {
-   }
+public:
+   /// 擁有此 AuthMgr 的管理員.
+   const seed::MaTreeSP MaRoot_;
+   /// 包含 UserDbs, Role, Policies...
+   const seed::MaTreeSP Agents_;
+   /// 負責儲存 Agents 所需的資料.
+   const InnDbfSP       Storage_;
+   const RoleMgrSP      RoleMgr_;
+
+   AuthMgr(seed::MaTreeSP ma, std::string name, InnDbfSP storage);
    virtual seed::TreeSP GetSapling() override;
 
    #define fon9_kCSTR_AuthAgent_Prefix    "AA_"
@@ -158,12 +131,11 @@ public:
    /// 取得 SASL 機制列表: 使用 SASL 的命名慣例.
    std::string GetSaslMechList(char chSpl = ' ') const;
 
-   #define fon9_kCSTR_AuthMgr_DefaultName "MaAuth"
    /// 在 ma 上面新增一個 AuthMgr.
    /// \retval nullptr   name 已存在.
    /// \retval !=nullptr 新增到 ma 的 AuthMgr 物件.
-   static AuthMgrSP Plant(seed::MaTreeSP ma, std::string name = fon9_kCSTR_AuthMgr_DefaultName) {
-      return ma->Plant<AuthMgr>("AuthMgr.Plant", std::move(name));
+   static AuthMgrSP Plant(seed::MaTreeSP ma, InnDbfSP storage, std::string name) {
+      return ma->Plant<AuthMgr>("AuthMgr.Plant", std::move(name), std::move(storage));
    }
 };
 

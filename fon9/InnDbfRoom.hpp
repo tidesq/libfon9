@@ -43,7 +43,6 @@ class fon9_API InnDbfTableLink;
 using InnDbfTableLinkSP = intrusive_ptr<InnDbfTableLink>;
 
 class fon9_API InnDbfTableHandler;
-using InnDbfTableHandlerSP = intrusive_ptr<InnDbfTableHandler>;
 
 //--------------------------------------------------------------------------//
 
