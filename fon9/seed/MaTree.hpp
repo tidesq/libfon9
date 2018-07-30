@@ -4,7 +4,7 @@
 #define __fon9_seed_MaTree_hpp__
 #include "fon9/seed/TreeLockContainerT.hpp"
 #include "fon9/seed/Named.hpp"
-#include <map>
+#include "fon9/SortedVector.hpp"
 
 namespace fon9 { namespace seed {
 
@@ -64,7 +64,19 @@ public:
 template <class NamedSeedBaseT>
 using NamedSeedSPT = intrusive_ptr<NamedSeedBaseT>;
 using NamedSeedSP = NamedSeedSPT<NamedSeed>;
-using NamedSeedContainerImpl = std::map<StrView, NamedSeedSP>;
+
+struct CmpNamedSeedSP {
+   bool operator()(const NamedSeedSP& lhs, const NamedSeedSP& rhs) const {
+      return lhs->Name_ < rhs->Name_;
+   }
+   bool operator()(const NamedSeedSP& lhs, const StrView& rhs) const {
+      return ToStrView(lhs->Name_) < rhs;
+   }
+   bool operator()(const StrView& lhs, const NamedSeedSP& rhs) const {
+      return lhs < ToStrView(rhs->Name_);
+   }
+};
+using NamedSeedContainerImpl = SortedVectorSet<NamedSeedSP, CmpNamedSeedSP>;
 
 /// \ingroup seed
 /// Container of NamedSeedSP.
@@ -114,7 +126,7 @@ public:
    NamedSeedSP Get(StrView name) const {
       ConstLocker container{this->Container_};
       auto        ifind{container->find(name)};
-      return ifind == container->end() ? NamedSeedSP{} : ifind->second;
+      return ifind == container->end() ? NamedSeedSP{} : *ifind;
    }
    template <class T>
    intrusive_ptr<T> Get(StrView name) const {

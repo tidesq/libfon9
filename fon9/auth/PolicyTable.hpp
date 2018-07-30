@@ -59,22 +59,27 @@ public:
 protected:
    virtual PolicyItemSP MakePolicy(const StrView& policyId) = 0;
 
-   struct ItemMap : public std::map<StrView, PolicyItemSP> {
-      using base = std::map<StrView, PolicyItemSP>;
-
-      using base::find;
-      iterator find(const PolicyId& key) { return this->find(ToStrView(key)); }
-
-      using base::lower_bound;
-      iterator lower_bound(const PolicyId& key) { return this->lower_bound(ToStrView(key)); }
-
+   struct CmpPolicyItemSP {
+      bool operator()(const PolicyItemSP& lhs, const PolicyItemSP& rhs) const {
+         return lhs->PolicyId_ < rhs->PolicyId_;
+      }
+      bool operator()(const PolicyItemSP& lhs, const StrView& rhs) const {
+         return ToStrView(lhs->PolicyId_) < rhs;
+      }
+      bool operator()(const StrView& lhs, const PolicyItemSP& rhs) const {
+         return lhs < ToStrView(rhs->PolicyId_);
+      }
+      bool operator()(const PolicyId& lhs, const PolicyItemSP& rhs) const {
+         return lhs < rhs->PolicyId_;
+      }
+      bool operator()(const PolicyItemSP& lhs, const PolicyId& rhs) const {
+         return lhs->PolicyId_ < rhs;
+      }
+   };
+   struct ItemMap : public SortedVectorSet<PolicyItemSP, CmpPolicyItemSP> {
+      using base = SortedVectorSet<PolicyItemSP, CmpPolicyItemSP>;
       /// 移除前呼叫: i->second->BeforeParentErase(table);
       iterator erase(iterator i);
-
-      std::pair<iterator, bool> insert(PolicyItemSP v) {
-         return base::insert(value_type{ToStrView(v->PolicyId_), v});
-      }
-      mapped_type& operator[](const key_type&) = delete;
    };
    using DeletedMap = std::map<PolicyId, InnDbfRoomKey>;
 
@@ -94,13 +99,13 @@ private:
          return v.second;
       }
       static InnDbfRoomKey& GetRoomKey(ItemMap::value_type& v) {
-         return v.second->RoomKey_;
+         return v->RoomKey_;
       }
       PolicyItem& FetchPolicy(PolicyTable& table, ItemMap& itemMap, ItemMap::iterator* iItem) {
          if (iItem)
-            return *(*iItem)->second;
+            return ***iItem;
          PolicyItemSP rec = table.MakePolicy(ToStrView(this->Key_));
-         return *(itemMap.insert(std::move(rec)).first->second);
+         return **itemMap.insert(std::move(rec)).first;
       }
    };
 
@@ -131,7 +136,7 @@ private:
 inline PolicyTable::ItemMap::iterator PolicyTable::ItemMap::erase(iterator i) {
    PolicyTable& table = ContainerOf(PolicyTable::Maps::StaticCast(ContainerOf(*this, &MapsImpl::ItemMap_)),
                                     &PolicyTable::Maps_);
-   i->second->BeforeParentErase(table);
+   (*i)->BeforeParentErase(table);
    return base::erase(i);
 }
 

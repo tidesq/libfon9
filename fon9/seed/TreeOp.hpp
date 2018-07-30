@@ -186,7 +186,7 @@ public:
       return ContainerLowerBound(container, strKeyText);
    }
 
-   template <class Container, class Iterator = typename Container::iterator, class KeyT = typename Container::key_type>
+   template <class Container, class Iterator = typename Container::iterator>
    static Iterator GetIteratorForGv(Container& container, StrView strKeyText) {
       Iterator ivalue;
       if (GetIteratorForGv(container, ivalue, strKeyText.begin()))
@@ -208,7 +208,7 @@ public:
       return ContainerFind(container, strKeyText);
    }
 
-   template <class Container, class Iterator = typename Container::iterator, class KeyT = typename Container::key_type>
+   template <class Container, class Iterator = typename Container::iterator>
    static Iterator GetIteratorForPod(Container& container, StrView strKeyText) {
       if (strKeyText.begin() == kStrKeyText_Begin_)
          return container.begin();

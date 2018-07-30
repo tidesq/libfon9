@@ -162,7 +162,7 @@ AuthR RoleTree::GetRole(StrView roleId, RoleConfig& res) const {
    auto               ifind = maps->ItemMap_.find(roleId);
    if (ifind == maps->ItemMap_.end())
       return AuthR{fon9_Auth_ERoleId};
-   RoleCfgSP roleConfig = static_cast<RoleItem*>(ifind->second.get())->RoleConfig_;
+   RoleCfgSP roleConfig = static_cast<RoleItem*>(ifind->get())->RoleConfig_;
    maps.unlock();
 
    PolicyConfigs::Locker pmap{roleConfig->PolicyConfigs_};

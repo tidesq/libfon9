@@ -55,9 +55,9 @@ void MaTree::OnMaTree_AfterClear() {
 bool MaTree::Add(NamedSeedSP seed, StrView logErrHeader) {
    {
       Locker container{this->Container_};
-      auto   ires = container->insert(ContainerImpl::value_type{&seed->Name_, std::move(seed)});
+      auto   ires = container->insert(std::move(seed));
       if (ires.second) {
-         this->OnMaTree_AfterAdd(container, *ires.first->second);
+         this->OnMaTree_AfterAdd(container, **ires.first);
          return true;
       }
    } // unlock.
@@ -70,10 +70,12 @@ std::vector<NamedSeedSP> MaTree::GetList(StrView nameHead) const {
    std::vector<NamedSeedSP>   res;
    ConstLocker                container{this->Container_};
    auto                       ifind{container->lower_bound(nameHead)};
-   while (ifind != container->end()
-          && ifind->first.size() >= nameHead.size()
-          && memcmp(ifind->first.begin(), nameHead.begin(), nameHead.size()) == 0) {
-      res.emplace_back(ifind->second);
+   while (ifind != container->end()) {
+      NamedSeed& seed = **ifind;
+      if (seed.Name_.size() < nameHead.size()
+      || memcmp(seed.Name_.c_str(), nameHead.begin(), nameHead.size()) != 0)
+         break;
+      res.emplace_back(&seed);
       ++ifind;
    }
    return res;
@@ -84,7 +86,7 @@ NamedSeedSP MaTree::Remove(StrView name) {
    auto     ifind{container->find(name)};
    if (ifind == container->end())
       return nullptr;
-   NamedSeedSP seed = ifind->second;
+   NamedSeedSP seed = *ifind;
    container->erase(ifind);
    this->OnMaTree_AfterRemove(container, *seed);
    return seed;
@@ -106,7 +108,7 @@ struct MaTree::PodOp : public PodOpLocker<PodOp, Locker> {
    NamedSeed*  Seed_;
    PodOp(ContainerImpl::value_type& v, Tree& sender, OpResult res, const StrView& key, Locker& locker)
       : base{*this, sender, res, key, locker}
-      , Seed_{v.second.get()} {
+      , Seed_{v.get()} {
    }
    NamedSeed& GetSeedRW(Tab&) {
       return *this->Seed_;
@@ -126,9 +128,14 @@ struct MaTree::TreeOp : public fon9::seed::TreeOp {
    TreeOp(MaTree& tree) : base(tree) {
    }
 
+   static void MakeNamedSeedView(NamedSeedContainerImpl::iterator ivalue, Tab* tab, RevBuffer& rbuf) {
+      if (tab)
+         FieldsCellRevPrint(tab->Fields_, SimpleRawRd{**ivalue}, rbuf, GridViewResult::kCellSplitter);
+      RevPrint(rbuf, (**ivalue).Name_);
+   }
    void GridView(const GridViewRequest& req, FnGridViewOp fnCallback) override {
       TreeOp_GridView_MustLock(*this, static_cast<MaTree*>(&this->Tree_)->Container_,
-                               req, std::move(fnCallback), &SimpleMakeRowView<ContainerImpl::iterator>);
+                               req, std::move(fnCallback), &MakeNamedSeedView);
    }
 
    void Get(StrView strKeyText, FnPodOp fnCallback) override {

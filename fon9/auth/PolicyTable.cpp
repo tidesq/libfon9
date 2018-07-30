@@ -37,9 +37,9 @@ bool PolicyTable::Delete(StrView policyId) {
    auto         irec = maps->ItemMap_.find(policyId);
    if (irec == maps->ItemMap_.end())
       return false;
-   auto& droom = maps->DeletedMap_[irec->second->PolicyId_];
+   auto& droom = maps->DeletedMap_[(*irec)->PolicyId_];
    assert(!droom);
-   droom = std::move(irec->second->RoomKey_);
+   droom = std::move((*irec)->RoomKey_);
    maps->ItemMap_.erase(irec);
 
    RevBufferList rbuf{64};

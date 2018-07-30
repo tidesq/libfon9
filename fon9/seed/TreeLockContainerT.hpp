@@ -62,18 +62,28 @@ fon9_MSC_WARN_POP;
 template <class Tree, class Container>
 inline auto OnTreeClearSeeds(Tree& owner, Container& c)
 -> decltype(c.begin()->OnParentTreeClear(owner), void()) {
+   // container.value_type is value;
    for (auto& seed : c)
       seed.OnParentTreeClear(owner);
 }
 template <class Tree, class Container>
 inline auto OnTreeClearSeeds(Tree& owner, Container& c)
+-> decltype((*c.begin())->OnParentTreeClear(owner), void()) {
+   // container.value_type is value*;
+   for (auto& seed : c)
+      seed->OnParentTreeClear(owner);
+}
+template <class Tree, class Container>
+inline auto OnTreeClearSeeds(Tree& owner, Container& c)
 -> decltype(c.begin()->second.OnParentTreeClear(owner), void()) {
+   // container.value_type is std::pair<key,value>;
    for (auto& seed : c)
       seed.second.OnParentTreeClear(owner);
 }
 template <class Tree, class Container>
 inline auto OnTreeClearSeeds(Tree& owner, Container& c)
 -> decltype(c.begin()->second->OnParentTreeClear(owner), void()) {
+   // container.value_type is std::pair<key,value*>;
    for (auto& seed : c)
       seed.second->OnParentTreeClear(owner);
 }

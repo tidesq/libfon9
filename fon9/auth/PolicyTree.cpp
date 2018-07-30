@@ -18,7 +18,7 @@ void PolicyTree::OnParentSeedClear() {
       maps->ItemMap_.swap(temp);
    }
    for (auto& seed : temp)
-      seed.second->OnParentTreeClear(*this);
+      seed->OnParentTreeClear(*this);
 }
 
 fon9_WARN_DISABLE_PADDING;
@@ -58,8 +58,8 @@ struct PolicyTree::TreeOp : public seed::TreeOp {
 
    static void MakePolicyRecordView(ItemMap::iterator ivalue, seed::Tab* tab, RevBuffer& rbuf) {
       if (tab)
-         FieldsCellRevPrint(tab->Fields_, seed::SimpleRawRd{*ivalue->second}, rbuf, seed::GridViewResult::kCellSplitter);
-      RevPrint(rbuf, ivalue->first);
+         FieldsCellRevPrint(tab->Fields_, seed::SimpleRawRd{**ivalue}, rbuf, seed::GridViewResult::kCellSplitter);
+      RevPrint(rbuf, (*ivalue)->PolicyId_);
    }
    virtual void GridView(const seed::GridViewRequest& req, seed::FnGridViewOp fnCallback) {
       seed::GridViewResult res{this->Tree_};
@@ -84,7 +84,7 @@ struct PolicyTree::TreeOp : public seed::TreeOp {
          Maps::Locker maps{static_cast<PolicyTree*>(&this->Tree_)->Maps_};
          auto         ifind = this->GetIteratorForPod(maps->ItemMap_, strKeyText);
          if (ifind != maps->ItemMap_.end()) {
-            this->OnPodOp(maps, *ifind->second, std::move(fnCallback));
+            this->OnPodOp(maps, **ifind, std::move(fnCallback));
             return;
          }
       } // unlock.
@@ -103,7 +103,7 @@ struct PolicyTree::TreeOp : public seed::TreeOp {
          PolicyItemSP rec = static_cast<PolicyTree*>(&this->Tree_)->MakePolicy(strKeyText);
          ifind = maps->ItemMap_.insert(std::move(rec)).first;
       }
-      this->OnPodOp(maps, *ifind->second, std::move(fnCallback), isForceWrite);
+      this->OnPodOp(maps, **ifind, std::move(fnCallback), isForceWrite);
    }
    virtual void Remove(StrView strKeyText, seed::Tab* tab, seed::FnPodRemoved fnCallback) override {
       seed::PodRemoveResult res{this->Tree_, seed::OpResult::not_found_key, strKeyText, tab};
