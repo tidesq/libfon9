@@ -39,7 +39,6 @@ bool PolicyTable::Delete(StrView policyId) {
       return false;
    auto& droom = maps->DeletedMap_[irec->second->PolicyId_];
    assert(!droom);
-   irec->second->BeforeParentErase(*this);
    droom = std::move(irec->second->RoomKey_);
    maps->ItemMap_.erase(irec);
 
@@ -74,11 +73,6 @@ void PolicyTable::OnInnDbfTable_Load(InnDbfLoadEventArgs& e) {
 
 //--------------------------------------------------------------------------//
 
-void PolicyTable::SyncHandler::BeforeErase(ItemMap& itemMap, ItemMap::iterator iItem) {
-   PolicyTable& table = ContainerOf(PolicyTable::Maps::StaticCast(ContainerOf(itemMap, &MapsImpl::ItemMap_)),
-                                    &PolicyTable::Maps_);
-   iItem->second->BeforeParentErase(table);
-}
 void PolicyTable::SyncHandler::UpdateSync(ItemMap& itemMap, ItemMap::iterator* iItem) {
    assert(this->EvArgs_.RoomType_ == InnDbfRoomType::RowData);
    PolicyTable& table = ContainerOf(PolicyTable::Maps::StaticCast(ContainerOf(itemMap, &MapsImpl::ItemMap_)),

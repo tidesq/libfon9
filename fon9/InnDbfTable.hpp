@@ -200,10 +200,6 @@ struct InnDbfSyncHandler {
       if (this->PendingFreeRoomKey_)
          this->Handler_.FreeRoom(std::move(this->PendingFreeRoomKey_));
    }
-   template <class Map>
-   static void BeforeErase(Map& map, typename Map::iterator imap) {
-      (void)map; (void)imap;
-   }
 };
 
 template <class Map, class SyncHandler>
@@ -215,7 +211,6 @@ InnSyncCheckResult OnInnDbfSync_Erase(Map& map, SyncHandler& handler) {
       break;
    case InnSyncCheckResult::SyncIsNewer:
       handler.PendingFreeRoomKey_ = std::move(handler.GetRoomKey(*imap));
-      handler.BeforeErase(map, imap);
       map.erase(imap);
       break;
    case InnSyncCheckResult::SyncIsOlder:

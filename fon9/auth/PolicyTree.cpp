@@ -61,14 +61,11 @@ struct PolicyTree::TreeOp : public seed::TreeOp {
          FieldsCellRevPrint(tab->Fields_, seed::SimpleRawRd{*ivalue->second}, rbuf, seed::GridViewResult::kCellSplitter);
       RevPrint(rbuf, ivalue->first);
    }
-   static ItemMap::iterator GetStartIterator(ItemMap& items, StrView strKeyText) {
-      return base::GetStartIterator(items, strKeyText, [](const StrView& strKey) { return strKey; });
-   }
    virtual void GridView(const seed::GridViewRequest& req, seed::FnGridViewOp fnCallback) {
       seed::GridViewResult res{this->Tree_};
       {
          Maps::Locker maps{static_cast<PolicyTree*>(&this->Tree_)->Maps_};
-         seed::MakeGridView(maps->ItemMap_, this->GetStartIterator(maps->ItemMap_, req.OrigKey_),
+         seed::MakeGridView(maps->ItemMap_, this->GetIteratorForGv(maps->ItemMap_, req.OrigKey_),
                             req, res, &MakePolicyRecordView);
       } // unlock.
       fnCallback(res);
@@ -85,7 +82,7 @@ struct PolicyTree::TreeOp : public seed::TreeOp {
    virtual void Get(StrView strKeyText, seed::FnPodOp fnCallback) override {
       {
          Maps::Locker maps{static_cast<PolicyTree*>(&this->Tree_)->Maps_};
-         auto         ifind = this->GetFindIterator(maps->ItemMap_, strKeyText, [](const StrView& strKey) { return strKey; });
+         auto         ifind = this->GetIteratorForPod(maps->ItemMap_, strKeyText);
          if (ifind != maps->ItemMap_.end()) {
             this->OnPodOp(maps, *ifind->second, std::move(fnCallback));
             return;
@@ -104,7 +101,7 @@ struct PolicyTree::TreeOp : public seed::TreeOp {
       if (ifind == maps->ItemMap_.end()) {
          isForceWrite = true;
          PolicyItemSP rec = static_cast<PolicyTree*>(&this->Tree_)->MakePolicy(strKeyText);
-         ifind = maps->ItemMap_.insert(ItemMap::value_type{ToStrView(rec->PolicyId_), std::move(rec)}).first;
+         ifind = maps->ItemMap_.insert(std::move(rec)).first;
       }
       this->OnPodOp(maps, *ifind->second, std::move(fnCallback), isForceWrite);
    }

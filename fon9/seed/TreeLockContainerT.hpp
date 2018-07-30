@@ -59,6 +59,25 @@ fon9_MSC_WARN_POP;
 
 //--------------------------------------------------------------------------//
 
+template <class Tree, class Container>
+inline auto OnTreeClearSeeds(Tree& owner, Container& c)
+-> decltype(c.begin()->OnParentTreeClear(owner), void()) {
+   for (auto& seed : c)
+      seed.OnParentTreeClear(owner);
+}
+template <class Tree, class Container>
+inline auto OnTreeClearSeeds(Tree& owner, Container& c)
+-> decltype(c.begin()->second.OnParentTreeClear(owner), void()) {
+   for (auto& seed : c)
+      seed.second.OnParentTreeClear(owner);
+}
+template <class Tree, class Container>
+inline auto OnTreeClearSeeds(Tree& owner, Container& c)
+-> decltype(c.begin()->second->OnParentTreeClear(owner), void()) {
+   for (auto& seed : c)
+      seed.second->OnParentTreeClear(owner);
+}
+
 /// \ingroup seed
 /// - 在 Tree 裡面包含一個 MustLock<ContainerImplT>
 template <class ContainerImplT>

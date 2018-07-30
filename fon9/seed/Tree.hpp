@@ -84,26 +84,5 @@ public:
    virtual void OnParentSeedClear();
 };
 
-//--------------------------------------------------------------------------//
-
-template <class Tree, class Container>
-inline auto OnTreeClearSeeds(Tree& owner, Container& c)
--> decltype(c.begin()->OnParentTreeClear(owner), void()) {
-   for (auto& seed : c)
-      seed.OnParentTreeClear(owner);
-}
-template <class Tree, class Container>
-inline auto OnTreeClearSeeds(Tree& owner, Container& c)
--> decltype(c.begin()->second.OnParentTreeClear(owner), void()) {
-   for (auto& seed : c)
-      seed.second.OnParentTreeClear(owner);
-}
-template <class Tree, class Container>
-inline auto OnTreeClearSeeds(Tree& owner, Container& c)
--> decltype(c.begin()->second->OnParentTreeClear(owner), void()) {
-   for (auto& seed : c)
-      seed.second->OnParentTreeClear(owner);
-}
-
 } } // namespaces
 #endif//__fon9_seed_Tree_hpp__

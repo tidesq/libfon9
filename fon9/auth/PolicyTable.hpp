@@ -61,8 +61,20 @@ protected:
 
    struct ItemMap : public std::map<StrView, PolicyItemSP> {
       using base = std::map<StrView, PolicyItemSP>;
+
       using base::find;
       iterator find(const PolicyId& key) { return this->find(ToStrView(key)); }
+
+      using base::lower_bound;
+      iterator lower_bound(const PolicyId& key) { return this->lower_bound(ToStrView(key)); }
+
+      /// 移除前呼叫: i->second->BeforeParentErase(table);
+      iterator erase(iterator i);
+
+      std::pair<iterator, bool> insert(PolicyItemSP v) {
+         return base::insert(value_type{ToStrView(v->PolicyId_), v});
+      }
+      mapped_type& operator[](const key_type&) = delete;
    };
    using DeletedMap = std::map<PolicyId, InnDbfRoomKey>;
 
@@ -88,7 +100,7 @@ private:
          if (iItem)
             return *(*iItem)->second;
          PolicyItemSP rec = table.MakePolicy(ToStrView(this->Key_));
-         return *(itemMap[ToStrView(rec->PolicyId_)] = std::move(rec));
+         return *(itemMap.insert(std::move(rec)).first->second);
       }
    };
 
@@ -111,13 +123,17 @@ private:
 
       void UpdateSync(ItemMap& itemMap, ItemMap::iterator* iItem);
       void UpdateSync(DeletedMap& deletedMap, DeletedMap::iterator* iDeleted);
-      static void BeforeErase(ItemMap& itemMap, ItemMap::iterator iItem);
-      static void BeforeErase(DeletedMap&, DeletedMap::iterator) {
-      }
    };
    virtual void OnInnDbfTable_Sync(InnDbfSyncEventArgs& e) override;
    virtual void OnInnDbfTable_SyncFlushed() override;
 };
+
+inline PolicyTable::ItemMap::iterator PolicyTable::ItemMap::erase(iterator i) {
+   PolicyTable& table = ContainerOf(PolicyTable::Maps::StaticCast(ContainerOf(*this, &MapsImpl::ItemMap_)),
+                                    &PolicyTable::Maps_);
+   i->second->BeforeParentErase(table);
+   return base::erase(i);
+}
 
 } } // namespaces
 #endif//__fon9_auth_PolicyTable_hpp__

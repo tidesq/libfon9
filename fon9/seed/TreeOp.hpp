@@ -164,8 +164,9 @@ public:
       return reinterpret_cast<intptr_t>(k.begin()) == reinterpret_cast<intptr_t>(kStrKeyText_End_);
    }
 
+   //--------------------------------------------------------------------------//
    template <class Container, class Iterator>
-   static bool GetStartIterator(Container& container, Iterator& istart, const char* strKeyText) {
+   static bool GetIteratorForGv(Container& container, Iterator& istart, const char* strKeyText) {
       if (strKeyText == kStrKeyText_Begin_)
          istart = container.begin();
       else if (strKeyText == kStrKeyText_End_)
@@ -174,23 +175,46 @@ public:
          return false;
       return true;
    }
-   template <class Container, class FnStrToKey, class Iterator = typename Container::iterator, class KeyT = typename Container::key_type>
-   static Iterator GetStartIterator(Container& container, StrView strKeyText, FnStrToKey fnStrToKey) {
+   
+   template <class Container>
+   static auto LowerBound(Container& container, StrView strKeyText) -> decltype(container.lower_bound(strKeyText)){
+      return container.lower_bound(strKeyText);
+   }
+
+   template <class Container>
+   static auto LowerBound(Container& container, StrView strKeyText) -> decltype(ContainerLowerBound(container,strKeyText)) {
+      return ContainerLowerBound(container, strKeyText);
+   }
+
+   template <class Container, class Iterator = typename Container::iterator, class KeyT = typename Container::key_type>
+   static Iterator GetIteratorForGv(Container& container, StrView strKeyText) {
       Iterator ivalue;
-      if (GetStartIterator(container, ivalue, strKeyText.begin()))
+      if (GetIteratorForGv(container, ivalue, strKeyText.begin()))
          return ivalue;
-      return container.lower_bound(fnStrToKey(strKeyText));
+      return LowerBound(container, strKeyText);
    }
 
    virtual void GridView(const GridViewRequest& req, FnGridViewOp fnCallback);
 
-   template <class Container, class FnStrToKey, class Iterator = typename Container::iterator, class KeyT = typename Container::key_type>
-   static Iterator GetFindIterator(Container& container, StrView strKeyText, FnStrToKey fnStrToKey) {
-      Iterator ivalue;
-      if (GetStartIterator(container, ivalue, strKeyText.begin()))
-         return ivalue;
-      return container.find(fnStrToKey(strKeyText));
+   //--------------------------------------------------------------------------//
+
+   template <class Container>
+   static auto Find(Container& container, StrView strKeyText) -> decltype(container.find(strKeyText)) {
+      return container.find(strKeyText);
    }
+
+   template <class Container>
+   static auto Find(Container& container, StrView strKeyText) -> decltype(ContainerFind(container, strKeyText)) {
+      return ContainerFind(container, strKeyText);
+   }
+
+   template <class Container, class Iterator = typename Container::iterator, class KeyT = typename Container::key_type>
+   static Iterator GetIteratorForPod(Container& container, StrView strKeyText) {
+      if (strKeyText.begin() == kStrKeyText_Begin_)
+         return container.begin();
+      return Find(container, strKeyText);
+   }
+
    /// 增加一個 pod.
    /// - 當 key 存在時, 視為成功, 會呼叫: fnCallback(OpResult::key_exists, op);
    /// - 有些 tree 不允許從管理介面加入 pod, 此時會呼叫: fnCallback(OpResult::not_supported_add_pod, nullptr);
@@ -198,6 +222,7 @@ public:
    virtual void Add(StrView strKeyText, FnPodOp fnCallback);
    virtual void Get(StrView strKeyText, FnPodOp fnCallback);
 
+   /// - strKeyText 不可為 TextBegin(), TextEnd();
    /// - tab == nullptr: 移除 pod.
    /// - tab != nullptr
    ///   - 可能僅移除某 seed.
@@ -362,7 +387,7 @@ void TreeOp_GridView_MustLock(TreeOp& op, MustLockContainer& c,
    GridViewResult res{op.Tree_};
    {
       typename MustLockContainer::Locker container{c};
-      MakeGridView(*container, op.GetStartIterator(*container, req.OrigKey_),
+      MakeGridView(*container, op.GetIteratorForGv(*container, req.OrigKey_),
                    req, res, std::move(fnRowAppender));
    } // unlock.
    fnCallback(res);
@@ -372,7 +397,7 @@ template <class PodOp, class TreeOp, class MustLockContainer>
 void TreeOp_Get_MustLock(TreeOp& treeOp, MustLockContainer& c, StrView strKeyText, FnPodOp&& fnCallback) {
    {
       typename MustLockContainer::Locker container{c};
-      auto   ifind = treeOp.GetStartIterator(*container, strKeyText);
+      auto   ifind = treeOp.GetIteratorForGv(*container, strKeyText);
       if (ifind != container->end()) {
          PodOp podOp{*ifind, treeOp.Tree_, OpResult::no_error, strKeyText, container};
          fnCallback(podOp, &podOp);

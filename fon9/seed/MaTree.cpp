@@ -126,9 +126,6 @@ struct MaTree::TreeOp : public fon9::seed::TreeOp {
    TreeOp(MaTree& tree) : base(tree) {
    }
 
-   static ContainerImpl::iterator GetStartIterator(ContainerImpl& container, StrView strKeyText) {
-      return base::GetStartIterator(container, strKeyText, [](const fon9::StrView& strKey) { return strKey; });
-   }
    void GridView(const GridViewRequest& req, FnGridViewOp fnCallback) override {
       TreeOp_GridView_MustLock(*this, static_cast<MaTree*>(&this->Tree_)->Container_,
                                req, std::move(fnCallback), &SimpleMakeRowView<ContainerImpl::iterator>);
@@ -137,6 +134,7 @@ struct MaTree::TreeOp : public fon9::seed::TreeOp {
    void Get(StrView strKeyText, FnPodOp fnCallback) override {
       TreeOp_Get_MustLock<PodOp>(*this, static_cast<MaTree*>(&this->Tree_)->Container_, strKeyText, std::move(fnCallback));
    }
+
    // MaTree 不支援透過 Op 來 Add(), Remove();
    // void Add(StrView strKeyText, FnPodOp fnCallback) override;
    // void Remove(StrView strKeyText, Tab* tab, FnPodRemoved fnCallback) override;

@@ -44,9 +44,7 @@ struct RoleTree::RoleConfigTree::TreeOp : public seed::TreeOp {
    using base = seed::TreeOp;
    TreeOp(RoleConfigTree& tree) : base(tree) {
    }
-   static PolicyKeys::iterator GetStartIterator(PolicyKeys& policies, StrView strKeyText) {
-      return base::GetStartIterator(policies, strKeyText, [](const StrView& strKey) { return SeedKey::MakeRef(strKey); });
-   }
+
    static void MakePolicyConfigView(PolicyKeys::iterator ivalue, seed::Tab* tab, RevBuffer& rbuf) {
       if (tab)
          seed::FieldsCellRevPrint(tab->Fields_, seed::SimpleRawRd{ivalue->second}, rbuf, seed::GridViewResult::kCellSplitter);
@@ -56,7 +54,7 @@ struct RoleTree::RoleConfigTree::TreeOp : public seed::TreeOp {
       seed::GridViewResult res{this->Tree_};
       {
          PolicyConfigs::Locker map{static_cast<RoleConfigTree*>(&this->Tree_)->PolicyConfigs_};
-         seed::MakeGridView(*map, this->GetStartIterator(*map, req.OrigKey_),
+         seed::MakeGridView(*map, this->GetIteratorForGv(*map, req.OrigKey_),
                             req, res, &MakePolicyConfigView);
       } // unlock.
       fnCallback(res);
@@ -71,7 +69,7 @@ struct RoleTree::RoleConfigTree::TreeOp : public seed::TreeOp {
    virtual void Get(StrView strKeyText, seed::FnPodOp fnCallback) override {
       {
          PolicyConfigs::Locker lockedMap{static_cast<RoleConfigTree*>(&this->Tree_)->PolicyConfigs_};
-         auto                  ifind = this->GetFindIterator(*lockedMap, strKeyText, [](const StrView& strKey) { return SeedKey::MakeRef(strKey); });
+         auto                  ifind = this->GetIteratorForPod(*lockedMap, strKeyText);
          if (ifind != lockedMap->end()) {
             this->OnPodOp(lockedMap, ifind->first, ifind->second, std::move(fnCallback));
             return;

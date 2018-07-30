@@ -55,7 +55,18 @@ fon9_MSC_WARN_POP;
 
 /// \ingroup auth
 /// 登入成功後根據 RoleId 取得的使用者政策列表.
-using PolicyKeys = std::map<PolicyName, PolicyId>;
+/// 為了讓 TreeOp::GetIteratorForPod(), TreeOp::GetIteratorForGv() 能夠運行. 所以需提供:
+/// - ContainerLowerBound(PolicyKeys& policies, StrView strKeyText);
+/// - ContainerFind(PolicyKeys& policies, StrView strKeyText);
+/// - 且 PolicyKeys 不可使用 using PolicyKeys = std::map<>; 因為 TreeOp 找不到 namespace fon9::auth;
+struct PolicyKeys : public std::map<PolicyName, PolicyId> {};
+
+inline PolicyKeys::iterator ContainerLowerBound(PolicyKeys& policies, StrView strKeyText) {
+   return policies.lower_bound(PolicyKeys::key_type::MakeRef(strKeyText));
+}
+inline PolicyKeys::iterator ContainerFind(PolicyKeys& policies, StrView strKeyText) {
+   return policies.find(PolicyKeys::key_type::MakeRef(strKeyText));
+}
 
 /// \ingroup auth
 /// 使用者的角色設定.
