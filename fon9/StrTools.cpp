@@ -103,7 +103,7 @@ fon9_API bool FetchTagValue(StrView& src, StrView& tag, StrView& value, char chF
 
 //--------------------------------------------------------------------------//
 
-static constexpr StrBrPair DefaultBrPair[]{
+static const StrBrPair DefaultBrPair[]{
    {'{', '}', true},
    {'[', ']', true},
    {'(', ')', true},
@@ -113,7 +113,7 @@ static constexpr StrBrPair DefaultBrPair[]{
 };
 const StrBrArg StrBrArg::Default_{DefaultBrPair};
 const StrBrArg StrBrArg::DefaultNoCurly_{DefaultBrPair + 1, numofele(DefaultBrPair) - 1};
-const StrBrArg StrBrArg::Quotation_{DefaultBrPair + 3, 2};
+const StrBrArg StrBrArg::Quotation_{DefaultBrPair + 3, 3};
 
 const StrBrPair* StrBrArg::Find(char chLeft) const {
    if (this->BrCount_ <= 0)
@@ -175,18 +175,16 @@ fon9_API StrView FetchField(StrView& src, char chDelim, const StrBrArg& brArg) {
    return retval;
 }
 
-fon9_API StrView FetchFirstBr(StrView& src, const StrBrArg& brArg) {
-   if (!StrTrimHead(&src).empty()) {
-      const char* pbeg = src.begin();
-      if (const StrBrPair* br = brArg.Find(*pbeg)) {
-         ++pbeg;
-         const char* pBrEnd = FindBrEnd(*br, pbeg, src.end(), brArg);
-         if (pBrEnd)
-            src.SetBegin(pBrEnd + 1);
-         else
-            src.SetBegin(pBrEnd = src.end());
-         return StrView{pbeg, pBrEnd};
-      }
+fon9_API StrView FetchFirstBrNoTrim(StrView& src, const StrBrArg& brArg) {
+   const char* pbeg = src.begin();
+   if (const StrBrPair* br = brArg.Find(*pbeg)) {
+      ++pbeg;
+      const char* pBrEnd = FindBrEnd(*br, pbeg, src.end(), brArg);
+      if (pBrEnd)
+         src.SetBegin(pBrEnd + 1);
+      else
+         src.SetBegin(pBrEnd = src.end());
+      return StrView{pbeg, pBrEnd};
    }
    return StrView{nullptr};
 }
@@ -293,6 +291,12 @@ fon9_API const char* SearchSubstr(StrView fullstr, StrView substr, char chSplitt
          return pfind;
    }
    return nullptr;
+}
+fon9_API std::string StdStrReplace(StrView src, const StrView oldStr, const StrView newStr) {
+   return StrReplaceImpl<std::string>(src, oldStr, newStr);
+}
+fon9_API CharVector CharVectorReplace(StrView src, const StrView oldStr, const StrView newStr) {
+   return StrReplaceImpl<CharVector>(src, oldStr, newStr);
 }
 
 } // namespace fon9

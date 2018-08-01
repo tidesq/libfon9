@@ -43,8 +43,13 @@ static void ContinueSeedSearch(Tree& curr, SeedSearcherSP searcher) {
          searcher->OnFoundTree(*opTree);
       else {
          // Parse: keyText^tabName/Remain
-         StrView tabName = StrFetchNoTrim(searcher->RemainPath_, '/');
-         StrView keyText = StrFetchNoTrim(tabName, '^');
+         // keyText 允許使用引號.
+         StrView tabName = FetchField(searcher->RemainPath_, '/', StrBrArg::Quotation_);
+         StrView keyText = FetchFirstBrNoTrim(tabName, StrBrArg::Quotation_);
+         if(keyText.begin() == nullptr)
+            keyText = StrFetchNoTrim(tabName, '^');
+         else // 移除引號之後, '^' 之前的字元:
+            StrFetchNoTrim(tabName, '^');
          searcher->RemainPath_ = FilePath::RemovePathHead(searcher->RemainPath_);
          searcher->ContinuePod(*opTree, keyText, tabName);
       }
@@ -113,6 +118,42 @@ void RemoveSeedSearcher::ContinuePod(TreeOp& opTree, fon9::StrView keyText, fon9
          return;
       }
       opTree.Remove(keyText, tab, std::move(this->Handler_));
+   }
+}
+
+//--------------------------------------------------------------------------//
+
+void WriteSeedSearcher::OnFoundTree(TreeOp& opTree) {
+   (void)opTree;
+   this->OnError(OpResult::not_supported_write);
+}
+void WriteSeedSearcher::OnFoundSeed(TreeOp& opTree, StrView keyText, Tab& tab) {
+   opTree.Add(keyText, [this, &tab, &keyText](const PodOpResult& res, PodOp* op) {
+      if (op)
+         op->BeginWrite(tab, std::bind(&WriteSeedSearcher::OnBeginWrite, this, std::placeholders::_1, std::placeholders::_2));
+      else {
+         this->RemainPath_.SetBegin(keyText.begin());
+         this->OnError(res.OpResult_);
+      }
+   });
+}
+
+void PutFieldSearcher::OnFieldValueChanged(const SeedOpResult& res, const RawWr& wr, const Field& fld) {
+   (void)res; (void)wr; (void)fld;
+}
+void PutFieldSearcher::OnBeginWrite(const SeedOpResult& res, const RawWr* wr) {
+   if (wr == nullptr)
+      this->OnError(res.OpResult_);
+   else {
+      const Field* fld = (this->FieldIndex_ >= 0
+                          ? res.Tab_->Fields_.Get(static_cast<size_t>(this->FieldIndex_))
+                          : res.Tab_->Fields_.Get(ToStrView(this->FieldName_)));
+      if (fld == nullptr)
+         this->OnError(OpResult::not_found_field);
+      else {
+         fld->StrToCell(*wr, ToStrView(this->FieldValue_));
+         this->OnFieldValueChanged(res, *wr, *fld);
+      }
    }
 }
 

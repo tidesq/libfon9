@@ -138,6 +138,7 @@ public:
 
    void clear();
    void reserve(size_t reversesz);
+   void erase(size_t offset, size_t count);
    void Free() {
       if (this->IsInBlob())
          fon9_Blob_Free(&this->Key_.Blob_);

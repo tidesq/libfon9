@@ -92,6 +92,8 @@ set(fon9src
  auth/RoleMgr.cpp
  auth/PolicyTable.cpp
  auth/PolicyTree.cpp
+ auth/PolicyMaster.cpp 
+ auth/PolicyAcl.cpp 
  auth/SaslClient.cpp
  auth/SaslScramSha256.cpp
  auth/SaslScramSha256Client.cpp

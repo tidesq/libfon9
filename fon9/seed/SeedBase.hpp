@@ -76,6 +76,7 @@ enum class OpResult {
    /// 指定的 tab 正確, 但裡面沒有 seed.
    not_found_seed     = -202,
    not_found_sapling  = -203,
+   not_found_field    = -204,
 };
 
 /// \ingroup seed

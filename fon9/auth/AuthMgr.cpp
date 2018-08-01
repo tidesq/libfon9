@@ -5,6 +5,13 @@
 
 namespace fon9 { namespace auth {
 
+StrView AuthResult::GetPolicyId(StrView policyName) const {
+   auto ifind = this->PolicyKeys_.find(PolicyName::MakeRef(policyName));
+   if (ifind == this->PolicyKeys_.end())
+      return ToStrView(this->RoleId_);
+   return ToStrView(ifind->second);
+}
+
 AuthSession::~AuthSession() {
 }
 

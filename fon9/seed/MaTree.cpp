@@ -149,10 +149,8 @@ struct MaTree::TreeOp : public fon9::seed::TreeOp {
 fon9_WARN_POP;
 
 void MaTree::OnTreeOp(FnTreeOp fnCallback) {
-   if (fnCallback) {
-      TreeOp op{*this};
-      fnCallback(TreeOpResult{this, OpResult::no_error}, &op);
-   }
+   TreeOp op{*this};
+   fnCallback(TreeOpResult{this, OpResult::no_error}, &op);
 }
 
 } } // namespaces

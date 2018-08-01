@@ -611,6 +611,12 @@
     <ClInclude Include="..\..\..\fon9\seed\SeedSearcher.hpp">
       <Filter>Header Files\seed\_base</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\auth\PolicyAcl.hpp">
+      <Filter>Header Files\auth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\auth\PolicyMaster.hpp">
+      <Filter>Header Files\auth</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -903,6 +909,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\seed\SeedSearcher.cpp">
       <Filter>Source Files\seed\_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\auth\PolicyAcl.cpp">
+      <Filter>Source Files\auth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\auth\PolicyMaster.cpp">
+      <Filter>Source Files\auth</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

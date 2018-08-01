@@ -16,9 +16,9 @@ using SeedSearcherSP = intrusive_ptr<SeedSearcher>;
 /// - 此為一次性的物件, 使用完畢後會自動刪除.
 struct fon9_API SeedSearcher : public intrusive_ref_counter<SeedSearcher> {
    fon9_NON_COPY_NON_MOVE(SeedSearcher);
-   const StrView  OrigPath_;
-   StrView        RemainPath_;
-   SeedSearcher(const StrView& path) : OrigPath_{path}, RemainPath_{path} {
+   const CharVector  OrigPath_;
+   StrView           RemainPath_;
+   SeedSearcher(const StrView& path) : OrigPath_{path}, RemainPath_{ToStrView(OrigPath_)} {
    }
    /// 如果 Tree::OnTreeOp() 是非同步,
    /// 則可能在尚未執行前就死亡, 衍生者須注意.
@@ -120,6 +120,50 @@ public:
 inline void RemoveSeed(Tree& root, const StrView& path, FnPodRemoved handler) {
    StartSeedSearch(root, new RemoveSeedSearcher(path, std::move(handler)));
 }
+
+//--------------------------------------------------------------------------//
+
+class fon9_API WriteSeedSearcher : public SeedSearcher {
+   fon9_NON_COPY_NON_MOVE(WriteSeedSearcher);
+   using base = SeedSearcher;
+public:
+   using base::base;
+
+   // 預設: opTree.Get(keyText, PodHandler{this, keyText.begin(), &tab});
+   // 若有必要您可以 override 改成 opTree.Add(keyText, PodHandler{this, keyText.begin(), &tab});
+   //void ContinueSeed(TreeOp& opTree, StrView keyText, Tab& tab) override;
+   // 預設使用 opPod.GetSapling();
+   // 若有必要您可以 override 改成 opPod.MakeSapling();
+   //TreeSP ContinueTree(PodOp& opPod, Tab& tab) override;
+
+   /// cannot remove "/"
+   void OnFoundTree(TreeOp& opTree) override;
+   /// 預設使用 opTree.Add() 進入 this->OnBeginWrite();
+   void OnFoundSeed(TreeOp& opTree, StrView keyText, Tab& tab) override;
+   virtual void OnBeginWrite(const SeedOpResult& res, const RawWr* wr) = 0;
+};
+
+class fon9_API PutFieldSearcher : public WriteSeedSearcher {
+   fon9_NON_COPY_NON_MOVE(PutFieldSearcher);
+   using base = WriteSeedSearcher;
+   const int         FieldIndex_{-1};
+   const CharVector  FieldName_{};
+   const CharVector  FieldValue_;
+public:
+   PutFieldSearcher(const StrView& path, const StrView& fieldName, const StrView& fieldValue)
+      : base{path}
+      , FieldName_{fieldName}
+      , FieldValue_{fieldValue} {
+   }
+   PutFieldSearcher(const StrView& path, size_t fieldIndex, const StrView& fieldValue)
+      : base{path}
+      , FieldIndex_{static_cast<int>(fieldIndex)}
+      , FieldValue_{fieldValue} {
+   }
+   void OnBeginWrite(const SeedOpResult& res, const RawWr* wr) override;
+   /// 預設 do nothing.
+   virtual void OnFieldValueChanged(const SeedOpResult& res, const RawWr& wr, const Field& fld);
+};
 
 fon9_WARN_POP;
 } } // namespaces

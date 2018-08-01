@@ -80,7 +80,9 @@
     <ClInclude Include="..\..\..\fon9\auth\AuthBase.h" />
     <ClInclude Include="..\..\..\fon9\auth\AuthBase.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\AuthMgr.hpp" />
+    <ClInclude Include="..\..\..\fon9\auth\PolicyAcl.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\PolicyAgent.hpp" />
+    <ClInclude Include="..\..\..\fon9\auth\PolicyMaster.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\PolicyTable.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\PolicyTree.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\RoleMgr.hpp" />
@@ -245,6 +247,8 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\fon9\Appender.cpp" />
     <ClCompile Include="..\..\..\fon9\auth\AuthMgr.cpp" />
+    <ClCompile Include="..\..\..\fon9\auth\PolicyAcl.cpp" />
+    <ClCompile Include="..\..\..\fon9\auth\PolicyMaster.cpp" />
     <ClCompile Include="..\..\..\fon9\auth\PolicyTable.cpp" />
     <ClCompile Include="..\..\..\fon9\auth\PolicyTree.cpp" />
     <ClCompile Include="..\..\..\fon9\auth\RoleMgr.cpp" />

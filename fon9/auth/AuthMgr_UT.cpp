@@ -4,7 +4,8 @@
 #include "fon9/TestTools.hpp"
 #include "fon9/framework/Framework.hpp"
 #include "fon9/seed/SeedSearcher.hpp"
-#include "fon9/auth/RoleMgr.hpp"
+#include "fon9/auth/AuthMgr.hpp"
+#include "fon9/auth/PolicyAcl.hpp"
 #include "fon9/InnSyncerFile.hpp"
 #include "fon9/Timer.hpp"
 #include "fon9/DefaultThreadPool.hpp"
@@ -33,6 +34,8 @@ void TestInitStart(fon9::Framework& fon9sys, std::string innSyncOutFileName, std
    maAuthStorage->Open(kDbfFileName);
    fon9sys.MaAuth_ = fon9::auth::AuthMgr::Plant(fon9sys.Root_, maAuthStorage, maAuthDbfName.ToString());
    fon9sys.Start();
+
+   fon9::auth::PolicyAclAgent::Plant(*fon9sys.MaAuth_, "PoAcl");
 }
 
 //--------------------------------------------------------------------------//
@@ -135,6 +138,34 @@ struct SetRole : public fon9::seed::SeedSearcher {
 
 //--------------------------------------------------------------------------//
 
+void TestInitPoAcl(fon9::seed::Tree& root) {
+   struct PutFieldSearcher : public fon9::seed::PutFieldSearcher {
+      fon9_NON_COPY_NON_MOVE(PutFieldSearcher);
+      using base = fon9::seed::PutFieldSearcher;
+      using base::base;
+      void OnError(fon9::seed::OpResult res) override {
+         std::cout <<
+            fon9::RevPrintTo<std::string>("|path=", this->OrigPath_,
+                                          "|res=", res, ':', fon9::seed::GetOpResultMessage(res))
+            << "\r[ERROR]" << std::endl;
+         abort();
+      }
+   };
+   StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/admin", "HomePath", "/"});
+   StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test",  "HomePath", "/home/{UserId}"});
+   StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'{UserId'",      "Rights", "x1"});
+   StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'{UserIdx'",     "Rights", "x2"});
+   StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'{UserId}'",     "Rights", "x3"});
+   StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'{UserId}/'",    "Rights", "x4"});
+   StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'{UserId}/*'",   "Rights", "x5"});
+   StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'/{UserId}'",    "Rights", "xa1"});
+   StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'/{UserId}/'",   "Rights", "xb2"});
+   StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'/{UserId}/*'",  "Rights", "xc3"});
+   StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'./{UserId}'",   "Rights", "xd4"});
+   StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'./{UserId}/'",  "Rights", "xe5"});
+   StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'./{UserId}/*'", "Rights", "xf6"});
+}
+
 void CheckGridView(fon9::seed::Tree& root, const char* path, const char* gvExpect) {
    std::cout << "[TEST ] GridView|path=" << path;
    fon9::seed::GetGridView(root, fon9::ToStrView(path),
@@ -147,18 +178,40 @@ void CheckGridView(fon9::seed::Tree& root, const char* path, const char* gvExpec
    });
    std::cout << "\r[OK   ]" << std::endl;
 }
+
+void CheckPoAcl(fon9::seed::Tree& root) {
+   CheckGridView(root, "/MaAuth/PoAcl", "admin" kSPL "/" kROWSPL "test" kSPL "/home/{UserId}");
+   CheckGridView(root, "/MaAuth/PoAcl/test",
+                 "./{UserId}"   kSPL "xd4" kROWSPL
+                 "./{UserId}/"  kSPL "xe5" kROWSPL
+                 "./{UserId}/*" kSPL "xf6" kROWSPL
+                 "/{UserId}"    kSPL "xa1" kROWSPL
+                 "/{UserId}/"   kSPL "xb2" kROWSPL
+                 "/{UserId}/*"  kSPL "xc3" kROWSPL
+                 "{UserId"      kSPL "x1"  kROWSPL
+                 "{UserIdx"     kSPL "x2"  kROWSPL
+                 "{UserId}"     kSPL "x3"  kROWSPL
+                 "{UserId}/"    kSPL "x4"  kROWSPL
+                 "{UserId}/*"   kSPL "x5");
+}
+
 void CheckInitGridViewAll(fon9::seed::Tree& root) {
    CheckGridView(root, "/MaAuth/RoleMgr",          kGridViewRoleMgr);
    CheckGridView(root, "/MaAuth/RoleMgr/admin",    kGridViewRoleMgr_admin);
    CheckGridView(root, "/MaAuth/RoleMgr/trader",   kGridViewRoleMgr_trader);
    CheckGridView(root, "/MaAuth/RoleMgr/trader01", kGridViewRoleMgr_trader01);
    CheckGridView(root, "/MaAuth/RoleMgr/dealer01", kGridViewRoleMgr_dealer01);
+   CheckPoAcl(root);
 }
 
 void TestInit() {
    RemoveTestFiles();
    fon9::Framework fon9sys;
    TestInitStart(fon9sys, kInnSyncOutFileName, kInnSyncInFileName);
+
+   std::cout << "[TEST ] PoAcl";
+   TestInitPoAcl(*fon9sys.Root_);
+   std::cout << "\r[OK   ]" << std::endl;
 
    std::cout << "[TEST ] SetRole";
    StartSeedSearch(*fon9sys.Root_, new SetRole);
@@ -198,6 +251,7 @@ void CheckRemovedGridViewAll(fon9::seed::Tree& root) {
    CheckGridView(root, "/MaAuth/RoleMgr/trader",   kRemovedGridViewRoleMgr_trader);
    CheckGridView(root, "/MaAuth/RoleMgr/trader01", kRemovedGridViewRoleMgr_trader01);
    CheckGridView(root, "/MaAuth/RoleMgr/dealer01", kRemovedGridViewRoleMgr_dealer01);
+   CheckPoAcl(root);
 }
 
 void TestRemove() {
@@ -221,6 +275,43 @@ void TestRemove() {
 
 //--------------------------------------------------------------------------//
 
+void TestAclExists(const fon9::auth::AccessList& acl, fon9::StrView path) {
+   if (acl.find(path) == acl.end()) {
+      std::cout << "|path=" << path.begin() << "|err=path not found" "\r[ERROR]" << std::endl;
+      abort();
+   }
+}
+void TestPoAclGetPolicy() {
+   std::cout << "[TEST ] PolicyAclAgent.GetPolicy";
+   fon9::Framework fon9sys;
+   TestInitStart(fon9sys, kInnSyncOutFileName, kInnSyncInFileName);
+   fon9::auth::AuthResult authr{*fon9sys.MaAuth_};
+   authr.AuthzId_.assign("fonwin");
+   authr.RoleId_.assign("test");
+   if (auto poAcl = fon9sys.MaAuth_->Agents_->Get<fon9::auth::PolicyAclAgent>("PoAcl")) {
+      fon9::auth::AclConfig   aclConfig;
+      poAcl->GetPolicy(authr, aclConfig);
+      TestAclExists(aclConfig.Acl_, "{UserId");
+      TestAclExists(aclConfig.Acl_, "{UserIdx");
+      TestAclExists(aclConfig.Acl_, "fonwin");
+      TestAclExists(aclConfig.Acl_, "fonwin/");
+      TestAclExists(aclConfig.Acl_, "fonwin/*");
+      TestAclExists(aclConfig.Acl_, "/fonwin");
+      TestAclExists(aclConfig.Acl_, "/fonwin/");
+      TestAclExists(aclConfig.Acl_, "/fonwin/*");
+      TestAclExists(aclConfig.Acl_, "./fonwin");
+      TestAclExists(aclConfig.Acl_, "./fonwin/");
+      TestAclExists(aclConfig.Acl_, "./fonwin/*");
+   }
+   else {
+      std::cout << "|err=PoAcl not found" "\r[ERROR]" << std::endl;
+      abort();
+   }
+   fon9sys.Dispose();
+   std::cout << "\r[OK   ]" << std::endl;
+}
+
+
 int main(int argc, char** argv) {
 #if defined(_MSC_VER) && defined(_DEBUG)
    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -231,8 +322,8 @@ int main(int argc, char** argv) {
    fon9::GetDefaultTimerThread();
    fon9::GetDefaultThreadPool();
    std::this_thread::sleep_for(std::chrono::milliseconds{10});
-   //--------------------------------------------------------------------------//
 
+   //--------------------------------------------------------------------------//
    TestInit();
    TestReload(&CheckInitGridViewAll);
    TestSync(&CheckInitGridViewAll);
@@ -240,6 +331,10 @@ int main(int argc, char** argv) {
    TestRemove();
    TestReload(&CheckRemovedGridViewAll);
    TestSync(&CheckRemovedGridViewAll);
+
+   //--------------------------------------------------------------------------//
+   utinfo.PrintSplitter();
+   TestPoAclGetPolicy();
 
    //--------------------------------------------------------------------------//
    bool isKeepTestFiles = false;

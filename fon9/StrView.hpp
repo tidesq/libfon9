@@ -140,6 +140,9 @@ public:
    constexpr int Get1st() const {
       return this->empty() ? EOF : static_cast<unsigned char>(*this->begin());
    }
+   const char* Find(char ch) const {
+      return traits_type::find(this->begin(), this->size(), ch);
+   }
 
    /// 建立 std::string
    std::string ToString() const {

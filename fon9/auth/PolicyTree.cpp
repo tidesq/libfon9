@@ -115,10 +115,8 @@ struct PolicyTree::TreeOp : public seed::TreeOp {
 fon9_WARN_POP;
 
 void PolicyTree::OnTreeOp(seed::FnTreeOp fnCallback) {
-   if (fnCallback) {
-      TreeOp op{*this};
-      fnCallback(seed::TreeOpResult{this, seed::OpResult::no_error}, &op);
-   }
+   TreeOp op{*this};
+   fnCallback(seed::TreeOpResult{this, seed::OpResult::no_error}, &op);
 }
 
 } } // namespaces

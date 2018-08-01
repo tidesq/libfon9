@@ -266,7 +266,7 @@ inline void ContainerReserve(...) {
 template <class Key, class Value>
 std::pair<const Key, Value> BitvToValue(DcQueue& buf, std::pair<const Key, Value>*) {
    Key   key;
-   Value value;
+   Value value{};
    BitvTo(buf, key);
    BitvTo(buf, value);
    return std::pair<const Key, Value>{std::move(key), std::move(value)};

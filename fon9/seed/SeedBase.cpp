@@ -40,6 +40,7 @@ fon9_API const char* GetOpResultMessage(OpResult res) {
       case_return(not_found_tab);
       case_return(not_found_seed);
       case_return(not_found_sapling);
+      case_return(not_found_field);
    }
    return "Unknown OpResult";
 }

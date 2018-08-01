@@ -54,6 +54,28 @@ int main() {
          fon9_CheckTestResult("reserve(+1)", false);
    }
 
+   // 測試 erase();
+   skey.assign(cstrFiller);
+   skey.erase(0, 0);
+   fon9_CheckTestResult("erase(0,0)", fon9::ToStrView(skey) == fon9::ToStrView(cstrFiller));
+
+   skey.erase(0, sizeof(cstrFiller));
+   fon9_CheckTestResult("erase(0,fullsize)", skey.empty());
+
+   skey.assign(cstrFiller);
+   skey.erase(10, sizeof(cstrFiller));
+   fon9_CheckTestResult("erase(10,fullsize)", fon9::ToStrView(skey) == fon9::StrView(cstrFiller,10));
+
+   skey.assign(cstrFiller);
+   skey.erase(0, 10);
+   fon9_CheckTestResult("erase(0,10)", fon9::ToStrView(skey) == fon9::StrView(cstrFiller+10, sizeof(cstrFiller)-11));
+
+   stds.assign(cstrFiller);
+   skey.assign(cstrFiller);
+   stds.erase(10, 5);
+   skey.erase(10, 5);
+   fon9_CheckTestResult("erase(10,5)", fon9::ToStrView(skey) == fon9::ToStrView(stds));
+
    // 測試填入空白.
    const size_t zero = 0;
    skey.Free();

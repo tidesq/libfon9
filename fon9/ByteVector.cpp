@@ -25,6 +25,8 @@ void ByteVector::CopyBytes(const void* mem, size_t sz) {
 }
 
 ByteVector& ByteVector::operator=(const ByteVector& rhs) {
+   if (this == &rhs)
+      return *this;
    if (rhs.IsUseInternal()) {
       this->FreeBlob();
       this->Key_ = rhs.Key_;
@@ -35,6 +37,8 @@ ByteVector& ByteVector::operator=(const ByteVector& rhs) {
 }
 
 ByteVector& ByteVector::operator=(ByteVector&& rhs) {
+   if (this == &rhs)
+      return *this;
    if (rhs.IsRefMem())
       this->CopyBytes(rhs.Key_.Blob_.MemPtr_, rhs.Key_.Blob_.MemUsed_);
    else {
@@ -60,6 +64,25 @@ bool ByteVector::MoveToBlob(size_t reversesz) {
    this->Key_.BinsSize_ = 0;
    this->Key_.Blob_ = blob;
    return true;
+}
+
+void ByteVector::erase(size_t offset, size_t count) {
+   if (fon9_UNLIKELY(this->IsRefMem()))
+      this->CopyBytes(this->Key_.Blob_.MemPtr_, this->Key_.Blob_.MemUsed_);
+   size_t cursz = this->size();
+   if (fon9_UNLIKELY(offset >= cursz))
+      return;
+   if (offset + count >= cursz)
+      cursz = offset;
+   else {
+      byte*  beg = this->begin() + offset;
+      cursz -= count;
+      memmove(beg, beg + count, cursz - offset);
+   }
+   if (this->IsInBlob())
+      this->Key_.Blob_.MemUsed_ = static_cast<fon9_Blob_Size_t>(cursz);
+   else // if (this->IsUseInternal())
+      this->Key_.BinsSize_ = static_cast<char>(cursz);
 }
 
 void ByteVector::resize(size_t sz) {

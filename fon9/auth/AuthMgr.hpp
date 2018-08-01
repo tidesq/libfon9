@@ -8,7 +8,7 @@ namespace fon9 { namespace auth {
 
 /// \ingroup auth
 /// 認證結果.
-struct AuthResult : public RoleConfig {
+struct fon9_API AuthResult : public RoleConfig {
    fon9_NON_COPY_NON_MOVE(AuthResult);
 
    AuthMgr& AuthMgr_;
@@ -30,6 +30,14 @@ struct AuthResult : public RoleConfig {
       , AuthMgr_(authMgr)
       , AuthcId_{std::move(authcId)} {
    }
+
+   StrView GetUserId() const {
+      return this->AuthzId_.empty() ? ToStrView(this->AuthcId_) : ToStrView(this->AuthzId_);
+   }
+
+   /// 若 policyName 在 this->PolicyKeys_ 找不到,
+   /// 則應直接用 RoleId_ 當作該 policyName 的 PolicyId.
+   StrView GetPolicyId(StrView policyName) const;
 };
 
 /// \ingroup auth

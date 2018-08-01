@@ -2,7 +2,7 @@
 /// \author fonwinz@gmail.com
 #ifndef __fon9_StrTools_hpp__
 #define __fon9_StrTools_hpp__
-#include "fon9/StrView.hpp"
+#include "fon9/CharVector.hpp"
 #include "fon9/Utility.hpp"
 
 namespace fon9 {
@@ -338,7 +338,7 @@ struct fon9_API StrBrArg {
    static const StrBrArg   Default_;
    /// 排除大括號之後的括號設定參數: 「 []、()、''、"" 」
    static const StrBrArg   DefaultNoCurly_;
-   /// 引號設定參數: 「 ''、"" 」
+   /// 引號設定參數: 「 ''、"", `` 」
    static const StrBrArg   Quotation_;
 };
 
@@ -359,7 +359,6 @@ struct fon9_API StrBrArg {
 fon9_API StrView FetchField(StrView& src, char chDelim, const StrBrArg& brArg = StrBrArg::Default_);
 
 /// \ingroup AlNum
-/// 先移除 src 開頭空白, 然後:
 /// - 如果 *src.begin() 有左括號(由brArg定義), 且有找到對應的右括號:
 ///   - retval = 括號內的字串(包含空白), *retval.end()==右括號.
 ///   - src = {右括號位置+1, src.end()}
@@ -368,13 +367,22 @@ fon9_API StrView FetchField(StrView& src, char chDelim, const StrBrArg& brArg = 
 ///   - src = {retval.end(), retval.end()}
 /// - 如果 *src.begin() 沒左括號:
 ///   - retval = nullptr
-///   - src = 移除開頭空白後的字串.
-fon9_API StrView FetchFirstBr(StrView& src, const StrBrArg& brArg = StrBrArg::Default_);
+///   - src = 不變.
+fon9_API StrView FetchFirstBrNoTrim(StrView& src, const StrBrArg& brArg = StrBrArg::Default_);
+/// \ingroup AlNum
+/// 先移除 src 開頭空白, 然後: FetchFirstBrNoTrim();
+inline StrView FetchFirstBr(StrView& src, const StrBrArg& brArg = StrBrArg::Default_) {
+   if (!StrTrimHead(&src).empty())
+      return FetchFirstBrNoTrim(src, brArg);
+   return StrView{nullptr};
+}
 
 /// \ingroup AlNum
-/// 移除前後空白後, 如果有引號(單引號 or 雙引號 or 反引號), 則移除引號.
-inline StrView TrimRemoveQuotes(StrView src, char* pQuote = nullptr) {
-   switch (int ch = StrTrim(&src).Get1st()) {
+/// 若第一個字元為引號(單引號 or 雙引號 or 反引號), 則移除第一個字元引號, 然後:
+/// - 若最後字元為對應的引號, 則移除最後引號字元.
+/// - *pQuote = 引號字元.
+inline StrView StrRemoveHeadTailQuotes(StrView src, char* pQuote = nullptr) {
+   switch (int ch = src.Get1st()) {
    case '\'': case '\"': case '`':
       src.SetBegin(src.begin() + 1);
       if (!src.empty() && *(src.end() - 1) == ch)
@@ -388,6 +396,12 @@ inline StrView TrimRemoveQuotes(StrView src, char* pQuote = nullptr) {
       break;
    }
    return src;
+}
+/// \ingroup AlNum
+/// 移除前後空白後, 如果有引號(單引號 or 雙引號 or 反引號), 則移除引號.
+/// \ref StrRemoveHeadTailQuotes()
+inline StrView TrimRemoveQuotes(StrView src, char* pQuote = nullptr) {
+   return StrRemoveHeadTailQuotes(StrTrim(&src), pQuote);
 }
 
 //--------------------------------------------------------------------------//
@@ -428,6 +442,37 @@ fon9_API StrView StrView_TruncUTF8(StrView utf8str, size_t expectLen);
 /// - substr = "ccc"
 /// - chSplitter = ' '
 fon9_API const char* SearchSubstr(StrView fullstr, StrView substr, char chSplitter);
+
+template <class StrT>
+StrT StrReplaceImpl(StrView src, const StrView oldStr, const StrView newStr) {
+   if (oldStr.empty())
+      return StrT{};
+   StrT res;
+   const size_t oldsz = oldStr.size();
+   if (src.size() < oldsz) {
+      src.AppendTo(res);
+      return res;
+   }
+   res.reserve(src.size());
+   StrView dst{src.begin(), src.size() - oldsz + 1};
+   while (const char* p1st = dst.Find(*oldStr.begin())) {
+      if (memcmp(p1st + 1, oldStr.begin() + 1, oldsz - 1) == 0) {
+         res.append(src.begin(), p1st);
+         res.append(newStr.begin(), newStr.end());
+         src.SetBegin(p1st += oldsz);
+         if (p1st >= dst.end())
+            break;
+         dst.SetBegin(p1st);
+      }
+      else
+         dst.SetBegin(p1st + 1);
+   }
+   res.append(src.begin(), src.end());
+   return res;
+}
+
+fon9_API std::string StdStrReplace(StrView src, const StrView oldStr, const StrView newStr);
+fon9_API CharVector CharVectorReplace(StrView src, const StrView oldStr, const StrView newStr);
 
 } // namespace fon9
 #endif//__fon9_StrTools_hpp__
