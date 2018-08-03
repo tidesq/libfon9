@@ -114,7 +114,7 @@ public:
    static intrusive_ptr<PolicyAclAgent> Plant(AuthMgr& authMgr, std::string name) {
       auto res = authMgr.Agents_->Plant<PolicyAclAgent>("PolicyAclAgent.Plant", std::move(name));
       if (res)
-         res->LinkStorage(*authMgr.Storage_, 128);
+         res->LinkStorage(authMgr.Storage_, 128);
       return res;
    }
 

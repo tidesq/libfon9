@@ -49,10 +49,10 @@ public:
       this->Unlock();
       return res;
    }
-   void OnSeedCommand(Tab* tab, StrView cmd, FnCommandResultHandler resHandler) override {
-      this->Unlock();
+
+   void OnSeedCommand(Tab* tab, StrView cmdln, FnCommandResultHandler resHandler) override {
       this->Tab_ = tab;
-      this->Pod_.HandleSeedCommand(*this, cmd, std::move(resHandler));
+      this->Pod_.HandleSeedCommand(this->Locker_, *this, cmdln, std::move(resHandler));
    }
 };
 fon9_MSC_WARN_POP;

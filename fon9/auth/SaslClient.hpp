@@ -27,6 +27,9 @@ public:
 };
 using SaslClientSP = std::unique_ptr<SaslClient>;
 
+/// \ingroup auth
+/// 透過 CreateSaslClient() 所建立的 SaslClient.
+/// 用來協助得知選用的是哪種 SASL 認證機制.
 struct SaslClientR {
    fon9_NON_COPYABLE(SaslClientR);
    SaslClientR() = delete;
@@ -55,7 +58,10 @@ protected:
    std::string Verify_;
 
    // 計算 saltedPassword & proof & verify
-   virtual void MakeClientFinalMessage(byte salt[], size_t saltSize, size_t iter, StrView authMessage, std::string& clientFinalMessage) = 0;
+   virtual void MakeClientFinalMessage(byte salt[], size_t saltSize,
+                                       size_t iter,
+                                       StrView authMessage,
+                                       std::string& clientFinalMessage) = 0;
 
 public:
    /// 若 authz.empty()  則會提供: "n,,n=authc,r=nonce"

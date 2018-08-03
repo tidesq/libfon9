@@ -3,6 +3,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include "fon9/crypto/Sha256.hpp"
 #include "fon9/auth/SaslScramSha256Client.hpp"
+#include "fon9/auth/SaslScramSha256Server.hpp"
 #include "fon9/Timer.hpp"
 #include "fon9/TestTools.hpp"
 
@@ -10,6 +11,8 @@ struct TestCaseItem {
    const char* Value_;
    const char* Result_;
 };
+
+//--------------------------------------------------------------------------//
 
 template <class Alg>
 void TestHash(const char* testName, const TestCaseItem* items, size_t testCount) {
@@ -29,43 +32,7 @@ void TestHash(const char* testName, const TestCaseItem* items, size_t testCount)
    std::cout << "\r[OK   ]" << std::endl;
 }
 
-//--------------------------------------------------------------------------//
-
-// items[0].Value_ = client nonce
-// items[1..n].Value_ / Result_ = Challenge / Response
-void TestSaslScram(fon9::auth::SaslClientSP saslcli, const TestCaseItem* items) {
-   std::string cmsg = saslcli->GetFirstMessage();
-   cmsg.erase(cmsg.find(",r=") + 3);
-   cmsg.append(items[0].Value_);
-   saslcli->SetFirstMessage(std::move(cmsg));
-
-   fon9::auth::AuthR res;
-   for (++items; items->Result_; ++items) {
-      res = saslcli->OnChallenge(fon9::ToStrView(items->Value_));
-      if (res.RCode_ != fon9_Auth_NeedsMore || res.Info_ != items->Result_) {
-      __ERROR_CHALLENGE_RESULT:
-         std::cout << "|err=Unknown challenge result|res=" << res.RCode_ << ":" << res.Info_
-            << "\r[ERROR]" << std::endl;
-         abort();
-      }
-   }
-   res = saslcli->OnChallenge(fon9::ToStrView(items->Value_));
-   if (res.RCode_ != fon9_Auth_Success)
-      goto __ERROR_CHALLENGE_RESULT;
-   std::cout << "\r[OK   ]" << std::endl;
-}
-
-//--------------------------------------------------------------------------//
-
-int main() {
-#if defined(_MSC_VER) && defined(_DEBUG)
-   _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-#endif
-
-   fon9::AutoPrintTestInfo utinfo{"Crypto"};
-   fon9::GetDefaultTimerThread();
-   std::this_thread::sleep_for(std::chrono::milliseconds{10});
-
+void TestSha256() {
    static const TestCaseItem  sha256TestCases[] = {
       {"", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
       {"a", "ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb"},
@@ -91,30 +58,160 @@ int main() {
       {"12345678901234567890123456789012345678901234567890123456789012341234567890123456789012345678901234567890123456789012345678901234","e33c2742a41754c22429bb370b82bdc42d1d311a08d1c6bb45363ae29ead75d1"},
    };
    TestHash<fon9::crypto::Sha256>("Sha256", sha256TestCases, fon9::numofele(sha256TestCases));
+}
+
+//--------------------------------------------------------------------------//
+
+// https://tools.ietf.org/html/rfc7677
+// The username 'user' and password 'pencil' are being used.
+const char kUserId[] = "user";
+const char kPassword[] = "pencil";
+
+struct UserTree : public fon9::auth::UserTree {
+   fon9_NON_COPY_NON_MOVE(UserTree);
+   using base = fon9::auth::UserTree;
+   UserTree(fon9::StrView strSalt, fon9::auth::PassAlgParam passAlgParam, fon9::auth::FnHashPass fnHashPass)
+      : base(fon9::auth::UserMgr::MakeFields(), std::move(fnHashPass)) {
+      Locker maps{this->PolicyMaps_};
+      auto   user = new fon9::auth::UserRec{kUserId};
+      maps->ItemMap_.insert(user);
+      const size_t saltSize = fon9::Base64DecodeLength(strSalt.size());
+      auto r64d = fon9::Base64Decode(user->Pass_.Salt_.alloc(saltSize), saltSize,
+                                     strSalt.begin(), strSalt.size());
+      user->Pass_.Salt_.resize(r64d.GetResult());
+      user->Pass_.AlgParam_ = passAlgParam;
+      fnHashPass(kPassword, sizeof(kPassword) - 1, user->Pass_, fon9::auth::HashPassFlag::ResetNone);
+   }
+   fon9::auth::AuthR AuthUpdate(fon9_Auth_R rcode, const fon9::auth::AuthRequest&, fon9::auth::AuthResult&, fon9::auth::UserMgr&) override {
+      return fon9::auth::AuthR{rcode};
+   }
+};
+
+struct SaslServer {
+   fon9::seed::MaTreeSP  Root_;
+   fon9::auth::AuthMgrSP AuthMgr_;
+   fon9::auth::UserMgrSP UserMgr_;
+   SaslServer() {
+      this->Root_.reset(new fon9::seed::MaTree{"ma"});
+      this->AuthMgr_ = fon9::auth::AuthMgr::Plant(this->Root_, nullptr, "AuthMgr");
+   }
+   virtual ~SaslServer() {
+      this->Root_->OnParentSeedClear();
+   }
+   virtual fon9::auth::AuthSessionSP CreateAuthSession(fon9::auth::FnOnAuthVerifyCB cb) = 0;
+};
+
+// scramMessages[0] = rClientNonce
+void TestSaslScram(SaslServer& server, fon9::auth::SaslClientSP saslcli, const char** scramMessages) {
+   std::string cmsg = saslcli->GetFirstMessage();
+   cmsg.erase(cmsg.find(",r=") + 3);
+   cmsg.append(*scramMessages++);
+   saslcli->SetFirstMessage(std::move(cmsg));
+
+   fon9::auth::AuthRequest req;
+   req.UserFrom_ = "TestUT";
+   req.Response_ = saslcli->GetFirstMessage();
+   fon9_Auth_R rcode = fon9_Auth_Waiting;
+   auto fnAuthCallback = [&scramMessages, &rcode, &saslcli, &req](fon9::auth::AuthR authr, fon9::auth::AuthSessionSP authSession) {
+      rcode = authr.RCode_;
+      if (authr.RCode_ == fon9_Auth_Success) {
+         std::cout << "\r[OK   ]" << std::endl;
+         return;
+      }
+
+      if (authr.RCode_ != fon9_Auth_NeedsMore) {
+         std::cout << "|err=Server:" << authr.RCode_ << ":" << authr.Info_;
+         return;
+      }
+
+      fon9::auth::AuthR res = saslcli->OnChallenge(&authr.Info_);
+      if (res.RCode_ != fon9_Auth_NeedsMore) {
+         std::cout << "|err=Client:" << res.RCode_ << ":" << res.Info_;
+         return;
+      }
+
+      if (req.Response_ != *scramMessages) {
+         std::cout << "|err=Unexpected request\r[ERROR]"
+            "\n|req=" << req.Response_ << "\n|exp=" << *scramMessages << std::endl;
+         abort();
+      }
+      if (authr.Info_ != *++scramMessages) {
+         std::cout << "|err=Unexpected result\r[ERROR]"
+            "\n|req=" << authr.Info_ << "\n|exp=" << *scramMessages << std::endl;
+         abort();
+      }
+      req.Response_ = res.Info_;
+      authSession->AuthVerify(req);
+   };
+   server.CreateAuthSession(std::move(fnAuthCallback))->AuthVerify(req);
+   if (rcode != fon9_Auth_Success) {
+      std::cout << "\r[ERROR]" << std::endl;
+      abort();
+   }
+}
+
+//--------------------------------------------------------------------------//
+// Sha256 範例來自:
+// https://tools.ietf.org/html/rfc7677#section-3
+#define kSha256ClientNonce "rOprNGfwEbeRWgbNEkqO"
+#define kSha256ServerNonce "%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0"
+#define kSha256Salt        "W22ZaJ0SNY7soEsUEjb6gQ=="
+#define kSha256AITERATOR   4096
+static const char* kScramSha256Messages[] = {
+   kSha256ClientNonce,
+
+   // ----- step 1: client first message -----
+   "n,,n=user,r=" kSha256ClientNonce,
+   //    \__/     \_ client nonce _/
+   //
+   // ----- step 2.1: server challenge -----
+   "r=" kSha256ClientNonce kSha256ServerNonce ",s=" kSha256Salt ",i=" fon9_CTXTOCSTR(kSha256AITERATOR),
+   //   \_ client nonce _/ \_ server nonce _/       \_ salt __/
+   // ----- step 2.2: client response -----
+   "c=biws,r=" kSha256ClientNonce kSha256ServerNonce ",p=dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ=",
+   //          \_ client nonce _/ \_ server nonce _/     \______________ client proof ______________/
+   //
+   // ----- step 3: server ack verify -----
+   "v=6rriTRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G4=",
+   // Client check "v=ServerSignature" or "e=server-error-value"
+   nullptr,
+};
+struct ScramSha256Server : public fon9::auth::AuthSession_SaslScramSha256 {
+   fon9_NON_COPY_NON_MOVE(ScramSha256Server);
+   using base = fon9::auth::AuthSession_SaslScramSha256;
+   using base::base;
+   void AppendServerNonce(std::string& svr1stMsg) const override {
+      svr1stMsg.append(kSha256ServerNonce);
+   }
+};
+struct SaslServer_ScramSha256 : public SaslServer {
+   SaslServer_ScramSha256() {
+      auto fnHashPassSha256 = &fon9::auth::PassRec::HashPass<fon9::crypto::Sha256, fon9::auth::SaslScramSha256Param>;
+      this->UserMgr_.reset(new fon9::auth::UserMgr(new UserTree(kSha256Salt, kSha256AITERATOR, fnHashPassSha256), "UserMgr"));
+   }
+   fon9::auth::AuthSessionSP CreateAuthSession(fon9::auth::FnOnAuthVerifyCB cb) override {
+      return fon9::auth::AuthSessionSP{new ScramSha256Server(*this->AuthMgr_, std::move(cb), this->UserMgr_)};
+   }
+   void Test() {
+      TestSaslScram(*this, fon9::auth::SaslScramSha256ClientCreator("", kUserId, kPassword), kScramSha256Messages);
+   }
+};
+
+//--------------------------------------------------------------------------//
+
+int main() {
+#if defined(_MSC_VER) && defined(_DEBUG)
+   _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif
+
+   fon9::AutoPrintTestInfo utinfo{"Crypto"};
+   fon9::GetDefaultTimerThread();
+   std::this_thread::sleep_for(std::chrono::milliseconds{10});
+
+   TestSha256();
 
    //--------------------------------------------------------------------------//
    // Test SASL: SCRAM-SHA-256 for Sha256 HMAC / PBKDF2
    std::cout << "[TEST ] SASL: SCRAM-SHA-256";
-   // https://tools.ietf.org/html/rfc7677
-   // The username 'user' and password 'pencil' are being used.
-   static const TestCaseItem  scramSha256TestCases[] = {
-      // ----- step 1: client first message -----
-      // C: n,,n=user,r=rOprNGfwEbeRWgbNEkqO
-      //         \__/   \__ client nonce __/
-      {"rOprNGfwEbeRWgbNEkqO", nullptr},
-
-      // ----- step 2: server challenge / client response -----
-      // S: challenge:
-      {"r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,s=W22ZaJ0SNY7soEsUEjb6gQ==,i=4096",
-      //  \__ client nonce __/\_______ server nonce _______/   \________ salt ________/
-      // C: response:
-      "c=biws,r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,p=dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ="},
-      //        \__ client nonce __/\_______ server nonce _______/   \______________ client proof ______________/
-
-      // ----- step 3: server ack verify -----
-      // S: v=6rriTRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G4=
-      // Client check "v=ServerSignature" or "e=server-error-value"
-      {"v=6rriTRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G4=", nullptr}
-   };
-   TestSaslScram(fon9::auth::SaslScramSha256ClientCreator("", "user", "pencil"), scramSha256TestCases);
+   SaslServer_ScramSha256{}.Test();
 }

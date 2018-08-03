@@ -37,7 +37,7 @@ public:
    static Fields MakeDefaultFields();
 
    virtual TreeSP GetSapling();
-   virtual void OnSeedCommand(SeedOpResult& res, StrView cmd, FnCommandResultHandler resHandler);
+   virtual void OnSeedCommand(SeedOpResult& res, StrView cmdln, FnCommandResultHandler resHandler);
 
    /// 應在 Parent Tree 收到 OnParentSeedClear() 時呼叫.
    /// 預設: sapling->OnParentSeedClear();

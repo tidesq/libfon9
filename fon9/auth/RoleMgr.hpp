@@ -20,7 +20,7 @@ public:
 
    bool GetRole(StrView roleId, RoleConfig& res);
 
-   bool LinkStorage(InnDbf& storage) {
+   bool LinkStorage(const InnDbfSP& storage) {
       return base::LinkStorage(storage, 128);
    }
 };

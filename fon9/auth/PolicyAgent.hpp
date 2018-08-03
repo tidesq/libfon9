@@ -12,13 +12,15 @@ class fon9_API PolicyAgent : public seed::NamedSapling {
    using base = seed::NamedSapling;
 
 public:
-   template <class... ArgsT>
-   PolicyAgent(PolicyTreeSP tree, ArgsT&&... args)
-      : base(std::move(tree), std::forward<ArgsT>(args)...) {
+   template <class... NamedSeedArgsT>
+   PolicyAgent(PolicyTreeSP sapling, NamedSeedArgsT&&... namedSeedArgs)
+      : base(std::move(sapling), std::forward<NamedSeedArgsT>(namedSeedArgs)...) {
    }
 
-   bool LinkStorage(InnDbf& storage, InnRoomSize minRoomSize) {
-      return storage.LinkTable(&this->Name_, *static_cast<PolicyTree*>(this->Sapling_.get()), minRoomSize);
+   bool LinkStorage(const InnDbfSP& storage, InnRoomSize minRoomSize) {
+      if (storage)
+         return storage->LinkTable(&this->Name_, *static_cast<PolicyTree*>(this->Sapling_.get()), minRoomSize);
+      return false;
    }
 };
 

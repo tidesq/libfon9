@@ -8,6 +8,8 @@ namespace fon9 {
 /// 在 function 裡面建立一個 static thread_local 物件.
 /// 第一次呼叫時會自動建構, 但是此物件不會自動解構!
 /// 所以僅適用於不須解構的物件.
+/// 為了避免在 thread 的死亡過程還會用到這些物件,
+/// 所以用這裡的方式定義 thread_local object.
 #define fon9_THREAD_LOCAL_OBJ(T, name, ...)        \
 static thread_local char   name##Mem_[sizeof(T)];  \
 static thread_local T*     name{nullptr};          \

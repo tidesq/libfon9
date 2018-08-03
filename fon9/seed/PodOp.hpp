@@ -41,7 +41,7 @@ public:
 
    /// 對此 Pod(or Seed) 進行指令操作.
    /// 不一定會在返回前呼叫 resHandler, 也不一定會在同一個 thread 呼叫 resHandler, 由衍生者決定.
-   virtual void OnSeedCommand(Tab* tab, StrView cmd, FnCommandResultHandler resHandler) = 0;
+   virtual void OnSeedCommand(Tab* tab, StrView cmdln, FnCommandResultHandler resHandler) = 0;
 
    virtual void BeginRead(Tab& tab, FnReadOp fnCallback) = 0;
    virtual void BeginWrite(Tab& tab, FnWriteOp fnCallback) = 0;
@@ -57,7 +57,7 @@ public:
    /// 對此 Seed 進行指令操作.
    /// 不一定會在返回前呼叫 resHandler, 也不一定會在同一個 thread 呼叫 resHandler, 由衍生者決定.
    /// 預設: 直接呼叫 resHandler(OpResult::not_supported_cmd, cmdpr);
-   void OnSeedCommand(Tab* tab, StrView cmd, FnCommandResultHandler resHandler) override;
+   void OnSeedCommand(Tab* tab, StrView cmdln, FnCommandResultHandler resHandler) override;
 
    void BeginRead(Tab& tab, FnReadOp fnCallback) override;
    void BeginWrite(Tab& tab, FnWriteOp fnCallback) override;

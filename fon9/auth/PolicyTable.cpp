@@ -8,11 +8,13 @@ namespace fon9 { namespace auth {
 
 PolicyItem::~PolicyItem() {
 }
+void PolicyItem::SetRemoved(PolicyTable&) {
+}
 void PolicyItem::OnParentTreeClear(PolicyTable& owner) {
    this->BeforeParentErase(owner);
 }
-void PolicyItem::OnSeedCommand(seed::SeedOpResult& res, StrView cmd, seed::FnCommandResultHandler resHandler) {
-   (void)cmd;
+void PolicyItem::OnSeedCommand(PolicyMaps::Locker&, seed::SeedOpResult& res, StrView cmdln, seed::FnCommandResultHandler resHandler) {
+   (void)cmdln;
    res.OpResult_ = seed::OpResult::not_supported_cmd;
    resHandler(res, nullptr);
 }
@@ -22,19 +24,18 @@ seed::TreeSP PolicyItem::GetSapling() {
 
 //--------------------------------------------------------------------------//
 
-void PolicyTable::MapsImpl::WriteUpdated(PolicyItem& rec) {
+void PolicyMapsImpl::WriteUpdated(PolicyItem& rec) {
    if (rec.IsRemoved_)
       return;
-   PolicyTable&   table = ContainerOf(PolicyTable::Maps::StaticCast(*this), &PolicyTable::Maps_);
    RevBufferList  rbuf{128};
    rec.SavePolicy(rbuf);
    ToBitv(rbuf, rec.PolicyId_);
-   table.WriteRoom(rec.RoomKey_, nullptr, fon9::InnDbfRoomType::RowData, rbuf.MoveOut());
+   PolicyTable::StaticCast(this->ItemMap_).WriteRoom(rec.RoomKey_, nullptr, fon9::InnDbfRoomType::RowData, rbuf.MoveOut());
 }
 
 bool PolicyTable::Delete(StrView policyId) {
-   Maps::Locker maps{this->Maps_};
-   auto         irec = maps->ItemMap_.find(policyId);
+   PolicyMaps::Locker maps{this->PolicyMaps_};
+   auto               irec = maps->ItemMap_.find(policyId);
    if (irec == maps->ItemMap_.end())
       return false;
    auto& droom = maps->DeletedMap_[(*irec)->PolicyId_];
@@ -50,14 +51,12 @@ bool PolicyTable::Delete(StrView policyId) {
 
 //--------------------------------------------------------------------------//
 
-void PolicyTable::LoadHandler::UpdateLoad(ItemMap& itemMap, ItemMap::iterator* iItem) {
-   PolicyTable& table = ContainerOf(PolicyTable::Maps::StaticCast(ContainerOf(itemMap, &MapsImpl::ItemMap_)),
-                                    &PolicyTable::Maps_);
-   PolicyItem&  rec = this->FetchPolicy(table, itemMap, iItem);
+void PolicyTable::LoadHandler::UpdateLoad(PolicyItemMap& itemMap, PolicyItemMap::iterator* iItem) {
+   PolicyItem&  rec = this->FetchPolicy(PolicyTable::StaticCast(itemMap), itemMap, iItem);
    rec.RoomKey_ = std::move(this->EvArgs_.RoomKey_);
    rec.LoadPolicy(*this->EvArgs_.Buffer_);
 }
-void PolicyTable::LoadHandler::UpdateLoad(DeletedMap& deletedMap, DeletedMap::iterator* iDeleted) {
+void PolicyTable::LoadHandler::UpdateLoad(PolicyDeletedMap& deletedMap, PolicyDeletedMap::iterator* iDeleted) {
    if (iDeleted)
       (*iDeleted)->second = std::move(this->EvArgs_.RoomKey_);
    else
@@ -67,17 +66,15 @@ void PolicyTable::OnInnDbfTable_Load(InnDbfLoadEventArgs& e) {
    LoadHandler handler{*this, e};
    BitvTo(*e.Buffer_, handler.Key_);
 
-   Maps::Locker maps{this->Maps_};
+   PolicyMaps::Locker maps{this->PolicyMaps_};
    OnInnDbfLoad(maps->ItemMap_, maps->DeletedMap_, handler);
 }
 
 //--------------------------------------------------------------------------//
 
-void PolicyTable::SyncHandler::UpdateSync(ItemMap& itemMap, ItemMap::iterator* iItem) {
+void PolicyTable::SyncHandler::UpdateSync(PolicyItemMap& itemMap, PolicyItemMap::iterator* iItem) {
    assert(this->EvArgs_.RoomType_ == InnDbfRoomType::RowData);
-   PolicyTable& table = ContainerOf(PolicyTable::Maps::StaticCast(ContainerOf(itemMap, &MapsImpl::ItemMap_)),
-                                    &PolicyTable::Maps_);
-   PolicyItem&  rec = this->FetchPolicy(table, itemMap, iItem);
+   PolicyItem&  rec = this->FetchPolicy(PolicyTable::StaticCast(itemMap), itemMap, iItem);
    if (iItem == nullptr)
       rec.RoomKey_ = std::move(this->PendingFreeRoomKey_);
    rec.LoadPolicy(*this->EvArgs_.Buffer_);
@@ -85,7 +82,7 @@ void PolicyTable::SyncHandler::UpdateSync(ItemMap& itemMap, ItemMap::iterator* i
    ToBitv(this->PendingWriteBuf_, rec.PolicyId_);
    this->PendingWriteRoomKey_ = &rec.RoomKey_;
 }
-void PolicyTable::SyncHandler::UpdateSync(DeletedMap& deletedMap, DeletedMap::iterator* iDeleted) {
+void PolicyTable::SyncHandler::UpdateSync(PolicyDeletedMap& deletedMap, PolicyDeletedMap::iterator* iDeleted) {
    assert(this->EvArgs_.RoomType_ == InnDbfRoomType::RowDeleted);
    if (iDeleted)
       this->PendingWriteRoomKey_ = &((*iDeleted)->second);
@@ -99,7 +96,7 @@ void PolicyTable::OnInnDbfTable_Sync(InnDbfSyncEventArgs& e) {
    SyncHandler handler{*this, e};
    BitvTo(*e.Buffer_, handler.Key_);
 
-   Maps::Locker maps{this->Maps_};
+   PolicyMaps::Locker maps{this->PolicyMaps_};
    OnInnDbfSync(maps->ItemMap_, maps->DeletedMap_, handler);
    if (handler.PendingWriteRoomKey_)
       this->WriteRoom(*handler.PendingWriteRoomKey_, &e.SyncKey_, e.RoomType_, handler.PendingWriteBuf_.MoveOut());
@@ -108,9 +105,9 @@ void PolicyTable::OnInnDbfTable_Sync(InnDbfSyncEventArgs& e) {
 //--------------------------------------------------------------------------//
 
 void PolicyTable::OnInnDbfTable_SyncFlushed() {
-   DeletedMap deletedMap;
+   PolicyDeletedMap deletedMap;
    {
-      Maps::Locker maps{this->Maps_};
+      PolicyMaps::Locker maps{this->PolicyMaps_};
       deletedMap.swap(maps->DeletedMap_);
    }
    for (auto& v : deletedMap)

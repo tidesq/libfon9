@@ -79,8 +79,8 @@ public:
    /// \endcode
    template <class ResultHandler>
    bool GetPolicy(const StrView& policyId, ResultHandler&& res) const {
-      Maps::ConstLocker  maps{this->Maps_};
-      auto               ifind = maps->ItemMap_.find(policyId);
+      PolicyMaps::ConstLocker maps{this->PolicyMaps_};
+      auto                    ifind = maps->ItemMap_.find(policyId);
       if (ifind == maps->ItemMap_.end())
          return false;
       res.InLocking(**ifind);
@@ -111,7 +111,7 @@ public:
    template <class LockedDetailTabble>
    void WriteUpdated(LockedDetailTabble& lockedTable) {
       lockedTable.unlock();
-      MasterPolicyTree::Maps::Locker  maps{this->OwnerMasterItem_->OwnerMasterTree_->Maps_};
+      PolicyMaps::Locker  maps{this->OwnerMasterItem_->OwnerMasterTree_->PolicyMaps_};
       maps->WriteUpdated(*this->OwnerMasterItem_);
    }
 };

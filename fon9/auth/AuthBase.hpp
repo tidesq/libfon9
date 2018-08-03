@@ -17,8 +17,8 @@ using AuthSessionSP = intrusive_ptr<AuthSession>;
 class fon9_API RoleMgr;
 using RoleMgrSP = intrusive_ptr<RoleMgr>;
 
-using PolicyName = CharVector;
 using PolicyId = CharVector;
+using PolicyName = CharVector;
 using RoleId = PolicyId;
 using UserId = PolicyId;
 

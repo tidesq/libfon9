@@ -20,7 +20,7 @@ struct fon9_API AuthResult : public RoleConfig {
    /// - 例如執行 sudo, 這裡用的是原本登入時的 UserId
    /// - 例如執行主管強迫, 這裡用的是營業員(or Keyin)的Id.
    UserId   AuthcId_;
-   /// - 登入成功後的提示訊息: e.g. "Last login: 2017/09/08 10:50:55 from 192.168.1.3";
+   /// - 認證成功後的提示訊息: e.g. "Last login: 2017/09/08 10:50:55 from 192.168.1.3";
    std::string ExtInfo_;
 
    AuthResult(AuthMgr& authMgr) : AuthMgr_(authMgr) {
@@ -75,10 +75,14 @@ public:
       : OnVerifyCB_(std::move(cb)), AuthResult_(authMgr) {
    }
    virtual ~AuthSession();
+
+   /// 當收到 client 的 request 時, 透過這裡處理.
+   /// 如果認證過程, 有多個步驟, 一樣透過這裡處理.
    virtual void AuthVerify(const AuthRequest& req) = 0;
 
-   /// 僅保證在 FnOnAuthVerifyCB 事件, 或登入結束後, 才能安全的取得.
-   /// 在登入處理的過程中, 不應該呼叫此處.
+   /// 僅保證在 FnOnAuthVerifyCB 事件, 或認證結束後, 才能安全的取得.
+   /// 在認證處理的過程中, 不應該呼叫此處.
+   /// 一旦認證結束, 此處的資料都不會再變動(包含 ExtInfo_ 也不會變).
    const AuthResult& GetAuthResult() const {
       return this->AuthResult_;
    }
@@ -89,7 +93,7 @@ fon9_WARN_POP;
 
 /// \ingroup auth
 /// 實際執行認證的元件基底.
-/// 例如: AuthAgent_SCRAM_SHA_256.cpp
+/// 例如: AuthAgentSaslScramSha256Server.cpp
 class fon9_API AuthAgent : public seed::NamedSeed {
    fon9_NON_COPY_NON_MOVE(AuthAgent);
    using base = seed::NamedSeed;
@@ -120,7 +124,7 @@ class fon9_API AuthMgr : public seed::NamedSeed {
 public:
    /// 擁有此 AuthMgr 的管理員.
    const seed::MaTreeSP MaRoot_;
-   /// 包含 UserDbs, Role, Policies...
+   /// 包含 UserMgrs, Role, Policies...
    const seed::MaTreeSP Agents_;
    /// 負責儲存 Agents 所需的資料.
    const InnDbfSP       Storage_;

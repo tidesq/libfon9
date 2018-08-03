@@ -25,8 +25,8 @@ Fields NamedSeed::MakeDefaultFields() {
 
 //--------------------------------------------------------------------------//
 
-void NamedSeed::OnSeedCommand(SeedOpResult& res, StrView cmd, FnCommandResultHandler resHandler) {
-   (void)cmd;
+void NamedSeed::OnSeedCommand(SeedOpResult& res, StrView cmdln, FnCommandResultHandler resHandler) {
+   (void)cmdln;
    res.OpResult_ = OpResult::not_supported_cmd;
    resHandler(res, nullptr);
 }
@@ -105,10 +105,10 @@ fon9_MSC_WARN_DISABLE_NO_PUSH(4265 /* class has virtual functions, but destructo
 struct MaTree::PodOp : public PodOpLocker<PodOp, Locker> {
    fon9_NON_COPY_NON_MOVE(PodOp);
    using base = PodOpLocker<PodOp, Locker>;
-   NamedSeed*  Seed_;
+   NamedSeedSP  Seed_;
    PodOp(ContainerImpl::value_type& v, Tree& sender, OpResult res, const StrView& key, Locker& locker)
       : base{*this, sender, res, key, locker}
-      , Seed_{v.get()} {
+      , Seed_{v} {
    }
    NamedSeed& GetSeedRW(Tab&) {
       return *this->Seed_;
@@ -116,8 +116,9 @@ struct MaTree::PodOp : public PodOpLocker<PodOp, Locker> {
    TreeSP HandleGetSapling(Tab&) {
       return this->Seed_->GetSapling();
    }
-   void HandleSeedCommand(SeedOpResult& res, StrView cmd, FnCommandResultHandler&& resHandler) {
-      this->Seed_->OnSeedCommand(res, cmd, std::move(resHandler));
+   void HandleSeedCommand(Locker&, SeedOpResult& res, StrView cmdln, FnCommandResultHandler&& resHandler) {
+      this->Unlock();
+      this->Seed_->OnSeedCommand(res, cmdln, std::move(resHandler));
    }
 };
 

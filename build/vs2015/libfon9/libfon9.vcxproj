@@ -88,8 +88,11 @@
     <ClInclude Include="..\..\..\fon9\auth\RoleMgr.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\SaslClient.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\SaslScram.hpp" />
+    <ClInclude Include="..\..\..\fon9\auth\SaslScramServer.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\SaslScramSha256.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\SaslScramSha256Client.hpp" />
+    <ClInclude Include="..\..\..\fon9\auth\SaslScramSha256Server.hpp" />
+    <ClInclude Include="..\..\..\fon9\auth\UserMgr.hpp" />
     <ClInclude Include="..\..\..\fon9\Base64.hpp" />
     <ClInclude Include="..\..\..\fon9\Bitv.h" />
     <ClInclude Include="..\..\..\fon9\BitvArchive.hpp" />
@@ -253,8 +256,11 @@
     <ClCompile Include="..\..\..\fon9\auth\PolicyTree.cpp" />
     <ClCompile Include="..\..\..\fon9\auth\RoleMgr.cpp" />
     <ClCompile Include="..\..\..\fon9\auth\SaslClient.cpp" />
+    <ClCompile Include="..\..\..\fon9\auth\SaslScramServer.cpp" />
     <ClCompile Include="..\..\..\fon9\auth\SaslScramSha256.cpp" />
     <ClCompile Include="..\..\..\fon9\auth\SaslScramSha256Client.cpp" />
+    <ClCompile Include="..\..\..\fon9\auth\SaslScramSha256Server.cpp" />
+    <ClCompile Include="..\..\..\fon9\auth\UserMgr.cpp" />
     <ClCompile Include="..\..\..\fon9\Base64.cpp" />
     <ClCompile Include="..\..\..\fon9\BitvEncode.cpp" />
     <ClCompile Include="..\..\..\fon9\BitvDecode.cpp" />

@@ -23,12 +23,12 @@ struct BitvOutArchive : public OutArchive, public BitvArchive {
    }
 
    template <class... ArgsT>
-   void operator()(ArgsT&&... args) {
+   void operator()(ArgsT&&... args) const {
       SerializeOut(*this, std::forward<ArgsT>(args)...);
    }
 
    template <class T>
-   void Save(T&& v) {
+   void Save(T&& v) const {
       ToBitv(this->Buffer_, std::forward<T>(v));
    }
 };
@@ -42,12 +42,12 @@ struct BitvInArchive : public InArchive, public BitvArchive {
    }
 
    template <class... ArgsT>
-   void operator()(ArgsT&&... args) {
+   void operator()(ArgsT&&... args) const {
       SerializeIn(*this, std::forward<ArgsT>(args)...);
    }
 
    template <class T>
-   void Load(T&& v) {
+   void Load(T&& v) const {
       BitvTo(this->Buffer_, std::forward<T>(v));
    }
 };

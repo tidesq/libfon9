@@ -617,6 +617,15 @@
     <ClInclude Include="..\..\..\fon9\auth\PolicyMaster.hpp">
       <Filter>Header Files\auth</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\auth\UserMgr.hpp">
+      <Filter>Header Files\auth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\auth\SaslScramSha256Server.hpp">
+      <Filter>Header Files\auth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\auth\SaslScramServer.hpp">
+      <Filter>Header Files\auth</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -914,6 +923,15 @@
       <Filter>Source Files\auth</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\auth\PolicyMaster.cpp">
+      <Filter>Source Files\auth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\auth\SaslScramSha256Server.cpp">
+      <Filter>Source Files\auth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\auth\UserMgr.cpp">
+      <Filter>Source Files\auth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\auth\SaslScramServer.cpp">
       <Filter>Source Files\auth</Filter>
     </ClCompile>
   </ItemGroup>

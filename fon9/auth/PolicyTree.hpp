@@ -15,6 +15,11 @@ class fon9_API PolicyTree : public seed::Tree, public PolicyTable {
 
 public:
    using base::base;
+
+   /// 預設使用底下 Layout1 建構:
+   /// - KeyField = seed::FieldCharVector(keyName)
+   /// - Tab = {tabName, fields}
+   /// - 若上述 Layout 不符, 您也可以直接使用 seed::Tree 的建構參數.
    PolicyTree(std::string tabName, std::string keyName, seed::Fields&& fields);
 
    virtual void OnTreeOp(seed::FnTreeOp fnCallback) override;

@@ -90,13 +90,16 @@ set(fon9src
  crypto/Sha256.cpp
  auth/AuthMgr.cpp
  auth/RoleMgr.cpp
+ auth/UserMgr.cpp
  auth/PolicyTable.cpp
  auth/PolicyTree.cpp
  auth/PolicyMaster.cpp 
  auth/PolicyAcl.cpp 
  auth/SaslClient.cpp
+ auth/SaslScramServer.cpp
  auth/SaslScramSha256.cpp
  auth/SaslScramSha256Client.cpp
+ auth/SaslScramSha256Server.cpp
  
  framework/Framework.cpp
 )

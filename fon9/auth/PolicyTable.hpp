@@ -9,12 +9,40 @@
 namespace fon9 { namespace auth {
 
 class fon9_API PolicyTable;
+class fon9_API PolicyItem;
+using PolicyItemSP = intrusive_ptr<PolicyItem>;
+
+struct CmpPolicyItemSP {
+   bool operator()(const PolicyItemSP& lhs, const PolicyItemSP& rhs) const;
+   bool operator()(const PolicyItemSP& lhs, const StrView& rhs) const;
+   bool operator()(const StrView& lhs, const PolicyItemSP& rhs) const;
+   bool operator()(const PolicyId& lhs, const PolicyItemSP& rhs) const;
+   bool operator()(const PolicyItemSP& lhs, const PolicyId& rhs) const;
+};
+struct PolicyItemMap : public SortedVectorSet<PolicyItemSP, CmpPolicyItemSP> {
+   using base = SortedVectorSet<PolicyItemSP, CmpPolicyItemSP>;
+   /// 移除前呼叫: i->second->BeforeParentErase(table);
+   iterator erase(iterator i);
+};
+using PolicyDeletedMap = std::map<PolicyId, InnDbfRoomKey>;
+
+struct fon9_API PolicyMapsImpl {
+   fon9_NON_COPY_NON_MOVE(PolicyMapsImpl);
+   PolicyItemMap     ItemMap_;
+   PolicyDeletedMap  DeletedMap_;
+
+   void WriteUpdated(PolicyItem& rec);
+};
+
+using PolicyMaps = MustLock<PolicyMapsImpl>;
+
+//--------------------------------------------------------------------------//
 
 fon9_WARN_DISABLE_PADDING;
 /// \ingroup auth
 /// 一筆使用者政策設定的基底.
 /// 例: Trader交易台股的權限.
-struct PolicyItem : public intrusive_ref_counter<PolicyItem> {
+class fon9_API PolicyItem : public intrusive_ref_counter<PolicyItem> {
    fon9_NON_COPY_NON_MOVE(PolicyItem);
    friend class PolicyTable;
    bool           IsRemoved_{false};
@@ -22,7 +50,13 @@ struct PolicyItem : public intrusive_ref_counter<PolicyItem> {
 
    virtual void LoadPolicy(DcQueue&) = 0;
    virtual void SavePolicy(RevBuffer&) = 0;
-   virtual void SetRemoved(PolicyTable& owner) = 0;
+
+   friend struct PolicyItemMap;
+   friend struct PolicyMapsImpl;
+   /// 在 BeforeParentErase(), OnParentTreeClear() 時呼叫,
+   /// 通常在 SetRemoved() 時切斷與 DetailTable 的聯繫.
+   /// 預設: do nothing.
+   virtual void SetRemoved(PolicyTable& owner);
    void BeforeParentErase(PolicyTable& owner) {
       this->IsRemoved_ = true;
       this->SetRemoved(owner);
@@ -39,13 +73,17 @@ public:
       return this->IsRemoved_;
    }
 
+   virtual seed::TreeSP GetSapling();
+
    /// 預設呼叫 BeforeParentErase(owner);
    virtual void OnParentTreeClear(PolicyTable& owner);
-   virtual void OnSeedCommand(seed::SeedOpResult& res, StrView cmd, seed::FnCommandResultHandler resHandler);
-   virtual seed::TreeSP GetSapling();
+
+   /// 預設: OpResult::not_supported_cmd;
+   virtual void OnSeedCommand(PolicyMaps::Locker& locker, seed::SeedOpResult& res, StrView cmdln, seed::FnCommandResultHandler resHandler);
 };
 fon9_WARN_POP;
-using PolicyItemSP = intrusive_ptr<PolicyItem>;
+
+//--------------------------------------------------------------------------//
 
 /// \ingroup auth
 /// 使用者政策資料表, 負責與 InnDbf 溝通.
@@ -56,52 +94,24 @@ public:
 
    bool Delete(StrView policyId);
 
+   static PolicyTable& StaticCast(PolicyItemMap& itemMap) {
+      return ContainerOf(PolicyMaps::StaticCast(ContainerOf(itemMap, &PolicyMapsImpl::ItemMap_)),
+                         &PolicyTable::PolicyMaps_);
+   }
 protected:
    virtual PolicyItemSP MakePolicy(const StrView& policyId) = 0;
-
-   struct CmpPolicyItemSP {
-      bool operator()(const PolicyItemSP& lhs, const PolicyItemSP& rhs) const {
-         return lhs->PolicyId_ < rhs->PolicyId_;
-      }
-      bool operator()(const PolicyItemSP& lhs, const StrView& rhs) const {
-         return ToStrView(lhs->PolicyId_) < rhs;
-      }
-      bool operator()(const StrView& lhs, const PolicyItemSP& rhs) const {
-         return lhs < ToStrView(rhs->PolicyId_);
-      }
-      bool operator()(const PolicyId& lhs, const PolicyItemSP& rhs) const {
-         return lhs < rhs->PolicyId_;
-      }
-      bool operator()(const PolicyItemSP& lhs, const PolicyId& rhs) const {
-         return lhs->PolicyId_ < rhs;
-      }
-   };
-   struct ItemMap : public SortedVectorSet<PolicyItemSP, CmpPolicyItemSP> {
-      using base = SortedVectorSet<PolicyItemSP, CmpPolicyItemSP>;
-      /// 移除前呼叫: i->second->BeforeParentErase(table);
-      iterator erase(iterator i);
-   };
-   using DeletedMap = std::map<PolicyId, InnDbfRoomKey>;
-
-   struct MapsImpl {
-      ItemMap     ItemMap_;
-      DeletedMap  DeletedMap_;
-
-      void WriteUpdated(PolicyItem& rec);
-   };
-   using Maps = MustLock<MapsImpl>;
-   Maps  Maps_;
+   PolicyMaps  PolicyMaps_;
 
 private:
    struct HandlerBase {
       PolicyId Key_;
-      static InnDbfRoomKey& GetRoomKey(DeletedMap::value_type& v) {
+      static InnDbfRoomKey& GetRoomKey(PolicyDeletedMap::value_type& v) {
          return v.second;
       }
-      static InnDbfRoomKey& GetRoomKey(ItemMap::value_type& v) {
+      static InnDbfRoomKey& GetRoomKey(PolicyItemMap::value_type& v) {
          return v->RoomKey_;
       }
-      PolicyItem& FetchPolicy(PolicyTable& table, ItemMap& itemMap, ItemMap::iterator* iItem) {
+      PolicyItem& FetchPolicy(PolicyTable& table, PolicyItemMap& itemMap, PolicyItemMap::iterator* iItem) {
          if (iItem)
             return ***iItem;
          PolicyItemSP rec = table.MakePolicy(ToStrView(this->Key_));
@@ -112,8 +122,8 @@ private:
    struct LoadHandler : public HandlerBase, public InnDbfLoadHandler {
       fon9_NON_COPY_NON_MOVE(LoadHandler);
       using InnDbfLoadHandler::InnDbfLoadHandler;
-      void UpdateLoad(ItemMap& itemMap, ItemMap::iterator* iItem);
-      void UpdateLoad(DeletedMap& deletedMap, DeletedMap::iterator* iDeleted);
+      void UpdateLoad(PolicyItemMap& itemMap, PolicyItemMap::iterator* iItem);
+      void UpdateLoad(PolicyDeletedMap& deletedMap, PolicyDeletedMap::iterator* iDeleted);
    };
    virtual void OnInnDbfTable_Load(InnDbfLoadEventArgs& e) override;
 
@@ -126,19 +136,35 @@ private:
       InnDbfRoomKey* PendingWriteRoomKey_{nullptr};
       RevBufferList  PendingWriteBuf_{128};
 
-      void UpdateSync(ItemMap& itemMap, ItemMap::iterator* iItem);
-      void UpdateSync(DeletedMap& deletedMap, DeletedMap::iterator* iDeleted);
+      void UpdateSync(PolicyItemMap& itemMap, PolicyItemMap::iterator* iItem);
+      void UpdateSync(PolicyDeletedMap& deletedMap, PolicyDeletedMap::iterator* iDeleted);
    };
    virtual void OnInnDbfTable_Sync(InnDbfSyncEventArgs& e) override;
    virtual void OnInnDbfTable_SyncFlushed() override;
 };
 
-inline PolicyTable::ItemMap::iterator PolicyTable::ItemMap::erase(iterator i) {
-   PolicyTable& table = ContainerOf(PolicyTable::Maps::StaticCast(ContainerOf(*this, &MapsImpl::ItemMap_)),
-                                    &PolicyTable::Maps_);
-   (*i)->BeforeParentErase(table);
+inline PolicyItemMap::iterator PolicyItemMap::erase(iterator i) {
+   (*i)->BeforeParentErase(PolicyTable::StaticCast(*this));
    return base::erase(i);
 }
+
+//struct CmpPolicyItemSP {
+   inline bool CmpPolicyItemSP::operator()(const PolicyItemSP& lhs, const PolicyItemSP& rhs) const {
+      return lhs->PolicyId_ < rhs->PolicyId_;
+   }
+   inline bool CmpPolicyItemSP::operator()(const PolicyItemSP& lhs, const StrView& rhs) const {
+      return ToStrView(lhs->PolicyId_) < rhs;
+   }
+   inline bool CmpPolicyItemSP::operator()(const StrView& lhs, const PolicyItemSP& rhs) const {
+      return lhs < ToStrView(rhs->PolicyId_);
+   }
+   inline bool CmpPolicyItemSP::operator()(const PolicyId& lhs, const PolicyItemSP& rhs) const {
+      return lhs < rhs->PolicyId_;
+   }
+   inline bool CmpPolicyItemSP::operator()(const PolicyItemSP& lhs, const PolicyId& rhs) const {
+      return lhs->PolicyId_ < rhs;
+   }
+//};
 
 } } // namespaces
 #endif//__fon9_auth_PolicyTable_hpp__

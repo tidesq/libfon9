@@ -153,7 +153,7 @@ fon9_WARN_DISABLE_PADDING;
 ///
 ///   template <class Archive>
 ///   void Serialize(Archive& ar, ArchiveWorker<Archive, MyObject>& rec) {
-///      CompositeVer<decltype(rec)> ver{rec, 1};
+///      CompositeVer<decltype(rec)> vrec{rec, 1};
 ///      ar(vrec);
 ///   }
 /// \endcode

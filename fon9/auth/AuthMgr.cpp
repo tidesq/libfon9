@@ -23,7 +23,7 @@ AuthMgr::AuthMgr(seed::MaTreeSP ma, std::string name, InnDbfSP storage)
    , Agents_{new seed::MaTree{"Agents"}}
    , Storage_{std::move(storage)}
    , RoleMgr_{new RoleMgr{"RoleMgr"}} {
-   this->RoleMgr_->LinkStorage(*this->Storage_);
+   this->RoleMgr_->LinkStorage(this->Storage_);
    this->Agents_->Add(this->RoleMgr_);
 }
 
