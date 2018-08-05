@@ -6,7 +6,8 @@
 
 namespace fon9 { namespace auth {
 
-fon9_API SaslClientSP SaslScramSha256ClientCreator (StrView authz, StrView authc, StrView pass);
+fon9_API SaslClientSP SaslScramSha256ClientCreator(const StrView& authz, const StrView& authc, const StrView& pass);
+fon9_API SaslClientSP SaslScramSha256ClientCreator_ChgPass(const StrView& authz, const StrView& authc, const StrView& oldPass, const StrView& newPass);
 
 } } // namespaces
 #endif//__fon9_auth_SaslScramSha256Client_hpp__

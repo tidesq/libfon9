@@ -15,7 +15,7 @@ SaslClient::~SaslClient() {
 //--------------------------------------------------------------------------//
 
 // 使用 Password 機制的 SaslClient 定義.
-typedef SaslClientSP (*FnSaslClientCreator) (StrView authz, StrView authc, StrView pass);
+typedef SaslClientSP (*FnSaslClientCreator) (const StrView& authz, const StrView& authc, const StrView& pass);
 struct SaslClientMech_Password {
    StrView              Name_;
    FnSaslClientCreator  Creator_;
@@ -25,7 +25,7 @@ static SaslClientMech_Password SaslClientMech_Password_[]{
 };
 
 fon9_API SaslClientR CreateSaslClient(StrView saslMechList, char chSplitter,
-                                      StrView authz, StrView authc, StrView pass) {
+                                      const StrView& authz, const StrView& authc, const StrView& pass) {
    for (SaslClientMech_Password& c : SaslClientMech_Password_) {
       if (SearchSubstr(saslMechList, c.Name_, chSplitter))
          return SaslClientR{c.Name_, c.Creator_(authz, authc, pass)};
@@ -35,7 +35,8 @@ fon9_API SaslClientR CreateSaslClient(StrView saslMechList, char chSplitter,
 
 //--------------------------------------------------------------------------//
 
-static const size_t  kClientNonceLength = 24;
+static constexpr size_t  kClientNonceLength = 24;
+static constexpr size_t  kMaxSaltSize       = 128;
 
 SaslScramClient::SaslScramClient(StrView authz, StrView authc, StrView pass)
    : Pass_{pass.ToString()} {
@@ -54,56 +55,98 @@ SaslScramClient::SaslScramClient(StrView authz, StrView authc, StrView pass)
    RandomChars(&*this->ClientFirstMessage_.begin() + szNoNonce, kClientNonceLength);
 }
 
+const char* SaslScramClient::ParseAndCalcSaltedPass(StrView pass, const char* msgbeg, const char* msgend, std::string& saltedPass) {
+   //  "s=SALT,i=N"
+   if (msgend - msgbeg < 10)
+      return nullptr;
+   if (msgbeg[0] != 's' || msgbeg[1] != '=')
+      return nullptr;
+   msgbeg += 2;
+   const char* pSaltEnd = StrView::traits_type::find(msgbeg, static_cast<size_t>(msgend - msgbeg), ',');
+   if (!pSaltEnd)
+      return nullptr;
+   if (pSaltEnd[1] != 'i' || pSaltEnd[2] != '=')
+      return nullptr;
+   const char*   rEnd;
+   const size_t  iterN = StrTo(StrView{pSaltEnd + 3, msgend}, static_cast<size_t>(0), &rEnd);
+   byte  salt[kMaxSaltSize];
+   auto  saltSize = Base64Decode(salt, sizeof(salt), msgbeg, static_cast<size_t>(pSaltEnd - msgbeg));
+   if (!saltSize)
+      return nullptr;
+   saltedPass = this->CalcSaltedPassword(pass, salt, saltSize.GetResult(), iterN);
+   return rEnd;
+}
+
 AuthR SaslScramClient::OnChallenge(StrView message) {
    fon9_Auth_R rcode = fon9_Auth_EArgs_Format;
    switch (message.Get1st()) {
    case 'r': // server_first_message = "r=ClientNonce" "ServerNonce" ",s=SALT,i=ITERATOR"
-      if (const char* pSalt = StrView::traits_type::find(message.begin(), message.size(), ',')) {
-         const char* const mend = message.end();
-         if (mend - pSalt < 11) // ",s=SALT,i=N"
+      if (const char* pNonceEnd = message.Find(',')) {
+         if (this->ParseAndCalcSaltedPass(&this->Pass_, pNonceEnd + 1, message.end(), this->SaltedPass_) != message.end())
             break;
-         const char* pNonceEnd = pSalt;
-         if (*++pSalt != 's' || *++pSalt != '=')
-            break;
-         ++pSalt;
-         const char* pSaltEnd = StrView::traits_type::find(pSalt, static_cast<size_t>(mend - pSalt), ',');
-         if (!pSaltEnd)
-            break;
-         if (mend - pSaltEnd < 4) // ",i=x"
-            break;
-         if (pSaltEnd[1] != 'i' || pSaltEnd[2] != '=')
-            break;
-         const char*    pend;
-         const size_t   iter = StrTo(StrView{pSaltEnd + 3, message.end()}, static_cast<size_t>(0), &pend);
-         if (pend != message.end())
-            break;
-         byte  salt[128];
-         auto  saltSize = Base64Decode(salt, sizeof(salt), pSalt, static_cast<size_t>(pSaltEnd - pSalt));
-         if (!saltSize)
-            break;
-         // 計算 proof.
+         // 建立 this->AuthMessage_ 及 clientFinalMessage.
          const char* cliFirstMsg = this->ClientFirstMessage_.c_str();
          if (cliFirstMsg[0] != 'n' || cliFirstMsg[1] != ',' || cliFirstMsg[2] != ',') // 移除 "n,,"
             break;
-         std::string authMessage{cliFirstMsg + 3, this->ClientFirstMessage_.size() - 3};
-         authMessage.push_back(',');
-         message.AppendTo(authMessage);
-         authMessage.push_back(',');
+         this->AuthMessage_.assign(cliFirstMsg + 3, this->ClientFirstMessage_.size() - 3);
+         this->AuthMessage_.push_back(',');
+         message.AppendTo(this->AuthMessage_);
+         this->AuthMessage_.push_back(',');
          std::string clientFinalMessage{"c=biws,"};// "biws" = Base64Encode("n,,");
          clientFinalMessage.append(message.begin(), pNonceEnd);// "r=" "ClientNonce" "ServerNonce"
-         authMessage.append(clientFinalMessage);
+         if (!this->NewPass_.empty())
+            clientFinalMessage.append(",s=", 3);
+         this->AuthMessage_.append(clientFinalMessage);
          clientFinalMessage.append(",p=", 3);
-         this->MakeClientFinalMessage(salt, saltSize.GetResult(), iter, &authMessage, clientFinalMessage);
+         // 計算 proof.
+         this->AppendProof(this->SaltedPass_, &this->AuthMessage_, clientFinalMessage);
          return AuthR(fon9_Auth_NeedsMore, std::move(clientFinalMessage));
       }
       break;
+   case 's': // change pass: "s=NewSALT,i=NewITERATOR,v=verifier"
+   {
+      std::string newSaltedPass;
+      if (const char* pIterEnd = this->ParseAndCalcSaltedPass(&this->NewPass_, message.begin(), message.end(), newSaltedPass)) {
+         if (newSaltedPass.size() != this->SaltedPass_.size())
+            return AuthR(fon9_Auth_EOther, "change pass: CalcSaltedPassword");
+         // pIterEnd = ",v=..."
+         if (message.end() - pIterEnd < 4)
+            break;
+         if (pIterEnd[0] != ',' || pIterEnd[1] != 'v' || pIterEnd[2] != '=')
+            break;
+         this->AuthMessage_.append(message.begin() + 2, pIterEnd); // 加上 "NewSALT,i=NewITERATOR"
+         std::string v = this->MakeVerify(this->SaltedPass_, &this->AuthMessage_);
+         pIterEnd += 3;
+         if (v.size() != static_cast<size_t>(message.end() - pIterEnd)
+         && memcmp(v.c_str(), pIterEnd, v.size()) != 0)
+            return AuthR(fon9_Auth_EProof, "err verify for change pass");
+         // 建立 client 改密碼訊息.
+         std::string climsg;
+         climsg.reserve(kMaxSaltSize * 3);
+         climsg.assign("h=", 2);
+         const char* pNewSalted = newSaltedPass.c_str();
+         for (char& c : this->SaltedPass_)
+            c = static_cast<char>(c ^ (*pNewSalted++));
+         size_t encsz = Base64EncodeLengthNoEOS(newSaltedPass.size());
+         climsg.resize(climsg.size() + encsz);
+         Base64Encode(&*(climsg.end() - static_cast<int>(encsz)), encsz, this->SaltedPass_.c_str(), this->SaltedPass_.size());
+         climsg.append(",p=");
+         this->AppendProof(newSaltedPass, &this->AuthMessage_, climsg);
+         this->SaltedPass_.swap(newSaltedPass);
+         return AuthR(fon9_Auth_NeedsMore, std::move(climsg));
+      }
+   } // case 's'
+   case 'h':
    case 'v':
-      if (message.size() - 2 == this->Verify_.size() && message.begin()[1] == '=') {
-         if (memcmp(message.begin() + 2, this->Verify_.c_str(), this->Verify_.size()) == 0)
-            return AuthR{fon9_Auth_Success};
+   {
+      std::string verifier = this->MakeVerify(this->SaltedPass_, &this->AuthMessage_);
+      if (message.size() - 2 == verifier.size() && message.begin()[1] == '=') {
+         if (memcmp(message.begin() + 2, verifier.c_str(), verifier.size()) == 0)
+            return AuthR{message.Get1st() == 'h' ? fon9_Auth_PassChanged : fon9_Auth_Success};
          rcode = fon9_Auth_EProof;
       }
       break;
+   } // case 'v'
    case 'e':
       rcode = fon9_Auth_EOther;
       break;

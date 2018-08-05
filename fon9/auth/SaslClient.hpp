@@ -46,27 +46,36 @@ struct SaslClientR {
 /// \ingroup auth
 /// 從 saslMechList 裡面選一個有支援的 sasl mech, 並建立 SaslClient.
 fon9_API SaslClientR CreateSaslClient(StrView saslMechList, char chSplitter,
-                                      StrView authz, StrView authc, StrView pass);
+                                      const StrView& authz, const StrView& authc, const StrView& pass);
 
 /// \ingroup auth
 /// 提供 SASL SCRAM Client 端的基底.
 /// - 不支援 channel binding.
 /// - 不支援 SASLprep.
+/// https://tools.ietf.org/html/rfc5802
 class fon9_API SaslScramClient : public SaslClient {
-protected:
    std::string Pass_;
-   std::string Verify_;
+   std::string NewPass_;
+   std::string AuthMessage_;
+   std::string SaltedPass_;
 
-   // 計算 saltedPassword & proof & verify
-   virtual void MakeClientFinalMessage(byte salt[], size_t saltSize,
-                                       size_t iter,
-                                       StrView authMessage,
-                                       std::string& clientFinalMessage) = 0;
+   // 取出 msg = "s=SALT,i=ITERATOR" 計算 SaltedPass
+   // 返回 ITERATOR 的尾端, 或 nullptr(表示訊息有誤).
+   const char* ParseAndCalcSaltedPass(StrView pass, const char* msgbeg, const char* msgend, std::string& saltedPass);
+
+protected:
+   virtual std::string CalcSaltedPassword(StrView pass, byte salt[], size_t saltSize, size_t iter) = 0;
+   virtual void AppendProof(const std::string& saltedPass, const StrView& authMessage, std::string& out) = 0;
+   virtual std::string MakeVerify(const std::string& saltedPass, const StrView& authMessage) = 0;
 
 public:
    /// 若 authz.empty()  則會提供: "n,,n=authc,r=nonce"
    /// 若 !authz.empty() 則會提供: "n,,a=authz,n=authc,r=nonce"
    SaslScramClient(StrView authz, StrView authc, StrView pass);
+   SaslScramClient(StrView authz, StrView authc, StrView oldPass, StrView newPass)
+      : SaslScramClient(authz, authc, oldPass) {
+      this->NewPass_ = newPass.ToString();
+   }
 
    /// message = server challenge message.
    virtual AuthR OnChallenge(StrView message) override;

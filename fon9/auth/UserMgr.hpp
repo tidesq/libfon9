@@ -95,7 +95,7 @@ struct fon9_API UserRec : public PolicyItem {
    UserEv      EvLastAuth_;
    /// 最後密碼錯誤時間/來自何方? 即使後來登入成功,此值不會改變.
    UserEv      EvLastErr_;
-   /// 密碼錯誤次數, 一旦認證成功此值會歸零.
+   /// 密碼錯誤次數, 一旦認證成功(或改密碼成功)此值會歸零.
    uint8_t     ErrCount_ = 0;
    uint8_t     FilledForAlign_[3];
    UserFlags   UserFlags_ = UserFlags::NeedChgPass;
@@ -123,7 +123,14 @@ public:
    using LockedUser = std::pair<Locker, UserRec*>;
    LockedUser GetLockedUser(const AuthResult& uid);
 
-   virtual AuthR AuthUpdate(fon9_Auth_R rcode, const AuthRequest& req, AuthResult& authr, UserMgr& owner);
+   /// - passRec:
+   ///   - rcode = fon9_Auth_PassChanged  則必須提供 passRec, 若沒提供則會直接 crash!
+   ///   - rcode != fon9_Auth_PassChanged 則不理會 passRec
+   virtual AuthR AuthUpdate(fon9_Auth_R        rcode,
+                            const AuthRequest& req,
+                            AuthResult&        authr,
+                            const PassRec*     passRec,
+                            UserMgr&           owner);
 };
 
 /// \ingroup auth
@@ -160,7 +167,10 @@ public:
 
    /// 如果登入成功, 則會更新 authr.ExtInfo_
    AuthR AuthUpdate(fon9_Auth_R rcode, const AuthRequest& req, AuthResult& authr) {
-      return static_cast<UserTree*>(this->Sapling_.get())->AuthUpdate(rcode, req, authr, *this);
+      return static_cast<UserTree*>(this->Sapling_.get())->AuthUpdate(rcode, req, authr, nullptr, *this);
+   }
+   AuthR PassChanged(const PassRec& passRec, const AuthRequest& req, AuthResult& authr) {
+      return static_cast<UserTree*>(this->Sapling_.get())->AuthUpdate(fon9_Auth_PassChanged, req, authr, &passRec, *this);
    }
 };
 using UserMgrSP = intrusive_ptr<UserMgr>;

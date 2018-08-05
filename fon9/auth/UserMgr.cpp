@@ -53,12 +53,14 @@ void UserRec::OnSeedCommand(PolicyMaps::Locker& locker, seed::SeedOpResult& res,
          RandomString(newpass, sizeof(newpass));
          cmdln.Reset(newpass, newpass + sizeof(newpass) - 1);
       }
-      auto& fnHassPass = static_cast<UserTree*>(res.Sender_)->FnHashPass_;
+      static const char kCSTR_LOG_repw[] = "UserRec.OnSeedCommand.repw|userId=";
+      auto& fnHashPass = static_cast<UserTree*>(res.Sender_)->FnHashPass_;
       PassRec passRec;
-      if (!fnHassPass(cmdln.begin(), cmdln.size(), passRec, HashPassFlag::ResetAll)) {
+      if (!fnHashPass(cmdln.begin(), cmdln.size(), passRec, HashPassFlag::ResetAll)) {
          locker.unlock();
          res.OpResult_ = seed::OpResult::mem_alloc_error;
-         resHandler(res, "HashPass");
+         resHandler(res, "FnHashPass");
+         fon9_LOG_ERROR(kCSTR_LOG_repw, this->PolicyId_, "|err=FnHashPass()");
       }
       else {
          locker->WriteUpdated(*this);
@@ -67,6 +69,7 @@ void UserRec::OnSeedCommand(PolicyMaps::Locker& locker, seed::SeedOpResult& res,
          cmdln.AppendTo(msg);
          res.OpResult_ = seed::OpResult::no_error;
          resHandler(res, &msg);
+         fon9_LOG_INFO(kCSTR_LOG_repw, this->PolicyId_);
       }
       return;
    }
@@ -81,9 +84,9 @@ seed::Fields UserMgr::MakeFields() {
    seed::Fields fields;
    fields.Add(fon9_MakeField(Named{"RoleId"}, UserRec, RoleId_));
 
-   fields.Add(fon9_MakeField(Named{"AlgParam"},   UserRec, Pass_.AlgParam_));
-   fields.Add(fon9_MakeField(Named{"Salt"},       UserRec, Pass_.Salt_));
-   fields.Add(fon9_MakeField(Named{"SaltedPass"}, UserRec, Pass_.SaltedPass_));
+   fields.Add(fon9_MakeField_const(Named{"AlgParam"},   UserRec, Pass_.AlgParam_));
+ //fields.Add(fon9_MakeField_const(Named{"Salt"},       UserRec, Pass_.Salt_));
+ //fields.Add(fon9_MakeField_const(Named{"SaltedPass"}, UserRec, Pass_.SaltedPass_));
 
    fields.Add(fon9_MakeField(Named{"Flags"},      UserRec, UserFlags_));
    fields.Add(fon9_MakeField(Named{"NotBefore"},  UserRec, NotBefore_));
@@ -116,7 +119,7 @@ UserTree::LockedUser UserTree::GetLockedUser(const AuthResult& uid) {
    return LockedUser{std::move(container), static_cast<UserRec*>(ifind->get())};
 }
 
-AuthR UserTree::AuthUpdate(fon9_Auth_R rcode, const AuthRequest& req, AuthResult& authz, UserMgr& owner) {
+AuthR UserTree::AuthUpdate(fon9_Auth_R rcode, const AuthRequest& req, AuthResult& authz, const PassRec* passRec, UserMgr& owner) {
    struct LogAux {
       fon9_NON_COPY_NON_MOVE(LogAux);
       LogArgs              LogArgs_{LogLevel::Warn};
@@ -150,35 +153,52 @@ AuthR UserTree::AuthUpdate(fon9_Auth_R rcode, const AuthRequest& req, AuthResult
    const TimeStamp  now = aux.LogArgs_.Time_;
    auto             lockedUser = this->GetLockedUser(authz);
    if (UserRec* user = lockedUser.second) {
-      if (rcode == fon9_Auth_Success) {
+      fon9_WARN_DISABLE_SWITCH;
+      switch (rcode) {
+      default:
+         if (++user->ErrCount_ == 0)
+            --user->ErrCount_;
+         user->EvLastErr_.Time_ = now;
+         user->EvLastErr_.From_ = req.UserFrom_;
+         break;
+      case fon9_Auth_PassChanged:
+      case fon9_Auth_Success:
          if (!user->NotBefore_.IsNull() && now < user->NotBefore_)
             ERR_RETURN(fon9_Auth_ENotBefore, "not-before");
          if (!user->NotAfter_.IsNull() && user->NotAfter_ < now)
             ERR_RETURN(fon9_Auth_ENotBefore, "not-after");
          if (IsEnumContains(user->UserFlags_, UserFlags::Locked))
             ERR_RETURN(fon9_Auth_EUserLocked, "user-locked");
-         if (IsEnumContains(user->UserFlags_, UserFlags::NeedChgPass))
-            ERR_RETURN(fon9_Auth_ENeedChgPass, "need-change-pass");
-         RevBufferList rbuf{128};
-         RevPrint(rbuf, "Last logon: ",
-                  user->EvLastAuth_.Time_, FmtTS{"K T+L"},
-                  " from ", user->EvLastAuth_.From_);
-         authz.ExtInfo_ = BufferTo<std::string>(rbuf.MoveOut());
-
+         if (rcode == fon9_Auth_PassChanged) {
+            user->UserFlags_ -= UserFlags::NeedChgPass;
+            user->EvChgPass_.Time_ = now;
+            user->EvChgPass_.From_ = req.UserFrom_;
+            user->Pass_ = *passRec;
+         }
+         else {
+            if (IsEnumContains(user->UserFlags_, UserFlags::NeedChgPass))
+               ERR_RETURN(fon9_Auth_ENeedChgPass, "need-change-pass");
+            RevBufferList rbuf{128};
+            RevPrint(rbuf, "Last logon: ",
+                     user->EvLastAuth_.Time_, FmtTS{"K T+L"},
+                     " from ", user->EvLastAuth_.From_);
+            authz.ExtInfo_ = BufferTo<std::string>(rbuf.MoveOut());
+            user->EvLastAuth_.Time_ = now;
+            user->EvLastAuth_.From_ = req.UserFrom_;
+         }
          user->ErrCount_ = 0;
-         user->EvLastAuth_.Time_ = now;
-         user->EvLastAuth_.From_ = req.UserFrom_;
          aux.LogArgs_.Level_ = LogLevel::Info;
+         break;
       }
-      else {
-         if (++user->ErrCount_ == 0)
-            --user->ErrCount_;
-         user->EvLastErr_.Time_ = now;
-         user->EvLastErr_.From_ = req.UserFrom_;
-      }
+      fon9_WARN_POP;
+
       lockedUser.first->WriteUpdated(*user);
       lockedUser.first.unlock();
-      if (rcode == fon9_Auth_Success) // 提示更改密碼?
+      if (rcode == fon9_Auth_PassChanged) { // 提示更改密碼?
+         RevPrint(aux.RBuf_, "|info=PassChanged");
+         return AuthR{fon9_Auth_PassChanged};
+      }
+      if (rcode == fon9_Auth_Success) // 密碼即將過期? 提示更改密碼?
          return AuthR{fon9_Auth_Success};
       RevPrint(aux.RBuf_, ":EPass");
    }

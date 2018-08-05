@@ -6,49 +6,51 @@
 
 namespace fon9 { namespace auth {
 
+fon9_WARN_DISABLE_PADDING;
 /// \ingroup auth
 /// 簡易 SASL SCRAM Server 端處理:
 /// 不考慮 SASLprep 字串正規化的問題.
 /// https://tools.ietf.org/html/rfc5802
-/// - Client 1st message:
-///   - "n,,n=USER,r=ClientNONCE"
-///   - "n,,a=AUTHZ,n=USER,r=ClientNONCE"
-///   - client_first_message_bare = 移除 "n,," 之後剩餘的字串.
-/// - Server 1st message:
-///   - "r=ClientNONCE+ServerNONCE,s=SALT,i=ITERATOR"
 class fon9_API SaslScramServer : public AuthSession {
    fon9_NON_COPY_NON_MOVE(SaslScramServer);
    using base = AuthSession;
 
+   void AppendSaltAndIterator(std::string& out);
+   bool CheckProof(StrView reqProof) {
+      return (reqProof == ToStrView(this->MakeProof()));
+   }
 protected:
    const UserMgrSP   UserMgr_;
    std::string       AuthMessage_;
-   SaltedPass        SaltedPass_;
-   size_t            Step_{0};
+   PassRec           Pass_;
+   unsigned          Step_{0};
+   bool              IsChgPass_{false};
 
-   /// 當找不到 User 時, 透過這裡設定 Pass 的預設值.
-   /// - passRec.AlgParam_ = ITERATOR; // for "i=ITERATOR"
-   /// - RandomBytes(passRec.Salt_.alloc(kSaltBytes), kSaltBytes);
-   virtual void SetDefaultPass(PassRec&) const = 0;
+   /// 當找不到 User 或需要改密碼, 透過這裡設定 Pass 的預設值.
+   /// - this->Pass_.AlgParam_ = ITERATOR; // for "i=ITERATOR"
+   /// - RandomBytes(this->Pass_.Salt_.alloc(kSaltBytes), kSaltBytes);
+   /// - 但不能改變 this->Pass_.SaltedPass_
+   virtual void SetDefaultPass() = 0;
 
    virtual void AppendServerNonce(std::string& svr1stMsg) const = 0;
 
    /// \code
-   ///   if (this->SaltedPass_.size() != SaslScramSha256::kOutputSize)
+   ///   if (this->Pass_.SaltedPass_.size() != SaslScramSha256::kOutputSize)
    ///      return std::string{};
-   ///   return SaslScramSha256::MakeProof(this->SaltedPass_.begin(), &this->AuthMessage_);
+   ///   return SaslScramSha256::MakeProof(this->Pass_.SaltedPass_.begin(), &this->AuthMessage_);
    /// \endcode
    virtual std::string MakeProof() = 0;
 
-   /// 必定在 MakeProof() 之後呼叫, 所以已經檢查過 this->SaltedPass_.size();
+   /// 必定在 MakeProof() 之後呼叫, 所以已經檢查過 this->Pass_.SaltedPass_.size();
    /// \code
-   ///   return SaslScramSha256::MakeVerify(this->SaltedPass_.begin(), &this->AuthMessage_);
+   ///   return SaslScramSha256::MakeVerify(this->Pass_.SaltedPass_.begin(), &this->AuthMessage_);
    /// \endocde
    virtual std::string MakeVerify() = 0;
 
-   bool ParseClientFirst(const AuthRequest& req);
-   bool ProofError(const AuthRequest& req);
-   bool ParseClientProof(const AuthRequest& req);
+   void ParseClientFirst(const AuthRequest& req);
+   void ProofError(const AuthRequest& req);
+   void ParseClientProof(const AuthRequest& req);
+   void ParseChangePass(const AuthRequest& req);
 
 public:
    SaslScramServer(AuthMgr& authMgr, FnOnAuthVerifyCB&& cb, UserMgrSP userMgr)
@@ -58,6 +60,7 @@ public:
 
    void AuthVerify(const AuthRequest& req) override;
 };
+fon9_WARN_POP;
 
 } } // namespaces
 #endif//__fon9_auth_SaslScramServer_hpp__

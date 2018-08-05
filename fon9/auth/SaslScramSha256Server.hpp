@@ -27,9 +27,10 @@ class AuthSession_SaslScramSha256 : public SaslScramServer {
    fon9_NON_COPY_NON_MOVE(AuthSession_SaslScramSha256);
    using base = SaslScramServer;
 
-   void SetDefaultPass(PassRec& passRec) const override {
-      passRec.AlgParam_ = SaslScramSha256Param::kAlgParam;
-      RandomBytes(passRec.Salt_.alloc(SaslScramSha256Param::kSaltBytes), SaslScramSha256Param::kSaltBytes);
+protected:
+   void SetDefaultPass() override {
+      this->Pass_.AlgParam_ = SaslScramSha256Param::kAlgParam;
+      RandomBytes(this->Pass_.Salt_.alloc(SaslScramSha256Param::kSaltBytes), SaslScramSha256Param::kSaltBytes);
    }
    void AppendServerNonce(std::string& svr1stMsg) const override {
       const size_t cursz = svr1stMsg.size();
@@ -37,12 +38,12 @@ class AuthSession_SaslScramSha256 : public SaslScramServer {
       RandomChars(&*svr1stMsg.begin() + cursz, 30);
    }
    std::string MakeProof() override {
-      if (this->SaltedPass_.size() != SaslScramSha256::kOutputSize)
+      if (this->Pass_.SaltedPass_.size() != SaslScramSha256::kOutputSize)
          return std::string{};
-      return SaslScramSha256::MakeProof(this->SaltedPass_.begin(), &this->AuthMessage_);
+      return SaslScramSha256::MakeProof(this->Pass_.SaltedPass_.begin(), &this->AuthMessage_);
    }
    std::string MakeVerify() override {
-      return SaslScramSha256::MakeVerify(this->SaltedPass_.begin(), &this->AuthMessage_);
+      return SaslScramSha256::MakeVerify(this->Pass_.SaltedPass_.begin(), &this->AuthMessage_);
    }
 
 public:

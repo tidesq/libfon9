@@ -16,16 +16,6 @@ public:
       kOutputSize = Alg::kOutputSize
    };
 
-   static void MakeClientFinalMessage(const std::string& pass, byte salt[], size_t saltSize, size_t iter,
-                                      StrView authMessage,
-                                      std::string& clientFinalMessage,
-                                      std::string& verifyMessage) {
-      byte saltedPassword[kOutputSize];
-      Alg::CalcSaltedPassword(pass.c_str(), pass.size(), salt, saltSize, iter, sizeof(saltedPassword), saltedPassword);
-      AppendProof(saltedPassword, authMessage, clientFinalMessage);
-      verifyMessage = MakeVerify(saltedPassword, authMessage);
-   }
-
    static void AppendProof(const byte saltedPassword[kOutputSize], StrView authMessage, std::string& out) {
       static const char   cstrClientKey[] = "Client Key";
 
