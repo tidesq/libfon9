@@ -62,6 +62,10 @@ public:
    void SetTitle(std::string value) {
       this->Title_ = std::move(value);
    }
+   /// 當 GetTitle().empty() 則傳回 Name_;
+   const std::string& GetTitleOrName() const {
+      return this->Title_.empty() ? this->Name_ : this->Title_;
+   }
 
    /// 取得物件詳細描述文字. 可能為 empty.
    const std::string& GetDescription() const {

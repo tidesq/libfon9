@@ -38,6 +38,7 @@ int main() {
       });
       std::this_thread::sleep_for(std::chrono::milliseconds{ms *= 2});
       fon9::io::AsyncDnQuery_CancelAndWait(&reqid);
+      std::cout << '.' << std::flush;
    } while (!isDone);
    std::cout << "[OK   ] Test done|@delay(ms)=" << ms << std::endl;
 

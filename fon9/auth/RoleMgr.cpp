@@ -49,7 +49,7 @@ class RoleTree : public MasterPolicyTree {
 
       fields.Add(fon9_MakeField(seed::Named{"Description"}, RoleItem, Description_));
       seed::TabSP tab{new seed::Tab(seed::Named{"RoleCfg"}, std::move(fields), std::move(saplingLayout))};
-      return new seed::Layout1(seed::FieldSP{new seed::FieldCharVector(seed::Named{"RoleId"}, 0)},
+      return new seed::Layout1(fon9_MakeField(seed::Named{"RoleId"}, PolicyItem, PolicyId_),
                                std::move(tab));
    }
 

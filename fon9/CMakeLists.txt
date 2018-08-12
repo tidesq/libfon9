@@ -26,6 +26,8 @@ set(fon9src
  ByteVector.cpp
  Base64.cpp
  Random.cpp
+ ConsoleIO.cpp
+ CmdArgs.cpp
 
  File.cpp
  FilePath.cpp
@@ -80,12 +82,15 @@ set(fon9src
  seed/TreeOp.cpp
  seed/PodOp.cpp
  seed/MaTree.cpp
- seed/SeedSearcher.cpp
+ seed/NamedPark.cpp
  seed/Field.cpp
  seed/FieldMaker.cpp
  seed/FieldBytes.cpp
  seed/FieldChars.cpp
  seed/FieldDyBlob.cpp
+ seed/SeedSearcher.cpp
+ seed/SeedAcl.cpp
+ seed/SeedFairy.cpp
 
  crypto/Sha256.cpp
  auth/AuthMgr.cpp
@@ -102,6 +107,7 @@ set(fon9src
  auth/SaslScramSha256Server.cpp
  
  framework/Framework.cpp
+ framework/SeedSession.cpp
 )
 add_library(fon9_s STATIC ${fon9src})
 target_link_libraries(fon9_s pthread rt)
@@ -109,7 +115,7 @@ target_link_libraries(fon9_s pthread rt)
 add_library(fon9 SHARED ${fon9src})
 target_link_libraries(fon9 pthread rt dl)
 
-add_executable(Fon9Co seed/Fon9Co.cpp)
+add_executable(Fon9Co framework/Fon9Co.cpp)
 target_link_libraries(Fon9Co pthread fon9)
 
 # unit tests: Tools / Utility

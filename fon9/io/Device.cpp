@@ -207,7 +207,7 @@ std::string Device::WaitSetProperty(StrView strTagValue) {
 }
 std::string Device::OpImpl_SetPropertyList(StrView propList) {
    StrView tag, value;
-   while (FetchTagValue(propList, tag, value)) {
+   while (StrFetchTagValue(propList, tag, value)) {
       std::string res = this->OpImpl_SetProperty(tag, value);
       if (!res.empty())
          return res;

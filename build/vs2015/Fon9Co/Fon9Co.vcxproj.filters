@@ -14,7 +14,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\fon9\seed\Fon9Co.cpp">
+    <ClCompile Include="..\..\..\fon9\framework\Fon9Co.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

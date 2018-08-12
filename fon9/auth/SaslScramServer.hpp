@@ -53,8 +53,8 @@ protected:
    void ParseChangePass(const AuthRequest& req);
 
 public:
-   SaslScramServer(AuthMgr& authMgr, FnOnAuthVerifyCB&& cb, UserMgrSP userMgr)
-      : AuthSession{authMgr, std::move(cb)}
+   SaslScramServer(AuthMgrSP authMgr, FnOnAuthVerifyCB&& cb, UserMgrSP userMgr)
+      : AuthSession(std::move(authMgr), std::move(cb))
       , UserMgr_(userMgr) {
    }
 

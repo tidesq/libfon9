@@ -7,6 +7,7 @@
 
 namespace fon9 {
 
+/// \ingroup Misc
 struct fon9_API Framework {
    std::string       ConfigPath_ = "fon9cfg/";
    std::string       SyncerPath_ = "fon9cfg/sync/";

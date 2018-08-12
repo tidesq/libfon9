@@ -208,7 +208,7 @@ OpResult FieldsMaker::Parse(StrView& fldcfg, char chSpl, char chTail, Fields& fi
       StrView exProp;
       if (fldcfg.Get1st() == '{') {// {exProp}
          fldcfg.SetBegin(fldcfg.begin() + 1);
-         exProp = FetchField(fldcfg, '}');
+         exProp = SbrFetchField(fldcfg, '}');
          StrTrimHead(&fldcfg);
          StrTrim(&exProp);
       }

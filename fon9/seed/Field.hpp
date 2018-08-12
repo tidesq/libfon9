@@ -44,7 +44,7 @@ enum class FieldType : uint8_t {
    Chars,
 
    /// 整數欄位.
-   Integer,
+   Integer = 10,
 
    /// 固定小數位欄位: fon9::Decimal
    Decimal,
@@ -55,6 +55,9 @@ enum class FieldType : uint8_t {
    /// 時間間隔.
    TimeInterval,
 };
+inline bool IsFieldTypeNumber(FieldType t) {
+   return t >= FieldType::Integer;
+}
 
 /// \ingroup seed
 enum class FieldFlag {

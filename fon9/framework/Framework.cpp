@@ -23,7 +23,7 @@ void Framework::Initialize(int argc, char** argv) {
    //   - HostId=
    this->ConfigPath_ = FilePath::AppendPathTail(&this->ConfigPath_);
    this->SyncerPath_ = FilePath::AppendPathTail(&this->SyncerPath_);
-   this->Root_.reset(new seed::MaTree{"Service"});
+   this->Root_.reset(new seed::MaTree{"Services"});
    this->Syncer_.reset(new InnSyncerFile(InnSyncerFile::CreateArgs(
       this->ConfigPath_ + "SyncOut.f9syn",
       this->ConfigPath_ + "SyncIn.f9syn",

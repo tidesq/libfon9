@@ -7,7 +7,7 @@
 
 ## User Auth 使用者管理機制
 * 使用 seed 機制管理資料表: user、role、policy... 
-* 提供 ACL(Access Control List) policy
+* 提供 Acl(Access Control List) policy
 * 使用 InnDbf 儲存資料表
 
 ### 使用 SASL 處理認證協商
@@ -24,7 +24,7 @@
       p=dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ=
    S: v=6rriTRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G4=
    ```
-* 額外擴充改密碼機制:
+* 由於 RFC 沒有提供改密碼機制(?)，所以 fon9 自行擴充:
   * 改密碼訊息:
    ```
    C: n,,n=user,r=rOprNGfwEbeRWgbNEkqO
@@ -42,7 +42,7 @@
   * NewAuthMessage  := (SASL 的 AuthMessage) + ",s=NewSALT,i=NewITERATOR"
   * NewProof        := SASL 計算 Proof 的算法:  使用 NewSaltedPassword 及 NewAuthMessage.
   * NewVerify       := SASL 計算 Verify 的算法: 使用 NewSaltedPassword 及 NewAuthMessage.
-  * 可以參考 [實際的範例](../fon9/fon9/crypto/Crypto_UT.cpp)
+  * 可以參考 [實際的範例](../fon9/crypto/Crypto_UT.cpp)
 
 ---------------------------------------
 
@@ -52,3 +52,63 @@
 
 ## 通訊管理
 
+---------------------------------------
+
+## 執行程式 Fon9Co
+* `Fon9Co` 是使用 fon9 建立的執行程式。
+* 啟動時進入 admin 模式:
+  * `Fon9Co --admin`
+* Fon9Co 操作指令:
+
+  | command                              | description
+  |--------------------------------------|----------------------------
+  | seedPath(第一個字元為「~ . / ' "」)  | change current seed path
+  | ss,fld1=val1,fld2=val2... [seedPath] | set seed field value, seed 若不存在則會建立, 建立後再設定 field 的值.
+  | rs                        [seedPath] | remove seed(or pod)
+  | ps                        [seedPath] | print seed field values
+  | pl                        [treePath] | print layout
+  | gv[,rowCount,startKey]    [treePath] | grid view
+  | gv+                                  | continue previous grid view
+
+* 例如首次啟動, 建立一個管理員Id = "fonwin":
+```console
+$ ~/devel/output/fon9/release/fon9/Fon9Co --admin
+Fon9Co admin mode.
+[[AdminMode]] />ss,RoleId=admin,Flags=0 /MaAuth/UserSha256/fonwin
+UserId=fonwin
+RoleId=admin
+AlgParam=0
+Flags=x0
+NotBefore=
+NotAfter=
+ChgPassTime=
+ChgPassFrom=
+LastAuthTime=
+LastAuthFrom=
+LastErrTime=
+LastErrFrom=
+ErrCount=0
+
+[[AdminMode]] />/MaAuth/UserSha256/fonwin repw test
+The new password is: test
+[[AdminMode]] />ss,HomePath=/    /MaAuth/PoAcl/admin
+PolicyId=admin
+HomePath=/
+
+[[AdminMode]] />ss,Rights=xff    /MaAuth/PoAcl/admin/'/'
+Path=/
+Rights=xff
+
+[[AdminMode]] />ss,Rights=xff    /MaAuth/PoAcl/admin/'/..'
+Path=/..
+Rights=xff
+[[AdminMode]] />exit
+
+
+Fon9Co login: fonwin
+Password: ****
+
+[fonwin] />
+[fonwin] />quit
+
+```

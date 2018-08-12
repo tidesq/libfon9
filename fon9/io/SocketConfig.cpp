@@ -26,7 +26,7 @@ void SocketConfig::SetDefaults() {
 StrView SocketOptions::ParseConfig(StrView cfgstr, FnOnTagValue fnUnknownField) {
    StrView res;
    while (!cfgstr.empty()) {
-      StrView value = FetchField(cfgstr, '|');
+      StrView value = SbrFetchField(cfgstr, '|');
       StrView tag = StrSplitTrim(value, '=');
       if (tag == "TcpNoDelay")
          this->TCP_NODELAY_ = (toupper(static_cast<unsigned char>(value.Get1st())) != 'N');

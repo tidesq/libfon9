@@ -11,8 +11,9 @@ fon9_API const char* GetOpResultMessage(OpResult res) {
       case_return(removed_pod);
       case_return(removed_seed);
 
-      case_return(access_denied);
       case_return(mem_alloc_error);
+      case_return(access_denied);
+      case_return(path_format_error);
 
       case_return(key_exists);
       case_return(key_format_error);

@@ -27,7 +27,7 @@ static SaslClientMech_Password SaslClientMech_Password_[]{
 fon9_API SaslClientR CreateSaslClient(StrView saslMechList, char chSplitter,
                                       const StrView& authz, const StrView& authc, const StrView& pass) {
    for (SaslClientMech_Password& c : SaslClientMech_Password_) {
-      if (SearchSubstr(saslMechList, c.Name_, chSplitter))
+      if (StrSearchSubstr(saslMechList, c.Name_, chSplitter))
          return SaslClientR{c.Name_, c.Creator_(authz, authc, pass)};
    }
    return SaslClientR{StrView{}, SaslClientSP{}};

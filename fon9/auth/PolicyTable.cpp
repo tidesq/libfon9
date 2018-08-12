@@ -27,6 +27,13 @@ seed::TreeSP PolicyItem::GetSapling() {
 void PolicyMapsImpl::WriteUpdated(PolicyItem& rec) {
    if (rec.IsRemoved_)
       return;
+   if (!rec.RoomKey_) {
+      auto ifind = this->DeletedMap_.find(rec.PolicyId_);
+      if (ifind != this->DeletedMap_.end()) {
+         rec.RoomKey_ = std::move(ifind->second);
+         this->DeletedMap_.erase(ifind);
+      }
+   }
    RevBufferList  rbuf{128};
    rec.SavePolicy(rbuf);
    ToBitv(rbuf, rec.PolicyId_);

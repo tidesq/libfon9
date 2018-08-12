@@ -113,6 +113,8 @@
     <ClInclude Include="..\..\..\fon9\ByteVector.hpp" />
     <ClInclude Include="..\..\..\fon9\CharAry.hpp" />
     <ClInclude Include="..\..\..\fon9\CharVector.hpp" />
+    <ClInclude Include="..\..\..\fon9\CmdArgs.hpp" />
+    <ClInclude Include="..\..\..\fon9\ConsoleIO.hpp" />
     <ClInclude Include="..\..\..\fon9\crypto\CryptoTools.hpp" />
     <ClInclude Include="..\..\..\fon9\crypto\Sha256.hpp" />
     <ClInclude Include="..\..\..\fon9\DyObj.hpp" />
@@ -124,6 +126,7 @@
     <ClInclude Include="..\..\..\fon9\FileAppender.hpp" />
     <ClInclude Include="..\..\..\fon9\FilePath.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\Framework.hpp" />
+    <ClInclude Include="..\..\..\fon9\framework\SeedSession.hpp" />
     <ClInclude Include="..\..\..\fon9\HostId.hpp" />
     <ClInclude Include="..\..\..\fon9\InnDbf.hpp" />
     <ClInclude Include="..\..\..\fon9\InnDbfTable.hpp" />
@@ -182,8 +185,11 @@
     <ClInclude Include="..\..\..\fon9\intrusive_ptr.hpp" />
     <ClInclude Include="..\..\..\fon9\intrusive_ref_counter.hpp" />
     <ClInclude Include="..\..\..\fon9\MustLock.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\NamedPark.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\SeedFairy.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\MaTree.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\PodOp.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\SeedAcl.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\SeedSearcher.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\Tab.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\Field.hpp" />
@@ -272,6 +278,8 @@
     <ClCompile Include="..\..\..\fon9\buffer\DcQueueList.cpp" />
     <ClCompile Include="..\..\..\fon9\buffer\MemBlock.cpp" />
     <ClCompile Include="..\..\..\fon9\ByteVector.cpp" />
+    <ClCompile Include="..\..\..\fon9\CmdArgs.cpp" />
+    <ClCompile Include="..\..\..\fon9\ConsoleIO.cpp" />
     <ClCompile Include="..\..\..\fon9\crypto\Sha256.cpp" />
     <ClCompile Include="..\..\..\fon9\ErrC.cpp" />
     <ClCompile Include="..\..\..\fon9\FdrNotify.cpp" />
@@ -279,6 +287,7 @@
     <ClCompile Include="..\..\..\fon9\FileAppender.cpp" />
     <ClCompile Include="..\..\..\fon9\FilePath.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\Framework.cpp" />
+    <ClCompile Include="..\..\..\fon9\framework\SeedSession.cpp" />
     <ClCompile Include="..\..\..\fon9\HostId.cpp" />
     <ClCompile Include="..\..\..\fon9\InnFile.cpp" />
     <ClCompile Include="..\..\..\fon9\InnDbf.cpp" />
@@ -318,8 +327,11 @@
     <ClCompile Include="..\..\..\fon9\CyclicBarrier.cpp" />
     <ClCompile Include="..\..\..\fon9\DecBase.cpp" />
     <ClCompile Include="..\..\..\fon9\FmtDef.cpp" />
+    <ClCompile Include="..\..\..\fon9\seed\NamedPark.cpp" />
+    <ClCompile Include="..\..\..\fon9\seed\SeedFairy.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\MaTree.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\PodOp.cpp" />
+    <ClCompile Include="..\..\..\fon9\seed\SeedAcl.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\SeedSearcher.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\Tab.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\Field.cpp" />

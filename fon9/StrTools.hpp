@@ -241,10 +241,10 @@ StrView StrFetchTrim(StrView& src, FnSplitter fnSplitter) {
 }
 
 template <class FnPred>
-struct CharSplitterFn {
+struct StrCharSplitterFn {
    decay_t<FnPred> FnPred_;
    template <class... ArgsT>
-   constexpr CharSplitterFn(ArgsT&&... args) : FnPred_{std::forward<ArgsT>(args)...} {
+   constexpr StrCharSplitterFn(ArgsT&&... args) : FnPred_{std::forward<ArgsT>(args)...} {
    }
    const char* operator()(const char* pbeg, const char* pend) {
       while (pbeg != pend) {
@@ -256,16 +256,19 @@ struct CharSplitterFn {
    }
 };
 
+/// \ingroup AlNum
+/// 建立一個尋找物件, 用來尋找 [pbeg,pend) 符合 fnPred() 的位置.
+/// 使用字元判斷函式(e.g. &isspace, &isnotspace) 來建立該尋找物件.
 template <class FnPred>
-constexpr CharSplitterFn<FnPred> MakeCharSplitterFn(FnPred&& fnPred) {
-   return CharSplitterFn<FnPred>{std::move(fnPred)};
+constexpr StrCharSplitterFn<FnPred> StrMakeCharSplitterFn(FnPred&& fnPred) {
+   return StrCharSplitterFn<FnPred>{std::move(fnPred)};
 }
 
 /// \ingroup AlNum
 /// 透過 CharSplitterFn<> 機制, 提供使用「字元函式(e.g. &isspace)」判斷分隔符號.
 /// e.g. `StrView v = StrFetchTrim(src, &isspace);`
 inline StrView StrFetchTrim(StrView& src, bool (*fn)(int ch)) {
-   return StrFetchTrim(src, MakeCharSplitterFn(fn));
+   return StrFetchTrim(src, StrMakeCharSplitterFn(fn));
 }
 
 //--------------------------------------------------------------------------//
@@ -298,7 +301,7 @@ inline StrView StrSplitTrim(StrView& src, char chDelim) {
 /// - **不考慮括號** 包住的巢狀欄位, 如果有需要考慮括號, 則應使用 `FetchField()`
 /// - 若 src 移除前後空白後為 empty(), 則返回 false.
 /// - 如果沒有找到 chEqual, 則 value 為 nullptr.
-fon9_API bool FetchTagValue(StrView& src, StrView& tag, StrView& value, char chFieldDelim = '|', char chEqual = '=');
+fon9_API bool StrFetchTagValue(StrView& src, StrView& tag, StrView& value, char chFieldDelim = '|', char chEqual = '=');
 
 //--------------------------------------------------------------------------//
 
@@ -356,7 +359,7 @@ struct fon9_API StrBrArg {
 ///      ...處理 tag & value...
 ///   }
 /// \endcode
-fon9_API StrView FetchField(StrView& src, char chDelim, const StrBrArg& brArg = StrBrArg::Default_);
+fon9_API StrView SbrFetchField(StrView& src, char chDelim, const StrBrArg& brArg = StrBrArg::Default_);
 
 /// \ingroup AlNum
 /// - 如果 *src.begin() 有左括號(由brArg定義), 且有找到對應的右括號:
@@ -368,19 +371,19 @@ fon9_API StrView FetchField(StrView& src, char chDelim, const StrBrArg& brArg = 
 /// - 如果 *src.begin() 沒左括號:
 ///   - retval = nullptr
 ///   - src = 不變.
-fon9_API StrView FetchFirstBrNoTrim(StrView& src, const StrBrArg& brArg = StrBrArg::Default_);
+fon9_API StrView SbrFetchInsideNoTrim(StrView& src, const StrBrArg& brArg = StrBrArg::Default_);
 /// \ingroup AlNum
 /// 先移除 src 開頭空白, 然後: FetchFirstBrNoTrim();
-inline StrView FetchFirstBr(StrView& src, const StrBrArg& brArg = StrBrArg::Default_) {
+inline StrView SbrFetchInside(StrView& src, const StrBrArg& brArg = StrBrArg::Default_) {
    if (!StrTrimHead(&src).empty())
-      return FetchFirstBrNoTrim(src, brArg);
+      return SbrFetchInsideNoTrim(src, brArg);
    return StrView{nullptr};
 }
 
 /// \ingroup AlNum
-/// 若第一個字元為引號(單引號 or 雙引號 or 反引號), 則移除第一個字元引號, 然後:
+/// 若第一個字元為引號「單引號 ' or 雙引號 " or 反引號 `」, 則移除第一個字元引號, 然後:
 /// - 若最後字元為對應的引號, 則移除最後引號字元.
-/// - *pQuote = 引號字元.
+/// - if(pQuote)  *pQuote = 引號字元.
 inline StrView StrRemoveHeadTailQuotes(StrView src, char* pQuote = nullptr) {
    switch (int ch = src.Get1st()) {
    case '\'': case '\"': case '`':
@@ -400,7 +403,7 @@ inline StrView StrRemoveHeadTailQuotes(StrView src, char* pQuote = nullptr) {
 /// \ingroup AlNum
 /// 移除前後空白後, 如果有引號(單引號 or 雙引號 or 反引號), 則移除引號.
 /// \ref StrRemoveHeadTailQuotes()
-inline StrView TrimRemoveQuotes(StrView src, char* pQuote = nullptr) {
+inline StrView StrTrimRemoveQuotes(StrView src, char* pQuote = nullptr) {
    return StrRemoveHeadTailQuotes(StrTrim(&src), pQuote);
 }
 
@@ -441,7 +444,7 @@ fon9_API StrView StrView_TruncUTF8(StrView utf8str, size_t expectLen);
 /// - fullstr = "aaa bbb ccc ddd"
 /// - substr = "ccc"
 /// - chSplitter = ' '
-fon9_API const char* SearchSubstr(StrView fullstr, StrView substr, char chSplitter);
+fon9_API const char* StrSearchSubstr(StrView fullstr, StrView substr, char chSplitter);
 
 template <class StrT>
 StrT StrReplaceImpl(StrView src, const StrView oldStr, const StrView newStr) {

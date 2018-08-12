@@ -71,5 +71,20 @@ public:
    }
 };
 
+template <class Pod>
+class PodOpReadonly : public PodOpDefault {
+   fon9_NON_COPY_NON_MOVE(PodOpReadonly);
+   using base = PodOpDefault;
+public:
+   Pod&  Pod_;
+   PodOpReadonly(Pod& pod, Tree& sender, const StrView& key)
+      : base{sender, OpResult::no_error, key}
+      , Pod_(pod) {
+   }
+   void BeginRead(Tab& tab, FnReadOp fnCallback) override {
+      this->BeginRW(tab, std::move(fnCallback), SimpleRawRd{this->Pod_});
+   }
+};
+
 } } // namespaces
 #endif//__fon9_seed_PodOp_hpp__

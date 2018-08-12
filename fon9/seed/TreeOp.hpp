@@ -50,7 +50,7 @@ struct GridViewRequest {
    /// - 如果要切到另一 thread 處理:
    ///   若 OrigKey_ 不是 TreeOp::kStrKeyText_Begin_; 或 TreeOp::kStrKeyText_End_;
    ///   則 OrigKey_ **必須** 要用 std::string 複製一份.
-   StrView  OrigKey_;
+   StrView  OrigKey_{nullptr};
 
    /// nullptr: 只取出 Key.
    /// !nullptr: 指定 Tab.
@@ -65,7 +65,7 @@ struct GridViewRequest {
 
    /// GridViewResult::GridView_ 最多最大容量限制, 0則表示不限制.
    /// 實際取出的資料量可能 >= MaxBufferSize_;
-   uint32_t MaxBufferSize_{0};
+   uint32_t MaxBufferSize_{1024 * 1024};
 
    GridViewRequest(const StrView& origKey) : OrigKey_{origKey} {
    }
@@ -75,6 +75,7 @@ struct GridViewResult {
    fon9_NON_COPY_NON_MOVE(GridViewResult);
 
    Tree*       Sender_;
+   Tab*        Tab_;
    OpResult    OpResult_;
 
       /// 使用 "\n"(kRowSplitter) 分隔行, 使用 "\x01"(kCellSplitter) 分隔 cell.
@@ -89,16 +90,18 @@ struct GridViewResult {
    /// GridView_ 裡面最後行距離 end 多遠?
    /// 如果不支援計算距離, 則為 GridViewResult::kNotSupported;
    size_t      DistanceEnd_{kNotSupported};
+   /// Container 共有幾筆資料.
    size_t      ContainerSize_{kNotSupported};
 
-   GridViewResult(Tree& sender, OpResult res)
+   GridViewResult(Tree& sender, Tab* tab, OpResult res)
       : Sender_(&sender)
+      , Tab_(tab)
       , OpResult_{res} {
    }
-   GridViewResult(Tree& sender) : GridViewResult(sender, OpResult::no_error) {
+   GridViewResult(Tree& sender, Tab* tab) : GridViewResult(sender, tab, OpResult::no_error) {
    }
 
-   GridViewResult(OpResult res) : Sender_{nullptr}, OpResult_{res} {
+   GridViewResult(OpResult res) : Sender_{nullptr}, Tab_{nullptr}, OpResult_{res} {
    }
 
    enum : size_t {
@@ -384,7 +387,7 @@ template <class TreeOp, class MustLockContainer, class FnRowAppender>
 void TreeOp_GridView_MustLock(TreeOp& op, MustLockContainer& c,
                               const GridViewRequest& req, FnGridViewOp&& fnCallback,
                               FnRowAppender&& fnRowAppender) {
-   GridViewResult res{op.Tree_};
+   GridViewResult res{op.Tree_, req.Tab_};
    {
       typename MustLockContainer::Locker container{c};
       MakeGridView(*container, op.GetIteratorForGv(*container, req.OrigKey_),
@@ -397,7 +400,7 @@ template <class PodOp, class TreeOp, class MustLockContainer>
 void TreeOp_Get_MustLock(TreeOp& treeOp, MustLockContainer& c, StrView strKeyText, FnPodOp&& fnCallback) {
    {
       typename MustLockContainer::Locker container{c};
-      auto   ifind = treeOp.GetIteratorForGv(*container, strKeyText);
+      auto   ifind = treeOp.GetIteratorForPod(*container, strKeyText);
       if (ifind != container->end()) {
          PodOp podOp{*ifind, treeOp.Tree_, OpResult::no_error, strKeyText, container};
          fnCallback(podOp, &podOp);

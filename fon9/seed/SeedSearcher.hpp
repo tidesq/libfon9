@@ -12,6 +12,13 @@ struct SeedSearcher;
 using SeedSearcherSP = intrusive_ptr<SeedSearcher>;
 
 /// \ingroup seed
+/// 解析 tabName = "keyText^tabName" 字串.
+/// - 解析完畢後, 返回 keyText, 剩餘 tabName.
+/// - keyText 可用引號, 返回時會移除引號.
+/// - 若 keyText 沒有引號, 且為空白, 則使用 TreeOp::TextBegin()
+fon9_API StrView ParseKeyTextAndTabName(StrView& tabName);
+
+/// \ingroup seed
 /// - 此處所有的 virtual function 都可能在任意 thread 被呼叫.
 /// - 此為一次性的物件, 使用完畢後會自動刪除.
 struct fon9_API SeedSearcher : public intrusive_ref_counter<SeedSearcher> {
@@ -32,17 +39,20 @@ struct fon9_API SeedSearcher : public intrusive_ref_counter<SeedSearcher> {
    /// 通常此時會執行 opTree.GridView(), 或其他批次作業.
    virtual void OnFoundTree(TreeOp& opTree) = 0;
 
-   /// 在取出 keyText, tab 之後, 然後移除前方的 '/',
-   /// 若此時 this->RemainPath_.empty() 則會先呼叫此處.
-   /// - opTree.Get() for [(Read) or (ContinueSearch for GridView)]
-   /// - opTree.Add() for [(Write)]
-   /// - opTree.Remove()
+   /// 在取出最後一個 keyText, tab 之後, 呼叫此處執行最後的操作.
+   /// - 此時 this->RemainPath_.empty()
    /// - 預設: this->ContinueSeed(opTree, keyText, tab); 然後觸發 OnFoundTree();
-   virtual void OnFoundSeed(TreeOp& opTree, StrView keyText, Tab& tab);
+   /// - 可能的操作:
+   ///   - opTree.Get() for [(Read) or (ContinueSearch for GridView)]
+   ///   - opTree.Add() for [(Write)]
+   ///   - opTree.Remove()
+   virtual void OnLastStep(TreeOp& opTree, StrView keyText, Tab& tab);
 
    /// 解析 this->RemainPath: "keyText^tabName/Remain" 並移除 Remain 前方的 '/' 之後.
-   /// 預設: 取得 tab 後, 呼叫 OnFoundSeed() 或 ContinueSeed() 或 OnError();
+   /// 預設: 取得 tab 後, 呼叫 OnLastStep() 或 ContinueSeed() 或 OnError();
    virtual void ContinuePod(TreeOp& opTree, StrView keyText, StrView tabName);
+
+   void ContinuePodForRemove(TreeOp& opTree, StrView keyText, StrView tabName, FnPodRemoved& removedHandler);
 
    struct PodHandler {
       SeedSearcherSP Searcher_;
@@ -63,8 +73,10 @@ fon9_API void StartSeedSearch(Tree& root, SeedSearcherSP searcher);
 
 //--------------------------------------------------------------------------//
 
-struct fon9_API GridViewSearcher : public SeedSearcher {
+class fon9_API GridViewSearcher : public SeedSearcher {
    fon9_NON_COPY_NON_MOVE(GridViewSearcher);
+   using base = SeedSearcher;
+public:
    GridViewRequest Request_;
    FnGridViewOp    Handler_;
    CharVector      OrigKey_;
@@ -114,7 +126,7 @@ public:
    void OnError(OpResult opRes) override;
    /// cannot remove "/"
    void OnFoundTree(TreeOp& opTree) override;
-   void ContinuePod(TreeOp& opTree, fon9::StrView keyText, fon9::StrView tabName) override;
+   void ContinuePod(TreeOp& opTree, StrView keyText, StrView tabName) override;
 };
 
 inline void RemoveSeed(Tree& root, const StrView& path, FnPodRemoved handler) {
@@ -139,7 +151,7 @@ public:
    /// cannot remove "/"
    void OnFoundTree(TreeOp& opTree) override;
    /// 預設使用 opTree.Add() 進入 this->OnBeginWrite();
-   void OnFoundSeed(TreeOp& opTree, StrView keyText, Tab& tab) override;
+   void OnLastStep(TreeOp& opTree, StrView keyText, Tab& tab) override;
    virtual void OnBeginWrite(const SeedOpResult& res, const RawWr* wr) = 0;
 };
 

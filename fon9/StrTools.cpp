@@ -93,7 +93,7 @@ fon9_API StrView StrSplit(StrView& src, char chDelim) {
    return retval;
 }
 
-fon9_API bool FetchTagValue(StrView& src, StrView& tag, StrView& value, char chFieldDelim, char chEqual) {
+fon9_API bool StrFetchTagValue(StrView& src, StrView& tag, StrView& value, char chFieldDelim, char chEqual) {
    if (StrTrimHead(&src).empty())
       return false;
    value = StrFetchTrim(src, chFieldDelim);
@@ -111,7 +111,7 @@ static const StrBrPair DefaultBrPair[]{
    {'"', '"', false},
    {'`', '`', false},
 };
-const StrBrArg StrBrArg::Default_{DefaultBrPair};
+const StrBrArg StrBrArg::Default_{DefaultBrPair + 0, numofele(DefaultBrPair)}; // Default_{DefaultBrPair}; VC 會有 Warn C4592.
 const StrBrArg StrBrArg::DefaultNoCurly_{DefaultBrPair + 1, numofele(DefaultBrPair) - 1};
 const StrBrArg StrBrArg::Quotation_{DefaultBrPair + 3, 3};
 
@@ -131,7 +131,7 @@ const StrBrPair* StrBrArg::Find(char chLeft) const {
 
 //
 // 引號「'、"」內可為「除了 chEndQ」的任意字元(除非 chEndQ 前面是 '\'), 包含沒對應的括號.
-static const char* SkipQuotationEnd(const char* pbeg, const char* pend, char chEndQ) {
+static const char* StrSkipQuotationEnd(const char* pbeg, const char* pend, char chEndQ) {
    while (const char* pbrEnd = StrView::traits_type::find(pbeg, static_cast<size_t>(pend - pbeg), chEndQ)) {
       if (pbrEnd == pbeg || *(pbrEnd - 1) != '\\')
          return pbrEnd;
@@ -140,14 +140,14 @@ static const char* SkipQuotationEnd(const char* pbeg, const char* pend, char chE
    return nullptr;
 }
 
-static const char* FindSplit(const char* pbeg, const char* pend, char chDelim, const StrBrArg& brArg);
+static const char* SbrFindSplit(const char* pbeg, const char* pend, char chDelim, const StrBrArg& brArg);
 // *(pbeg-1) 必定 == br.Left_; 然後尋找結束的引號, 或對應的右括號.
-inline static const char* FindBrEnd(const StrBrPair& br, const char* pbeg, const char* pend, const StrBrArg& brArg) {
+inline static const char* SbrFindEnd(const StrBrPair& br, const char* pbeg, const char* pend, const StrBrArg& brArg) {
    return br.IsAllowNest_
-      ? FindSplit(pbeg, pend, br.Right_, brArg)
-      : SkipQuotationEnd(pbeg, pend, br.Right_);
+      ? SbrFindSplit(pbeg, pend, br.Right_, brArg)
+      : StrSkipQuotationEnd(pbeg, pend, br.Right_);
 }
-static const char* FindSplit(const char* pbeg, const char* pend, char chDelim, const StrBrArg& brArg) {
+static const char* SbrFindSplit(const char* pbeg, const char* pend, char chDelim, const StrBrArg& brArg) {
    while (pbeg < pend) {
       const char  chBeg = *pbeg;
       if (chBeg == chDelim)
@@ -158,14 +158,14 @@ static const char* FindSplit(const char* pbeg, const char* pend, char chDelim, c
          continue;
       }
       if (const StrBrPair* br = brArg.Find(chBeg))
-         if (const char* pspl = FindBrEnd(*br, pbeg, pend, brArg))
+         if (const char* pspl = SbrFindEnd(*br, pbeg, pend, brArg))
             pbeg = pspl + 1;
    }
    return nullptr;
 }
 
-fon9_API StrView FetchField(StrView& src, char chDelim, const StrBrArg& brArg) {
-   if (const char* pDelim = FindSplit(src.begin(), src.end(), chDelim, brArg)) {
+fon9_API StrView SbrFetchField(StrView& src, char chDelim, const StrBrArg& brArg) {
+   if (const char* pDelim = SbrFindSplit(src.begin(), src.end(), chDelim, brArg)) {
       StrView retval{src.begin(), pDelim};
       src.SetBegin(pDelim + 1);
       return retval;
@@ -175,11 +175,11 @@ fon9_API StrView FetchField(StrView& src, char chDelim, const StrBrArg& brArg) {
    return retval;
 }
 
-fon9_API StrView FetchFirstBrNoTrim(StrView& src, const StrBrArg& brArg) {
+fon9_API StrView SbrFetchInsideNoTrim(StrView& src, const StrBrArg& brArg) {
    const char* pbeg = src.begin();
    if (const StrBrPair* br = brArg.Find(*pbeg)) {
       ++pbeg;
-      const char* pBrEnd = FindBrEnd(*br, pbeg, src.end(), brArg);
+      const char* pBrEnd = SbrFindEnd(*br, pbeg, src.end(), brArg);
       if (pBrEnd)
          src.SetBegin(pBrEnd + 1);
       else
@@ -281,7 +281,7 @@ fon9_API void StrView_ToEscapeStr(std::string& dst, StrView src, StrView chSpeci
 
 //--------------------------------------------------------------------------//
 
-fon9_API const char* SearchSubstr(StrView fullstr, StrView substr, char chSplitter) {
+fon9_API const char* StrSearchSubstr(StrView fullstr, StrView substr, char chSplitter) {
    const char* pfind = std::search(fullstr.begin(), fullstr.end(), substr.begin(), substr.end());
    if (pfind == fullstr.end())
       return nullptr;

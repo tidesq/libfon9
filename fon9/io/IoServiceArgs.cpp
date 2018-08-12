@@ -68,7 +68,7 @@ const char* IoServiceArgs::FromTagValue(StrView tag, StrView value) {
 
 const char* IoServiceArgs::Parse(StrView values) {
    StrView tag, value;
-   while (FetchTagValue(values, tag, value)) {
+   while (StrFetchTagValue(values, tag, value)) {
       if (const char* perr = this->FromTagValue(tag, value))
          return perr;
    }

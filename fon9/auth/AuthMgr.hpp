@@ -9,26 +9,32 @@ namespace fon9 { namespace auth {
 /// \ingroup auth
 /// 認證結果.
 struct fon9_API AuthResult : public RoleConfig {
-   fon9_NON_COPY_NON_MOVE(AuthResult);
-
-   AuthMgr& AuthMgr_;
+   AuthMgrSP   AuthMgr_;
    /// manager? guest? trader?
    /// - 例如執行 sudo, 這裡用的是 "root"
    /// - 例如執行主管強迫, 這裡用的是主管Id.
-   UserId   AuthzId_;
+   UserId      AuthzId_;
    /// Tony? Alice? Bob?
    /// - 例如執行 sudo, 這裡用的是原本登入時的 UserId
    /// - 例如執行主管強迫, 這裡用的是營業員(or Keyin)的Id.
-   UserId   AuthcId_;
+   UserId      AuthcId_;
    /// - 認證成功後的提示訊息: e.g. "Last login: 2017/09/08 10:50:55 from 192.168.1.3";
    std::string ExtInfo_;
 
-   AuthResult(AuthMgr& authMgr) : AuthMgr_(authMgr) {
+   AuthResult(AuthMgrSP authMgr) : AuthMgr_{std::move(authMgr)} {
    }
-   AuthResult(AuthMgr& authMgr, UserId authcId, RoleConfig roleCfg)
+   AuthResult(AuthMgrSP authMgr, UserId authcId, RoleConfig roleCfg)
       : RoleConfig(std::move(roleCfg))
-      , AuthMgr_(authMgr)
+      , AuthMgr_{std::move(authMgr)}
       , AuthcId_{std::move(authcId)} {
+   }
+
+   void Clear() {
+      this->RoleId_.clear();
+      this->PolicyKeys_.clear();
+      this->AuthzId_.clear();
+      this->AuthcId_.clear();
+      this->ExtInfo_.clear();
    }
 
    StrView GetUserId() const {
@@ -71,8 +77,8 @@ protected:
    const FnOnAuthVerifyCB  OnVerifyCB_;
    AuthResult              AuthResult_;
 public:
-   AuthSession(AuthMgr& authMgr, FnOnAuthVerifyCB&& cb)
-      : OnVerifyCB_(std::move(cb)), AuthResult_(authMgr) {
+   AuthSession(AuthMgrSP authMgr, FnOnAuthVerifyCB&& cb)
+      : OnVerifyCB_(std::move(cb)), AuthResult_(std::move(authMgr)) {
    }
    virtual ~AuthSession();
 
@@ -100,7 +106,7 @@ class fon9_API AuthAgent : public seed::NamedSeed {
 public:
    using base::base;
 
-   virtual AuthSessionSP CreateAuthSession(AuthMgr& authMgr, FnOnAuthVerifyCB cb) = 0;
+   virtual AuthSessionSP CreateAuthSession(AuthMgrSP authMgr, FnOnAuthVerifyCB cb) = 0;
 };
 using AuthAgentSP = intrusive_ptr<AuthAgent>;
 
@@ -142,6 +148,19 @@ public:
 
    /// 取得 SASL 機制列表: 使用 SASL 的命名慣例.
    std::string GetSaslMechList(char chSpl = ' ') const;
+
+   template <class PolicyConfig, class PolicyAgent = typename PolicyConfig::PolicyAgent>
+   bool GetPolicy(StrView agentName, const AuthResult& authr, PolicyConfig& res) const {
+      if (auto agent = this->Agents_->Get<PolicyAgent>(agentName))
+         return agent->GetPolicy(authr, res);
+      return false;
+   }
+   template <class PolicyAgent, class PolicyConfig = typename PolicyAgent::PolicyConfig>
+   bool GetPolicy(StrView agentName, const AuthResult& authr, PolicyConfig& res) const {
+      if (auto agent = this->Agents_->Get<PolicyAgent>(agentName))
+         return agent->GetPolicy(authr, res);
+      return false;
+   }
 
    /// 在 ma 上面新增一個 AuthMgr.
    /// \retval nullptr   name 已存在.

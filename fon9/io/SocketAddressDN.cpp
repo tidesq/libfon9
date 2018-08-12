@@ -21,7 +21,7 @@ void DomainNameParser::Parse(StrView dnPort, DomainNameParseResult& res) {
    StrView dn1; // 把 dn1:port 分開.
    if (dnPort.Get1st() == '[') { // "[ipv6]:port"
       this->AddrHints_.ai_family = AF_INET6;
-      dn1 = FetchFirstBr(dnPort);//取出 "[dn1]"
+      dn1 = SbrFetchInsideNoTrim(dnPort);//取出 "[dn1]" 裡面的 "dn1"
       StrTrim(&dn1);
    }
    else { // default address family

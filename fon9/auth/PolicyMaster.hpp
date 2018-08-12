@@ -168,7 +168,7 @@ public:
       }
 
       virtual void GridView(const seed::GridViewRequest& req, seed::FnGridViewOp fnCallback) {
-         seed::GridViewResult res{this->Tree_};
+         seed::GridViewResult res{this->Tree_, req.Tab_};
          {
             DetailTableLocker   map{static_cast<DetailPolicyTreeTable*>(&this->Tree_)->DetailTable_};
             seed::MakeGridView(*map, this->GetIteratorForGv(*map, req.OrigKey_),

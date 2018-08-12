@@ -7,7 +7,7 @@
 namespace fon9 { namespace auth {
 
 PolicyTree::PolicyTree(std::string tabName, std::string keyName, seed::Fields&& fields)
-   : base{new seed::Layout1(seed::FieldSP{new seed::FieldCharVector(seed::Named{std::move(keyName)}, 0)},
+   : base{new seed::Layout1(fon9_MakeField(seed::Named{std::move(keyName)}, PolicyItem, PolicyId_),
                             new seed::Tab{seed::Named{std::move(tabName)}, std::move(fields)})} {
 }
 
@@ -63,7 +63,7 @@ struct PolicyTree::TreeOp : public seed::TreeOp {
       RevPrint(rbuf, (*ivalue)->PolicyId_);
    }
    virtual void GridView(const seed::GridViewRequest& req, seed::FnGridViewOp fnCallback) {
-      seed::GridViewResult res{this->Tree_};
+      seed::GridViewResult res{this->Tree_, req.Tab_};
       {
          PolicyMaps::Locker maps{static_cast<PolicyTree*>(&this->Tree_)->PolicyMaps_};
          seed::MakeGridView(maps->ItemMap_, this->GetIteratorForGv(maps->ItemMap_, req.OrigKey_),

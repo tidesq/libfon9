@@ -16,8 +16,8 @@ void TreeOp::Add(StrView strKeyText, FnPodOp fnCallback) {
 void TreeOp::Get(StrView strKeyText, FnPodOp fnCallback) {
    fnCallback(PodOpResult{this->Tree_, OpResult::not_supported_get_pod, strKeyText}, nullptr);
 }
-void TreeOp::GridView(const GridViewRequest& /*req*/, FnGridViewOp fnCallback) {
-   GridViewResult res{this->Tree_,OpResult::not_supported_grid_view};
+void TreeOp::GridView(const GridViewRequest& req, FnGridViewOp fnCallback) {
+   GridViewResult res{this->Tree_, req.Tab_, OpResult::not_supported_grid_view};
    fnCallback(res);
 }
 

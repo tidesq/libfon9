@@ -41,7 +41,7 @@ AuthSessionSP AuthMgr::CreateAuthSession(StrView mechanismName, FnOnAuthVerifyCB
       if(!aa)
          return nullptr;
    }
-   return aa->CreateAuthSession(*this, std::move(cb));
+   return aa->CreateAuthSession(this, std::move(cb));
 }
 
 std::string AuthMgr::GetSaslMechList(char chSpl) const {

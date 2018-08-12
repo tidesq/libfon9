@@ -238,7 +238,7 @@ struct TestSaslServer_ScramSha256 : public TestSaslServer {
       this->UserMgr_.reset(new fon9::auth::UserMgr(new UserTree(kSha256Salt, kSha256ITERATOR, fnHashPassSha256), "UserMgr"));
    }
    fon9::auth::AuthSessionSP CreateAuthSession(fon9::auth::FnOnAuthVerifyCB cb) override {
-      return fon9::auth::AuthSessionSP{new ScramSha256Server(*this->AuthMgr_, std::move(cb), this->UserMgr_)};
+      return fon9::auth::AuthSessionSP{new ScramSha256Server(this->AuthMgr_, std::move(cb), this->UserMgr_)};
    }
    void Test() {
       std::cout << "[TEST ] SASL: SCRAM-SHA-256";

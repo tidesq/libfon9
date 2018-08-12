@@ -63,6 +63,7 @@ void UserRec::OnSeedCommand(PolicyMaps::Locker& locker, seed::SeedOpResult& res,
          fon9_LOG_ERROR(kCSTR_LOG_repw, this->PolicyId_, "|err=FnHashPass()");
       }
       else {
+         this->Pass_ = std::move(passRec);
          locker->WriteUpdated(*this);
          locker.unlock();
          std::string msg = "The new password is: ";
@@ -180,7 +181,7 @@ AuthR UserTree::AuthUpdate(fon9_Auth_R rcode, const AuthRequest& req, AuthResult
                ERR_RETURN(fon9_Auth_ENeedChgPass, "need-change-pass");
             RevBufferList rbuf{128};
             RevPrint(rbuf, "Last logon: ",
-                     user->EvLastAuth_.Time_, FmtTS{"K T+L"},
+                     user->EvLastAuth_.Time_, FmtTS{"K T+'L'"},
                      " from ", user->EvLastAuth_.From_);
             authz.ExtInfo_ = BufferTo<std::string>(rbuf.MoveOut());
             user->EvLastAuth_.Time_ = now;
@@ -204,7 +205,7 @@ AuthR UserTree::AuthUpdate(fon9_Auth_R rcode, const AuthRequest& req, AuthResult
    }
    else
       RevPrint(aux.RBuf_, ":EUser");
-   ERR_RETURN(fon9_Auth_EUserPass, "invalid-proof");
+   ERR_RETURN(fon9_Auth_EUserPass, "invalid-proof(maybe UserId or Password error)");
 #undef ERR_RETURN
 
 __ERR_RETURN:

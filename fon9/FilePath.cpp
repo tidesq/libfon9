@@ -227,7 +227,7 @@ FilePath::StrList FilePath::SplitPathList(StrView& fname) {
                   if (plist.empty()) // error: 沒有前一層路徑!
                      return StrList{};
                   plist.pop_back();
-                  fname.SetBegin(fname.begin() + 3);
+                  fname.SetBegin(fname.begin() + (szfname == 2 ? 2 : 3));
                   continue;
                }
                break;
@@ -236,7 +236,7 @@ FilePath::StrList FilePath::SplitPathList(StrView& fname) {
          }
          break;
       }
-      StrView item{StrFetchNoTrim(fname, '/')};
+      StrView item{SbrFetchField(fname, '/', StrBrArg::Quotation_)};
       if (item.empty())
          break;
       plist.push_back(item);

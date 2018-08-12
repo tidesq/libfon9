@@ -4,7 +4,8 @@
 #define __fon9_buffer_DcQueue_hpp__
 #include "fon9/buffer/RevBuffer.hpp"
 #include "fon9/ErrC.hpp"
-#include <string.h> // memcpy()
+#include "fon9/StrView.hpp"
+#include <string.h> // memcpy();
 
 namespace fon9 {
 
@@ -168,7 +169,12 @@ public:
    }
    DcQueueFixedMem(const void* beg, const void* end) : base(beg, end) {
    }
-   template <class BufferT>
+   DcQueueFixedMem(const StrView& msg) : base(msg.begin(), msg.end()) {
+   }
+   template <class StrT, class T = decltype(ToStrView(*static_cast<StrT*>(nullptr)))>
+   DcQueueFixedMem(const StrT& msg) : DcQueueFixedMem{ToStrView(msg)} {
+   }
+   template <class BufferT, class T = decltype(static_cast<BufferT*>(nullptr)->GetCurrent())>
    DcQueueFixedMem(BufferT& ibuf) : base(ibuf.GetCurrent(), ibuf.GetMemEnd()) {
    }
 

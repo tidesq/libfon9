@@ -32,8 +32,8 @@ StrView SocketServerConfig::ParseConfig(StrView cfgstr, FnOnTagValue fnUnknownFi
             this->ListenBacklog_ = 5;
       }
       else if (tag == "ClientOptions") {
-         StrView cres = this->AcceptedSocketOptions_.ParseConfig(FetchFirstBr(value),
-                                                                 [this, &fnClientOptionsUnknownField](StrView atag, StrView avalue) {
+         StrView cres = this->AcceptedSocketOptions_.ParseConfig(SbrFetchInside(value),
+         [this, &fnClientOptionsUnknownField](StrView atag, StrView avalue) {
             if (fnClientOptionsUnknownField(atag, avalue))
                return true;
             return this->AcceptedClientOptions_.ParseOption(atag, avalue).empty();

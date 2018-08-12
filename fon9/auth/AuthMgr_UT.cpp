@@ -275,7 +275,7 @@ void TestRemove() {
 
 //--------------------------------------------------------------------------//
 
-void TestAclExists(const fon9::auth::AccessList& acl, fon9::StrView path) {
+void TestAclExists(const fon9::seed::AccessList& acl, fon9::StrView path) {
    if (acl.find(path) == acl.end()) {
       std::cout << "|path=" << path.begin() << "|err=path not found" "\r[ERROR]" << std::endl;
       abort();
@@ -285,11 +285,11 @@ void TestPoAclGetPolicy() {
    std::cout << "[TEST ] PolicyAclAgent.GetPolicy";
    fon9::Framework fon9sys;
    TestInitStart(fon9sys, kInnSyncOutFileName, kInnSyncInFileName);
-   fon9::auth::AuthResult authr{*fon9sys.MaAuth_};
+   fon9::auth::AuthResult authr{fon9sys.MaAuth_};
    authr.AuthzId_.assign("fonwin");
    authr.RoleId_.assign("test");
    if (auto poAcl = fon9sys.MaAuth_->Agents_->Get<fon9::auth::PolicyAclAgent>("PoAcl")) {
-      fon9::auth::AclConfig   aclConfig;
+      fon9::seed::AclConfig   aclConfig;
       poAcl->GetPolicy(authr, aclConfig);
       TestAclExists(aclConfig.Acl_, "{UserId");
       TestAclExists(aclConfig.Acl_, "{UserIdx");

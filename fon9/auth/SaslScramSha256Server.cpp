@@ -13,7 +13,7 @@ public:
       : base{std::move(name)}
       , UserMgr_{std::move(userMgr)} {
    }
-   AuthSessionSP CreateAuthSession(AuthMgr& authMgr, FnOnAuthVerifyCB cb) override {
+   AuthSessionSP CreateAuthSession(AuthMgrSP authMgr, FnOnAuthVerifyCB cb) override {
       return new AuthSession_SaslScramSha256(authMgr, std::move(cb), this->UserMgr_);
    }
 };

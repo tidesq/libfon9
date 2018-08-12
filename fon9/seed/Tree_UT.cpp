@@ -226,7 +226,7 @@ public:
       }
       void GridView(const fon9::seed::GridViewRequest& req, fon9::seed::FnGridViewOp fnCallback) override {
          IvacSymbMap::iterator      istart = this->GetIteratorForGv(static_cast<IvacSymbTree*>(&this->Tree_)->Symbs_, req.OrigKey_);
-         fon9::seed::GridViewResult res{this->Tree_};
+         fon9::seed::GridViewResult res{this->Tree_, req.Tab_};
          if (req.Tab_ && req.Tab_->GetIndex() == kTabVol) {
             fon9::seed::MakeGridView(static_cast<IvacSymbTree*>(&this->Tree_)->Symbs_, istart, req, res,
                                      [](IvacSymbMap::iterator ivalue, fon9::seed::Tab* tab, fon9::RevBuffer& rbuf) {
@@ -389,7 +389,7 @@ public:
          }
       }
       void GridView(const fon9::seed::GridViewRequest& req, fon9::seed::FnGridViewOp fnCallback) override {
-         fon9::seed::GridViewResult res{this->Tree_};
+         fon9::seed::GridViewResult res{this->Tree_, req.Tab_};
          IvacNo istart;
          if (this->GetIvacNoChk(istart, req.OrigKey_)) {
             constexpr unsigned maxDefaultCount = 100;
@@ -496,7 +496,7 @@ public:
                 std::move(fnCallback));
       }
       void GridView(const fon9::seed::GridViewRequest& req, fon9::seed::FnGridViewOp fnCallback) override {
-         fon9::seed::GridViewResult res{this->Tree_};
+         fon9::seed::GridViewResult res{this->Tree_, req.Tab_};
          auto&                      brkmap = static_cast<BrkTree*>(&this->Tree_)->BrkMap_;
          fon9::seed::MakeGridView(brkmap, this->GetIteratorForGv(brkmap, req.OrigKey_), req, res,
                                   &fon9::seed::SimpleMakeRowView<BrkMap::iterator>);

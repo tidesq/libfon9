@@ -18,9 +18,9 @@ fon9_API const char* FindInvalidNameChar(StrView str) {
 }
 
 fon9_API Named DeserializeNamed(StrView& cfg, char chSpl, int chTail) {
-   StrView  descr = chTail == -1 ? cfg : FetchField(cfg, static_cast<char>(chTail));
-   StrView  name  = FetchField(descr, chSpl);
-   StrView  title = FetchField(descr, chSpl);
+   StrView  descr = chTail == -1 ? cfg : SbrFetchField(cfg, static_cast<char>(chTail));
+   StrView  name  = SbrFetchField(descr, chSpl);
+   StrView  title = SbrFetchField(descr, chSpl);
    
    StrTrim(&name);
    if (const char* pInvalid = FindInvalidNameChar(name)) {
@@ -29,8 +29,8 @@ fon9_API Named DeserializeNamed(StrView& cfg, char chSpl, int chTail) {
    }
    cfg.SetBegin(descr.end() + (chTail != -1));
    return Named(name.ToString(),
-      StrView_ToNormalizeStr(TrimRemoveQuotes(title)),
-      StrView_ToNormalizeStr(TrimRemoveQuotes(descr)));
+      StrView_ToNormalizeStr(StrTrimRemoveQuotes(title)),
+      StrView_ToNormalizeStr(StrTrimRemoveQuotes(descr)));
 }
 
 fon9_API void SerializeNamed(std::string& dst, const Named& named, char chSpl, int chTail) {
