@@ -39,6 +39,7 @@ $OUTPUT_DIR/CharVector_UT
 $OUTPUT_DIR/ThreadController_UT
 $OUTPUT_DIR/Timer_UT
 $OUTPUT_DIR/AQueue_UT
+$OUTPUT_DIR/SchTask_UT
 
 # unit tests: buffer
 $OUTPUT_DIR/Buffer_UT

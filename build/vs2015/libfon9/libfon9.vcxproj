@@ -185,6 +185,7 @@
     <ClInclude Include="..\..\..\fon9\intrusive_ptr.hpp" />
     <ClInclude Include="..\..\..\fon9\intrusive_ref_counter.hpp" />
     <ClInclude Include="..\..\..\fon9\MustLock.hpp" />
+    <ClInclude Include="..\..\..\fon9\SchTask.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\NamedPark.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\SeedFairy.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\MaTree.hpp" />
@@ -327,6 +328,7 @@
     <ClCompile Include="..\..\..\fon9\CyclicBarrier.cpp" />
     <ClCompile Include="..\..\..\fon9\DecBase.cpp" />
     <ClCompile Include="..\..\..\fon9\FmtDef.cpp" />
+    <ClCompile Include="..\..\..\fon9\SchTask.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\NamedPark.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\SeedFairy.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\MaTree.cpp" />

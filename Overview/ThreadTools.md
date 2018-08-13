@@ -161,3 +161,7 @@ public:
    }
 };
 ```
+
+## `fon9::SchTask`
+* [`fon9/SchTask.hpp`](../fon9/SchTask.hpp)
+* 排程項目: 現在時間到達設定的範圍內觸發 InSch 事件, 離開設定的時間範圍觸發 OutSch 事件。

@@ -650,6 +650,9 @@
     <ClInclude Include="..\..\..\fon9\seed\NamedPark.hpp">
       <Filter>Header Files\seed\_trees</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\SchTask.hpp">
+      <Filter>Header Files\_base\_Thread</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -975,6 +978,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\seed\NamedPark.cpp">
       <Filter>Source Files\seed\_trees</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\SchTask.cpp">
+      <Filter>Source Files\_base\_Thread</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -261,4 +261,30 @@ fon9_API TimeInterval StrTo(StrView str, TimeInterval value, const char** endptr
    return StrTo<TimeInterval, StrToTimeIntervalAux>(str, value, endptr);
 }
 
+//--------------------------------------------------------------------------//
+
+static char* ToStrRevNN(char* pout, DayTimeSec::Value& v) {
+   unsigned nn = (v % 60u);
+   v /= 60u;
+   pout = Pic9ToStrRev<2>(pout, nn);
+   *--pout = ':';
+   return pout;
+}
+
+fon9_API char* ToStrRev(char* pout, DayTimeSec value) {
+   pout = ToStrRevNN(pout, value.Seconds_);
+   pout = ToStrRevNN(pout, value.Seconds_);
+   pout = Pic9ToStrRev<2>(pout, value.Seconds_ % 24);
+   if ((value.Seconds_ /= 24) > 0) {
+      *--pout = '-';
+      pout = UIntToStrRev(pout, value.Seconds_);
+   }
+   return pout;
+}
+
+fon9_API char* ToStrRev(char* const pstart, DayTimeSec value, FmtDef fmt) {
+   char* pout = ToStrRev(pstart, value);
+   return IntToStrRev_LastJustify(pout, pstart, false, fmt);
+}
+
 } // namespaces

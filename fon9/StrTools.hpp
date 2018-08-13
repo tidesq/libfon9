@@ -298,7 +298,7 @@ inline StrView StrSplitTrim(StrView& src, char chDelim) {
 
 /// \ingroup AlNum
 /// 簡單的從 src 取出一組 `tag=value`, src = `tag=value|tag=value|tag=value...`.
-/// - **不考慮括號** 包住的巢狀欄位, 如果有需要考慮括號, 則應使用 `FetchField()`
+/// - **不考慮括號** 包住的巢狀欄位, 如果有需要考慮括號, 則應使用 `SbrFetchField()`
 /// - 若 src 移除前後空白後為 empty(), 則返回 false.
 /// - 如果沒有找到 chEqual, 則 value 為 nullptr.
 fon9_API bool StrFetchTagValue(StrView& src, StrView& tag, StrView& value, char chFieldDelim = '|', char chEqual = '=');

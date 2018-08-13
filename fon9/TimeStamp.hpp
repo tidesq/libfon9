@@ -33,6 +33,23 @@ public:
       return this->GetIntPart();
    }
 };
+inline TimeStamp operator+(TimeStamp ts, TimeInterval::DecimalBase ti) {
+   return TimeStamp{ts.ToDecimal() + ti};
+}
+inline TimeStamp& operator+=(TimeStamp& ts, TimeInterval::DecimalBase ti) {
+   ts = ts + ti;
+   return ts;
+}
+inline TimeStamp operator-(TimeStamp ts, TimeInterval::DecimalBase ti) {
+   return TimeStamp{ts.ToDecimal() - ti};
+}
+inline TimeStamp& operator-=(TimeStamp& ts, TimeInterval::DecimalBase ti) {
+   ts = ts - ti;
+   return ts;
+}
+inline TimeInterval operator-(TimeStamp t1, TimeStamp t2) {
+   return TimeInterval{t1.ToDecimal() - t2.ToDecimal()};
+}
 
 /// \ingroup AlNum
 /// 取得 UTC 現在時間.
@@ -244,11 +261,16 @@ public:
 fon9_WARN_POP;
 
 inline TimeStamp operator+(TimeStamp ts, TimeZoneOffset tz) {
-   return TimeStamp{ts + tz.ToTimeInterval()};
+   return ts + tz.ToTimeInterval();
 }
 inline TimeStamp& operator+=(TimeStamp& ts, TimeZoneOffset tz) {
-   ts += tz.ToTimeInterval();
-   return ts;
+   return ts += tz.ToTimeInterval();
+}
+inline TimeStamp operator-(TimeStamp ts, TimeZoneOffset tz) {
+   return ts - tz.ToTimeInterval();
+}
+inline TimeStamp& operator-=(TimeStamp& ts, TimeZoneOffset tz) {
+   return ts -= tz.ToTimeInterval();
 }
 
 /// \ingroup AlNum

@@ -85,5 +85,38 @@ fon9_API char* ToStrRev_TimeIntervalDec(char* pout, uintmax_t& value, FmtDef fmt
 /// 字串轉成 TimeInterval, 支援的格式參考 \ref char* ToStrRev(char* pout, TimeInterval ti);
 fon9_API TimeInterval StrTo(StrView str, TimeInterval value = TimeInterval::Null(), const char** endptr = nullptr);
 
+//--------------------------------------------------------------------------//
+
+/// \ingroup AlNum
+/// 一天內的時間(秒數), 例: 0 = 00:00:00; 86399 = 23:59:59
+struct DayTimeSec : public Comparable<DayTimeSec> {
+   using Value = uint32_t;
+   Value Seconds_;
+   constexpr DayTimeSec() : Seconds_{0} {}
+   explicit constexpr DayTimeSec(Value v) : Seconds_{v} {}
+   constexpr DayTimeSec(uint32_t h, uint32_t m, uint32_t s)
+      : Seconds_{((h * 60) + m) * 60 + s} {
+   }
+   unsigned ToHHMMSS() const {
+      return (this->Seconds_ % 60) + ((this->Seconds_ / 60) % 60) * 100 + (this->Seconds_ / (60 * 60)) * 10000;
+   }
+   bool operator==(DayTimeSec r) const { return this->Seconds_ == r.Seconds_; }
+   bool operator<(DayTimeSec r) const { return this->Seconds_ < r.Seconds_; }
+};
+
+/// \ingroup AlNum
+/// 支援的格式參考 \ref char* ToStrRev(char* pout, TimeInterval ti);
+inline DayTimeSec StrTo(const StrView& str, DayTimeSec nullValue, const char** endptr = nullptr) {
+   TimeInterval ti = StrTo(str, TimeInterval::Null(), endptr);
+   return ti.IsNull() ? nullValue : DayTimeSec{static_cast<DayTimeSec::Value>(ti.GetIntPart())};
+}
+
+inline unsigned StrToHHMMSS(const StrView& str) {
+   return StrTo(str, DayTimeSec{}).ToHHMMSS();
+}
+
+fon9_API char* ToStrRev(char* pout, DayTimeSec value, FmtDef fmt);
+fon9_API char* ToStrRev(char* pout, DayTimeSec value);
+
 } // namespaces
 #endif//__fon9_TimeInterval_hpp__

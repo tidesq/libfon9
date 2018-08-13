@@ -18,6 +18,7 @@ set(fon9src
  ThreadId.cpp
  Timer.cpp
  DefaultThreadPool.cpp
+ SchTask.cpp
 
  Log.cpp
  ErrC.cpp
@@ -164,6 +165,9 @@ target_link_libraries(Timer_UT fon9_s)
 
 add_executable(AQueue_UT AQueue_UT.cpp)
 target_link_libraries(AQueue_UT fon9_s)
+
+add_executable(SchTask_UT SchTask_UT.cpp)
+target_link_libraries(SchTask_UT fon9_s)
 
 # unit tests: buffer
 add_executable(Buffer_UT buffer/Buffer_UT.cpp)
