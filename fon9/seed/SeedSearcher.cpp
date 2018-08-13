@@ -46,7 +46,7 @@ void SeedSearcher::ContinuePod(TreeOp& opTree, StrView keyText, StrView tabName)
 }
 void SeedSearcher::ContinuePodForRemove(TreeOp& opTree, StrView keyText, StrView tabName, FnPodRemoved& removedHandler) {
    if (!this->RemainPath_.empty())
-      this->ContinuePod(opTree, keyText, tabName);
+      this->SeedSearcher::ContinuePod(opTree, keyText, tabName);
    else {
       Tab* tab;
       if (tabName.empty())
