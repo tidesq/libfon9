@@ -86,7 +86,7 @@ InnDbf::OpenResult InnDbf::OpenImpl(OpenArgs& oargs) {
          return OpenResult{std::errc::bad_message};
       }
       InnDbfTableLinkSP table{new InnDbfTableLink(tableId, tableName, this)};
-      auto& v = tableMap->kindex(ToStrView(table->TableName_));
+      auto& v = tableMap->kfetch(ToStrView(table->TableName_));
       if (v.second) {
          errmsg = "Dup tableName";
          goto __RETURN_ERROR;
@@ -177,7 +177,7 @@ void InnDbf::LoadAll() {
          continue;
       case kInnRoomType_Free:
          FreedRoomsMap::Locker freedRoomsMap{this->FreedRoomsMap_};
-         freedRoomsMap->kindex(roomKey.GetRoomSize()).second.push_back(roomKey.GetRoomPos());
+         freedRoomsMap->kfetch(roomKey.GetRoomSize()).second.push_back(roomKey.GetRoomPos());
          continue;
       }
 
@@ -414,7 +414,7 @@ void InnDbf::WriteFreeRoom(FreedRoomsMap::Locker& freedRoomsMap, InnFile::RoomKe
    if (!roomKey)
       freedRoomsMap.unlock();
    else {
-      freedRoomsMap->kindex(roomKey.GetRoomSize()).second.push_back(roomKey.GetRoomPos());
+      freedRoomsMap->kfetch(roomKey.GetRoomSize()).second.push_back(roomKey.GetRoomPos());
       freedRoomsMap.unlock();
       this->InnFile_.FreeRoom(roomKey, kInnRoomType_Free);
    }

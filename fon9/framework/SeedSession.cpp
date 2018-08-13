@@ -25,8 +25,8 @@ void SeedSession::SetAdminMode() {
    st->State_ = State::UserReady;
    this->Authr_.AuthcId_.assign("[AdminMode]");
    this->Fairy_->Ac_.Home_.assign("/");
-   this->Fairy_->Ac_.Acl_.kindex(fon9::seed::AclPath::MakeRef("/", 1)).second = fon9::seed::AccessRight::Full;
-   this->Fairy_->Ac_.Acl_.kindex(fon9::seed::AclPath::MakeRef("/..", 3)).second = fon9::seed::AccessRight::Full;
+   this->Fairy_->Ac_.Acl_.kfetch(fon9::seed::AclPath::MakeRef("/", 1)).second = fon9::seed::AccessRight::Full;
+   this->Fairy_->Ac_.Acl_.kfetch(fon9::seed::AclPath::MakeRef("/..", 3)).second = fon9::seed::AccessRight::Full;
 }
 
 //--------------------------------------------------------------------------//

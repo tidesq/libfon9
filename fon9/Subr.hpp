@@ -38,7 +38,7 @@ public:
    using base::end;
    using base::erase;
    using base::size;
-   using base::vindex;
+   using base::sindex;
    /// 使用 SortedVector::find(SubConn id) 進行二元搜尋.
    iterator find(SubConn id) {
       return base::find(id);
@@ -190,7 +190,7 @@ public:
          ~ResetIdx() { *idx = prv; }
       } resetIdx{&this->NextEmitIdx_};
       while (this->NextEmitIdx_ < subrs->size()) {
-         if (!combiner(subrs->vindex(this->NextEmitIdx_++).second, std::forward<ArgsT>(args)...))
+         if (!combiner(subrs->sindex(this->NextEmitIdx_++).second, std::forward<ArgsT>(args)...))
             break;
       }
    }

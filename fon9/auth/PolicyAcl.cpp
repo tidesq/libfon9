@@ -82,7 +82,7 @@ bool PolicyAclAgent::GetPolicy(const AuthResult& authr, PolicyConfig& res) {
    res.Home_ = CharVectorReplace(ToStrView(res.Home_), kUserId, userId);
    seed::AccessList acl{std::move(res.Acl_)};
    for (auto& v : acl)
-      res.Acl_.kindex(CharVectorReplace(ToStrView(v.first), kUserId, userId)).second = v.second;
+      res.Acl_.kfetch(CharVectorReplace(ToStrView(v.first), kUserId, userId)).second = v.second;
    return true;
 }
 
