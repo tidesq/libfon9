@@ -23,6 +23,7 @@ $OUTPUT_DIR/Subr_UT
 $OUTPUT_DIR/Base64_UT
 $OUTPUT_DIR/Endian_UT
 $OUTPUT_DIR/Bitv_UT
+$OUTPUT_DIR/ConfigLoader_UT
 
 # unit tests: Container / Algorithm
 $OUTPUT_DIR/Trie_UT

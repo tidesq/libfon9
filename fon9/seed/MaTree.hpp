@@ -3,7 +3,7 @@
 #ifndef __fon9_seed_MaTree_hpp__
 #define __fon9_seed_MaTree_hpp__
 #include "fon9/seed/TreeLockContainerT.hpp"
-#include "fon9/seed/Named.hpp"
+#include "fon9/Named.hpp"
 #include "fon9/SortedVector.hpp"
 
 namespace fon9 { namespace seed {
@@ -122,7 +122,7 @@ public:
    }
 
    /// 請注意 thread safe: 除了 retval->Name_ 是 thread safe,
-   /// 其他的 retval->GetDisplayText(); retval->GetDescription(); 都不是 thread safe!
+   /// 其他的 retval->GetTitle(); retval->GetDescription(); 都不是 thread safe!
    NamedSeedSP Get(StrView name) const {
       ConstLocker container{this->Container_};
       auto        ifind{container->find(name)};

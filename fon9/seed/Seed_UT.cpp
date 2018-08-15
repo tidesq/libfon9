@@ -140,7 +140,7 @@ std::string TestGetFields(std::ostream* os, const fon9::seed::Tab& tab, const Re
 
 template <class ReqT>
 std::string TestGetFields(std::ostream* os, fon9::seed::Fields&& fields) {
-   fon9::seed::TabSP tab{new fon9::seed::Tab{fon9::seed::Named{"Req"}, std::move(fields)}};
+   fon9::seed::TabSP tab{new fon9::seed::Tab{fon9::Named{"Req"}, std::move(fields)}};
    ReqT              req;
    return TestGetFields(os, *tab, req);
 }
@@ -148,74 +148,74 @@ std::string TestGetFields(std::ostream* os, fon9::seed::Fields&& fields) {
 template <class ReqT>
 fon9::seed::Fields MakeReqFields() {
    fon9::seed::Fields fields;
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstStdStr"},   ReqT, ConstStdStrValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"StdStr"},        ReqT, StdStrValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"CharVector"},    ReqT, CharVectorValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstChar"},     ReqT, ConstCharValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"Char"},          ReqT, CharValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstChar4"},    ReqT, ConstChar4Value_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"Char4"},         ReqT, Char4Value_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstChar4A"},   ReqT, ConstChar4Ary_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"Char4A"},        ReqT, Char4Ary_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstInt"},      ReqT, ConstIntValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"Int"},           ReqT, IntValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstEnumInt"},  ReqT, ConstEnumIntValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"EnumInt"},       ReqT, EnumIntValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstEnumChar"}, ReqT, ConstEnumCharValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"EnumChar"},      ReqT, EnumCharValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstEnumHex"},  ReqT, ConstEnumHexValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named("EnumHex", "FmtFlag", "Test FmtFlag hex output"), ReqT, EnumHexValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstByte4Ary"}, ReqT, ConstByte4Ary_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"Byte4Aty"},      ReqT, Byte4Ary_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstBytes"},    ReqT, ConstBytes));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"Bytes"},         ReqT, Bytes));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstBVec"},     ReqT, ConstBVec_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"BVec"},          ReqT, BVec_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstDec"},      ReqT, ConstDecValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"Dec"},           ReqT, DecValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"Dec0"},          ReqT, Dec0Value_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"Dec0N"},         ReqT, Dec0Null_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstTs"},       ReqT, ConstTs_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"Ts"},            ReqT, Ts_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstTi"},       ReqT, ConstTi_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"Ti"},            ReqT, Ti_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstStdStr"},   ReqT, ConstStdStrValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"StdStr"},        ReqT, StdStrValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"CharVector"},    ReqT, CharVectorValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstChar"},     ReqT, ConstCharValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"Char"},          ReqT, CharValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstChar4"},    ReqT, ConstChar4Value_));
+   fields.Add(fon9_MakeField(fon9::Named{"Char4"},         ReqT, Char4Value_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstChar4A"},   ReqT, ConstChar4Ary_));
+   fields.Add(fon9_MakeField(fon9::Named{"Char4A"},        ReqT, Char4Ary_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstInt"},      ReqT, ConstIntValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"Int"},           ReqT, IntValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstEnumInt"},  ReqT, ConstEnumIntValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"EnumInt"},       ReqT, EnumIntValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstEnumChar"}, ReqT, ConstEnumCharValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"EnumChar"},      ReqT, EnumCharValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstEnumHex"},  ReqT, ConstEnumHexValue_));
+   fields.Add(fon9_MakeField(fon9::Named("EnumHex", "FmtFlag", "Test FmtFlag hex output"), ReqT, EnumHexValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstByte4Ary"}, ReqT, ConstByte4Ary_));
+   fields.Add(fon9_MakeField(fon9::Named{"Byte4Aty"},      ReqT, Byte4Ary_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstBytes"},    ReqT, ConstBytes));
+   fields.Add(fon9_MakeField(fon9::Named{"Bytes"},         ReqT, Bytes));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstBVec"},     ReqT, ConstBVec_));
+   fields.Add(fon9_MakeField(fon9::Named{"BVec"},          ReqT, BVec_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstDec"},      ReqT, ConstDecValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"Dec"},           ReqT, DecValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"Dec0"},          ReqT, Dec0Value_));
+   fields.Add(fon9_MakeField(fon9::Named{"Dec0N"},         ReqT, Dec0Null_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstTs"},       ReqT, ConstTs_));
+   fields.Add(fon9_MakeField(fon9::Named{"Ts"},            ReqT, Ts_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstTi"},       ReqT, ConstTi_));
+   fields.Add(fon9_MakeField(fon9::Named{"Ti"},            ReqT, Ti_));
    return fields;
 }
 
 template <class ReqT>
 fon9::seed::Fields MakeReqFieldsIncData() {
    fon9::seed::Fields fields;
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstStdStr"},   ReqT, Data_.ConstStdStrValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"StdStr"},        ReqT, Data_.StdStrValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"CharVector"},    ReqT, Data_.CharVectorValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstChar"},     ReqT, Data_.ConstCharValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"Char"},          ReqT, Data_.CharValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstChar4"},    ReqT, Data_.ConstChar4Value_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"Char4"},         ReqT, Data_.Char4Value_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstChar4A"},   ReqT, Data_.ConstChar4Ary_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"Char4A"},        ReqT, Data_.Char4Ary_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstInt"},      ReqT, Data_.ConstIntValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"Int"},           ReqT, Data_.IntValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstEnumInt"},  ReqT, Data_.ConstEnumIntValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"EnumInt"},       ReqT, Data_.EnumIntValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstEnumChar"}, ReqT, Data_.ConstEnumCharValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"EnumChar"},      ReqT, Data_.EnumCharValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstEnumHex"},  ReqT, Data_.ConstEnumHexValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named("EnumHex", "FmtFlag", "Test FmtFlag hex output"), ReqT, Data_.EnumHexValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstByte4Ary"}, ReqT, Data_.ConstByte4Ary_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"Byte4Aty"},      ReqT, Data_.Byte4Ary_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstBytes"},    ReqT, Data_.ConstBytes));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"Bytes"},         ReqT, Data_.Bytes));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstBVec"},     ReqT, Data_.ConstBVec_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"BVec"},          ReqT, Data_.BVec_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstDec"},      ReqT, Data_.ConstDecValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"Dec"},           ReqT, Data_.DecValue_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"Dec0"},          ReqT, Data_.Dec0Value_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"Dec0N"},         ReqT, Data_.Dec0Null_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstTs"},       ReqT, Data_.ConstTs_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"Ts"},            ReqT, Data_.Ts_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"ConstTi"},       ReqT, Data_.ConstTi_));
-   fields.Add(fon9_MakeField(fon9::seed::Named{"Ti"},            ReqT, Data_.Ti_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstStdStr"},   ReqT, Data_.ConstStdStrValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"StdStr"},        ReqT, Data_.StdStrValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"CharVector"},    ReqT, Data_.CharVectorValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstChar"},     ReqT, Data_.ConstCharValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"Char"},          ReqT, Data_.CharValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstChar4"},    ReqT, Data_.ConstChar4Value_));
+   fields.Add(fon9_MakeField(fon9::Named{"Char4"},         ReqT, Data_.Char4Value_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstChar4A"},   ReqT, Data_.ConstChar4Ary_));
+   fields.Add(fon9_MakeField(fon9::Named{"Char4A"},        ReqT, Data_.Char4Ary_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstInt"},      ReqT, Data_.ConstIntValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"Int"},           ReqT, Data_.IntValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstEnumInt"},  ReqT, Data_.ConstEnumIntValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"EnumInt"},       ReqT, Data_.EnumIntValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstEnumChar"}, ReqT, Data_.ConstEnumCharValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"EnumChar"},      ReqT, Data_.EnumCharValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstEnumHex"},  ReqT, Data_.ConstEnumHexValue_));
+   fields.Add(fon9_MakeField(fon9::Named("EnumHex", "FmtFlag", "Test FmtFlag hex output"), ReqT, Data_.EnumHexValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstByte4Ary"}, ReqT, Data_.ConstByte4Ary_));
+   fields.Add(fon9_MakeField(fon9::Named{"Byte4Aty"},      ReqT, Data_.Byte4Ary_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstBytes"},    ReqT, Data_.ConstBytes));
+   fields.Add(fon9_MakeField(fon9::Named{"Bytes"},         ReqT, Data_.Bytes));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstBVec"},     ReqT, Data_.ConstBVec_));
+   fields.Add(fon9_MakeField(fon9::Named{"BVec"},          ReqT, Data_.BVec_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstDec"},      ReqT, Data_.ConstDecValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"Dec"},           ReqT, Data_.DecValue_));
+   fields.Add(fon9_MakeField(fon9::Named{"Dec0"},          ReqT, Data_.Dec0Value_));
+   fields.Add(fon9_MakeField(fon9::Named{"Dec0N"},         ReqT, Data_.Dec0Null_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstTs"},       ReqT, Data_.ConstTs_));
+   fields.Add(fon9_MakeField(fon9::Named{"Ts"},            ReqT, Data_.Ts_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstTi"},       ReqT, Data_.ConstTi_));
+   fields.Add(fon9_MakeField(fon9::Named{"Ti"},            ReqT, Data_.Ti_));
    return fields;
 }
 
@@ -234,7 +234,7 @@ void TestDyRec(const std::string& fldcfg, const std::string& vlist) {
    fon9_CheckTestResult("Dup.MakeFields", fieldsCount == fields.size());
 
    // 測試 DyRec 沒有使用 MakeDyMemRaw() 建立: 必定產生 exception!
-   fon9::seed::TabSP tab{new fon9::seed::Tab{fon9::seed::Named{"DyRec"}, std::move(fields)}};
+   fon9::seed::TabSP tab{new fon9::seed::Tab{fon9::Named{"DyRec"}, std::move(fields)}};
    try {
       ReqRawData req;
       TestGetFields(nullptr, *tab, req);
@@ -265,7 +265,7 @@ void TestDyRec(const std::string& fldcfg, const std::string& vlist) {
 
 void TestDeserializeNamed(fon9::StrView src, char chSpl, int chTail) {
    std::cout << "\n" << src.begin() << " => ";
-   fon9::seed::Named n1 = fon9::seed::DeserializeNamed(src, chSpl, chTail);
+   fon9::Named n1 = fon9::DeserializeNamed(src, chSpl, chTail);
    std::cout << "name=" << n1.Name_ << "|title=" << n1.GetTitle() << "|desc=" << n1.GetDescription() << std::endl;
 
    fon9_CheckTestResult("DeserializeNamed",
@@ -276,9 +276,9 @@ void TestDeserializeNamed(fon9::StrView src, char chSpl, int chTail) {
       fon9_CheckTestResult("DeserializeNamed:src.begin()[-1]==chTail", (*(src.begin() - 1) == chTail));
 
    std::string s1;
-   fon9::seed::SerializeNamed(s1, n1, chSpl, chTail);
+   fon9::SerializeNamed(s1, n1, chSpl, chTail);
    src = fon9::ToStrView(s1);
-   fon9::seed::Named n2 = fon9::seed::DeserializeNamed(src, chSpl, chTail);
+   fon9::Named n2 = fon9::DeserializeNamed(src, chSpl, chTail);
    fon9_CheckTestResult(("SerializeNamed()=" + s1).c_str(),
       (n1.Name_ == n2.Name_ && n1.GetTitle() == n2.GetTitle() && n1.GetDescription() == n2.GetDescription()));
 }

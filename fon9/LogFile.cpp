@@ -67,8 +67,10 @@ class LogFileImpl : public LogFileAppender {
       LogFileImpl::gLogFile->Append(std::move(buf));
    }
 
-   static void AddLogInfo(File& fd, RevBufferList& rbuf, TimeStamp now) {
+   static void AddLogInfo(File& fd, RevBufferList& rbuf, TimeStamp now, char chHeadNL) {
       AddLogHeader(rbuf, now, LogLevel::Important);
+      if (chHeadNL)
+         RevPutChar(rbuf, chHeadNL);
       DcQueueList dcQueue{rbuf.MoveOut()};
       fd.Append(dcQueue);
    }
@@ -97,14 +99,16 @@ class LogFileImpl : public LogFileAppender {
          if (fd.IsOpened()) { // fd = 舊的 log file.
             RevPrint(rbuf, "LogFile.OnFileRotate|next=", curfd->GetOpenName(),
                      "|curr=", fd.GetOpenName(), this->OrigStartInfo_);
-            this->AddLogInfo(fd, rbuf, now);
+            this->AddLogInfo(fd, rbuf, now, '\0');
          }
          if (isFirstStart)
             RevPrint(rbuf, "LogFile.OnStart", this->OrigStartInfo_);
          else
             RevPrint(rbuf, "LogFile.OnFileRotate|prev=", fd.GetOpenName(),
                      "|curr=", curfd->GetOpenName(), this->OrigStartInfo_);
-         this->AddLogInfo(*curfd, rbuf, now);
+         auto fsz = curfd->GetFileSize();
+         char chHeadNL = (fsz.HasResult() && fsz.GetResult() != 0) ? '\n' : '\0';
+         this->AddLogInfo(*curfd, rbuf, now, chHeadNL);
       }
       return curfd;
    }

@@ -263,7 +263,7 @@ public:
 template <class V, class Compare = std::less<V>, class ContainerT = std::vector<V>>
 class SortedVectorSet : public SortedVectorImpl<ContainerT, ContainerT, Compare> {
    using base = SortedVectorImpl<ContainerT, ContainerT, Compare>;
-protected:
+public:
    using key_compare = Compare;
    using value_compare = Compare;
 

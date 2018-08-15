@@ -79,6 +79,8 @@ void SeedSession::OnAuthDone(auth::AuthR&& authr) {
    else {
       this->Fairy_->CurrPath_ = this->Fairy_->Ac_.Home_;
    }
+   if (msg.empty())
+      msg = &this->Authr_.ExtInfo_;
    this->EmitAuthEvent(st, DcQueueFixedMem{msg});
 }
 

@@ -1,10 +1,10 @@
-﻿/// \file fon9/seed/Named.hpp
+﻿/// \file fon9/Named.hpp
 /// \author fonwinz@gmail.com
-#ifndef __fon9_seed_Named_hpp__
-#define __fon9_seed_Named_hpp__
+#ifndef __fon9_Named_hpp__
+#define __fon9_Named_hpp__
 #include "fon9/StrView.hpp"
 
-namespace fon9 { namespace seed {
+namespace fon9 {
 
 inline bool IsValidName1stChar(char ch) {
    //return isalpha(static_cast<unsigned char>(ch)) || ch == '_';//第一個字元僅允許 alpha or '_'
@@ -105,5 +105,5 @@ fon9_API Named DeserializeNamed(StrView& cfg, char chSpl, int chTail);
 /// - 若 chTail == -1; 則表示不加尾端字元.
 fon9_API void SerializeNamed(std::string& dst, const Named& named, char chSpl, int chTail);
 
-} } // namespaces
-#endif//__fon9_seed_Named_hpp__
+} // namespaces
+#endif//__fon9_Named_hpp__

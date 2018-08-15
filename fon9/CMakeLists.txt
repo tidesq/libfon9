@@ -23,12 +23,14 @@ set(fon9src
  Log.cpp
  ErrC.cpp
  Outcome.cpp
+ Named.cpp
  Blob.c
  ByteVector.cpp
  Base64.cpp
  Random.cpp
  ConsoleIO.cpp
  CmdArgs.cpp
+ ConfigLoader.cpp
 
  File.cpp
  FilePath.cpp
@@ -77,7 +79,6 @@ set(fon9src
  seed/SeedBase.cpp
  seed/Tab.cpp
  seed/Layout.cpp
- seed/Named.cpp
  seed/Raw.cpp
  seed/Tree.cpp
  seed/TreeOp.cpp
@@ -92,6 +93,7 @@ set(fon9src
  seed/SeedSearcher.cpp
  seed/SeedAcl.cpp
  seed/SeedFairy.cpp
+ seed/SysEnv.cpp
 
  crypto/Sha256.cpp
  auth/AuthMgr.cpp
@@ -128,6 +130,9 @@ target_link_libraries(Base64_UT fon9_s)
 
 add_executable(Endian_UT Endian_UT.cpp)
 target_link_libraries(Endian_UT fon9_s)
+
+add_executable(ConfigLoader_UT ConfigLoader_UT.cpp)
+target_link_libraries(ConfigLoader_UT fon9_s)
 
 # unit tests: Container / Algorithm
 add_executable(Trie_UT Trie_UT.cpp)

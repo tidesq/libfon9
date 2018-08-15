@@ -12,7 +12,7 @@ struct CmdArgDef {
    StrView     ArgShort_;
    StrView     ArgLong_;
    const char* EnvName_;
-   StrView     DisplayText_;
+   StrView     Title_;
    StrView     Description_;
 };
 

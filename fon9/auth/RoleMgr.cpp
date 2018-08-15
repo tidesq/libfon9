@@ -42,14 +42,14 @@ class RoleTree : public MasterPolicyTree {
 
    static seed::LayoutSP MakeLayout() {
       seed::Fields fields;
-      fields.Add(fon9_MakeField(seed::Named{"PolicyId"}, DetailTableImpl::value_type, second));
+      fields.Add(fon9_MakeField(Named{"PolicyId"}, DetailTableImpl::value_type, second));
       seed::LayoutSP saplingLayout{
-         new seed::Layout1(fon9_MakeField(seed::Named{"PolicyName"}, DetailTableImpl::value_type, first),
-                           new seed::Tab{seed::Named{"RoleConfig"}, std::move(fields)})};
+         new seed::Layout1(fon9_MakeField(Named{"PolicyName"}, DetailTableImpl::value_type, first),
+                           new seed::Tab{Named{"RoleConfig"}, std::move(fields)})};
 
-      fields.Add(fon9_MakeField(seed::Named{"Description"}, RoleItem, Description_));
-      seed::TabSP tab{new seed::Tab(seed::Named{"RoleCfg"}, std::move(fields), std::move(saplingLayout))};
-      return new seed::Layout1(fon9_MakeField(seed::Named{"RoleId"}, PolicyItem, PolicyId_),
+      fields.Add(fon9_MakeField(Named{"Description"}, RoleItem, Description_));
+      seed::TabSP tab{new seed::Tab(Named{"RoleCfg"}, std::move(fields), std::move(saplingLayout))};
+      return new seed::Layout1(fon9_MakeField(Named{"RoleId"}, PolicyItem, PolicyId_),
                                std::move(tab));
    }
 

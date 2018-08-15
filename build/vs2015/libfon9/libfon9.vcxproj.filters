@@ -446,12 +446,6 @@
     <ClInclude Include="..\..\..\fon9\seed\Layout.hpp">
       <Filter>Header Files\seed\_base</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\seed\Named.hpp">
-      <Filter>Header Files\seed\_base</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\seed\NamedIx.hpp">
-      <Filter>Header Files\seed\_base</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\fon9\seed\SeedBase.hpp">
       <Filter>Header Files\seed\_base</Filter>
     </ClInclude>
@@ -653,6 +647,18 @@
     <ClInclude Include="..\..\..\fon9\SchTask.hpp">
       <Filter>Header Files\_base\_Thread</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\ConfigLoader.hpp">
+      <Filter>Header Files\_base\_File</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\Named.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\NamedIx.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\SysEnv.hpp">
+      <Filter>Header Files\seed\_trees</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -847,9 +853,6 @@
     <ClCompile Include="..\..\..\fon9\seed\Layout.cpp">
       <Filter>Source Files\seed\_base</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\fon9\seed\Named.cpp">
-      <Filter>Source Files\seed\_base</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\fon9\seed\SeedBase.cpp">
       <Filter>Source Files\seed\_base</Filter>
     </ClCompile>
@@ -981,6 +984,15 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\SchTask.cpp">
       <Filter>Source Files\_base\_Thread</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\ConfigLoader.cpp">
+      <Filter>Source Files\_base\_File</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\Named.cpp">
+      <Filter>Source Files\_base\_Tools / Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\seed\SysEnv.cpp">
+      <Filter>Source Files\seed\_trees</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

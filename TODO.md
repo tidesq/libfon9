@@ -5,7 +5,6 @@ libfon9 TODO list
 ## 演算法/容器
 ---------------------------------------
 ## 雜項
-* ConfigLoader
 ---------------------------------------
 ## 檔案/儲存/載入
 * Serialize/Deserialize
@@ -22,17 +21,10 @@ libfon9 TODO list
 * DllManager
 * WebUI
 * Fon9Co
+  * 啟動時設定工作目錄 current dir: `-w dir` or `--workdir dir`.
+  * 將啟動時的「命令列參數」及「其他重要資訊」寫入 log.
   * Linux: to daemon.
   * Windows: install to service.
-  * 啟動參數:
-    * SysEnv tree: 揭示啟動時的各項參數.
-    * 設定 log path.
-    * 設定 config path.
-    * 載入基本設定:
-      * HostId
-      * MaAuth path.
-      * Sync path.
-      * MemLock.
 
 ---------------------------------------
 ## 通訊基礎建設

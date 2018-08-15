@@ -1,8 +1,18 @@
 ﻿// \file fon9/framework/Framework.cpp
 // \author fonwinz@gmail.com
 #include "fon9/framework/Framework.hpp"
+#include "fon9/seed/SysEnv.hpp"
+#include "fon9/ConfigLoader.hpp"
 #include "fon9/InnSyncerFile.hpp"
 #include "fon9/FilePath.hpp"
+#include "fon9/LogFile.hpp"
+#include "fon9/Log.hpp"
+#include "fon9/HostId.hpp"
+#include "fon9/DefaultThreadPool.hpp"
+
+#if !defined(fon9_WINDOWS)
+#include <sys/mman.h> // mlockall()
+#endif
 
 namespace fon9 {
 
@@ -11,32 +21,109 @@ Framework::~Framework() {
 }
 
 void Framework::Initialize(int argc, char** argv) {
-   (void)argc; (void)argv;
-   // TODO: 從 env, args... 取出 ConfigPath_;
-   // - 從 ConfigPath/fon9common.ini 取出:
-   //   - memlock=Y/N
-   //   - LogFile=./logs/{0:f+TW}/fon9sys-{1:04}.log  # 超過 {0:f+8}=YYYYMMDD(台灣時間), {1:04}=檔案序號.
-   //   - LogFileSizeMB=N                             # 超過 N MB 就換檔.
-   //   - Syncer=InnSyncerFile: syncOutFileName, syncInFileName, 100ms
-   //   - MaAuthDbfName=MaAuth                        # 用在 Syncer 時尋找 Handler 時使用, 一個 Syncer 可以有多個 Handler.
-   // - 從 ConfigPath/fon9local.ini 取出(在 fon9common.ini 使用 $include fon9local.ini 即可):
-   //   - HostId=
-   this->ConfigPath_ = FilePath::AppendPathTail(&this->ConfigPath_);
-   this->SyncerPath_ = FilePath::AppendPathTail(&this->SyncerPath_);
    this->Root_.reset(new seed::MaTree{"Services"});
+
+   auto sysEnv = seed::SysEnv::Plant(this->Root_);
+   auto cfgPath = sysEnv->Add(argc, argv, CmdArgDef{
+      StrView{fon9_kCSTR_SysEnvItem_ConfigPath}, //Name
+      StrView{"fon9cfg"}, //DefaultValue
+      StrView{"c"},       //ArgShort_
+      StrView{"cfg"},     //ArgLong_
+      "fon9cfg",          //EnvName_
+      StrView{},          //Title_
+      StrView{}});        //Description_
+   this->ConfigPath_ = FilePath::AppendPathTail(&cfgPath->Value_);
+   sysEnv->Initialize(argc, argv);
+
+   #define fon9_kCSTR_SyncerPath    "SyncerPath"
+   #define fon9_kCSTR_MaAuthName    "MaAuthName"
+   ConfigLoader cfgld{this->ConfigPath_};
+   cfgld.IncludeConfig("$" fon9_kCSTR_SyncerPath "=fon9syn\n"
+                       "$" fon9_kCSTR_MaAuthName "=MaAuth\n"
+                       "$include:fon9local.cfg");
+   cfgld.IncludeConfig("$include:fon9common.cfg");
+
+   StrView        cfgstr;
+   RevBufferList  rbuf{128};
+
+   // 如果沒設定, log 就輸出在 console.
+   if (auto logFileFmt = cfgld.GetVariable("LogFileFmt")) {
+      cfgstr = &logFileFmt->Value_.Str_;
+      if (!StrTrim(&cfgstr).empty()) {
+         File::SizeType maxFileSizeMB = 0;
+         if (auto logFileSize = cfgld.GetVariable("LogFileSizeMB"))
+            maxFileSizeMB = StrTo(&logFileSize->Value_.Str_, 0u);
+         std::string fname = StrView_ToNormalizeStr(cfgstr);
+         auto        res = InitLogWriteToFile(fname, FileRotate::TimeScale::Day, maxFileSizeMB * 1024 * 1024, 0);
+         if (res.IsError())
+            RevPrint(rbuf, "err=", res.GetError());
+         else if (maxFileSizeMB > 0)
+            RevPrint(rbuf, "MaxFileSizeMB=", maxFileSizeMB);
+         sysEnv->Add(new seed::SysEnvItem("LogFileFmt", std::move(fname), std::string{}, BufferTo<std::string>(rbuf.MoveOut())));
+      }
+   }
+
+   if (auto hostId = cfgld.GetVariable("HostId")) {
+      LocalHostId_ = StrTo(&hostId->Value_.Str_, 0u);
+      if (LocalHostId_ == 0) {
+         std::string err = RevPrintTo<std::string>("$HostId|err=Local $HostId cannot be zero|from=", hostId->From_);
+         fon9_LOG_FATAL(err);
+         Raise<std::runtime_error>(err);
+      }
+      fon9_LOG_INFO("LocalHostId=", LocalHostId_);
+      sysEnv->Add(new seed::SysEnvItem("HostId", RevPrintTo<std::string>(LocalHostId_), "Local HostId"));
+   }
+
+   // Syncer=InnSyncerFile: syncOutFileName, syncInFileName, 100ms
+   // TODO: 設定 Syncer 用哪種機制及參數. (不一定要使用 InnSyncerFile)
+   cfgstr = &cfgld.GetVariable(fon9_kCSTR_SyncerPath)->Value_.Str_;
+   this->SyncerPath_ = FilePath::AppendPathTail(StrTrim(&cfgstr));
+   sysEnv->Add(new seed::SysEnvItem{fon9_kCSTR_SyncerPath, this->SyncerPath_});
    this->Syncer_.reset(new InnSyncerFile(InnSyncerFile::CreateArgs(
-      this->ConfigPath_ + "SyncOut.f9syn",
-      this->ConfigPath_ + "SyncIn.f9syn",
+      this->SyncerPath_ + "SyncOut.f9syn",
+      this->SyncerPath_ + "SyncIn.f9syn",
       TimeInterval_Second(1)
    )));
 
-   StrView  maAuthDbfName{"MaAuth"};
-   InnDbfSP maAuthStorage{new InnDbf(maAuthDbfName, this->Syncer_)};
-   maAuthStorage->Open(this->ConfigPath_ + maAuthDbfName.ToString() + ".f9dbf");
-   this->MaAuth_ = auth::AuthMgr::Plant(this->Root_, maAuthStorage, maAuthDbfName.ToString());
+   // MaAuthName 用在:
+   // (1) Syncer 時尋找 Handler 時使用(一個 Syncer 可以有多個 Handler).
+   // (2) 從 Root 尋找使用: "/MaAuthName"
+   // (3) ConfigPath_/MaAuthName.f9dbf
+   cfgstr = &cfgld.GetVariable(fon9_kCSTR_MaAuthName)->Value_.Str_;
+   InnDbfSP maAuthStorage{new InnDbf(StrTrim(&cfgstr), this->Syncer_)};
+   maAuthStorage->Open(this->ConfigPath_ + cfgstr.ToString() + ".f9dbf");
+   this->MaAuth_ = auth::AuthMgr::Plant(this->Root_, maAuthStorage, cfgstr.ToString());
+
+   #define fon9_kCSTR_MemLock       "MemLock"
+   if (auto varMemLock = cfgld.GetVariable(fon9_kCSTR_MemLock)) {
+      cfgstr = &varMemLock->Value_.Str_;
+      if (toupper(static_cast<unsigned char>(StrTrimHead(&cfgstr).Get1st())) == 'Y') {
+         // MemLock 開啟 mlockall(MCL_CURRENT|MCL_FUTURE), 不支援 Windows.
+         #define MLOCK()       mlockall(MCL_CURRENT|MCL_FUTURE)
+         #define MLOCK_cstr   "mlockall(MCL_CURRENT|MCL_FUTURE)"
+         #define MLOCK_log    "$" fon9_kCSTR_MemLock ":" MLOCK_cstr "|"
+         std::string desc;
+         #if !defined(fon9_WINDOWS)
+            if (MLOCK() == 0) {
+               desc = "OK";
+               fon9_LOG_INFO(MLOCK_log "info=OK!");
+            }
+            else {
+               desc = RevPrintTo<std::string>("err=", GetSysErrC());
+               fon9_LOG_ERROR(MLOCK_log, desc);
+            }
+         #else
+            desc = "err=Not support on Windows";
+            fon9_LOG_WARN(MLOCK_log, desc);
+         #endif
+         sysEnv->Add(new seed::SysEnvItem(fon9_kCSTR_MemLock, "Y", MLOCK_cstr, std::move(desc)));
+      }
+   }
 }
 
 void Framework::Start() {
+   GetDefaultThreadPool();
+   GetDefaultTimerThread();
    this->MaAuth_->Storage_->LoadAll();
    this->Syncer_->StartSync();
 }

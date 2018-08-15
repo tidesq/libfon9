@@ -9,6 +9,7 @@
 #include "fon9/ConsoleIO.hpp"
 #include "fon9/CountDownLatch.hpp"
 #include "fon9/CmdArgs.hpp"
+#include "fon9/RevPrint.hpp"
 
 //--------------------------------------------------------------------------//
 
@@ -43,7 +44,6 @@ static BOOL WINAPI WindowsCtrlBreakHandler(DWORD dwCtrlType) {
 }
 #else
 #include <signal.h>
-#include <sys/mman.h> // mlockall()
 static void UnixSignalTermHandler(int) {
    AppBreakMsg_ = "<Signal TERM>";
    if (!freopen("/dev/null", "r", stdin)) {
@@ -142,7 +142,10 @@ public:
       size_t   passlen = fon9::getpass("Password: ", passbuf, sizeof(passbuf));
       this->PutNewLineConsole();
       fon9::StrView  authz{};
-      return this->AuthUser(fon9::StrTrim(&authz), authc, fon9::StrView{passbuf, passlen}, "console");
+      fon9::RevBufferFixedSize<1024> rbuf;
+      fon9::RevPrint(rbuf, "console:", fon9::LocalHostId_);
+      return this->AuthUser(fon9::StrTrim(&authz), authc, fon9::StrView{passbuf, passlen},
+                            fon9::StrView{rbuf.GetCurrent(), rbuf.GetMemEnd()});
    }
 
    State RunLoop() {
@@ -160,18 +163,19 @@ int main(int argc, char** argv) {
    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
    //_CrtSetBreakAlloc(176);
 #endif
-   fon9::Framework   fon9sys;
-   fon9sys.Initialize(argc, argv);
-   fon9::auth::PlantScramSha256(*fon9sys.MaAuth_);
-   fon9::auth::PolicyAclAgent::Plant(*fon9sys.MaAuth_);
-   fon9sys.Start();
 
 #ifdef fon9_WINDOWS
    SetConsoleCtrlHandler(&WindowsCtrlBreakHandler, TRUE);
 #else
    signal(SIGTERM, &UnixSignalTermHandler);
-   signal(SIGINT,  &UnixSignalTermHandler);
+   signal(SIGINT, &UnixSignalTermHandler);
 #endif
+
+   fon9::Framework   fon9sys;
+   fon9sys.Initialize(argc, argv);
+   fon9::auth::PlantScramSha256(*fon9sys.MaAuth_);
+   fon9::auth::PolicyAclAgent::Plant(*fon9sys.MaAuth_);
+   fon9sys.Start();
 
    // 使用 "--admin" 啟動 AdminMode.
    bool isAdminMode = (fon9::GetCmdArg(argc, argv, fon9::StrView{}, "admin").begin() != nullptr);

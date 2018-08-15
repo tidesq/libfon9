@@ -1,7 +1,6 @@
 ﻿/// \file fon9/File.cpp
 /// \author fonwinz@gmail.com
 #include "fon9/File.hpp"
-#include "fon9/Log.hpp"
 
 #ifdef fon9_WINDOWS
 #include "fon9/sys/FileWin32.hpp"

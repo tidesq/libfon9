@@ -3,7 +3,7 @@
 #ifndef __fon9_seed_Layout_hpp__
 #define __fon9_seed_Layout_hpp__
 #include "fon9/seed/SeedBase.hpp"
-#include "fon9/seed/NamedIx.hpp"
+#include "fon9/NamedIx.hpp"
 #include "fon9/MustLock.hpp"
 
 namespace fon9 { namespace seed {

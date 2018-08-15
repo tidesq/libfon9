@@ -56,7 +56,7 @@ public:
    using ObjectSP = NamedSeedSPT<ObjectT>;
    using FnEventHandler = std::function<void(ObjectT*, ParkTree::EventType)>;
 
-   NamedPark(StrView name) : base{name.ToString(), new ParkTree{name.ToString()}} {
+   NamedPark(StrView name) : base{new ParkTree{name.ToString()}, name.ToString()} {
    }
 
    /// 把 obj 加入 Sapling(MaTree), 在返回前會先觸發 EventType_Add.

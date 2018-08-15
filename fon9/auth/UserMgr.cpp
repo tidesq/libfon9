@@ -143,7 +143,7 @@ AuthR UserTree::AuthUpdate(fon9_Auth_R rcode, const AuthRequest& req, AuthResult
                   "|table=", this->Owner_.Name_,
                   "|from=", this->Req_.UserFrom_,
                   "|authcId=", this->Authz_.AuthcId_);
-         RevPrint(this->RBuf_, this->LogArgs_.Time_, ThisThread_.GetThreadIdStr(), GetLevelStr(this->LogArgs_.Level_));
+         AddLogHeader(this->RBuf_, this->LogArgs_.Time_, this->LogArgs_.Level_);
          LogWrite(this->LogArgs_, this->RBuf_.MoveOut());
       }
    };

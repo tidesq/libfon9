@@ -3,9 +3,9 @@
 #ifndef __fon9_seed_Field_hpp__
 #define __fon9_seed_Field_hpp__
 #include "fon9/seed/SeedBase.hpp"
-#include "fon9/seed/NamedIx.hpp"
 #include "fon9/buffer/RevBuffer.hpp"
 #include "fon9/ToStr.hpp"
+#include "fon9/NamedIx.hpp"
 
 namespace fon9 { namespace seed {
 

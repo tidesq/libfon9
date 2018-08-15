@@ -1,13 +1,13 @@
-﻿/// \file fon9/seed/NamedIx.hpp
+﻿/// \file fon9/NamedIx.hpp
 /// \author fonwinz@gmail.com
-#ifndef __fon9_seed_NamedIx_hpp__
-#define __fon9_seed_NamedIx_hpp__
-#include "fon9/seed/Named.hpp"
+#ifndef __fon9_NamedIx_hpp__
+#define __fon9_NamedIx_hpp__
+#include "fon9/Named.hpp"
 #include <map>
 #include <vector>
 #include <memory>
 
-namespace fon9 { namespace seed {
+namespace fon9 {
 
 template <class NamedIxSP>
 class NamedIxMapHasRemove;
@@ -192,5 +192,5 @@ protected:
    }
 };
 
-} } // namespaces
-#endif//__fon9_seed_NamedIx_hpp__
+} // namespaces
+#endif//__fon9_NamedIx_hpp__

@@ -132,7 +132,7 @@ enum {
 
 // fon9 內部使用: GetDefaultTimerThread(); GetDefaultThreadPool(); 的 ThrRun() 等候 Log system 備妥.
 extern void (*gWaitLogSystemReady)();
-extern void AddLogHeader(RevBufferList& rbuf, TimeStamp tm, LogLevel level);
+fon9_API void AddLogHeader(RevBufferList& rbuf, TimeStamp tm, LogLevel level);
 
 }// namespace
 #endif//__fon9_Log_hpp__

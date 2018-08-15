@@ -50,3 +50,6 @@
 * `extern fon9_API HostId  LocalHostId_;`
 
 ---------------------------------------
+
+## 設定檔載入工具
+* [`fon9/ConfigLoader.hpp`](../fon9/ConfigLoader.hpp)

@@ -56,7 +56,7 @@ fon9_API void LogWrite(const LogArgs& logArgs, BufferList&& buf) {
    FnLogWriter_(logArgs, std::move(buf));
 }
 
-void AddLogHeader(RevBufferList& rbuf, TimeStamp tm, LogLevel level) {
+fon9_API void AddLogHeader(RevBufferList& rbuf, TimeStamp tm, LogLevel level) {
    RevPrint(rbuf, ThisThread_.GetThreadIdStr(), GetLevelStr(level));
    RevPut_Date_Time_us(rbuf, tm);
 }

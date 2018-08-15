@@ -1,9 +1,9 @@
-﻿/// \file fon9/seed/Named.cpp
+﻿/// \file fon9/Named.cpp
 /// \author fonwinz@gmail.com
-#include "fon9/seed/Named.hpp"
+#include "fon9/Named.hpp"
 #include "fon9/StrTools.hpp"
 
-namespace fon9 { namespace seed {
+namespace fon9 {
 
 fon9_API const char* FindInvalidNameChar(StrView str) {
    const char* pend = str.end();
@@ -53,4 +53,4 @@ fon9_API void SerializeNamed(std::string& dst, const Named& named, char chSpl, i
       dst.push_back(static_cast<char>(chTail));
 }
 
-}} // namespaces
+} // namespaces

@@ -7,8 +7,8 @@
 namespace fon9 { namespace auth {
 
 PolicyTree::PolicyTree(std::string tabName, std::string keyName, seed::Fields&& fields)
-   : base{new seed::Layout1(fon9_MakeField(seed::Named{std::move(keyName)}, PolicyItem, PolicyId_),
-                            new seed::Tab{seed::Named{std::move(tabName)}, std::move(fields)})} {
+   : base{new seed::Layout1(fon9_MakeField(Named{std::move(keyName)}, PolicyItem, PolicyId_),
+                            new seed::Tab{Named{std::move(tabName)}, std::move(fields)})} {
 }
 
 void PolicyTree::OnParentSeedClear() {

@@ -56,8 +56,30 @@
 
 ## 執行程式 Fon9Co
 * `Fon9Co` 是使用 fon9 建立的執行程式。
-* 啟動時進入 admin 模式:
-  * `Fon9Co --admin`
+* 啟動參數:
+  * 啟動時進入 admin 模式: `Fon9Co --admin`
+  * 設定檔路徑: `-c cfgpath` or `--cfg cfgpath` or `getenv("fon9cfg");` or 預設值="fon9cfg"
+  * 其他啟動參數放在: fon9local.cfg, fon9common.cfg:
+    * Log檔設定, 如果沒設定 $LogFileFmt, 則 log 就輸出在 console
+      * $LogFileFmt=./logs/{0:f+'L'}/fon9sys-{1:04}.log  # 超過 {0:f+'L'}=YYYYMMDD(localtime), {1:04}=檔案序號.
+      * $LogFileSizeMB=n                                 # 超過 n MB 就換檔.
+    * $HostId     沒有預設值, 如果沒設定, 就不會設定 LocalHostId_
+    * $SyncerPath 指定 InnSyncerFile 的路徑, 預設 = "fon9syn"
+    * $MaAuthName 預設 "MaAuth"
+    * $MemLock    預設 "N"
+  * SysEnv: 揭示啟動時的各項參數: `gv /SysEnv` 輸出範例:
+```
+Name       |Title                           |Description                   |Value                              
+CommandLine|                                |                              |./release/fon9/Fon9Co              
+ConfigPath |                                |                              |fon9cfg                            
+ExecPath   |                                |                              |/home/fonwin/devel/output/fon9     
+HostId     |Local HostId                    |                              |16                                 
+LogFileFmt |                                |                              |./logs/{0:f+'L'}/fon9sys-{1:04}.log
+MemLock    |mlockall(MCL_CURRENT|MCL_FUTURE)|err=:12:Cannot allocate memory|Y                                  
+SyncerPath |                                |                              |fon9syn/                           
+= 7/7 ==== the end ===
+```
+
 * Fon9Co 操作指令:
 
   | command                              | description
