@@ -18,6 +18,7 @@ using DeviceSPT = intrusive_ptr<DeviceT>;
 /// Device 的指標, 一般而言在收到 fon9::io::State::Disposing 事件時, 必須要 reset();
 using DeviceSP = DeviceSPT<Device>;
 class DeviceServer;
+class DeviceAcceptedClient;
 struct DeviceOpLocker;
 
 class Session;

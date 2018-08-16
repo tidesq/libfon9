@@ -14,9 +14,9 @@ class FdrTcpListener;
 using FdrTcpServer = TcpServerBase<FdrTcpListener, FdrServiceSP>;
 using FdrTcpServerSP = DeviceSPT<FdrTcpServer>;
 
-class fon9_API FdrTcpListener : public TcpListenerBase, public FdrEventHandler {
+class fon9_API FdrTcpListener : public DeviceListener, public FdrEventHandler {
    fon9_NON_COPY_NON_MOVE(FdrTcpListener);
-   using baseCounter = TcpListenerBase;
+   using baseCounter = DeviceListener;
    class AcceptedClient;
 
    FdrTcpListener(FdrTcpServerSP&& server, Socket&& soListen);
@@ -28,9 +28,13 @@ class fon9_API FdrTcpListener : public TcpListenerBase, public FdrEventHandler {
    virtual void OnFdrEvent_ReleaseRef() override;
    virtual void OnFdrEvent_StartSend() override;
 
+   /// 必須啟動 dev.CommonTimerRunAfter(); 才會有此事件.
+   void OnTcpServer_OnCommonTimer() {}
+   friend FdrTcpServer;
+
 public:
    const FdrTcpServerSP   Server_;
-   static ListenerSP CreateListener(FdrTcpServerSP server, SocketResult& soRes);
+   static DeviceListenerSP CreateListener(FdrTcpServerSP server, SocketResult& soRes);
 };
 
 } } // namespaces

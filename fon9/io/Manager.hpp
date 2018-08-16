@@ -26,7 +26,7 @@ public:
    /// 當有 client 連線到 server 時的通知, 事件順序:
    /// - OnDevice_Accepted(server, client);
    /// - OnDevice_Initialized(client);
-   virtual void OnDevice_Accepted(DeviceServer& server, Device& client) = 0;
+   virtual void OnDevice_Accepted(DeviceServer& server, DeviceAcceptedClient& client) = 0;
 
    virtual void OnDevice_Initialized(Device& dev) = 0;
    virtual void OnDevice_Destructing(Device& dev) = 0;

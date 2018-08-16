@@ -21,7 +21,7 @@ public:
    virtual void OnDevice_Destructing(Device& dev) override {
       fon9_LOG_INFO("OnDevice_Destructing|dev=", ToPtr{&dev});
    }
-   void OnDevice_Accepted(DeviceServer& server, Device& client) {
+   void OnDevice_Accepted(DeviceServer& server, DeviceAcceptedClient& client) {
       fon9_LOG_INFO("OnDevice_Accepted|server=", ToPtr(&server), "|client=", ToPtr(&client));
    }
    virtual void OnDevice_Initialized(Device& dev) override {

@@ -26,12 +26,12 @@ void SocketServerConfig::SetDefaults() {
 StrView SocketServerConfig::ParseConfig(StrView cfgstr, FnOnTagValue fnUnknownField, FnOnTagValue fnClientOptionsUnknownField) {
    StrView clires;
    StrView res = this->ListenConfig_.ParseConfigListen(cfgstr,
-                                                       [this, &fnUnknownField, &fnClientOptionsUnknownField, &clires](StrView tag, StrView value) {
+   [this, &fnUnknownField, &fnClientOptionsUnknownField, &clires](StrView tag, StrView value) {
       if (tag == "ListenBacklog") {
          if ((this->ListenBacklog_ = StrTo(value, int{5})) <= 0)
             this->ListenBacklog_ = 5;
       }
-      else if (tag == "ClientOptions") {
+      else if (tag == "ClientOptions") { // value = "{AcceptedSocketOptions_|AcceptedClientOptions_}"
          StrView cres = this->AcceptedSocketOptions_.ParseConfig(SbrFetchInside(value),
          [this, &fnClientOptionsUnknownField](StrView atag, StrView avalue) {
             if (fnClientOptionsUnknownField(atag, avalue))

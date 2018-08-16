@@ -7,9 +7,9 @@
 namespace fon9 { namespace io {
 fon9_WARN_DISABLE_PADDING;
 
-class FdrTcpListener::AcceptedClient : public AcceptedClientDeviceBase, public FdrSocket {
+class FdrTcpListener::AcceptedClient : public DeviceAcceptedClient, public FdrSocket {
    fon9_NON_COPY_NON_MOVE(AcceptedClient);
-   using base = AcceptedClientDeviceBase;
+   using base = DeviceAcceptedClient;
 
    virtual void OnFdrEvent_AddRef() override {
       intrusive_ptr_add_ref(static_cast<Device*>(this));
@@ -57,7 +57,7 @@ public:
       , FdrSocket(*owner.Server_->IoServiceSP_, std::move(soAccepted)) {
    }
 
-   using Impl = DeviceImpl_DeviceStartSend<AcceptedClientWithSend<AcceptedClient>, FdrSocket>;
+   using Impl = DeviceImpl_DeviceStartSend<DeviceAcceptedClientWithSend<AcceptedClient>, FdrSocket>;
 };
 
 //--------------------------------------------------------------------------//
@@ -67,18 +67,18 @@ FdrTcpListener::FdrTcpListener(FdrTcpServerSP&& server, Socket&& soListen)
    , Server_{std::move(server)} {
 }
 
-ListenerSP FdrTcpListener::CreateListener(FdrTcpServerSP server, SocketResult& soRes) {
+DeviceListenerSP FdrTcpListener::CreateListener(FdrTcpServerSP server, SocketResult& soRes) {
    const SocketServerConfig& cfg = server->Config_;
    Socket   soListen;
    if (!cfg.CreateListenSocket(soListen, soRes))
-      return ListenerSP{};
+      return DeviceListenerSP{};
    
    size_t capAcceptedClients = cfg.ServiceArgs_.Capacity_;
    if (capAcceptedClients > 0) // 如果有限制最大連線數量, 則容量必須稍大, 才能接收連線後再關閉.
       capAcceptedClients += 4; // TODO: 檢查 getrlimit(RLIMIT_NOFILE) 允許的最大 fd.
 
-   FdrTcpListener*   fdrListener;
-   ListenerSP retval{fdrListener = new FdrTcpListener{std::move(server), std::move(soListen)}};
+   FdrTcpListener*  fdrListener;
+   DeviceListenerSP retval{fdrListener = new FdrTcpListener{std::move(server), std::move(soListen)}};
    fdrListener->SetAcceptedClientsReserved(capAcceptedClients);
    fdrListener->UpdateFdrEvent();
    return retval;
@@ -156,7 +156,7 @@ void FdrTcpListener::OnFdrEvent_Handling(FdrEventFlag evs) {
       }
       fon9_LOG_INFO("TcpServer.Accepted"
                     "|dev=", ToHex{devAccepted},
-                    "|aId=", devAccepted->GetAcceptedClientId(),
+                    "|seq=", devAccepted->GetAcceptedClientSeq(),
                     strConnUID);
    } while (!this->IsDisposing());
 }

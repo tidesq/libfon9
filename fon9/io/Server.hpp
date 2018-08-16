@@ -41,5 +41,106 @@ public:
    }
 };
 
+class fon9_API DeviceListener;
+using DeviceListenerSP = intrusive_ptr<DeviceListener>;
+
+/// \ingroup io
+/// 由 DeviceServer/DeviceListener 接受連線之後, 填入 DeviceAcceptedClient 的序號.
+/// 序號會回收再利用.
+using DeviceAcceptedClientSeq = uint64_t;
+
+/// \ingroup io
+/// 透過 DeviceServer 連入的 Device 基底.
+/// - 遠端連入後建立的對應 Device.
+/// - 一旦斷線(LinkBroken, LinkError, Close...):
+///   - 觸發 Dispose 最終會刪除對應的 Device.
+///   - 告知 Listener 移除 this.
+class fon9_API DeviceAcceptedClient : public Device {
+   fon9_NON_COPY_NON_MOVE(DeviceAcceptedClient);
+   using base = Device;
+
+   friend DeviceListener;
+   DeviceAcceptedClientSeq AcceptedClientSeq_{0};
+
+protected:
+   /// DeviceAcceptedClient 不可能執行到這兒, 因為是被動接受連線,
+   /// 沒有「重新開啟」的操作, 所以這裡 do nothing.
+   virtual void OpImpl_Reopen() override;
+
+   /// 僅能在尚未 LinkReady 時執行, 一旦 LinkReady 就不會做任何事情!
+   /// 在 Server 接受連線後, 會將 Device 設定好, 所以這裡的參數為 Server 提供的 deviceId.
+   virtual void OpImpl_Open(std::string deviceId) override;
+
+   /// 判斷: 如果是斷線, 則 this->Owner_->RemoveAcceptedClient(*this);
+   virtual void OpImpl_StateChanged(const StateChangedArgs& e) override;
+
+public:
+   const DeviceListenerSP  Owner_;
+   DeviceAcceptedClient(DeviceListenerSP owner, SessionSP ses, ManagerSP mgr, const DeviceOptions* optsDefault)
+      : base(std::move(ses), std::move(mgr), Style::AcceptedClient, optsDefault)
+      , Owner_{std::move(owner)} {
+   }
+   DeviceAcceptedClientSeq GetAcceptedClientSeq() const {
+      return this->AcceptedClientSeq_;
+   }
+};
+
+fon9_WARN_DISABLE_PADDING;
+/// \ingroup io
+/// 各類 Listener(例如: TcpListener) 的基底, 負責管理 DeviceAcceptedClient.
+class fon9_API DeviceListener : public intrusive_ref_counter<DeviceListener> {
+   fon9_NON_COPY_NON_MOVE(DeviceListener);
+   friend DeviceAcceptedClient;
+
+   bool  IsDisposing_{false};
+
+   // 因為不確定: std::vector<DeviceAcceptedClientSP> 是否能最佳化.
+   // - 例如: erase(iter); 只用 memmove(); 就足夠.
+   // - 所以, 自行呼叫:
+   //   - intrusive_ptr_add_ref(): 在 AddAcceptedClient(); 之後呼叫.
+   //   - intrusive_ptr_release(): 在 Dispose(); 及 RemoveAcceptedClient(); 呼叫
+   using AcceptedClientsImpl = std::vector<DeviceAcceptedClient*>;
+   static AcceptedClientsImpl::iterator FindAcceptedClients(AcceptedClientsImpl& devs, DeviceAcceptedClientSeq seq);
+
+   using AcceptedClients = MustLock<AcceptedClientsImpl>;
+   mutable AcceptedClients  AcceptedClients_;
+
+   void RemoveAcceptedClient(DeviceAcceptedClient& devAccepted);
+   
+   /// acceptedClientSeqAndOthers = "seq cause...";
+   /// 返回時 acceptedClientSeqAndOthers->begin() 會指向 seq 之後的第1個位置.
+   DeviceSP GetAcceptedClient(StrView* acceptedClientSeqAndOthers);
+
+   virtual void OnListener_Dispose() = 0;
+
+protected:
+   void AddAcceptedClient(DeviceServer& server, DeviceAcceptedClient& devAccepted, StrView connId);
+   void SetAcceptedClientsReserved(size_t capacity) {
+      if (capacity) {
+         AcceptedClients::Locker devs{this->AcceptedClients_};
+         devs->reserve(capacity);
+      }
+   }
+
+public:
+   DeviceListener() {
+   }
+   virtual ~DeviceListener();
+
+   void Dispose(std::string cause);
+   bool IsDisposing() const {
+      return this->IsDisposing_;
+   }
+
+   size_t GetConnectionCount() const {
+      AcceptedClients::Locker devs{this->AcceptedClients_};
+      return devs->size();
+   }
+
+   void OpImpl_CloseAcceptedClient(StrView acceptedClientSeqAndOthers);
+   void OpImpl_LingerCloseAcceptedClient(StrView acceptedClientSeqAndOthers);
+};
+fon9_WARN_POP;
+
 } } // namespaces
 #endif//__fon9_io_Server_hpp__

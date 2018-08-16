@@ -233,7 +233,7 @@ e.g.
          std::cout << dres << std::endl;
    }
    dev->AsyncDispose("quit");
-   // 等候 AsyncDispose() 執行完畢.
+   // 等候 dev->AsyncDispose("quit") 執行完畢.
    dev->WaitGetDeviceId();
    // wait all AcceptedClient dispose
    while (mgr->use_count() != 2) // mgr(+1), dev->Manager_(+1)

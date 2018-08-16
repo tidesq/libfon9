@@ -14,7 +14,7 @@ class IocpTcpListener;
 using IocpTcpServer = TcpServerBase<IocpTcpListener, IocpServiceSP>;
 using IocpTcpServerSP = DeviceSPT<IocpTcpServer>;
 
-class fon9_API IocpTcpListener : public TcpListenerBase, public IocpHandler {
+class fon9_API IocpTcpListener : public DeviceListener, public IocpHandler {
    fon9_NON_COPY_NON_MOVE(IocpTcpListener);
    class AcceptedClient;
 
@@ -32,14 +32,17 @@ class fon9_API IocpTcpListener : public TcpListenerBase, public IocpHandler {
    void ResetupAccepter();
    bool SetupAccepter(SocketResult& soRes);
    virtual void OnListener_Dispose() override;
-   virtual void OnTcpServer_OnCommonTimer() override;
+   
+   
+   friend IocpTcpServer;
+   /// 必須啟動 dev.CommonTimerRunAfter(); 才會有此事件.
+   void OnTcpServer_OnCommonTimer();
 
    IocpTcpListener(IocpServiceSP&& iosv, IocpTcpServerSP&& server, Socket&& soListen);
 
 public:
    const IocpTcpServerSP   Server_;
-   static ListenerSP CreateListener(IocpTcpServerSP server, SocketResult& soRes);
-
+   static DeviceListenerSP CreateListener(IocpTcpServerSP server, SocketResult& soRes);
 };
 
 } } // namespaces

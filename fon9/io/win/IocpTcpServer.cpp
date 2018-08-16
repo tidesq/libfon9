@@ -3,17 +3,17 @@
 #include "fon9/io/win/IocpTcpServer.hpp"
 
 namespace fon9 { namespace io {
-fon9_WARN_DISABLE_PADDING;
 
-class IocpTcpListener::AcceptedClient : public AcceptedClientDeviceBase, public IocpSocket {
+fon9_WARN_DISABLE_PADDING;
+class IocpTcpListener::AcceptedClient : public DeviceAcceptedClient, public IocpSocket {
    fon9_NON_COPY_NON_MOVE(AcceptedClient);
-   using base = AcceptedClientDeviceBase;
+   using base = DeviceAcceptedClient;
 
    virtual unsigned IocpSocketAddRef() override {
-      return intrusive_ptr_add_ref(static_cast<AcceptedClientDeviceBase*>(this));
+      return intrusive_ptr_add_ref(static_cast<DeviceAcceptedClient*>(this));
    }
    virtual unsigned IocpSocketReleaseRef() override {
-      return intrusive_ptr_release(static_cast<AcceptedClientDeviceBase*>(this));
+      return intrusive_ptr_release(static_cast<DeviceAcceptedClient*>(this));
    }
 
    virtual void OnIocpSocket_Error(OVERLAPPED* lpOverlapped, DWORD eno) override {
@@ -54,7 +54,7 @@ public:
       , IocpSocket(owner.IocpService_, std::move(soAccepted), soRes) {
    }
 
-   using Impl = DeviceImpl_DeviceStartSend<AcceptedClientWithSend<AcceptedClient>, IocpSocket>;
+   using Impl = DeviceImpl_DeviceStartSend<DeviceAcceptedClientWithSend<AcceptedClient>, IocpSocket>;
 };
 
 //--------------------------------------------------------------------------//
@@ -65,11 +65,11 @@ IocpTcpListener::IocpTcpListener(IocpServiceSP&& iosv, IocpTcpServerSP&& server,
    , ListenSocket_{std::move(soListen)} {
 }
 
-ListenerSP IocpTcpListener::CreateListener(IocpTcpServerSP server, SocketResult& soRes) {
+DeviceListenerSP IocpTcpListener::CreateListener(IocpTcpServerSP server, SocketResult& soRes) {
    const SocketServerConfig& cfg = server->Config_;
    Socket   soListen;
    if (!cfg.CreateListenSocket(soListen, soRes))
-      return ListenerSP{};
+      return DeviceListenerSP{};
    
    IocpServiceSP  iosv = server->IoServiceSP_;
    size_t         capAcceptedClients{0};
@@ -83,19 +83,19 @@ ListenerSP IocpTcpListener::CreateListener(IocpTcpServerSP server, SocketResult&
          capAcceptedClients = (iosvArgs.Capacity_ += 4);
       iosv = IocpService::MakeService(iosvArgs, thrName, soRes);
       if (!iosv)
-         return ListenerSP{};
+         return DeviceListenerSP{};
    }
    IocpTcpListener*  iocpListener;
-   ListenerSP retval{iocpListener = new IocpTcpListener{std::move(iosv), std::move(server), std::move(soListen)}};
-   auto       resAttach = iocpListener->IocpAttach(iocpListener->ListenSocket_.GetSocketHandle());
+   DeviceListenerSP  retval{iocpListener = new IocpTcpListener{std::move(iosv), std::move(server), std::move(soListen)}};
+   auto              resAttach = iocpListener->IocpAttach(iocpListener->ListenSocket_.GetSocketHandle());
    if (resAttach.IsError()) {
       soRes = SocketResult{"IocpAttach", resAttach.GetError()};
-      return ListenerSP{};
+      return DeviceListenerSP{};
    }
    iocpListener->SetAcceptedClientsReserved(capAcceptedClients);
    if (iocpListener->SetupAccepter(soRes))
       return retval;
-   return ListenerSP{};
+   return DeviceListenerSP{};
 }
 
 //--------------------------------------------------------------------------//
@@ -210,7 +210,7 @@ void IocpTcpListener::OnIocp_Done(OVERLAPPED* lpOverlapped, DWORD bytesTransfere
    else
       fon9_LOG_INFO("TcpServer.Accepted"
                     "|dev=", ToHex{devAccepted},
-                    "|aId=", devAccepted->GetAcceptedClientId(),
+                    "|seq=", devAccepted->GetAcceptedClientSeq(),
                     "|soAccepted=", soAccepted, strConnUID);
 
    this->ClientSocket_.Close();
@@ -229,6 +229,6 @@ void IocpTcpListener::OnTcpServer_OnCommonTimer() {
    if (!this->ClientSocket_.IsSocketReady() && this->Server_->OpImpl_GetState() == State::Listening)
       this->ResetupAccepter();
 }
-
 fon9_WARN_POP;
+
 } } // namespaces
