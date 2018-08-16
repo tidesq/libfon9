@@ -364,18 +364,21 @@ struct SeedSession::SetSeedFields : public Request {
          this->OnError(res.OpResult_);
          return;
       }
-      StrView fldvals{&this->FieldValues_};
+      StrView       fldvals{&this->FieldValues_};
+      RevBufferList rbuf{128};
       while (!fldvals.empty()) {
          StrView val = SbrFetchField(fldvals, ',');
          StrView fldName = StrFetchTrim(val, '=');
          auto    fld = res.Tab_->Fields_.Get(fldName);
-         if (fld == nullptr) {
-            this->Session_->OutputSeedFields(this, res, *wr, ToStrView(fldName.ToString("Field not found:")));
-            return;
+         if (fld == nullptr)
+            RevPrint(rbuf, "fieldName=", fldName, "|err=field not found\n");
+         else {
+            seed::OpResult r = fld->StrToCell(*wr, StrRemoveHeadTailQuotes(val));
+            if (r != seed::OpResult::no_error)
+               RevPrint(rbuf, "fieldName=", fldName, "|err=StrToCell():", r, ':', seed::GetOpResultMessage(r), '\n');
          }
-         fld->StrToCell(*wr, StrRemoveHeadTailQuotes(val));
       }
-      this->Session_->OutputSeedFields(this, res, *wr, StrView{});
+      this->Session_->OutputSeedFields(this, res, *wr, ToStrView(BufferTo<std::string>(rbuf.MoveOut())));
    }
 };
 
