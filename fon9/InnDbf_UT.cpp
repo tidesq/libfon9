@@ -342,9 +342,9 @@ void TestInnDbf() {
       std::cout << "[TEST ] LinkTable() * N";
       for (unsigned tableId = 2; tableId < 1000; ++tableId) {
          dbf1.Dbf_->DelinkTable(*dbf1.UserTable_);
-         fon9::RevBufferFixedSize<128> tableName;
-         fon9::RevPrint(tableName, "Table", tableId, fon9::FmtDef{"08"});
-         dbf1.Dbf_->LinkTable(fon9::StrView(tableName.GetCurrent(), tableName.GetMemEnd()), *dbf1.UserTable_, kMinUserRoomSize);
+         fon9::RevBufferFixedSize<128> rbufTableName;
+         fon9::RevPrint(rbufTableName, "Table", tableId, fon9::FmtDef{"08"});
+         dbf1.Dbf_->LinkTable(ToStrView(rbufTableName), *dbf1.UserTable_, kMinUserRoomSize);
       }
       std::cout << "\r" "[OK   ]" << std::endl;
 

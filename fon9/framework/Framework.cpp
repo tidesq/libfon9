@@ -12,6 +12,9 @@
 
 #if !defined(fon9_WINDOWS)
 #include <sys/mman.h> // mlockall()
+bool SetCurrentDirectory(const char* path) {
+   return chdir(path) == 0;
+}
 #endif
 
 namespace fon9 {
@@ -20,7 +23,30 @@ Framework::~Framework() {
    this->Dispose();
 }
 
+static void RaiseInitializeError(std::string err) {
+   fon9_LOG_FATAL(err);
+   Raise<std::runtime_error>(err);
+}
+static void LogSysEnv(seed::SysEnvItemSP item) {
+   if (item)
+      fon9_LOG_IMP("SysEnv|", item->Name_, "=", item->Value_);
+}
+
 void Framework::Initialize(int argc, char** argv) {
+   auto workDir = GetCmdArg(argc, argv, CmdArgDef{
+      StrView{"WorkDir"}, //Name
+      StrView{},          //DefaultValue
+      StrView{"w"},       //ArgShort_
+      StrView{"workdir"}, //ArgLong_
+      nullptr,            //EnvName_
+      StrView{},          //Title_
+      StrView{}});        //Description_
+   if (!workDir.empty()) {
+      if (!SetCurrentDirectory(workDir.ToString().c_str()))
+         // 如果路徑設定失敗, 表示現在的執行環境不正確: 不可執行程式.
+         RaiseInitializeError(RevPrintTo<std::string>("SetCurrentDirectory(\"", workDir, "\")|err=", GetSysErrC()));
+   }
+
    this->Root_.reset(new seed::MaTree{"Services"});
 
    auto sysEnv = seed::SysEnv::Plant(this->Root_);
@@ -63,15 +89,14 @@ void Framework::Initialize(int argc, char** argv) {
       }
    }
 
-   if (auto hostId = cfgld.GetVariable("HostId")) {
+   #define fon9_kCSTR_HostId   "HostId"
+   if (auto hostId = cfgld.GetVariable(fon9_kCSTR_HostId)) {
       LocalHostId_ = StrTo(&hostId->Value_.Str_, 0u);
-      if (LocalHostId_ == 0) {
-         std::string err = RevPrintTo<std::string>("$HostId|err=Local $HostId cannot be zero|from=", hostId->From_);
-         fon9_LOG_FATAL(err);
-         Raise<std::runtime_error>(err);
-      }
-      fon9_LOG_INFO("LocalHostId=", LocalHostId_);
-      sysEnv->Add(new seed::SysEnvItem("HostId", RevPrintTo<std::string>(LocalHostId_), "Local HostId"));
+      if (LocalHostId_ == 0)
+         RaiseInitializeError(RevPrintTo<std::string>("$" fon9_kCSTR_HostId "=", hostId->Value_.Str_,
+                                                      "|err=Local $HostId cannot be zero"
+                                                      "|from=", hostId->From_));
+      sysEnv->Add(new seed::SysEnvItem(fon9_kCSTR_HostId, RevPrintTo<std::string>(LocalHostId_), "Local HostId"));
    }
 
    // Syncer=InnSyncerFile: syncOutFileName, syncInFileName, 100ms
@@ -119,6 +144,13 @@ void Framework::Initialize(int argc, char** argv) {
          sysEnv->Add(new seed::SysEnvItem(fon9_kCSTR_MemLock, "Y", MLOCK_cstr, std::move(desc)));
       }
    }
+
+   // 透過 log 紀錄基本的執行環境.
+   LogSysEnv(sysEnv->Get(fon9_kCSTR_SysEnvItem_ProcessId));
+   LogSysEnv(sysEnv->Get(fon9_kCSTR_SysEnvItem_CommandLine));
+   LogSysEnv(sysEnv->Get(fon9_kCSTR_SysEnvItem_ExecPath));
+   LogSysEnv(sysEnv->Get(fon9_kCSTR_SysEnvItem_ConfigPath));
+   LogSysEnv(sysEnv->Get(fon9_kCSTR_HostId));
 }
 
 void Framework::Start() {

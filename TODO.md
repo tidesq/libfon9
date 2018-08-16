@@ -21,8 +21,6 @@ libfon9 TODO list
 * DllManager
 * WebUI
 * Fon9Co
-  * 啟動時設定工作目錄 current dir: `-w dir` or `--workdir dir`.
-  * 將啟動時的「命令列參數」及「其他重要資訊」寫入 log.
   * Linux: to daemon.
   * Windows: install to service.
 

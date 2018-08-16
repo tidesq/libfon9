@@ -125,9 +125,7 @@ public:
       for (unsigned id = 0; id < threadCount;) {
          rbuf.Rewind();
          RevPrint(rbuf, thrName, '.', ++id);
-         this->ThreadPool_.emplace_back(&ThrRun,
-                                        std::string{rbuf.GetCurrent(), rbuf.GetMemEnd()},
-                                        this);
+         this->ThreadPool_.emplace_back(&ThrRun, rbuf.ToStrT<std::string>(), this);
       }
       this->ThreadPool_.shrink_to_fit();
    }

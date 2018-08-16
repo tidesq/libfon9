@@ -3,6 +3,7 @@
 #ifndef __fon9_buffer_RevBuffer_hpp__
 #define __fon9_buffer_RevBuffer_hpp__
 #include "fon9/Exception.hpp"
+#include "fon9/StrView.hpp"
 
 namespace fon9 {
 
@@ -68,6 +69,14 @@ public:
    void RewindEOS() {
       this->MemCurrent_ = this->MemEnd_;
       *(--this->MemCurrent_) = '\0';
+   }
+
+   inline friend StrView ToStrView(RevBufferFixedMem& rbuf) {
+      return StrView{rbuf.GetCurrent(), rbuf.GetMemEnd()};
+   }
+   template <class StrT>
+   StrT ToStrT() const {
+      return StrT{this->GetCurrent(), this->GetMemEnd()};
    }
 };
 /// \ingroup Buffer

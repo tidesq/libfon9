@@ -9,6 +9,9 @@
 #else
 #include <unistd.h>
 #define _getcwd   getcwd
+static inline pid_t GetCurrentProcessId() {
+   return getpid();
+}
 #endif
 
 namespace fon9 { namespace seed {
@@ -48,6 +51,10 @@ void SysEnv::Initialize(int argc, char** argv) {
    }
    this->Add(argc, argv, cwd);
    fon9_GCC_WARN_POP;
+
+   RevBufferFixedSize<128> rbuf;
+   RevPrint(rbuf, GetCurrentProcessId());
+   this->Add(new SysEnvItem{fon9_kCSTR_SysEnvItem_ProcessId, rbuf.ToStrT<std::string>()});
 }
 
 } } // namespaces

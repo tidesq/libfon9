@@ -28,6 +28,7 @@ void FixBug_use_std_thread(pthread_t* thread, void *(*start_routine) (void *)) {
 //--------------------------------------------------------------------------//
 
 static const char* AppBreakMsg_ = nullptr;
+
 #ifdef fon9_WINDOWS
 static BOOL WINAPI WindowsCtrlBreakHandler(DWORD dwCtrlType) {
    switch (dwCtrlType) {
@@ -42,12 +43,19 @@ static BOOL WINAPI WindowsCtrlBreakHandler(DWORD dwCtrlType) {
    freopen_s(&fstdin, "NUL:", "r", stdin);
    return TRUE;
 }
+static void SetupCtrlBreakHandler() {
+   SetConsoleCtrlHandler(&WindowsCtrlBreakHandler, TRUE);
+}
 #else
 #include <signal.h>
 static void UnixSignalTermHandler(int) {
    AppBreakMsg_ = "<Signal TERM>";
    if (!freopen("/dev/null", "r", stdin)) {
    }
+}
+static void SetupCtrlBreakHandler() {
+   signal(SIGTERM, &UnixSignalTermHandler);
+   signal(SIGINT, &UnixSignalTermHandler);
 }
 #endif
 
@@ -144,8 +152,7 @@ public:
       fon9::StrView  authz{};
       fon9::RevBufferFixedSize<1024> rbuf;
       fon9::RevPrint(rbuf, "console:", fon9::LocalHostId_);
-      return this->AuthUser(fon9::StrTrim(&authz), authc, fon9::StrView{passbuf, passlen},
-                            fon9::StrView{rbuf.GetCurrent(), rbuf.GetMemEnd()});
+      return this->AuthUser(fon9::StrTrim(&authz), authc, fon9::StrView{passbuf, passlen}, ToStrView(rbuf));
    }
 
    State RunLoop() {
@@ -159,17 +166,12 @@ public:
 //--------------------------------------------------------------------------//
 
 int main(int argc, char** argv) {
-#if defined(_MSC_VER) && defined(_DEBUG)
-   _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-   //_CrtSetBreakAlloc(176);
-#endif
+   #if defined(_MSC_VER) && defined(_DEBUG)
+      _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+      //_CrtSetBreakAlloc(176);
+   #endif
 
-#ifdef fon9_WINDOWS
-   SetConsoleCtrlHandler(&WindowsCtrlBreakHandler, TRUE);
-#else
-   signal(SIGTERM, &UnixSignalTermHandler);
-   signal(SIGINT, &UnixSignalTermHandler);
-#endif
+   SetupCtrlBreakHandler();
 
    fon9::Framework   fon9sys;
    fon9sys.Initialize(argc, argv);

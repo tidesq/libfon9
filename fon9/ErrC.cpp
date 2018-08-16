@@ -35,7 +35,7 @@ public:
       }
       RevBufferFixedSize<1024> rbuf;
       RevPrint(rbuf, "WinERR=", static_cast<unsigned long>(_Errcode));
-      return std::string(rbuf.GetCurrent(), rbuf.GetUsedSize());
+      return rbuf.ToStrT<std::string>();
    }
 
    virtual std::error_condition default_error_condition(int _Errval) const noexcept {

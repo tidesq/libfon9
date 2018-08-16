@@ -18,6 +18,7 @@ struct fon9_API Framework {
    ~Framework();
 
    /// create system default object.
+   /// - 設定工作目錄:  `-w dir` or `--workdir dir`
    /// - ConfigPath_ = `-c cfgpath` or `--cfg cfgpath` or `getenv("fon9cfg");` or default="fon9cfg"
    /// - 然後載入設定: fon9local.cfg, fon9common.cfg; 設定內容包含:
    ///   - LogFileFmt  如果沒設定, log 就輸出在 console.

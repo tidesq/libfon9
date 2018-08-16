@@ -61,8 +61,9 @@ public:
    }
 
    #define fon9_kCSTR_SysEnvItem_ConfigPath   "ConfigPath"    // config 檔案的預設路徑.
-   #define fon9_kCSTR_SysEnvItem_CommandLine  "CommandLine"   // 程式啟動時的參數: argv[0] + " " + argv[1]...
-   #define fon9_kCSTR_SysEnvItem_ExecPath     "ExecPath"      // 程式啟動時的路徑.
+   #define fon9_kCSTR_SysEnvItem_CommandLine  "CommandLine"   // Initialize() 時的參數: argv[0] + " " + argv[1]...
+   #define fon9_kCSTR_SysEnvItem_ExecPath     "ExecPath"      // Initialize() 時的路徑.
+   #define fon9_kCSTR_SysEnvItem_ProcessId    "ProcessId"
    /// 加入:
    /// - fon9_kCSTR_SysEnvItem_CommandLine: 程式啟動時的參數: argv[0] + " " + argv[1]...
    /// - fon9_kCSTR_SysEnvItem_ExecPath:    getcwd()
