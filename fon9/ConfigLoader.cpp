@@ -228,7 +228,7 @@ struct ConfigLoader::Appender {
       for (;;) {
          const char*  plnEnd = this->CfgRemain_.Find('\n');
          StrView      lnpr{plnEnd ? StrView{this->CfgRemain_.begin(), plnEnd} : this->CfgRemain_};
-         lnpr = SbrFetchField(StrTrimHead(&lnpr), '#', StrBrArg::Quotation_); // remove remark.
+         lnpr = SbrFetchFieldNoTrim(StrTrimHead(&lnpr), '#', StrBrArg::Quotation_); // remove remark.
          // lnpr = 一行: 移除開頭空白, 移除尾端註解(僅考慮「引號」, 不考慮括號, 因為括號可能跨行, 引號不會跨行)
          // 此時 this->CfgRemain_.begin() 指向此行的開始位置, 暫時不能動它, 因為它是計算 ColNo 的基礎.
          BeforeAppendResult appRes;
@@ -270,7 +270,7 @@ struct ConfigLoader::Appender {
          }
          else { // ${var} 這種用法可以連結字串: ${var}Tail 避免 $varTail 是另一個變數的問題.
             lnpr.SetBegin(pnBeg + 2);
-            inVar = SbrFetchField(lnpr, '}');
+            inVar = SbrFetchFieldNoTrim(lnpr, '}');
             if (inVar.end() == lnpr.begin()) {
                this->ColNo_ += static_cast<ColCount>(pnBeg + 1 - prvBeg); // 指向 '{' 的位置.
                Raise<Err>("ConfigLoader.ExpandLine|err=Bad variable expand, no corresponding closing '}' found.",
@@ -375,7 +375,7 @@ ConfigLoader::LineCount ConfigLoader::Append(LineFromSP from, const StrView& cfg
          else {
             const char* pBrOpen = lnpr.begin();
             this->CfgRemain_.SetBegin(pBrOpen + 1);
-            lnpr = SbrFetchField(this->CfgRemain_, '}', CfgBrPair); // CfgBrPair = 考慮行尾的 # 不對稱右括號 } 註解.
+            lnpr = SbrFetchFieldNoTrim(this->CfgRemain_, '}', CfgBrPair); // CfgBrPair = 考慮行尾的 # 不對稱右括號 } 註解.
             // lnpr=大括號內的文字, this->CfgRemain_.begi()=右大括號+1.
             if (lnpr.end() == this->CfgRemain_.begin()) {
                this->ColNo_ += static_cast<ColCount>(pBrOpen - plnbeg); // 指向 '{' 的位置.

@@ -186,8 +186,9 @@ e.g.
    IoServiceSP iosv;
    if (argc >= 4) {
       fon9::io::IoServiceArgs iosvArgs;
-      if (const char* perr = iosvArgs.Parse(fon9::StrView_cstr(argv[3]))) {
-         std::cout << "IoServiceArgs.Parse|err@:" << perr << std::endl;
+      fon9::RevBufferList     rbuf{128};
+      if (!fon9::ParseConfig(iosvArgs, fon9::StrView_cstr(argv[3]), rbuf)) {
+         std::cout << "IoServiceArgs.Parse|" << fon9::BufferTo<std::string>(rbuf.MoveOut()) << std::endl;
          return 3;
       }
       IoService::MakeResult   err;

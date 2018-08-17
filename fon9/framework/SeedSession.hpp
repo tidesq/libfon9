@@ -109,7 +109,7 @@ protected:
 private:
    struct StateImpl {
       State       State_{State::None};
-      std::string CommandLines_;
+      std::string PendingCommandLines_;
       RequestSP   CurrRequest_;
       std::string Prompt_;
    };

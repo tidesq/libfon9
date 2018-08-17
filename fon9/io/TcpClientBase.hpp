@@ -22,8 +22,8 @@ class fon9_API TcpClientBase : public Device {
    using base = Device;
 
 protected:
-   template<class DeviceT>
-   friend bool OpThr_ParseDeviceConfig(DeviceT& dev, StrView cfgstr, FnOnTagValue fnUnknownField);
+   template <class DeviceT>
+   friend bool OpThr_DeviceParseConfig(DeviceT& dev, StrView cfgstr);
    SocketClientConfig   Config_;
 
    size_t               NextAddrIndex_;

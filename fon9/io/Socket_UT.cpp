@@ -48,20 +48,29 @@ int main() {
    fon9::StrView                 res;
    fon9::io::SocketClientConfig  clicfg;
    clicfg.SetDefaults();
-#define cstrDN "www.google.com:https, www.yahoo.com:http, 192.168.1.1:6666"
-   res = clicfg.ParseConfig("192.168.1.3:5555|Timeout=99|DN=" cstrDN
-                            "|TcpNoDelay=N|SNDBUF=1234|RCVBUF=5678|ReuseAddr=Y|ReusePort=Y|Linger=N|KeepAlive=8"
-                            "|MyTag=MyValue|Bind=192.168.1.4:29999"
-                            "|ERR-TEST",
-                            [](fon9::StrView tag, fon9::StrView value) {
-      return(tag == "MyTag" && value == "MyValue");
-   });
-   if (res != "ERR-TEST") {
-      std::cout << "|@:" << res.ToString() << "\r[ERROR]" << std::endl;
+   #define cstrDN "www.google.com:https, www.yahoo.com:http, 192.168.1.1:6666"
+   struct CliParser : public fon9::io::SocketClientConfig::Parser {
+      fon9_NON_COPY_NON_MOVE(CliParser);
+      using base = fon9::io::SocketClientConfig::Parser;
+      using base::base;
+      Result OnTagValue(fon9::StrView tag, fon9::StrView& value) override {
+         if (tag == "MyTag" && value == "MyValue")
+            return Result::Success;
+         return base::OnTagValue(tag, value);
+      }
+   };
+   fon9::StrView cfgstr{"192.168.1.3:5555|Timeout=99|DN=" cstrDN
+      "|TcpNoDelay=N|SNDBUF=1234|RCVBUF=5678|ReuseAddr=Y|ReusePort=Y|Linger=N|KeepAlive=8"
+      "|MyTag=MyValue|Bind=192.168.1.4:29999"
+      "|ERR-TEST"};
+   if (CliParser{clicfg}.Parse(cfgstr) != fon9::ConfigParser::Result::EUnknownTag
+       || cfgstr != "ERR-TEST") {
+      std::cout << "|@:" << cfgstr.ToString() << "\r[ERROR]" << std::endl;
       abort();
    }
-   const char* cstrErrFieldName;
+   
    //----------------------------------------
+   const char* cstrErrFieldName;
    #define CHECK_VALUE(cfg, fld, value) \
       if (cfg.fld != value) { \
          cstrErrFieldName = #fld; \
@@ -100,21 +109,33 @@ __ERROR_cstrErrFieldName:
    std::cout << "[TEST ] SocketServerConfig::ParseConfig()";
    fon9::io::SocketServerConfig  sercfg;
    sercfg.SetDefaults();
-   res = sercfg.ParseConfig("[::1]9999|Remote=[2406:2000:ec:815::3]:8888|ListenBacklog=100|Capacity=10240|ThreadCount=99|Wait=Busy|Cpus=1,2,3"
-                            "|ClientOptions="
-                              "{TcpNoDelay=N|SNDBUF=1234|RCVBUF=5678|ReuseAddr=Y|ReusePort=Y|Linger=N|KeepAlive=8"
-                              "|MyClientTag=MyClientValue}"
-                            "|MyServerTag=MyServerValue|ERR-TEST",
-                            [](fon9::StrView tag, fon9::StrView value) {
-      return(tag == "MyServerTag" && value == "MyServerValue");
-   },
-                            [](fon9::StrView tag, fon9::StrView value) {
-      return(tag == "MyClientTag" && value == "MyClientValue");
-   });
-   if (res != "ERR-TEST") {
-      std::cout << "|@:" << res.ToString() << "\r[ERROR]" << std::endl;
+   struct SerParser : public fon9::io::SocketServerConfig::Parser {
+      fon9_NON_COPY_NON_MOVE(SerParser);
+      using base = fon9::io::SocketServerConfig::Parser;
+      using base::base;
+      Result OnTagValue(fon9::StrView tag, fon9::StrView& value) override {
+         if (tag == "MyServerTag" && value == "MyServerValue")
+            return Result::Success;
+         return base::OnTagValue(tag, value);
+      }
+      Result OnTagValueClient(fon9::StrView tag, fon9::StrView& value) override {
+         if (tag == "MyClientTag" && value == "MyClientValue")
+            return Result::Success;
+         return base::OnTagValueClient(tag, value);
+      }
+   };
+   cfgstr = "[::1]9999|Remote=[2406:2000:ec:815::3]:8888|ListenBacklog=100"
+      "|Capacity=10240|ThreadCount=99|Wait=Busy|Cpus=1,2,3"
+      "|ClientOptions="
+         "{TcpNoDelay=N|SNDBUF=1234|RCVBUF=5678|ReuseAddr=Y|ReusePort=Y|Linger=N|KeepAlive=8"
+         "|MyClientTag=MyClientValue}"
+      "|MyServerTag=MyServerValue|ERR-TEST";
+   if (SerParser{sercfg}.Parse(cfgstr) != fon9::ConfigParser::Result::EUnknownTag
+       || cfgstr != "ERR-TEST") {
+      std::cout << "|@:" << cfgstr.ToString() << "\r[ERROR]" << std::endl;
       abort();
    }
+
    fon9::io::IoServiceArgs::CpuAffinity   cpus{1,2,3};
    CHECK_VALUE(sercfg, ServiceArgs_.CpuAffinity_, cpus);
    CHECK_VALUE(sercfg, ServiceArgs_.ThreadCount_, 99);

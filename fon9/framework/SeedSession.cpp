@@ -54,7 +54,7 @@ SeedSession::State SeedSession::Logout() {
 void SeedSession::EmitAuthEvent(State newst, DcQueue&& msg) {
    St::Locker st{this->St_};
    assert(!st->CurrRequest_);
-   st->CommandLines_.clear();
+   st->PendingCommandLines_.clear();
    if (newst == State::UserReady && st->State_ == State::Logouting)
       this->OnAuthEventInLocking(st->State_ = State::UserExit, DcQueueFixedMem{});
    else
@@ -167,9 +167,9 @@ SeedSession::State SeedSession::FeedLine(StrView cmdln) {
    if (st->State_ != State::UserReady)
       return st->State_;
    if (st->CurrRequest_) {
-      if (!st->CommandLines_.empty() && st->CommandLines_.back() != '\n')
-         st->CommandLines_.push_back('\n');
-      cmdln.AppendTo(st->CommandLines_);
+      if (!st->PendingCommandLines_.empty() && st->PendingCommandLines_.back() != '\n')
+         st->PendingCommandLines_.push_back('\n');
+      cmdln.AppendTo(st->PendingCommandLines_);
       return st->State_;
    }
    this->ExecuteCommand(st, cmdln);
@@ -197,11 +197,11 @@ void SeedSession::EmitRequestDone(RequestSP req, DcQueue&& extmsg) {
       this->ClearLogout(st);
       return;
    }
-   if (st->CommandLines_.empty())
+   if (st->PendingCommandLines_.empty())
       return;
-   StrView full{&st->CommandLines_};
+   StrView full{&st->PendingCommandLines_};
    StrView cmdln = StrFetchNoTrim(full, '\n');
-   st->CommandLines_.erase(0, st->CommandLines_.size() - full.size());
+   st->PendingCommandLines_.erase(0, st->PendingCommandLines_.size() - full.size());
    this->ExecuteCommand(st, cmdln);
 }
 
@@ -218,7 +218,7 @@ void SeedSession::ExecuteCommand(St::Locker& st, StrView cmdln) {
 }
 
 SeedSession::RequestSP SeedSession::MakeRequest(StrView cmdln) {
-   StrView cmd = SbrFetchField(cmdln, ' ');
+   StrView cmd = SbrFetchFieldNoTrim(cmdln, ' ');
    StrTrimHead(&cmdln);
    switch (cmd.Get1st()) {
    case '`':
@@ -367,13 +367,13 @@ struct SeedSession::SetSeedFields : public Request {
       StrView       fldvals{&this->FieldValues_};
       RevBufferList rbuf{128};
       while (!fldvals.empty()) {
-         StrView val = SbrFetchField(fldvals, ',');
+         StrView val = SbrFetchFieldNoTrim(fldvals, ',');
          StrView fldName = StrFetchTrim(val, '=');
          auto    fld = res.Tab_->Fields_.Get(fldName);
          if (fld == nullptr)
             RevPrint(rbuf, "fieldName=", fldName, "|err=field not found\n");
          else {
-            seed::OpResult r = fld->StrToCell(*wr, StrRemoveHeadTailQuotes(val));
+            seed::OpResult r = fld->StrToCell(*wr, StrNoTrimRemoveQuotes(val));
             if (r != seed::OpResult::no_error)
                RevPrint(rbuf, "fieldName=", fldName, "|err=StrToCell():", r, ':', seed::GetOpResultMessage(r), '\n');
          }

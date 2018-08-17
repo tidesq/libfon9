@@ -269,11 +269,8 @@ protected:
    /// \copydoc DeviceCommand()
    virtual std::string OnDevice_Command(StrView cmd, StrView param);
 
-   /// - 解析 propList(tag=value) 然後呼叫 OpImpl_SetProperty(tag,value);
-   /// - 一旦發生錯誤, 就不會繼續解析之後的內容.
-   /// - 傳回 retval.empty() 表示成功.
-   std::string OpImpl_SetPropertyList(StrView propList);
-   virtual std::string OpImpl_SetProperty(StrView tag, StrView value);
+   /// 可能透過 WaitSetProperty() 呼叫到此處.
+   virtual ConfigParser::Result OpImpl_SetProperty(StrView tag, StrView& value);
 
    void SetNoRecvEvent() {
       this->Options_.Flags_ |= DeviceFlag::NoRecvEvent;

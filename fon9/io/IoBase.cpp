@@ -39,24 +39,25 @@ fon9_API StrView GetStateStr(State st) {
 
 //--------------------------------------------------------------------------//
 
-static std::string ParseTimeIntervalToMS(StrView value, uint32_t& res) {
-   TimeInterval ti{StrTo(value, TimeInterval{})};
+static ConfigParser::Result ParseTimeIntervalToMS(StrView& value, uint32_t& res) {
+   TimeInterval ti{StrTo(&value, TimeInterval{})};
    res = (ti.GetOrigValue() <= 0 ? 0u : static_cast<uint32_t>((ti * 1000).GetIntPart()));
-   return std::string{};
+   return ConfigParser::Result::Success;
 }
-std::string DeviceOptions::ParseOption(StrView tag, StrView value) {
+
+ConfigParser::Result DeviceOptions::OnTagValue(StrView tag, StrView& value) {
    if (tag == "SendASAP") {
       if (toupper(value.Get1st()) == 'N')
          this->Flags_ -= DeviceFlag::SendASAP;
       else
          this->Flags_ |= DeviceFlag::SendASAP;
-      return std::string();
+      return ConfigParser::Result::Success;
    }
    if (tag == "RetryInterval")
       return ParseTimeIntervalToMS(value, this->LinkErrorRetryInterval_);
    if (tag == "ReopenInterval")
       return ParseTimeIntervalToMS(value, this->LinkBrokenReopenInterval_);
-   return tag.ToString("unknown device option name:");
+   return ConfigParser::Result::EUnknownTag;
 }
 
 } } // namespaces

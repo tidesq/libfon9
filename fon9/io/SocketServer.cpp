@@ -23,35 +23,52 @@ void SocketServerConfig::SetDefaults() {
    this->ServiceArgs_.HowWait_ = HowWait::Block;
 }
 
-StrView SocketServerConfig::ParseConfig(StrView cfgstr, FnOnTagValue fnUnknownField, FnOnTagValue fnClientOptionsUnknownField) {
-   StrView clires;
-   StrView res = this->ListenConfig_.ParseConfigListen(cfgstr,
-   [this, &fnUnknownField, &fnClientOptionsUnknownField, &clires](StrView tag, StrView value) {
-      if (tag == "ListenBacklog") {
-         if ((this->ListenBacklog_ = StrTo(value, int{5})) <= 0)
-            this->ListenBacklog_ = 5;
-      }
-      else if (tag == "ClientOptions") { // value = "{AcceptedSocketOptions_|AcceptedClientOptions_}"
-         StrView cres = this->AcceptedSocketOptions_.ParseConfig(SbrFetchInside(value),
-         [this, &fnClientOptionsUnknownField](StrView atag, StrView avalue) {
-            if (fnClientOptionsUnknownField(atag, avalue))
-               return true;
-            return this->AcceptedClientOptions_.ParseOption(atag, avalue).empty();
-         });
-         if (clires.empty())
-            clires = cres;
-      }
-      else if (this->ServiceArgs_.FromTagValue(tag, value) == nullptr)
-         return true;
-      else
-         return (fnUnknownField && fnUnknownField(tag, value));
-      return true;
-   });
-   if (this->ServiceArgs_.ThreadCount_ <= 0)
-      this->ServiceArgs_.ThreadCount_ = GetDefaultServerThreadCount();
-   if (!res.empty())
+SocketServerConfig::Parser::~Parser() {
+   if (this->Owner_.ServiceArgs_.ThreadCount_ <= 0)
+      this->Owner_.ServiceArgs_.ThreadCount_ = GetDefaultServerThreadCount();
+}
+
+ConfigParser::Result SocketServerConfig::Parser::OnTagValue(StrView tag, StrView& value) {
+   if (tag == "ListenBacklog") {
+      if ((this->Owner_.ListenBacklog_ = StrTo(value, int{5})) <= 0)
+         this->Owner_.ListenBacklog_ = 5;
+   }
+   else if (tag == "ClientOptions") { // value = "{AcceptedSocketOptions_|AcceptedClientOptions_}"
+      struct ClientParser : public ConfigParser {
+         fon9_NON_COPY_NON_MOVE(ClientParser);
+         Parser& ParentParser_;
+         ClientParser(Parser& pparser) : ParentParser_(pparser) {
+         }
+         Result OnTagValue(StrView tag, StrView& value) override {
+            return this->ParentParser_.OnTagValueClient(tag, value);
+         }
+         bool OnErrorBreak(ErrorEventArgs& e) override {
+            return this->ParentParser_.OnErrorBreakClient(e);
+         }
+      };
+      value = SbrFetchInsideNoTrim(value);
+      return ClientParser{*this}.Parse(value);
+   }
+   else {
+      Result res = BaseParser::OnTagValue(tag, value);
+      if(res == Result::EUnknownTag)
+         if((res = this->Owner_.ServiceArgs_.OnTagValue(tag, value)) == Result::EUnknownTag)
+            return this->Owner_.ListenConfig_.OnTagValue(tag, value);
       return res;
-   return clires;
+   }
+   return Result::Success;
+}
+
+ConfigParser::Result SocketServerConfig::Parser::OnTagValueClient(StrView tag, StrView& value) {
+   Result res = this->Owner_.AcceptedClientOptions_.OnTagValue(tag, value);
+   if (res == Result::EUnknownTag)
+      return this->Owner_.AcceptedSocketOptions_.OnTagValue(tag, value);
+   return res;
+}
+
+bool SocketServerConfig::Parser::OnErrorBreakClient(ErrorEventArgs& e) {
+   (void)e;
+   return true;
 }
 
 bool SocketServerConfig::CreateListenSocket(Socket& soListen, SocketResult& soRes) const {

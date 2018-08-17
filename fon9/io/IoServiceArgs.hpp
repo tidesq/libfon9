@@ -2,7 +2,7 @@
 /// \author fonwinz@gmail.com
 #ifndef __fon9_io_IoServiceArgs_hpp__
 #define __fon9_io_IoServiceArgs_hpp__
-#include "fon9/StrView.hpp"
+#include "fon9/ConfigParser.hpp"
 
 fon9_BEFORE_INCLUDE_STD;
 #include <thread>
@@ -38,9 +38,6 @@ struct fon9_API IoServiceArgs {
    size_t   Capacity_{0};
 
    IoServiceArgs() = default;
-   IoServiceArgs(StrView args) {
-      this->Parse(args);
-   }
 
    int GetCpuAffinity(size_t threadPoolIndex) const {
       if (CpuAffinity_.empty())
@@ -55,10 +52,7 @@ struct fon9_API IoServiceArgs {
    /// Capacity    | >= 0
    /// Wait        | "Block" or "Busy" or "Yield"
    /// Cpus        | c0, c1, c2 ... 根據 thread pool index 依序選擇 c0 或 c1 或 c2...
-   const char* FromTagValue(StrView tag, StrView value);
-
-   /// 傳回發現錯誤的位置, nullptr 表示解析成功.
-   const char* Parse(StrView args);
+   ConfigParser::Result OnTagValue(StrView tag, StrView& value);
 };
 
 /// \ingroup io

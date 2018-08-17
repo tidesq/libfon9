@@ -195,28 +195,32 @@ std::string Device::WaitGetDeviceInfo() {
    return res;
 }
 
-std::string Device::WaitSetProperty(StrView strTagValue) {
-   CountDownLatch waiter{1};
-   std::string    res;
-   this->OpQueue_.AddTask(DeviceAsyncOp{[&](Device& dev) {
-      res = dev.OpImpl_SetPropertyList(strTagValue);
-      waiter.ForceWakeUp();
+std::string Device::WaitSetProperty(StrView strTagValueList) {
+   struct Parser : public ConfigParser {
+      fon9_NON_COPY_NON_MOVE(Parser);
+      Device&        Device_;
+      CountDownLatch Waiter_{1};
+      RevBufferList  RBuf_{128};
+      Parser(Device& dev) : Device_(dev) {}
+      Result OnTagValue(StrView tag, StrView& value) override {
+         return this->Device_.OpImpl_SetProperty(tag, value);
+      }
+      bool OnErrorBreak(ErrorEventArgs& e) override {
+         RevPrint(this->RBuf_, "err=", e, '\n');
+         return false;
+      }
+   };
+   Parser pr{*this};
+   this->OpQueue_.AddTask(DeviceAsyncOp{[&](Device&) {
+      pr.Parse(strTagValueList);
+      pr.Waiter_.ForceWakeUp();
    }});
-   waiter.Wait();
-   return res;
-}
-std::string Device::OpImpl_SetPropertyList(StrView propList) {
-   StrView tag, value;
-   while (StrFetchTagValue(propList, tag, value)) {
-      std::string res = this->OpImpl_SetProperty(tag, value);
-      if (!res.empty())
-         return res;
-   }
-   return std::string();
+   pr.Waiter_.Wait();
+   return BufferTo<std::string>(pr.RBuf_.MoveOut());
 }
 
-std::string Device::OpImpl_SetProperty(StrView tag, StrView value) {
-   return this->Options_.ParseOption(tag, value);
+ConfigParser::Result Device::OpImpl_SetProperty(StrView tag, StrView& value) {
+   return this->Options_.OnTagValue(tag, value);
 }
 
 std::string Device::OnDevice_Command(StrView cmd, StrView param) {

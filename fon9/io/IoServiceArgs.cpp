@@ -32,11 +32,13 @@ fon9_API StrView HowWaitToStr(HowWait value) {
 
 //--------------------------------------------------------------------------//
 
-const char* IoServiceArgs::FromTagValue(StrView tag, StrView value) {
+ConfigParser::Result IoServiceArgs::OnTagValue(StrView tag, StrView& value) {
+   const char* pvalbeg = value.begin();
    if (tag == "ThreadCount") {
       if ((this->ThreadCount_ = StrTo(value, 0u)) <= 0) {
          this->ThreadCount_ = 1;
-         return value.begin();
+         value.SetBegin(pvalbeg);
+         return ConfigParser::Result::EValueTooSmall;
       }
    }
    else if (tag == "Capacity")
@@ -44,36 +46,40 @@ const char* IoServiceArgs::FromTagValue(StrView tag, StrView value) {
    else if (tag == "Wait") {
       if ((this->HowWait_ = StrToHowWait(value)) == HowWait::Unknown) {
          this->HowWait_ = HowWait::Block;
-         return value.begin();
+         return ConfigParser::Result::EInvalidValue;
       }
    }
    else if (tag == "Cpus") {
-      while (!StrTrimHead(&value).empty()) {
+      while (!value.empty()) {
          StrView v1 = StrFetchTrim(value, ',');
          if (v1.empty())
             continue;
          const char* pend;
          int n = StrTo(v1, -1, &pend);
-         if (n < 0)
-            return v1.begin();
-         if (pend != v1.end())
-            return pend;
+         if (n < 0) {
+            value.SetBegin(v1.begin());
+            return ConfigParser::Result::EInvalidValue;
+         }
+         if (pend != v1.end()) {
+            value.SetBegin(pend);
+            return ConfigParser::Result::EInvalidValue;
+         }
          this->CpuAffinity_.push_back(static_cast<uint32_t>(n));
       }
    }
    else
-      return tag.begin();
-   return nullptr;
+      return ConfigParser::Result::EUnknownTag;
+   return ConfigParser::Result::Success;
 }
 
-const char* IoServiceArgs::Parse(StrView values) {
-   StrView tag, value;
-   while (StrFetchTagValue(values, tag, value)) {
-      if (const char* perr = this->FromTagValue(tag, value))
-         return perr;
-   }
-   return nullptr;
-}
+// const char* IoServiceArgs::Parse(StrView values) {
+//    StrView tag, value;
+//    while (StrFetchTagValue(values, tag, value)) {
+//       if (const char* perr = this->FromTagValue(tag, value))
+//          return perr;
+//    }
+//    return nullptr;
+// }
 
 //--------------------------------------------------------------------------//
 

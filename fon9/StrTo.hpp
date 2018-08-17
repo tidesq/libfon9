@@ -463,5 +463,15 @@ inline intmax_t NaiveStrToSInt(const StrView& str, const char** endptr = nullptr
    return NaiveStrToSInt(str.begin(), str.end(), endptr);
 }
 
+/// \ingroup AlNum
+/// str 轉 T, 並將 str->begin() 設定成無效字元位置, 或 str->end();
+template <class T>
+auto StrTo(StrView* str, T null) -> decltype(StrTo(*str, null, static_cast<const char**>(nullptr))) {
+   const char* pend;
+   null = StrTo(*str, null, &pend);
+   str->SetBegin(pend);
+   return null;
+}
+
 } // namespace fon9
 #endif//__fon9_StrTo_hpp__

@@ -3,9 +3,9 @@
 /// \defgroup io  IO通訊
 #ifndef __fon9_io_IoBase_hpp__
 #define __fon9_io_IoBase_hpp__
-#include "fon9/StrView.hpp"
 #include "fon9/intrusive_ref_counter.hpp"
 #include "fon9/Utility.hpp"
+#include "fon9/ConfigParser.hpp"
 
 #include <memory>
 
@@ -203,7 +203,7 @@ struct DeviceOptions {
    ///   使用 TimeInterval 格式設定, 延遲最小單位為 ms, e.g.
    ///   "RetryInterval=3"    表示連線失敗後, 延遲  3 秒後重新連線.
    ///   "ReopenInterval=0.5" 表示斷線後, 延遲  0.5 秒後重新連線.
-   std::string ParseOption(StrView tag, StrView value);
+   ConfigParser::Result OnTagValue(StrView tag, StrView& value);
 };
 fon9_WARN_POP;
 

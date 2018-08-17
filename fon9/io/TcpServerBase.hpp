@@ -5,6 +5,7 @@
 #include "fon9/io/Server.hpp"
 #include "fon9/io/SocketServer.hpp"
 #include "fon9/io/DeviceStartSend.hpp"
+#include "fon9/io/DeviceParseConfig.hpp"
 
 namespace fon9 { namespace io {
 
@@ -51,7 +52,7 @@ class TcpServerBase : public DeviceServer {
    friend Listener;//為了讓 Listener 可以取得 Config_; 及 Device 相關的保護操作.
 
    template <class DeviceT>
-   friend bool OpThr_ParseDeviceConfig(DeviceT& dev, StrView cfgstr, FnOnTagValue fnUnknownField);
+   friend bool OpThr_DeviceParseConfig(DeviceT& dev, StrView cfgstr);
    SocketServerConfig   Config_;
    DeviceListenerSP     Listener_;
 
@@ -75,7 +76,7 @@ class TcpServerBase : public DeviceServer {
    }
    virtual void OpImpl_Open(std::string cfgstr) override {
       this->OpImpl_DisposeListener("Open");
-      if (!OpThr_ParseDeviceConfig(*this, &cfgstr, FnOnTagValue{}))
+      if (!OpThr_DeviceParseConfig(*this, &cfgstr))
          return;
       // "|L=ip:port" or "|L=[ip6]:port"
       char    uidbuf[kMaxTcpConnectionUID];

@@ -1,14 +1,12 @@
 ﻿/// \file fon9/io/TcpClientBase.cpp
 /// \author fonwinz@gmail.com
 #include "fon9/io/TcpClientBase.hpp"
+#include "fon9/io/DeviceParseConfig.hpp"
 
 namespace fon9 { namespace io {
 
-//--------------------------------------------------------------------------//
-
 TcpClientBase::~TcpClientBase() {
 }
-
 void TcpClientBase::OpImpl_TcpClearLinking() {
    AsyncDnQuery_CancelAndWait(&this->DnReqId_);
    ZeroStruct(this->RemoteAddress_);
@@ -72,7 +70,7 @@ void TcpClientBase::OpImpl_ConnectToNext(StrView lastError) {
 }
 void TcpClientBase::OpImpl_Open(std::string cfgstr) {
    this->OpImpl_TcpClearLinking();
-   if (OpThr_ParseDeviceConfig(*this, &cfgstr, FnOnTagValue{}))
+   if (OpThr_DeviceParseConfig(*this, &cfgstr))
       this->OpImpl_ReopenImpl();
 }
 void TcpClientBase::OpImpl_Reopen() {

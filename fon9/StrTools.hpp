@@ -120,8 +120,6 @@ constexpr const char* StrFindIf(const StrView& str, FnPredicate&&... fnPred) {
    return StrFindIf(str.begin(), str.end(), std::forward<FnPredicate>(fnPred)...);
 }
 
-//--------------------------------------------------------------------------//
-
 /// \ingroup AlNum
 /// 從尾端往前找, 找到第一次 `FnPredicate(unsigned char ch)==true` 的字元, 如果沒找到則傳回 nullptr.
 template <class FnPredicate>
@@ -141,15 +139,14 @@ constexpr const char* StrRFindIf(const StrView& str, FnPredicate&&... fnPred) {
 
 //--------------------------------------------------------------------------//
 
+/// \ingroup AlNum
+/// 從頭往後找第一個非空白的字元位置.
+/// \retval pend  全都是空白.
+/// \retval !pend 非空白字元位置.
 inline const char* StrFindTrimHead(const char* pbeg, const char* pend) {
    if (const char* p = StrFindIf(pbeg, pend, isnotspace))
       return p;
    return pend;
-}
-inline const char* StrFindTrimTail(const char* pbeg, const char* pend) {
-   if (const char* p = StrRFindIf(pbeg, pend, isnotspace))
-      return p + 1;
-   return pbeg;
 }
 
 /// \ingroup AlNum
@@ -165,6 +162,16 @@ inline StrView& StrTrimHead(StrView* str, const char* pfrom) {
    assert(str->begin() <= pfrom && pfrom <= str->end());
    str->SetBegin(StrFindTrimHead(pfrom, str->end()));
    return *str;
+}
+
+/// \ingroup AlNum
+/// 從尾往前找第一個非空白的字元位置.
+/// \retval pbeg  全都是空白.
+/// \retval pos   非空白字元位置+1.
+inline const char* StrFindTrimTail(const char* pbeg, const char* pend) {
+   if (const char* p = StrRFindIf(pbeg, pend, isnotspace))
+      return p + 1;
+   return pbeg;
 }
 
 /// \ingroup AlNum
@@ -227,7 +234,7 @@ inline StrView StrFetchNoTrim(StrView& src, char chDelim) {
 /// \ingroup AlNum
 /// - 透過 fnSplitter 找到要分割的位置.
 /// - 然後傳回分割位置前的字串(移除前後空白)
-/// - src 移動到分割位置+1(沒有移除空白)
+/// - src.begin() 移動到分割位置+1(沒有移除空白)
 /// - 如果沒找到分割位置, 則傳回: 移除前後空白的src, src 移到 end() 的位置.
 template <class FnSplitter>
 StrView StrFetchTrim(StrView& src, FnSplitter fnSplitter) {
@@ -271,37 +278,72 @@ inline StrView StrFetchTrim(StrView& src, bool (*fn)(int ch)) {
    return StrFetchTrim(src, StrMakeCharSplitterFn(fn));
 }
 
-//--------------------------------------------------------------------------//
-
 /// \ingroup AlNum
 /// - 找到第一個 chDelim = 要分割的位置.
 /// - 如果有找到 chDelim:
 ///   - 傳回分割位置前的字串(移除前後空白)
-///   - src 移動到分割位置+1(沒有移除空白)
-/// - 如果沒找到 chDelim, 則傳回: 移除前後空白的src, src 移到 end() 的位置.
+///   - src.begin() 移動到分割位置+1(沒有移除空白)
+/// - 如果沒找到 chDelim, 則傳回: 移除前後空白的src, src.begin() 移到 end() 的位置.
 inline StrView StrFetchTrim(StrView& src, char chDelim) {
    return StrFetchTrim(src, [chDelim](const char* pbeg, const char* pend) {
       return StrView::traits_type::find(pbeg, static_cast<size_t>(pend - pbeg), chDelim);
    });
 }
 
+//--------------------------------------------------------------------------//
+
 /// \ingroup AlNum
-/// 類似 StrFetchTrim(StrView& src, char chDelim);
-/// - 在沒找到 chDelim 時: src 會設為 nullptr.
-/// - 在有找到 chDelim 時:
+/// 分割字串, 並移除分割字元 chDelim 左右的空白.
+/// - 在沒找到 chDelim 時:
+///   - 返回 src (沒有移除任何空白), src 會設為 nullptr.
+/// - 在有找到 chDelim 時, 移除 chDelim 左右的空白:
 ///   - src 會移除前方空白, 尾端不動.
 ///   - 傳回值會移除尾端空白, 但前方不動.
 fon9_API StrView StrSplit(StrView& src, char chDelim);
-inline StrView StrSplitTrim(StrView& src, char chDelim) {
+
+/// \ingroup AlNum
+/// 移除 src 前後空白後, 然後使用 StrSplit() 分割字串.
+inline StrView StrTrimSplit(StrView& src, char chDelim) {
    return StrSplit(StrTrim(&src), chDelim);
 }
 
 /// \ingroup AlNum
 /// 簡單的從 src 取出一組 `tag=value`, src = `tag=value|tag=value|tag=value...`.
-/// - **不考慮括號** 包住的巢狀欄位, 如果有需要考慮括號, 則應使用 `SbrFetchField()`
-/// - 若 src 移除前後空白後為 empty(), 則返回 false.
+/// - 若 src 移除開頭空白後為 empty(), 則返回 false.
+/// - tag, value 都會移除前後空白.
 /// - 如果沒有找到 chEqual, 則 value 為 nullptr.
+/// - src.begin() 移到 chFieldDelim 分割位置+1(沒有移除空白), 如果沒有 chFieldDelim, 則移到 src.end()
+/// - **不考慮括號** 包住的巢狀欄位, 如果有需要考慮括號, 則應使用 `SbrFetchFieldNoTrim()`
 fon9_API bool StrFetchTagValue(StrView& src, StrView& tag, StrView& value, char chFieldDelim = '|', char chEqual = '=');
+
+/// \ingroup AlNum
+/// 若第一個字元為引號「單引號 ' or 雙引號 " or 反引號 `」, 則移除第一個字元引號, 然後:
+/// - 若最後字元為對應的引號, 則移除最後引號字元.
+/// - if(pQuote)  *pQuote = 引號字元.
+/// - src 內容不變.
+inline StrView StrNoTrimRemoveQuotes(StrView src, char* pQuote = nullptr) {
+   switch (int ch = src.Get1st()) {
+   case '\'': case '\"': case '`':
+      src.SetBegin(src.begin() + 1);
+      if (!src.empty() && *(src.end() - 1) == ch)
+         src.SetEnd(src.end() - 1);
+      if (pQuote)
+         *pQuote = static_cast<char>(ch);
+      break;
+   default:
+      if (pQuote)
+         *pQuote = 0;
+      break;
+   }
+   return src;
+}
+
+/// \ingroup AlNum
+/// 移除前後空白後, 如果有引號(單引號 or 雙引號 or 反引號), 則移除引號.
+/// \ref StrNoTrimRemoveQuotes()
+inline StrView StrTrimRemoveQuotes(StrView src, char* pQuote = nullptr) {
+   return StrNoTrimRemoveQuotes(StrTrim(&src), pQuote);
+}
 
 //--------------------------------------------------------------------------//
 
@@ -355,13 +397,14 @@ struct fon9_API StrBrArg {
 /// \code
 ///   while (!cfgstr.empty()) {
 ///      fon9::StrView value = fon9::FetchField(cfgstr, '|');
-///      fon9::StrView tag = fon9::StrSplitTrim(value, '=');
+///      fon9::StrView tag = fon9::StrTrimSplit(value, '=');
 ///      ...處理 tag & value...
 ///   }
 /// \endcode
-fon9_API StrView SbrFetchField(StrView& src, char chDelim, const StrBrArg& brArg = StrBrArg::Default_);
+fon9_API StrView SbrFetchFieldNoTrim(StrView& src, char chDelim, const StrBrArg& brArg = StrBrArg::Default_);
 
 /// \ingroup AlNum
+/// 取出「括號或引號」內的字串.
 /// - 如果 *src.begin() 有左括號(由brArg定義), 且有找到對應的右括號:
 ///   - retval = 括號內的字串(包含空白), *retval.end()==右括號.
 ///   - src = {右括號位置+1, src.end()}
@@ -373,38 +416,11 @@ fon9_API StrView SbrFetchField(StrView& src, char chDelim, const StrBrArg& brArg
 ///   - src = 不變.
 fon9_API StrView SbrFetchInsideNoTrim(StrView& src, const StrBrArg& brArg = StrBrArg::Default_);
 /// \ingroup AlNum
-/// 先移除 src 開頭空白, 然後: FetchFirstBrNoTrim();
-inline StrView SbrFetchInside(StrView& src, const StrBrArg& brArg = StrBrArg::Default_) {
+/// 先移除 src 開頭空白, 然後使用 FetchFirstBrNoTrim() 取出「括號或引號」內的字串.
+inline StrView SbrTrimHeadFetchInside(StrView& src, const StrBrArg& brArg = StrBrArg::Default_) {
    if (!StrTrimHead(&src).empty())
       return SbrFetchInsideNoTrim(src, brArg);
    return StrView{nullptr};
-}
-
-/// \ingroup AlNum
-/// 若第一個字元為引號「單引號 ' or 雙引號 " or 反引號 `」, 則移除第一個字元引號, 然後:
-/// - 若最後字元為對應的引號, 則移除最後引號字元.
-/// - if(pQuote)  *pQuote = 引號字元.
-inline StrView StrRemoveHeadTailQuotes(StrView src, char* pQuote = nullptr) {
-   switch (int ch = src.Get1st()) {
-   case '\'': case '\"': case '`':
-      src.SetBegin(src.begin() + 1);
-      if (!src.empty() && *(src.end() - 1) == ch)
-         src.SetEnd(src.end() - 1);
-      if (pQuote)
-         *pQuote = static_cast<char>(ch);
-      break;
-   default:
-      if (pQuote)
-         *pQuote = 0;
-      break;
-   }
-   return src;
-}
-/// \ingroup AlNum
-/// 移除前後空白後, 如果有引號(單引號 or 雙引號 or 反引號), 則移除引號.
-/// \ref StrRemoveHeadTailQuotes()
-inline StrView StrTrimRemoveQuotes(StrView src, char* pQuote = nullptr) {
-   return StrRemoveHeadTailQuotes(StrTrim(&src), pQuote);
 }
 
 //--------------------------------------------------------------------------//

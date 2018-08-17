@@ -7,27 +7,6 @@
 
 namespace fon9 { namespace io {
 
-using FnOnTagValue = std::function<bool(StrView tag, StrView value)>;
-
-template <class DeviceT>
-inline static bool OpThr_ParseDeviceConfig(DeviceT& dev, StrView cfgstr, FnOnTagValue fnUnknownField) {
-   dev.OpImpl_SetState(State::Opening, cfgstr);
-   dev.Config_.SetDefaults();
-   StrView errfn = dev.Config_.ParseConfig(cfgstr, [&dev, &fnUnknownField](StrView tag, StrView value) {
-      if (fnUnknownField && fnUnknownField(tag, value))
-         return true;
-      return dev.OpImpl_SetProperty(tag, value).empty();
-   });
-   if (errfn.empty())
-      return true;
-   std::string  errmsg;
-   errmsg.assign("Unknown config: {");
-   errfn.AppendTo(errmsg);
-   errmsg.push_back('}');
-   dev.OpImpl_SetState(State::ConfigError, &errmsg);
-   return false;
-}
-
 fon9_WARN_DISABLE_PADDING;
 /// \ingroup io
 /// Socket 基本參數.
@@ -61,20 +40,19 @@ struct fon9_API SocketOptions {
    /// - >1:  TCP_KEEPIDLE,TCP_KEEPINTVL 的間隔秒數, 此時 TCP_KEEPCNT 一律設為 3.
    int KeepAliveInterval_;
 
-   /// 全部設為預設值.
    void SetDefaults();
 
-   StrView ParseConfig(StrView cfgstr, FnOnTagValue fnUnknownField);
+   ConfigParser::Result OnTagValue(StrView tag, StrView& value);
 };
 
 /// \ingroup io
 /// Socket 設定.
 struct fon9_API SocketConfig {
-   /// 使用 "Bind=address:port" or "Bind=port" 設定: 綁定的 local address.
+   /// 綁定的 local address.
    /// - Tcp Server: listen address & port.
    /// - Tcp Client: local address & port.
    SocketAddress AddrBind_;
-   /// 使用 "Remote=address:port" 設定: 目的地位置.
+   /// 目的地位置.
    /// - Tcp Server: 一般無此參數, 若有提供[專用Server]則可設定此參數, 收到連入連線後判斷是否是正確的來源.
    /// - Tcp Client: 遠端Server的 address & port.
    SocketAddress AddrRemote_;
@@ -85,28 +63,34 @@ struct fon9_API SocketConfig {
       return static_cast<AddressFamily>(AddrBind_.Addr_.sa_family);
    }
 
-   /// 全部設為預設值.
    void SetDefaults();
 
-   /// 根據解析的設定, 填入各項參數, 各項參數間使用 '|' 分隔.
-   /// - 第一個分隔之前, 若沒有「=」, 則將該值填入 addrDefault
-   /// - 設定之前 **不會** 先設定為預設值, 您可以用 SetDefaults() 先設定預設, 並自行先調整預設值.
-   /// - 透過 ParseField() 解析設定.
-   /// - 若遇到不認識的 field, 則會透過 fnUnknownField(tag,value) 來處理.
-   /// \return retval.empty(): 解析正確; 否則為: 第一個發生錯誤的 "tag" 或 "tag=value"
-   StrView ParseConfig(StrView cfgstr, SocketAddress* addrDefault, FnOnTagValue fnUnknownField);
+   /// - 如果沒有設定 AddrBind_ family 則使用 AddrRemote_ 的 sa_family;
+   /// - 如果沒有設定 AddrRemote_ family 則使用 AddrBind_ 的 sa_family;
+   void SetAddrFamily();
 
-   /// TcpClient: cfgstr = "ip:port|...opts(tag=value)..."
-   /// this->AddrRemote_ = ip:port;
-   StrView ParseConfigClient(StrView cfgstr, FnOnTagValue fnUnknownField) {
-      return this->ParseConfig(cfgstr, &this->AddrRemote_, std::move(fnUnknownField));
-   }
+   /// - "Bind=address:port" or "Bind=port" 
+   /// - "Remote=address:port"
+   /// - 其餘轉給 this->Options_ 處理.
+   ConfigParser::Result OnTagValue(StrView tag, StrView& value);
 
-   /// TcpServer: cfgstr = "port|...opts(tag=value)..."
-   /// this->AddrBind_ = any:port;
-   StrView ParseConfigListen(StrView cfgstr, FnOnTagValue fnUnknownField) {
-      return this->ParseConfig(cfgstr, &this->AddrBind_, std::move(fnUnknownField));
-   }
+   struct fon9_API Parser : public ConfigParser {
+      fon9_NON_COPY_NON_MOVE(Parser);
+      SocketConfig&  Owner_;
+      SocketAddress* AddrDefault_;
+      Parser(SocketConfig& owner, SocketAddress& addrDefault)
+         : Owner_(owner)
+         , AddrDefault_{&addrDefault} {
+      }
+      /// 解構時呼叫 this->Owner_.SetAddrFamily();
+      ~Parser();
+
+      /// - 第一個沒有「=」的欄位(value.begin()==nullptr): 將該值填入 *this->AddrDefault_;
+      ///   然後將 this->AddrDefault_ = nullptr;
+      ///   也就是只有第一個沒有「=」的欄位會填入 *this->AddrDefault_, 其餘視為錯誤.
+      /// - 其餘轉給 this->Owner_.OnTagValue() 處理.
+      Result OnTagValue(StrView tag, StrView& value) override;
+   };
 };
 fon9_WARN_POP;
 

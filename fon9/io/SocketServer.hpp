@@ -12,16 +12,14 @@ fon9_WARN_DISABLE_PADDING;
 /// 一般用於 Tcp Server 的設定.
 struct fon9_API SocketServerConfig {
    SocketConfig   ListenConfig_;
-
-   /// 使用 "ClientOptions={configs}" 提供設定.
    SocketOptions  AcceptedSocketOptions_;
    DeviceOptions  AcceptedClientOptions_;
 
-   /// listen() 的 backlog 參數, 使用 "ListenBacklog=n" 設定.
+   /// listen() 的 backlog 參數.
    /// - SetDefaults() = 5
    int   ListenBacklog_;
 
-   /// \ref IoServiceArgs::FromTagValue(StrView tag, StrView value)
+   /// \ref IoServiceArgs::OnTagValue(StrView tag, StrView& value)
    /// - ServiceArgs_.ThreadCount_ 提供服務的 threads 數量.
    ///   - SetDefaults() = std::thread::hardware_concurrency() / 2.
    ///   - 若 std::thread::hardware_concurrency()==0, 則設為 2.
@@ -34,7 +32,29 @@ struct fon9_API SocketServerConfig {
    /// 其餘使用預設值.
    void SetDefaults();
 
-   StrView ParseConfig(StrView cfgstr, FnOnTagValue fnUnknownField, FnOnTagValue fnClientOptionsUnknownField = FnOnTagValue{});
+   class fon9_API Parser : public SocketConfig::Parser {
+      fon9_NON_COPY_NON_MOVE(Parser);
+      using BaseParser = SocketConfig::Parser;
+      SocketServerConfig& Owner_;
+   public:
+      /// 若設定字串為 "port|...opts(tag=value)...", 則 this->AddrBind_ = port;
+      Parser(SocketServerConfig& owner)
+         : BaseParser{owner.ListenConfig_, owner.ListenConfig_.AddrBind_}
+         , Owner_(owner) {
+      }
+      ~Parser();
+
+      /// - "ListenBacklog=n"
+      /// - "ClientOptions={configs}" 提供: AcceptedSocketOptions_, AcceptedClientOptions_
+      /// - 其餘丟給 ListenConfig_.OnTagValue() 及 ServiceArgs_.OnTagValue();
+      Result OnTagValue(StrView tag, StrView& value) override;
+
+      /// 轉給 AcceptedSocketOptions_.OnTagValue(), AcceptedClientOptions_.OnTagValue();
+      virtual Result OnTagValueClient(StrView tag, StrView& value);
+
+      /// 預設 do nothing, 傳回 true.
+      virtual bool OnErrorBreakClient(ErrorEventArgs& e);
+   };
 
    bool CreateListenSocket(Socket& soListen, SocketResult& soRes) const;
 };

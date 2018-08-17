@@ -115,6 +115,7 @@
     <ClInclude Include="..\..\..\fon9\CharVector.hpp" />
     <ClInclude Include="..\..\..\fon9\CmdArgs.hpp" />
     <ClInclude Include="..\..\..\fon9\ConfigLoader.hpp" />
+    <ClInclude Include="..\..\..\fon9\ConfigParser.hpp" />
     <ClInclude Include="..\..\..\fon9\ConsoleIO.hpp" />
     <ClInclude Include="..\..\..\fon9\crypto\CryptoTools.hpp" />
     <ClInclude Include="..\..\..\fon9\crypto\Sha256.hpp" />
@@ -138,6 +139,7 @@
     <ClInclude Include="..\..\..\fon9\InnSyncKey.hpp" />
     <ClInclude Include="..\..\..\fon9\io\Device.hpp" />
     <ClInclude Include="..\..\..\fon9\io\DeviceAsyncOp.hpp" />
+    <ClInclude Include="..\..\..\fon9\io\DeviceParseConfig.hpp" />
     <ClInclude Include="..\..\..\fon9\io\FdrService.hpp" />
     <ClInclude Include="..\..\..\fon9\io\FdrServiceEpoll.hpp" />
     <ClInclude Include="..\..\..\fon9\io\FdrSocket.hpp" />
@@ -283,6 +285,7 @@
     <ClCompile Include="..\..\..\fon9\ByteVector.cpp" />
     <ClCompile Include="..\..\..\fon9\CmdArgs.cpp" />
     <ClCompile Include="..\..\..\fon9\ConfigLoader.cpp" />
+    <ClCompile Include="..\..\..\fon9\ConfigParser.cpp" />
     <ClCompile Include="..\..\..\fon9\ConsoleIO.cpp" />
     <ClCompile Include="..\..\..\fon9\crypto\Sha256.cpp" />
     <ClCompile Include="..\..\..\fon9\ErrC.cpp" />

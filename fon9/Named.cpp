@@ -18,9 +18,9 @@ fon9_API const char* FindInvalidNameChar(StrView str) {
 }
 
 fon9_API Named DeserializeNamed(StrView& cfg, char chSpl, int chTail) {
-   StrView  descr = chTail == -1 ? cfg : SbrFetchField(cfg, static_cast<char>(chTail));
-   StrView  name  = SbrFetchField(descr, chSpl);
-   StrView  title = SbrFetchField(descr, chSpl);
+   StrView  descr = chTail == -1 ? cfg : SbrFetchFieldNoTrim(cfg, static_cast<char>(chTail));
+   StrView  name  = SbrFetchFieldNoTrim(descr, chSpl);
+   StrView  title = SbrFetchFieldNoTrim(descr, chSpl);
    
    StrTrim(&name);
    if (const char* pInvalid = FindInvalidNameChar(name)) {

@@ -31,6 +31,7 @@ set(fon9src
  ConsoleIO.cpp
  CmdArgs.cpp
  ConfigLoader.cpp
+ ConfigParser.cpp
 
  File.cpp
  FilePath.cpp

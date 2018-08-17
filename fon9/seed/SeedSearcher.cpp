@@ -79,7 +79,7 @@ static void ContinueSeedSearch(Tree& curr, SeedSearcherSP searcher) {
       else {
          // Parse: keyText^tabName/Remain
          // keyText 允許使用引號.
-         StrView tabName = SbrFetchField(searcher->RemainPath_, '/', StrBrArg::Quotation_);
+         StrView tabName = SbrFetchFieldNoTrim(searcher->RemainPath_, '/', StrBrArg::Quotation_);
          StrView keyText = ParseKeyTextAndTabName(tabName);
          searcher->RemainPath_ = FilePath::RemovePathHead(searcher->RemainPath_);
          searcher->ContinuePod(*opTree, keyText, tabName);

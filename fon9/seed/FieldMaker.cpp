@@ -5,7 +5,7 @@
 
 namespace fon9 { namespace seed {
 
-static size_t StrToCount(StrView& fldcfg) {
+static size_t StrToCountNum(StrView& fldcfg) {
    const char* pend;
    size_t      count = StrTo(fldcfg, 0u, &pend);
    fldcfg.SetBegin(pend);
@@ -13,7 +13,7 @@ static size_t StrToCount(StrView& fldcfg) {
 }
 
 static FieldSP MakeFieldChars(StrView& fldcfg, char chSpl, char chTail) {
-   size_t   byteCount = StrToCount(fldcfg);
+   size_t   byteCount = StrToCountNum(fldcfg);
    Named    named{DeserializeNamed(fldcfg, chSpl, chTail)};
    if (named.Name_.empty())
       return FieldSP{};
@@ -24,7 +24,7 @@ static FieldSP MakeFieldChars(StrView& fldcfg, char chSpl, char chTail) {
    }
 }
 static FieldSP MakeFieldBytes(StrView& fldcfg, char chSpl, char chTail) {
-   size_t   byteCount = StrToCount(fldcfg);
+   size_t   byteCount = StrToCountNum(fldcfg);
    Named    named{DeserializeNamed(fldcfg, chSpl, chTail)};
    if (named.Name_.empty())
       return FieldSP{};
@@ -119,7 +119,7 @@ static FieldSP MakeFieldImpl(StrView& fldcfg, char chSpl, char chTail) {
    case 'S':
    case 'U':
       const char* perr = fldcfg.begin();
-      size_t      byteCount = StrToCount(fldcfg);
+      size_t      byteCount = StrToCountNum(fldcfg);
       if (byteCount <= 0)
          break;
       DecScaleT scale;
@@ -133,7 +133,7 @@ static FieldSP MakeFieldImpl(StrView& fldcfg, char chSpl, char chTail) {
          break;
       case '.':
          fldcfg.SetBegin(fldcfg.begin() + 1);
-         scale = static_cast<DecScaleT>(StrToCount(fldcfg));
+         scale = static_cast<DecScaleT>(StrToCountNum(fldcfg));
          break;
       }
       Named named{DeserializeNamed(fldcfg, chSpl, chTail)};
@@ -208,7 +208,7 @@ OpResult FieldsMaker::Parse(StrView& fldcfg, char chSpl, char chTail, Fields& fi
       StrView exProp;
       if (fldcfg.Get1st() == '{') {// {exProp}
          fldcfg.SetBegin(fldcfg.begin() + 1);
-         exProp = SbrFetchField(fldcfg, '}');
+         exProp = SbrFetchFieldNoTrim(fldcfg, '}');
          StrTrimHead(&fldcfg);
          StrTrim(&exProp);
       }

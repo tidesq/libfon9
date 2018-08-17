@@ -164,7 +164,7 @@ static const char* SbrFindSplit(const char* pbeg, const char* pend, char chDelim
    return nullptr;
 }
 
-fon9_API StrView SbrFetchField(StrView& src, char chDelim, const StrBrArg& brArg) {
+fon9_API StrView SbrFetchFieldNoTrim(StrView& src, char chDelim, const StrBrArg& brArg) {
    if (const char* pDelim = SbrFindSplit(src.begin(), src.end(), chDelim, brArg)) {
       StrView retval{src.begin(), pDelim};
       src.SetBegin(pDelim + 1);
