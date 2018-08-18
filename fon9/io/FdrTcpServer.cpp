@@ -54,7 +54,7 @@ class FdrTcpListener::AcceptedClient : public DeviceAcceptedClient, public FdrSo
 public:
    AcceptedClient(FdrTcpListener& owner, Socket soAccepted, SessionSP ses, ManagerSP mgr, const DeviceOptions& optsDefault)
       : base(&owner, std::move(ses), std::move(mgr), &optsDefault)
-      , FdrSocket(*owner.Server_->IoServiceSP_, std::move(soAccepted)) {
+      , FdrSocket(*owner.IoServiceSP_, std::move(soAccepted)) {
    }
 
    using Impl = DeviceImpl_DeviceStartSend<DeviceAcceptedClientWithSend<AcceptedClient>, FdrSocket>;
@@ -62,8 +62,9 @@ public:
 
 //--------------------------------------------------------------------------//
 
-FdrTcpListener::FdrTcpListener(FdrTcpServerSP&& server, Socket&& soListen)
-   : FdrEventHandler{*server->IoServiceSP_, soListen.MoveOut()}
+FdrTcpListener::FdrTcpListener(FdrServiceSP iosv, FdrTcpServerSP&& server, Socket&& soListen)
+   : FdrEventHandler{*iosv, soListen.MoveOut()}
+   , IoServiceSP_{std::move(iosv)}
    , Server_{std::move(server)} {
 }
 
@@ -77,8 +78,18 @@ DeviceListenerSP FdrTcpListener::CreateListener(FdrTcpServerSP server, SocketRes
    if (capAcceptedClients > 0) // 如果有限制最大連線數量, 則容量必須稍大, 才能接收連線後再關閉.
       capAcceptedClients += 4; // TODO: 檢查 getrlimit(RLIMIT_NOFILE) 允許的最大 fd.
 
+   auto iosv = server->IoServiceSP_;
+   if (!iosv) {
+      char        addrbuf[SocketAddress::kMaxAddrPortStrSize];
+      std::string thrName{"Listen:"};
+      thrName.append(addrbuf, cfg.ListenConfig_.AddrBind_.ToAddrPortStr(addrbuf));
+      iosv = MakeDefaultFdrService(server->Config_.ServiceArgs_, thrName, soRes);
+      if (!iosv)
+         return DeviceListenerSP{};
+   }
+
    FdrTcpListener*  fdrListener;
-   DeviceListenerSP retval{fdrListener = new FdrTcpListener{std::move(server), std::move(soListen)}};
+   DeviceListenerSP retval{fdrListener = new FdrTcpListener{std::move(iosv), std::move(server), std::move(soListen)}};
    fdrListener->SetAcceptedClientsReserved(capAcceptedClients);
    fdrListener->UpdateFdrEvent();
    return retval;

@@ -7,6 +7,9 @@
 
 namespace fon9 { namespace io {
 
+fon9_API FdrServiceSP MakeDefaultFdrService(const IoServiceArgs& ioArgs, const std::string& thrName, Result2& err) {
+   return FdrServiceEpoll::MakeService(ioArgs, thrName, err);
+}
 FdrServiceSP FdrServiceEpoll::MakeService(const IoServiceArgs& ioArgs, const std::string& thrName, MakeResult& err) {
    size_t thrCount = ioArgs.ThreadCount_;
    if (thrCount <= 0)

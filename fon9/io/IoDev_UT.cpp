@@ -210,9 +210,15 @@ e.g.
       dev.reset(new TcpServer(iosv, ses, mgr));
 
    dev->AsyncOpen(argv[2]);
+   dev->WaitGetDeviceId();// 等候 dev->AsyncOpen() 執行完畢.
+   std::this_thread::sleep_for(std::chrono::milliseconds{10}); // 等候其他 thread 啟動.
 
+   std::cout << "'?' or 'help' for command list.\n";
    char cmdbuf[1024];
-   while (fgets(cmdbuf, sizeof(cmdbuf), stdin)) {
+   for (;;) {
+      std::cout << "> " << std::flush;
+      if (!fgets(cmdbuf, sizeof(cmdbuf), stdin))
+         break;
       fon9::StrView  cmd{fon9::StrView_cstr(cmdbuf)};
       fon9::StrTrim(&cmd);
       if (cmd.empty()) {
@@ -221,6 +227,34 @@ e.g.
       }
       if (cmd == "quit")
          break;
+      if (cmd == "?" || cmd == "help") {
+         std::cout << R"(
+Commands:
+   ? or help      this menu.
+   quit           quit program.
+   log N          N=LogLevel, 4=WARN, 5=ERROR
+
+   ses e          pingpong echo on/off
+   ses a size     dev.SendASAP(data, size);
+   ses b size     dev.SendBuffered(data, size);
+                  size can use k=*1000, m=*1000000;
+                  e.g. "b 2k" = dev.SendBuffered(data, 2000);
+   ses s string   dev.StrSend(string);
+
+   open param     dev.AsyncOpen(param);
+   close cause    dev.AsyncClose("DeviceCommand.close:" + cause);
+   lclose cause   dev.AsyncLingerClose("DeviceCommand.lclose:" + cause);
+   dispose cause  dev.AsyncDispose("DeviceCommand.dispose:" + cause);
+   info           dev.GetDeviceInfo();
+   set properties dev.WaitSetProperty(properties);
+                  properties:
+                     SendASAP=Y/N       Send() = SendASAP() or SendBuffered()
+                     RetryInterval=n    Retry interval for LinkError.
+                     ReopenInterval=m   Reopen interval for LinkBroken.
+)"
+<< std::endl;
+         continue;
+      }
       fon9::StrView cmdln{cmd};
       fon9::StrView c1 = fon9::StrFetchTrim(cmdln, &fon9::isspace);
       if (c1 == "log") {
@@ -234,8 +268,7 @@ e.g.
          std::cout << dres << std::endl;
    }
    dev->AsyncDispose("quit");
-   // 等候 dev->AsyncDispose("quit") 執行完畢.
-   dev->WaitGetDeviceId();
+   dev->WaitGetDeviceId(); // 等候 dev->AsyncDispose("quit") 執行完畢.
    // wait all AcceptedClient dispose
    while (mgr->use_count() != 2) // mgr(+1), dev->Manager_(+1)
       std::this_thread::yield();

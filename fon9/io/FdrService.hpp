@@ -128,6 +128,10 @@ private:
 };
 using FdrServiceSP = intrusive_ptr<FdrService>;
 
+/// \ingroup io
+/// 各個 OS, 有它自己的預設 FdrService: 例如 Linux = epoll.
+fon9_API FdrServiceSP MakeDefaultFdrService(const IoServiceArgs& ioArgs, const std::string& thrName, Result2& err);
+
 //--------------------------------------------------------------------------//
 
 /// \ingroup io

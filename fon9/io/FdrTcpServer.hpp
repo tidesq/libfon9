@@ -19,7 +19,7 @@ class fon9_API FdrTcpListener : public DeviceListener, public FdrEventHandler {
    using baseCounter = DeviceListener;
    class AcceptedClient;
 
-   FdrTcpListener(FdrTcpServerSP&& server, Socket&& soListen);
+   FdrTcpListener(FdrServiceSP iosv, FdrTcpServerSP&& server, Socket&& soListen);
    virtual void OnListener_Dispose() override;
 
    virtual FdrEventFlag GetRequiredFdrEventFlag() const override;
@@ -33,7 +33,8 @@ class fon9_API FdrTcpListener : public DeviceListener, public FdrEventHandler {
    friend FdrTcpServer;
 
 public:
-   const FdrTcpServerSP   Server_;
+   const FdrServiceSP   IoServiceSP_;
+   const FdrTcpServerSP Server_;
    static DeviceListenerSP CreateListener(FdrTcpServerSP server, SocketResult& soRes);
 };
 
