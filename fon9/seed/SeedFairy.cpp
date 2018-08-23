@@ -19,7 +19,7 @@ struct SeedFairy::AclTree : public Tree {
       using base = seed::TreeOp;
       TreeOp(AclTree& tree) : base(tree) {
       }
-      virtual void GridView(const GridViewRequest& req, FnGridViewOp fnCallback) {
+      void GridView(const GridViewRequest& req, FnGridViewOp fnCallback) override {
          GridViewResult res{this->Tree_, req.Tab_};
          AccessList&    acl = static_cast<AclTree*>(&this->Tree_)->Acl_;
          MakeGridView(acl, this->GetIteratorForGv(acl, req.OrigKey_),

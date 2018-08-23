@@ -27,6 +27,10 @@ fon9_API StrView HowWaitToStr(HowWait value);
 /// args: "ThreadCount=n|Wait=Policy|Cpus=List|Capacity=0"
 /// Policy: Block(default)
 struct fon9_API IoServiceArgs {
+   /// 若有設定 CpuAffinity, 則每個 io service thread 會綁定一個固定的 cpu, 而不是所有的 thread 共用這裡設定的 cpu.
+   /// 例如: ThreadCount_=3; CpuAffinity=0,1;
+   ///       則 Thr0=Cpu0; Thr1=Cpu1; Thr2=Cpu0;
+   ///       此例: Thr0,Thr2 會共同綁在 Cpu0;
    using CpuAffinity = std::vector<uint32_t>;
    CpuAffinity CpuAffinity_;
 

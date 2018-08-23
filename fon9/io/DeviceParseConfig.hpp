@@ -24,7 +24,7 @@ namespace fon9 { namespace io {
 /// };
 /// \endcode
 template <class DeviceT>
-inline static bool OpThr_DeviceParseConfig(DeviceT& dev, StrView cfgstr) {
+inline bool OpThr_DeviceParseConfig(DeviceT& dev, StrView cfgstr) {
    dev.OpImpl_SetState(State::Opening, cfgstr);
    dev.Config_.SetDefaults();
 

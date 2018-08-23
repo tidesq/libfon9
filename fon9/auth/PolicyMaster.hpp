@@ -167,7 +167,7 @@ public:
       TreeOp(DetailPolicyTree& tree) : base(tree) {
       }
 
-      virtual void GridView(const seed::GridViewRequest& req, seed::FnGridViewOp fnCallback) {
+      void GridView(const seed::GridViewRequest& req, seed::FnGridViewOp fnCallback) override {
          seed::GridViewResult res{this->Tree_, req.Tab_};
          {
             DetailTableLocker   map{static_cast<DetailPolicyTreeTable*>(&this->Tree_)->DetailTable_};
@@ -183,7 +183,7 @@ public:
          if (op.IsModified_ || isForceWrite)
             static_cast<DetailPolicyTree*>(&this->Tree_)->WriteUpdated(lockedMap);
       }
-      virtual void Get(StrView strKeyText, seed::FnPodOp fnCallback) override {
+      void Get(StrView strKeyText, seed::FnPodOp fnCallback) override {
          {
             DetailTableLocker lockedMap{static_cast<DetailPolicyTreeTable*>(&this->Tree_)->DetailTable_};
             auto              ifind = this->GetIteratorForPod(*lockedMap, strKeyText);
@@ -194,7 +194,7 @@ public:
          } // unlock.
          fnCallback(seed::PodOpResult{this->Tree_, seed::OpResult::not_found_key, strKeyText}, nullptr);
       }
-      virtual void Add(StrView strKeyText, seed::FnPodOp fnCallback) override {
+      void Add(StrView strKeyText, seed::FnPodOp fnCallback) override {
          if (this->IsTextBegin(strKeyText) || this->IsTextEnd(strKeyText)) {
             fnCallback(seed::PodOpResult{this->Tree_, seed::OpResult::not_found_key, strKeyText}, nullptr);
             return;
@@ -210,7 +210,7 @@ public:
          }
          this->OnPodOp(lockedMap, strKeyText, *ifind, std::move(fnCallback), isForceWrite);
       }
-      virtual void Remove(StrView strKeyText, seed::Tab* tab, seed::FnPodRemoved fnCallback) override {
+      void Remove(StrView strKeyText, seed::Tab* tab, seed::FnPodRemoved fnCallback) override {
          seed::PodRemoveResult res{this->Tree_, seed::OpResult::not_found_key, strKeyText, tab};
          PodKey                key{KeyMaker::StrToKey(strKeyText)};
          {

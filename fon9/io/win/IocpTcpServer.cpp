@@ -45,6 +45,8 @@ class IocpTcpListener::AcceptedClient : public DeviceAcceptedClient, public Iocp
    }
    virtual void OpImpl_Close(std::string cause) override {
       shutdown(this->Socket_.GetSocketHandle(), SD_SEND);
+      // 避免對方沒有 shutdown RECV, 所以這裡主動中斷 Recv, 以免要等很久才會釋放 this.
+      CancelIoEx(reinterpret_cast<HANDLE>(this->Socket_.GetSocketHandle()), &this->RecvOverlapped_);
       OpThr_DisposeNoClose(*this, std::move(cause));
    }
 

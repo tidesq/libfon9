@@ -80,6 +80,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\fon9\framework\Fon9Co.cpp" />
+    <ClCompile Include="..\..\..\fon9\framework\HttpManSession.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\fon9\framework\HttpManSession.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,4 +1,4 @@
-﻿// \file fon9/seed/fon9Co.cpp
+﻿// \file fon9/framework/fon9Co.cpp
 // fon9 console
 // \author fonwinz@gmail.com
 #include "fon9/framework/Framework.hpp"
@@ -9,7 +9,10 @@
 #include "fon9/ConsoleIO.hpp"
 #include "fon9/CountDownLatch.hpp"
 #include "fon9/CmdArgs.hpp"
-#include "fon9/RevPrint.hpp"
+#include "fon9/Log.hpp"
+
+#include "fon9/framework/HttpManSession.hpp"
+#include "fon9/framework/IoManager.hpp"
 
 //--------------------------------------------------------------------------//
 
@@ -33,17 +36,25 @@ static const char* AppBreakMsg_ = nullptr;
 static BOOL WINAPI WindowsCtrlBreakHandler(DWORD dwCtrlType) {
    switch (dwCtrlType) {
    case CTRL_C_EVENT:         AppBreakMsg_ = "<Ctrl-C>";      break;// Handle the CTRL-C signal.
-   case CTRL_CLOSE_EVENT:     AppBreakMsg_ = "<Close>";       break;// CTRL-CLOSE: confirm that the user wants to exit.
    case CTRL_BREAK_EVENT:     AppBreakMsg_ = "<Ctrl-Break>";  break;// Pass other signals to the next handler.
+   case CTRL_CLOSE_EVENT:     AppBreakMsg_ = "<Close>";       break;// CTRL-CLOSE: confirm that the user wants to exit.
    case CTRL_LOGOFF_EVENT:    AppBreakMsg_ = "<Logoff>";      break;
    case CTRL_SHUTDOWN_EVENT:  AppBreakMsg_ = "<Shutdown>";    break;
    default:                   AppBreakMsg_ = "<Unknow Ctrl>"; break;
    }
-   FILE* fstdin = nullptr;
-   freopen_s(&fstdin, "NUL:", "r", stdin);
+   while(AppBreakMsg_) {
+      CancelIoEx(GetStdHandle(STD_INPUT_HANDLE), nullptr);
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+   }
+   std::this_thread::sleep_for(std::chrono::milliseconds(100));
+   //GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0);
+   //FILE* fstdin = nullptr;
+   //freopen_s(&fstdin, "NUL:", "r", stdin); // 如果遇到 CTRL_CLOSE_EVENT(或其他?) 會卡死在這兒!?
    return TRUE;
 }
 static void SetupCtrlBreakHandler() {
+   SetConsoleCP(CP_UTF8);
+   SetConsoleOutputCP(CP_UTF8);
    SetConsoleCtrlHandler(&WindowsCtrlBreakHandler, TRUE);
 }
 #else
@@ -51,6 +62,7 @@ static void SetupCtrlBreakHandler() {
 static void UnixSignalTermHandler(int) {
    AppBreakMsg_ = "<Signal TERM>";
    if (!freopen("/dev/null", "r", stdin)) {
+      // Linux 可透過 freopen() 中斷執行中的 fgets();
    }
 }
 static void SetupCtrlBreakHandler() {
@@ -111,12 +123,14 @@ class ConsoleSeedSession : public fon9::SeedSession {
          this->WritePrompt(&prompt);
          // TODO: fgets() 可以考慮使用 gnu readline library.
          if (!fgets(cmdbuf, sizeof(cmdbuf), stdin))
-            return State::Broken;
+             return State::Broken;
          fon9::StrView cmdln{fon9::StrView_cstr(cmdbuf)};
          if (StrTrim(&cmdln).empty())
             continue;
-         if (cmdln == "quit")
+         if (cmdln == "quit") {
+            fon9_LOG_IMP("main.quit|user=", this->GetAuthr().GetUserId());
             return State::QuitApp;
+         }
          if (cmdln == "exit")
             return State::UserExit;
          this->FeedLine(cmdln);
@@ -171,12 +185,41 @@ int main(int argc, char** argv) {
       //_CrtSetBreakAlloc(176);
    #endif
 
+   #if defined(NDEBUG)
+      fon9::LogLevel_ = fon9::LogLevel::Info;
+   #endif
+
    SetupCtrlBreakHandler();
 
    fon9::Framework   fon9sys;
    fon9sys.Initialize(argc, argv);
    fon9::auth::PlantScramSha256(*fon9sys.MaAuth_);
    fon9::auth::PolicyAclAgent::Plant(*fon9sys.MaAuth_);
+   //------vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+   fon9::IoManagerArgs iomArgs;
+   iomArgs.Name_ = "MaIo";
+   iomArgs.IoServiceCfgstr_ = "ThreadCount=2|Capacity=100";
+   iomArgs.DeviceFactoryPark_ = fon9::seed::FetchNamedPark<fon9::DeviceFactoryPark>(*fon9sys.Root_, "DeviceFactoryPark");
+   iomArgs.DeviceFactoryPark_->Add(fon9::GetIoFactoryTcpClient());
+   iomArgs.DeviceFactoryPark_->Add(fon9::GetIoFactoryTcpServer());
+   fon9::NamedIoManager* iomgr;
+   fon9sys.Root_->Add(iomgr = new fon9::NamedIoManager{iomArgs});
+   iomgr->GetIoManager().SessionFactoryPark_->Add(fon9::HttpManSession::MakeFactory(fon9sys));
+
+   fon9::IoConfigItem iocfg;
+   iocfg.Enabled_ = fon9::EnabledYN::Yes;
+   //iocfg.Sch_;
+   iocfg.SessionName_.assign(fon9_kCSTR_HttpManSession);
+   iocfg.SessionArgs_.assign("$HtmlDir={/} $Seed={/seed}");
+
+   iocfg.DeviceName_.assign("TcpServer");
+   iocfg.DeviceArgs_.assign("6080");
+   iomgr->GetIoManager().AddConfig("Id001", iocfg);
+
+   iocfg.DeviceName_.assign("TcpClient");
+   iocfg.DeviceArgs_.assign("dn=NoHost:6080");
+   iomgr->GetIoManager().AddConfig("Id002", iocfg);
+   //------^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    fon9sys.Start();
 
    // 使用 "--admin" 啟動 AdminMode.
@@ -204,12 +247,26 @@ int main(int argc, char** argv) {
       default:
       case ConsoleSeedSession::State::Authing:
       case ConsoleSeedSession::State::Logouting:
-      case ConsoleSeedSession::State::Broken: // stdin EOF, wait signal for quit app.
          coSession->Wait();
          res = coSession->GetState();
-         break;;
+         break;
+      case ConsoleSeedSession::State::Broken:
+         // stdin EOF, sleep() and retry read.
+         // wait signal for quit app.
+         // 一旦遇到 EOF, 就需要重新登入?
+         int c;
+         do {
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            clearerr(stdin);
+            c = fgetc(stdin);
+         } while (c == EOF && AppBreakMsg_ == nullptr);
+         ungetc(c, stdin);
+         res = coSession->GetState();
+         continue;
       }
    }
+   fon9_LOG_IMP("main.quit|cause=console:", AppBreakMsg_);
    puts(AppBreakMsg_);
+   AppBreakMsg_ = nullptr;
    return 0;
 }

@@ -62,7 +62,7 @@ struct PolicyTree::TreeOp : public seed::TreeOp {
          FieldsCellRevPrint(tab->Fields_, seed::SimpleRawRd{**ivalue}, rbuf, seed::GridViewResult::kCellSplitter);
       RevPrint(rbuf, (*ivalue)->PolicyId_);
    }
-   virtual void GridView(const seed::GridViewRequest& req, seed::FnGridViewOp fnCallback) {
+   void GridView(const seed::GridViewRequest& req, seed::FnGridViewOp fnCallback) override {
       seed::GridViewResult res{this->Tree_, req.Tab_};
       {
          PolicyMaps::Locker maps{static_cast<PolicyTree*>(&this->Tree_)->PolicyMaps_};
@@ -80,7 +80,7 @@ struct PolicyTree::TreeOp : public seed::TreeOp {
          maps->WriteUpdated(rec);
       }
    }
-   virtual void Get(StrView strKeyText, seed::FnPodOp fnCallback) override {
+   void Get(StrView strKeyText, seed::FnPodOp fnCallback) override {
       {
          PolicyMaps::Locker maps{static_cast<PolicyTree*>(&this->Tree_)->PolicyMaps_};
          auto               ifind = this->GetIteratorForPod(maps->ItemMap_, strKeyText);
@@ -91,7 +91,7 @@ struct PolicyTree::TreeOp : public seed::TreeOp {
       } // unlock.
       fnCallback(seed::PodOpResult{this->Tree_, seed::OpResult::not_found_key, strKeyText}, nullptr);
    }
-   virtual void Add(StrView strKeyText, seed::FnPodOp fnCallback) override {
+   void Add(StrView strKeyText, seed::FnPodOp fnCallback) override {
       if (this->IsTextBegin(strKeyText) || this->IsTextEnd(strKeyText)) {
          fnCallback(seed::PodOpResult{this->Tree_, seed::OpResult::not_found_key, strKeyText}, nullptr);
          return;
@@ -106,7 +106,7 @@ struct PolicyTree::TreeOp : public seed::TreeOp {
       }
       this->OnPodOp(maps, **ifind, std::move(fnCallback), isForceWrite);
    }
-   virtual void Remove(StrView strKeyText, seed::Tab* tab, seed::FnPodRemoved fnCallback) override {
+   void Remove(StrView strKeyText, seed::Tab* tab, seed::FnPodRemoved fnCallback) override {
       seed::PodRemoveResult res{this->Tree_, seed::OpResult::not_found_key, strKeyText, tab};
       if (static_cast<PolicyTree*>(&this->Tree_)->Delete(strKeyText))
          res.OpResult_ = seed::OpResult::removed_pod;

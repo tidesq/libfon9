@@ -131,11 +131,11 @@ void TcpClientBase::OpImpl_Close(std::string cause) {
    OpThr_SetDeviceId(*this, std::string{});
 }
 void TcpClientBase::OpImpl_StateChanged(const StateChangedArgs& e) {
-   if (IsAllowContinueSend(e.Before_)) {
-      if (e.After_ != State::Lingering)
+   if (IsAllowContinueSend(e.BeforeState_)) {
+      if (e.After_.State_ != State::Lingering)
          this->OpImpl_TcpLinkBroken();
    }
-   else if (e.Before_ == State::Linking && e.After_ != State::LinkReady)
+   else if (e.BeforeState_ == State::Linking && e.After_.State_ != State::LinkReady)
       this->OpImpl_TcpClearLinking();
    base::OpImpl_StateChanged(e);
 }

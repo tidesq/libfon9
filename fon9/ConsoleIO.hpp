@@ -12,13 +12,7 @@
 
 namespace fon9 {
 
-#ifdef fon9_WINDOWS
-inline int getch() {
-   return ::_getch();
-}
-#else
 extern fon9_API int getch();
-#endif
 
 /// \ingroup Misc
 /// 要求使用者從 console 輸入密碼.

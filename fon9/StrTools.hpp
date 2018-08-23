@@ -79,6 +79,9 @@ inline char* Put2Digs(char* pout, uint8_t i00_99) {
 
 //--------------------------------------------------------------------------//
 
+constexpr int toupper(int ch) { return 'a' <= ch && ch <= 'z' ? (ch - 'a' + 'A') : ch; }
+constexpr int tolower(int ch) { return 'A' <= ch && ch <= 'Z' ? (ch - 'A' + 'a') : ch; }
+
 constexpr bool iscntrl(int ch) { return static_cast<unsigned>(ch) <= '\x1f' || ch == '\x7f'; }
 constexpr bool isprint(int ch) { return '\x20' <= ch && ch <= '\x7e'; }
 constexpr bool isspace(int ch) { return '\x20' == ch || ('\x9' <= ch && ch <= '\xd'); }
@@ -100,6 +103,10 @@ constexpr bool isnotupper(int ch) { return !isupper(ch); }
 constexpr bool isnotlower(int ch) { return !islower(ch); }
 constexpr bool isnotalpha(int ch) { return !isalpha(ch); }
 constexpr bool isnotdigit(int ch) { return !isdigit(ch); }
+
+fon9_API bool iequals(StrView a, StrView r);
+fon9_API int icompare(const char* a, const char* b, size_t sz);
+fon9_API int icompare(StrView a, StrView r);
 
 //--------------------------------------------------------------------------//
 

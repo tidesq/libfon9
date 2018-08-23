@@ -144,6 +144,12 @@
     <Filter Include="Source Files\seed\_tools">
       <UniqueIdentifier>{b380d7de-1187-4b29-9910-0a3993f8b45e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\web">
+      <UniqueIdentifier>{8aec7ba0-b31e-415b-9e7a-d7573ca64ba3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\web">
+      <UniqueIdentifier>{e3920260-e31f-4599-9e20-53816d652f0f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\sys\Config.h">
@@ -665,6 +671,15 @@
     <ClInclude Include="..\..\..\fon9\ConfigParser.hpp">
       <Filter>Header Files\_base\_Tools / Utility</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\framework\IoFactory.hpp">
+      <Filter>Header Files\framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\framework\IoManager.hpp">
+      <Filter>Header Files\framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\web\HttpParser.hpp">
+      <Filter>Header Files\web</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1002,6 +1017,18 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\ConfigParser.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\framework\IoFactoryTcpClient.cpp">
+      <Filter>Source Files\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\framework\IoFactoryTcpServer.cpp">
+      <Filter>Source Files\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\framework\IoManager.cpp">
+      <Filter>Source Files\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\web\HttpParser.cpp">
+      <Filter>Source Files\web</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

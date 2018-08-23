@@ -11,14 +11,14 @@ namespace fon9 { namespace seed {
 
 fon9_MSC_WARN_DISABLE(4265 /* class has virtual functions, but destructor is not virtual. */);
 template <class Pod, class Locker>
-class PodOpLocker : public PodOpDefault {
-   fon9_NON_COPY_NON_MOVE(PodOpLocker);
+class PodOpLockerNoWrite : public PodOpDefault {
+   fon9_NON_COPY_NON_MOVE(PodOpLockerNoWrite);
    using base = PodOpDefault;
 
 public:
    Pod&     Pod_;
    Locker&  Locker_;
-   PodOpLocker(Pod& pod, Tree& sender, OpResult res, const StrView& key, Locker& locker)
+   PodOpLockerNoWrite(Pod& pod, Tree& sender, OpResult res, const StrView& key, Locker& locker)
       : base{sender, res, key}
       , Pod_(pod)
       , Locker_(locker) {
@@ -37,10 +37,6 @@ public:
       this->Lock();
       this->BeginRW(tab, std::move(fnCallback), SimpleRawRd{this->Pod_.GetSeedRW(tab)});
    }
-   void BeginWrite(Tab& tab, FnWriteOp fnCallback) override {
-      this->Lock();
-      this->BeginRW(tab, std::move(fnCallback), SimpleRawWr{this->Pod_.GetSeedRW(tab)});
-   }
 
    /// TreeSP 是一個操作單元, 所以在取出 sapling 之後會 unlock.
    /// 避免在操作 sapling 時回頭需要 lock, 造成死結.
@@ -53,6 +49,19 @@ public:
    void OnSeedCommand(Tab* tab, StrView cmdln, FnCommandResultHandler resHandler) override {
       this->Tab_ = tab;
       this->Pod_.HandleSeedCommand(this->Locker_, *this, cmdln, std::move(resHandler));
+   }
+};
+
+template <class Pod, class Locker>
+class PodOpLocker : public PodOpLockerNoWrite<Pod, Locker> {
+   fon9_NON_COPY_NON_MOVE(PodOpLocker);
+   using base = PodOpLockerNoWrite<Pod, Locker>;
+
+public:
+   using base::base;
+   void BeginWrite(Tab& tab, FnWriteOp fnCallback) override {
+      this->Lock();
+      this->BeginRW(tab, std::move(fnCallback), SimpleRawWr{this->Pod_.GetSeedRW(tab)});
    }
 };
 fon9_MSC_WARN_POP;

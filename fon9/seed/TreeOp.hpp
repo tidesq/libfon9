@@ -126,6 +126,21 @@ using FnGridViewOp = std::function<void(GridViewResult& result)>;
 
 //--------------------------------------------------------------------------//
 
+template <class Container>
+static auto ContainerLowerBound(Container& container, StrView strKeyText) -> decltype(container.lower_bound(strKeyText)) {
+   return container.lower_bound(strKeyText);
+}
+
+template <class Container>
+static auto ContainerFind(Container& container, StrView strKeyText) -> decltype(container.find(strKeyText)) {
+   return container.find(strKeyText);
+}
+
+template <class Container>
+using ContainerIterator = conditional_t<std::is_const<Container>::value,
+   typename Container::const_iterator,
+   typename Container::iterator>;
+
 /// \ingroup seed
 /// Tree 的(管理)操作不是放在 class Tree's methods? 因為:
 /// - 無法在操作前知道如何安全的操作 tree:
@@ -179,43 +194,22 @@ public:
       return true;
    }
    
-   template <class Container>
-   static auto LowerBound(Container& container, StrView strKeyText) -> decltype(container.lower_bound(strKeyText)){
-      return container.lower_bound(strKeyText);
-   }
-
-   template <class Container>
-   static auto LowerBound(Container& container, StrView strKeyText) -> decltype(ContainerLowerBound(container,strKeyText)) {
-      return ContainerLowerBound(container, strKeyText);
-   }
-
-   template <class Container, class Iterator = typename Container::iterator>
+   template <class Container, class Iterator = ContainerIterator<Container> >
    static Iterator GetIteratorForGv(Container& container, StrView strKeyText) {
       Iterator ivalue;
       if (GetIteratorForGv(container, ivalue, strKeyText.begin()))
          return ivalue;
-      return LowerBound(container, strKeyText);
+      return ContainerLowerBound(container, strKeyText);
    }
 
    virtual void GridView(const GridViewRequest& req, FnGridViewOp fnCallback);
 
    //--------------------------------------------------------------------------//
-
-   template <class Container>
-   static auto Find(Container& container, StrView strKeyText) -> decltype(container.find(strKeyText)) {
-      return container.find(strKeyText);
-   }
-
-   template <class Container>
-   static auto Find(Container& container, StrView strKeyText) -> decltype(ContainerFind(container, strKeyText)) {
-      return ContainerFind(container, strKeyText);
-   }
-
-   template <class Container, class Iterator = typename Container::iterator>
+   template <class Container, class Iterator = ContainerIterator<Container>>
    static Iterator GetIteratorForPod(Container& container, StrView strKeyText) {
       if (strKeyText.begin() == kStrKeyText_Begin_)
          return container.begin();
-      return Find(container, strKeyText);
+      return ContainerFind(container, strKeyText);
    }
 
    /// 增加一個 pod.

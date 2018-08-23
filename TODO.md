@@ -5,6 +5,8 @@ libfon9 TODO list
 ## 演算法/容器
 ---------------------------------------
 ## 雜項
+* DefaultThreadPoolArgs: ThreadCount_, CpuAffinity_;
+
 ---------------------------------------
 ## 檔案/儲存/載入
 * Serialize/Deserialize
@@ -23,12 +25,21 @@ libfon9 TODO list
 * Fon9Co
   * Linux: to daemon.
   * Windows: install to service.
+  * 啟動時參數指定預設的 LogLevel.
+* SeedSession/SeedFairy/SeedSearcher: 還需要再整理其中的關連(並重新命名).
 
 ---------------------------------------
 ## 通訊基礎建設
-* IoManager/SessionFactory/DeviceFactory/FactoryPark
+* IoManager/SessionFactory/DeviceFactory
+  * 提供 IoManager 的使用說明.
+  * Sch 設定排程時間.
+  * 註冊 Factory 異動事件, 讓稍晚註冊的 Factory 可以建立 Device.
+  * NeedsApply
+  * HttpMan: ip白名單、黑名單?
 * UDP/Multicast
 * FileDevice
 * TLS
+* Device.DeviceCommand() 傳回值: success+message or fail+message.
+* DeviceId 拿掉開頭的 '|' 字元.
 ---------------------------------------
 ## Simple FIX engine

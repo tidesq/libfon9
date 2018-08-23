@@ -55,6 +55,38 @@ const char Digs0099[] =
 
 //--------------------------------------------------------------------------//
 
+fon9_API bool iequals(StrView a, StrView r) {
+   auto sz = a.size();
+   if (sz != r.size())
+      return false;
+   const char* p = r.begin();
+   for (char ch : a) {
+      if (tolower(ch) != tolower(*p++))
+         return false;
+   }
+   return true;
+}
+fon9_API int icompare(const char* a, const char* b, size_t sz) {
+   while (sz) {
+      if (int c = tolower(*a++) - tolower(*b++))
+         return c;
+      --sz;
+   }
+   return 0;
+}
+fon9_API int icompare(StrView a, StrView r) {
+   const size_t lhsSize = a.size();
+   const size_t rhsSize = r.size();
+   const size_t minSize = (lhsSize < rhsSize ? lhsSize : rhsSize);
+   if (const int retval = icompare(a.begin(), r.begin(), minSize))
+      return retval;
+   return (lhsSize < rhsSize ? -1
+           : lhsSize > rhsSize ? 1
+           : 0);
+}
+
+//--------------------------------------------------------------------------//
+
 fon9_API StrView StrView_TruncUTF8(StrView utf8str, size_t expectLen) {
    if (utf8str.size() <= expectLen)
       return utf8str;

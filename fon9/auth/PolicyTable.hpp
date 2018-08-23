@@ -33,7 +33,6 @@ struct fon9_API PolicyMapsImpl {
 
    void WriteUpdated(PolicyItem& rec);
 };
-
 using PolicyMaps = MustLock<PolicyMapsImpl>;
 
 //--------------------------------------------------------------------------//

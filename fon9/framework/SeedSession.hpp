@@ -105,6 +105,9 @@ protected:
       St::Locker st{this->St_};
       prompt.assign(st->Prompt_);
    }
+   const auth::AuthResult& GetAuthr() const {
+      return this->Authr_;
+   }
 
 private:
    struct StateImpl {

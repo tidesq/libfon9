@@ -36,8 +36,30 @@ void DeviceAcceptedClient::OpImpl_Open(std::string deviceId) {
 }
 void DeviceAcceptedClient::OpImpl_StateChanged(const StateChangedArgs& e) {
    base::OpImpl_StateChanged(e);
-   if (e.Before_ <= State::LinkReady && State::LinkReady < e.After_)
+   if (e.BeforeState_ <= State::LinkReady && State::LinkReady < e.After_.State_)
       this->Owner_->RemoveAcceptedClient(*this);
+}
+
+//--------------------------------------------------------------------------//
+
+AcceptedClientsImpl::const_iterator AcceptedClientsImpl::lower_bound(DeviceAcceptedClientSeq seq) const {
+   return std::lower_bound(this->begin(), this->end(), seq,
+                           [](DeviceAcceptedClient* i, DeviceAcceptedClientSeq k) -> bool {
+      return i->GetAcceptedClientSeq() < k;
+   });
+}
+AcceptedClientsImpl::const_iterator AcceptedClientsImpl::find(DeviceAcceptedClientSeq seq) const {
+   auto ifind = this->lower_bound(seq);
+   auto iend = this->end();
+   if (ifind != iend && (*ifind)->GetAcceptedClientSeq() == seq)
+      return ifind;
+   return iend;
+}
+fon9_API AcceptedClientsImpl::const_iterator ContainerLowerBound(const AcceptedClientsImpl& container, StrView strKeyText) {
+   return container.lower_bound(StrTo(strKeyText, DeviceAcceptedClientSeq{}));
+}
+fon9_API AcceptedClientsImpl::const_iterator ContainerFind(const AcceptedClientsImpl& container, StrView strKeyText) {
+   return container.find(StrTo(strKeyText, DeviceAcceptedClientSeq{}));
 }
 
 //--------------------------------------------------------------------------//
@@ -63,18 +85,6 @@ void DeviceListener::Dispose(std::string cause) {
    }
 }
 
-DeviceListener::AcceptedClientsImpl::iterator
-DeviceListener::FindAcceptedClients(AcceptedClientsImpl& devs, DeviceAcceptedClientSeq seq) {
-   auto iend = devs.end();
-   auto ifind = std::lower_bound(devs.begin(), iend, seq,
-                           [](DeviceAcceptedClient* i, DeviceAcceptedClientSeq k) -> bool {
-      return i->AcceptedClientSeq_ < k;
-   });
-   if (ifind != iend && (*ifind)->AcceptedClientSeq_ == seq)
-      return ifind;
-   return iend;
-}
-
 void DeviceListener::AddAcceptedClient(DeviceServer& server, DeviceAcceptedClient& devAccepted, StrView connId) {
    {
       AcceptedClients::Locker devs{this->AcceptedClients_};
@@ -82,16 +92,16 @@ void DeviceListener::AddAcceptedClient(DeviceServer& server, DeviceAcceptedClien
       devs->push_back(&devAccepted);
    }
    intrusive_ptr_add_ref(&devAccepted);
-   devAccepted.Initialize();
    if (server.Manager_)
       server.Manager_->OnDevice_Accepted(server, devAccepted);
+   devAccepted.Initialize();
    devAccepted.AsyncOpen(connId.ToString());
 }
 void DeviceListener::RemoveAcceptedClient(DeviceAcceptedClient& devAccepted) {
    if (this->IsDisposing_)
       return;
    AcceptedClients::Locker devs{this->AcceptedClients_};
-   auto ifind = FindAcceptedClients(*devs, devAccepted.AcceptedClientSeq_);
+   auto ifind = devs->find(devAccepted.AcceptedClientSeq_);
    if (ifind != devs->end() && *ifind == &devAccepted) {
       devs->erase(ifind);
       intrusive_ptr_release(&devAccepted);
@@ -105,7 +115,7 @@ DeviceSP DeviceListener::GetAcceptedClient(StrView* acceptedClientSeqAndOthers) 
    StrTrim(acceptedClientSeqAndOthers);
 
    AcceptedClients::Locker devs{this->AcceptedClients_};
-   auto ifind = FindAcceptedClients(*devs, seq);
+   auto ifind = devs->find(seq);
    return (ifind == devs->end() ? DeviceSP{} : DeviceSP{*ifind});
 }
 void DeviceListener::OpImpl_CloseAcceptedClient(StrView acceptedClientSeqAndOthers) {

@@ -55,7 +55,7 @@ fon9_API void RevPrint(RevBuffer& rbuf, const ConfigParser::ErrorEventArgs& e) {
 }
 
 bool ConfigParserMsg::OnErrorBreak(ErrorEventArgs& e) {
-   RevPrint(this->RBuf_, "err=", e, '\n');
+   RevPrint(this->RBuf_, "|err=", e);
    return false;
 }
 

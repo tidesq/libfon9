@@ -86,23 +86,29 @@ public:
 };
 
 fon9_WARN_DISABLE_PADDING;
+// 因為不確定: std::vector<DeviceAcceptedClientSP> 是否能最佳化.
+// - 例如: erase(iter); 只用 memmove(); 就足夠.
+// - 所以, 自行呼叫:
+//   - intrusive_ptr_add_ref(): 在 AddAcceptedClient(); 之後呼叫.
+//   - intrusive_ptr_release(): 在 Dispose(); 及 RemoveAcceptedClient(); 呼叫
+struct fon9_API AcceptedClientsImpl : public std::vector<DeviceAcceptedClient*> {
+   const_iterator find(DeviceAcceptedClientSeq seq) const;
+   const_iterator lower_bound(DeviceAcceptedClientSeq seq) const;
+};
+fon9_API AcceptedClientsImpl::const_iterator ContainerLowerBound(const AcceptedClientsImpl& container, StrView strKeyText);
+fon9_API AcceptedClientsImpl::const_iterator ContainerFind(const AcceptedClientsImpl& container, StrView strKeyText);
+using AcceptedClients = MustLock<AcceptedClientsImpl>;
+
 /// \ingroup io
 /// 各類 Listener(例如: TcpListener) 的基底, 負責管理 DeviceAcceptedClient.
+/// - DeviceServer 在更改設定時, 可能會建立新的 DeviceListener,
+///   並且 Dispose 舊的 DeviceAcceptedClient.
+///   舊的 DeviceListener 就會在 DeviceAcceptedClient 全部死亡時, 自然消失.
 class fon9_API DeviceListener : public intrusive_ref_counter<DeviceListener> {
    fon9_NON_COPY_NON_MOVE(DeviceListener);
    friend DeviceAcceptedClient;
 
    bool  IsDisposing_{false};
-
-   // 因為不確定: std::vector<DeviceAcceptedClientSP> 是否能最佳化.
-   // - 例如: erase(iter); 只用 memmove(); 就足夠.
-   // - 所以, 自行呼叫:
-   //   - intrusive_ptr_add_ref(): 在 AddAcceptedClient(); 之後呼叫.
-   //   - intrusive_ptr_release(): 在 Dispose(); 及 RemoveAcceptedClient(); 呼叫
-   using AcceptedClientsImpl = std::vector<DeviceAcceptedClient*>;
-   static AcceptedClientsImpl::iterator FindAcceptedClients(AcceptedClientsImpl& devs, DeviceAcceptedClientSeq seq);
-
-   using AcceptedClients = MustLock<AcceptedClientsImpl>;
    mutable AcceptedClients  AcceptedClients_;
 
    void RemoveAcceptedClient(DeviceAcceptedClient& devAccepted);
@@ -126,6 +132,11 @@ public:
    DeviceListener() {
    }
    virtual ~DeviceListener();
+
+   /// 提供給 IoManager 安全的取用 Device.ManagerBookmark.
+   AcceptedClients::ConstLocker Lock() const{
+      return AcceptedClients::ConstLocker{this->AcceptedClients_};
+   }
 
    void Dispose(std::string cause);
    bool IsDisposing() const {

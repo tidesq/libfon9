@@ -116,33 +116,36 @@ inline bool IsAllowContinueSend(State st) {
 
 //--------------------------------------------------------------------------//
 
-/// \ingroup io
-/// OnDevice_StateChanged() 事件的參數.
-struct StateChangedArgs {
-   fon9_NON_COPY_NON_MOVE(StateChangedArgs);
-   StateChangedArgs(StrView info, const std::string& deviceId)
-      : Info_{info}
-      , DeviceId_(deviceId) {
-   }
-   State                Before_;
-   State                After_;
-   /// if (After _== State::Opening) 則 Info_ = cfgstr;
-   StrView              Info_;
-   const std::string&   DeviceId_;
-};
-
 fon9_WARN_DISABLE_PADDING;
 /// \ingroup io
 /// OnDevice_StateUpdated() 事件的參數.
 /// State 沒變, 但更新訊息.
 /// 例如: 還在 State::Linking, 但是嘗試不同的 RemoteAddress.
 struct StateUpdatedArgs {
-   StateUpdatedArgs(State st, StrView info)
-      : State_(st)
+   fon9_NON_COPY_NON_MOVE(StateUpdatedArgs);
+   StateUpdatedArgs(State st, StrView info, const std::string& deviceId)
+      : StateUpdatedArgs(info, deviceId) {
+      this->State_ = st;
+   }
+   StateUpdatedArgs(StrView info, const std::string& deviceId)
+      : DeviceId_(deviceId)
       , Info_{info} {
    }
-   State    State_;
-   StrView  Info_;
+   const std::string&   DeviceId_;
+   /// if (State_== State::Opening) 則 Info_ = cfgstr;
+   StrView              Info_;
+   State                State_;
+};
+
+/// \ingroup io
+/// OnDevice_StateChanged() 事件的參數.
+struct StateChangedArgs {
+   fon9_NON_COPY_NON_MOVE(StateChangedArgs);
+   StateChangedArgs(const StrView& info, const std::string& deviceId)
+      : After_{info, deviceId} {
+   }
+   StateUpdatedArgs After_;
+   State            BeforeState_;
 };
 fon9_WARN_POP;
 

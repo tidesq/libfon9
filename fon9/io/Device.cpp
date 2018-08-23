@@ -136,7 +136,7 @@ bool Device::OpImpl_SetState(State afst, StrView stmsg) {
    State bfst = this->State_;
    if (bfst == afst) {
       if (afst < State::Disposing) { // Disposing 訊息不需要重複更新.
-         StateUpdatedArgs e{afst, stmsg};
+         StateUpdatedArgs e{afst, stmsg, this->DeviceId_};
          this->Session_->OnDevice_StateUpdated(*this, e);
          if (this->Manager_)
             this->Manager_->OnDevice_StateUpdated(*this, e);
@@ -148,8 +148,8 @@ bool Device::OpImpl_SetState(State afst, StrView stmsg) {
       return false;
    this->State_ = afst;
    StateChangedArgs e{stmsg, this->DeviceId_};
-   e.Before_ = bfst;
-   e.After_ = afst;
+   e.BeforeState_ = bfst;
+   e.After_.State_ = afst;
    this->OpImpl_StateChanged(e);
    this->Session_->OnDevice_StateChanged(*this, e);
    if (this->Manager_)

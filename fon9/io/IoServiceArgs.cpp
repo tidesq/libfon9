@@ -72,15 +72,6 @@ ConfigParser::Result IoServiceArgs::OnTagValue(StrView tag, StrView& value) {
    return ConfigParser::Result::Success;
 }
 
-// const char* IoServiceArgs::Parse(StrView values) {
-//    StrView tag, value;
-//    while (StrFetchTagValue(values, tag, value)) {
-//       if (const char* perr = this->FromTagValue(tag, value))
-//          return perr;
-//    }
-//    return nullptr;
-// }
-
 //--------------------------------------------------------------------------//
 
 void ServiceThreadArgs::OnThrRunBegin(StrView msgHead) const {

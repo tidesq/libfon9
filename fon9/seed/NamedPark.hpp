@@ -51,12 +51,15 @@ private:
 /// \copydoc ParkTree
 template <class ObjectT>
 class NamedPark : public NamedSapling {
+   fon9_NON_COPY_NON_MOVE(NamedPark);
    using base = NamedSapling;
 public:
    using ObjectSP = NamedSeedSPT<ObjectT>;
    using FnEventHandler = std::function<void(ObjectT*, ParkTree::EventType)>;
 
-   NamedPark(StrView name) : base{new ParkTree{name.ToString()}, name.ToString()} {
+   NamedPark(MaTree&, StrView name) : NamedPark{name} {
+   }
+   NamedPark(StrView name) : base(new ParkTree{name.ToString()}, name.ToString()) {
    }
 
    /// 把 obj 加入 Sapling(MaTree), 在返回前會先觸發 EventType_Add.
@@ -91,7 +94,7 @@ inline NamedSeedSPT<ParkT> FetchNamedPark(MaTree& maTree, StrView parkName, Args
       if (park)
          return park;
       if (fon9_LIKELY(!newPark))
-         newPark.reset(new ParkT{maTree, parkName, std::forward<ArgsT>(ctorArgs)...});
+         newPark.reset(new ParkT(maTree, parkName, std::forward<ArgsT>(ctorArgs)...));
       if (fon9_LIKELY(maTree.Add(newPark)))
          return newPark;
       // maTree.Add(newPark) 失敗, 另一 thread 同時 Add()!

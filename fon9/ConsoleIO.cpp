@@ -4,7 +4,11 @@
 #include <stdio.h>
 #include <ctype.h>
 
-#ifndef fon9_WINDOWS
+#ifdef fon9_WINDOWS
+fon9_BEFORE_INCLUDE_STD
+#include <io.h>
+fon9_AFTER_INCLUDE_STD
+#else
 #include <unistd.h>
 #include <termios.h>
 #include <string.h>
@@ -12,7 +16,11 @@
 
 namespace fon9 {
 
-#ifndef fon9_WINDOWS
+#ifdef fon9_WINDOWS
+fon9_API int getch() {
+   return _isatty(_fileno(stdin)) ? _getch() : fgetc(stdin);
+}
+#else
 fon9_API int getch() {
    struct termios cur;
    memset(&cur, 0, sizeof(cur));

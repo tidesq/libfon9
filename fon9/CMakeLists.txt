@@ -77,6 +77,8 @@ set(fon9src
  io/FdrTcpClient.cpp
  io/FdrTcpServer.cpp
 
+ web/HttpParser.cpp
+
  seed/SeedBase.cpp
  seed/Tab.cpp
  seed/Layout.cpp
@@ -112,6 +114,9 @@ set(fon9src
  
  framework/Framework.cpp
  framework/SeedSession.cpp
+ framework/IoManager.cpp
+ framework/IoFactoryTcpClient.cpp
+ framework/IoFactoryTcpServer.cpp
 )
 add_library(fon9_s STATIC ${fon9src})
 target_link_libraries(fon9_s pthread rt)
@@ -119,7 +124,7 @@ target_link_libraries(fon9_s pthread rt)
 add_library(fon9 SHARED ${fon9src})
 target_link_libraries(fon9 pthread rt dl)
 
-add_executable(Fon9Co framework/Fon9Co.cpp)
+add_executable(Fon9Co framework/Fon9Co.cpp framework/HttpManSession.cpp)
 target_link_libraries(Fon9Co pthread fon9)
 
 # unit tests: Tools / Utility

@@ -9,8 +9,9 @@ namespace fon9 { namespace seed {
 
 fon9_WARN_DISABLE_PADDING;
 /// \ingroup seed
-/// 協助您在 Tree、Pod、Seed 之間來回穿梭、查看、操作的工具.
-/// 所有的操作都 **不是 thread safe**
+/// - 檢查存訪問的權限.
+///   - 然後透過 SeedSearcher 協助您在 Tree、Pod、Seed 之間來回穿梭、查看、操作.
+/// - 所有的操作都 **不是 thread safe**
 struct fon9_API SeedFairy : public intrusive_ref_counter<SeedFairy> {
    fon9_NON_COPY_NON_MOVE(SeedFairy);
    struct AclTree;

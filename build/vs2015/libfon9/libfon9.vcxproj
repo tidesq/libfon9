@@ -128,6 +128,8 @@
     <ClInclude Include="..\..\..\fon9\FileAppender.hpp" />
     <ClInclude Include="..\..\..\fon9\FilePath.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\Framework.hpp" />
+    <ClInclude Include="..\..\..\fon9\framework\IoFactory.hpp" />
+    <ClInclude Include="..\..\..\fon9\framework\IoManager.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\SeedSession.hpp" />
     <ClInclude Include="..\..\..\fon9\HostId.hpp" />
     <ClInclude Include="..\..\..\fon9\InnDbf.hpp" />
@@ -246,6 +248,7 @@
     <ClInclude Include="..\..\..\fon9\Unaligned.hpp" />
     <ClInclude Include="..\..\..\fon9\Utility.hpp" />
     <ClInclude Include="..\..\..\fon9\WaitPolicy.hpp" />
+    <ClInclude Include="..\..\..\fon9\web\HttpParser.hpp" />
     <ClInclude Include="..\..\..\fon9\Worker.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -294,6 +297,9 @@
     <ClCompile Include="..\..\..\fon9\FileAppender.cpp" />
     <ClCompile Include="..\..\..\fon9\FilePath.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\Framework.cpp" />
+    <ClCompile Include="..\..\..\fon9\framework\IoFactoryTcpClient.cpp" />
+    <ClCompile Include="..\..\..\fon9\framework\IoFactoryTcpServer.cpp" />
+    <ClCompile Include="..\..\..\fon9\framework\IoManager.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\SeedSession.cpp" />
     <ClCompile Include="..\..\..\fon9\HostId.cpp" />
     <ClCompile Include="..\..\..\fon9\InnFile.cpp" />
@@ -365,6 +371,7 @@
     <ClCompile Include="..\..\..\fon9\TimeStamp.cpp" />
     <ClCompile Include="..\..\..\fon9\ToStr.cpp" />
     <ClCompile Include="..\..\..\fon9\ToStrFmt.cpp" />
+    <ClCompile Include="..\..\..\fon9\web\HttpParser.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
