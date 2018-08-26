@@ -680,6 +680,24 @@
     <ClInclude Include="..\..\..\fon9\web\HttpParser.hpp">
       <Filter>Header Files\web</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\web\UrlCodec.hpp">
+      <Filter>Header Files\web</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\web\HttpMessage.hpp">
+      <Filter>Header Files\web</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\web\HttpHandler.hpp">
+      <Filter>Header Files\web</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\web\HttpHandlerStatic.hpp">
+      <Filter>Header Files\web</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\web\HttpDate.hpp">
+      <Filter>Header Files\web</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\web\HttpSession.hpp">
+      <Filter>Header Files\web</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -694,6 +712,9 @@
     </None>
     <None Include="..\..\..\fon9\seed\README.md">
       <Filter>Header Files\seed</Filter>
+    </None>
+    <None Include="..\..\..\fon9\web\HttpStatic.cfg">
+      <Filter>Header Files\web</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -1016,7 +1037,7 @@
       <Filter>Source Files\_base\_Tools / Utility</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\ConfigParser.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\_base\_Tools / Utility</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\framework\IoFactoryTcpClient.cpp">
       <Filter>Source Files\framework</Filter>
@@ -1028,6 +1049,24 @@
       <Filter>Source Files\framework</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\web\HttpParser.cpp">
+      <Filter>Source Files\web</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\web\UrlCodec.cpp">
+      <Filter>Source Files\web</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\web\HttpMessage.cpp">
+      <Filter>Source Files\web</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\web\HttpHandler.cpp">
+      <Filter>Source Files\web</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\web\HttpHandlerStatic.cpp">
+      <Filter>Source Files\web</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\web\HttpDate.cpp">
+      <Filter>Source Files\web</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\web\HttpSession.cpp">
       <Filter>Source Files\web</Filter>
     </ClCompile>
   </ItemGroup>

@@ -77,7 +77,13 @@ set(fon9src
  io/FdrTcpClient.cpp
  io/FdrTcpServer.cpp
 
+ web/HttpSession.cpp
  web/HttpParser.cpp
+ web/HttpMessage.cpp
+ web/UrlCodec.cpp
+ web/HttpDate.cpp
+ web/HttpHandler.cpp
+ web/HttpHandlerStatic.cpp
 
  seed/SeedBase.cpp
  seed/Tab.cpp
@@ -124,7 +130,7 @@ target_link_libraries(fon9_s pthread rt)
 add_library(fon9 SHARED ${fon9src})
 target_link_libraries(fon9 pthread rt dl)
 
-add_executable(Fon9Co framework/Fon9Co.cpp framework/HttpManSession.cpp)
+add_executable(Fon9Co framework/Fon9Co.cpp)
 target_link_libraries(Fon9Co pthread fon9)
 
 # unit tests: Tools / Utility

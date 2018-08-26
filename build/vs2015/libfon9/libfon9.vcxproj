@@ -248,13 +248,20 @@
     <ClInclude Include="..\..\..\fon9\Unaligned.hpp" />
     <ClInclude Include="..\..\..\fon9\Utility.hpp" />
     <ClInclude Include="..\..\..\fon9\WaitPolicy.hpp" />
+    <ClInclude Include="..\..\..\fon9\web\HttpDate.hpp" />
+    <ClInclude Include="..\..\..\fon9\web\HttpHandlerStatic.hpp" />
+    <ClInclude Include="..\..\..\fon9\web\HttpMessage.hpp" />
     <ClInclude Include="..\..\..\fon9\web\HttpParser.hpp" />
+    <ClInclude Include="..\..\..\fon9\web\HttpHandler.hpp" />
+    <ClInclude Include="..\..\..\fon9\web\HttpSession.hpp" />
+    <ClInclude Include="..\..\..\fon9\web\UrlCodec.hpp" />
     <ClInclude Include="..\..\..\fon9\Worker.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\fon9\buffer\README.md" />
     <None Include="..\..\..\fon9\io\README.md" />
     <None Include="..\..\..\fon9\seed\README.md" />
+    <None Include="..\..\..\fon9\web\HttpStatic.cfg" />
     <None Include="..\..\..\Overview\ThreadTools.md" />
     <None Include="..\..\..\README.md" />
   </ItemGroup>
@@ -371,7 +378,13 @@
     <ClCompile Include="..\..\..\fon9\TimeStamp.cpp" />
     <ClCompile Include="..\..\..\fon9\ToStr.cpp" />
     <ClCompile Include="..\..\..\fon9\ToStrFmt.cpp" />
+    <ClCompile Include="..\..\..\fon9\web\HttpDate.cpp" />
+    <ClCompile Include="..\..\..\fon9\web\HttpHandlerStatic.cpp" />
+    <ClCompile Include="..\..\..\fon9\web\HttpMessage.cpp" />
     <ClCompile Include="..\..\..\fon9\web\HttpParser.cpp" />
+    <ClCompile Include="..\..\..\fon9\web\HttpHandler.cpp" />
+    <ClCompile Include="..\..\..\fon9\web\HttpSession.cpp" />
+    <ClCompile Include="..\..\..\fon9\web\UrlCodec.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

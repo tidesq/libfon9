@@ -252,7 +252,7 @@ void DeviceContinueSend(DeviceT& dev, SendBuffer& sbuf, Aux& aux) {
    fon9_GCC_WARN_DISABLE_NO_PUSH("-Wshadow");
    aux.DisableWritableEvent(sbuf);
    sc.GetALocker().AddAsyncTask(DeviceAsyncOp{[&sbuf, aux](Device& dev) {
-      fon9_LOG_WARN("Async.DeviceContinueSend|dev=", ToPtr{&dev});
+      fon9_LOG_DEBUG("Async.DeviceContinueSend|dev=", ToPtr{&dev});
       if (fon9_LIKELY(IsAllowContinueSend(dev.OpImpl_GetState()))
           && fon9_LIKELY(aux.IsSendBufferAlive(dev, sbuf))) {
          ContinueSendChecker sc;

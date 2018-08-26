@@ -247,7 +247,7 @@ public:
       auto ifind = this->find(key);
       if (ifind != this->end())
          return *ifind;
-      return *this->insert(typename base::value_type{key, mapped_type{}}).first;
+      return *this->insert(typename base::value_type{K{key}, mapped_type{}}).first;
    }
 };
 

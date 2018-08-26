@@ -22,6 +22,7 @@ libfon9 TODO list
 * TreeFlag::NeedsApply: 使用「套用」方式處理資料異動。
 * DllManager
 * WebUI
+  * js: [fetch API](https://notfalse.net/31/fetch-api)
 * Fon9Co
   * Linux: to daemon.
   * Windows: install to service.
@@ -35,10 +36,17 @@ libfon9 TODO list
   * Sch 設定排程時間.
   * 註冊 Factory 異動事件, 讓稍晚註冊的 Factory 可以建立 Device.
   * NeedsApply
-  * HttpMan: ip白名單、黑名單?
+  * ip白名單、黑名單?
+* Http
+  * 限制訊息最大長度.
+  * 如何找到要提供給 HttpHandler,HttpSession 的參數?
+  * Http SASL: [標準還在草稿階段](https://tools.ietf.org/id/draft-vanrein-httpauth-sasl-00.html)
+    看起來還有很遠的路要走，所以只好先用 js 頂著。
+* TLS
+  
+  
 * UDP/Multicast
 * FileDevice
-* TLS
 * Device.DeviceCommand() 傳回值: success+message or fail+message.
 * DeviceId 拿掉開頭的 '|' 字元.
 ---------------------------------------

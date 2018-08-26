@@ -78,7 +78,7 @@ __UNLOCK_FOR_NO_LINK:
    aux.DisableReadableEvent(rbuf);
    fon9_GCC_WARN_DISABLE("-Wshadow");
    rlocker.GetALocker().AddAsyncTask(DeviceAsyncOp{[&rxbuf, aux](Device& dev) {
-      fon9_LOG_WARN("Async.DeviceRecvBufferReady");
+      fon9_LOG_DEBUG("Async.DeviceRecvBufferReady");
       RecvBuffer& rbuf = RecvBuffer::StaticCast(rxbuf);
       if (dev.OpImpl_GetState() == State::LinkReady && aux.IsRecvBufferAlive(dev, rbuf)) {
          RecvBufferSize contRecvSize = dev.Session_->OnDevice_Recv(dev, rxbuf);

@@ -5,7 +5,7 @@
 
 namespace fon9 { namespace web {
 
-constexpr size_t kMinHeaderSize = sizeof("GET / HTTP/" "\r\n\r\n");
+constexpr size_t kMinHeaderSize = sizeof("GET / HTTP/" fon9_kCSTR_HTTPCRLN2);
 constexpr size_t kMaxHeaderSize = 1024 * 8;
 
 static bool TrimHeadAndAppend(std::string& dst, BufferNode* front) {
@@ -21,33 +21,6 @@ static bool TrimHeadAndAppend(std::string& dst, BufferNode* front) {
       front = front->GetNext();
    }
    return false;
-}
-
-//--------------------------------------------------------------------------//
-
-void HttpMessage::RemoveFullMessage() {
-   const char*  origBegin = this->OrigStr_.c_str();
-   StrView tail{origBegin + (this->IsChunked() ? this->ChunkTrailer_.End() : this->Body_.End()),
-                origBegin + this->OrigStr_.size()};
-   if (StrTrimHead(&tail).empty())
-      this->OrigStr_.clear();
-   else
-      this->OrigStr_.erase(0, static_cast<size_t>(tail.begin() - origBegin));
-   this->ClearFields();
-}
-void HttpMessage::ClearAll() {
-   this->OrigStr_.clear();
-   this->ClearFields();
-}
-void HttpMessage::ClearFields() {
-   this->StartLine_.Size_ = 0;
-   this->Body_.Pos_ = this->Body_.Size_ = 0;
-   this->ContentLength_ = 0;
-   this->NextChunkSize_ = 0;
-   this->CurrChunkFrom_ = 0;
-   this->ChunkExt_.clear();
-   this->ChunkTrailer_.Pos_ = this->ChunkTrailer_.Size_ = 0;
-   this->HeaderFields_.clear();
 }
 
 //--------------------------------------------------------------------------//
@@ -70,7 +43,7 @@ HttpResult HttpParser::Feed(HttpMessage& msg, BufferList buf) {
 HttpResult HttpParser::AfterFeedHeader(HttpMessage& msg, size_t bfsz) {
    if (msg.OrigStr_.size() < kMinHeaderSize) // min http header.
       return HttpResult::Incomplete;
-   size_t pHeadEnd = msg.OrigStr_.find("\r\n\r\n", bfsz > 3 ? bfsz - 3 : 0, 4);
+   size_t pHeadEnd = msg.OrigStr_.find(fon9_kCSTR_HTTPCRLN2, bfsz > 3 ? bfsz - 3 : 0, 4);
    if (pHeadEnd == std::string::npos) {
       if (msg.OrigStr_.size() > kMaxHeaderSize)
          return HttpResult::HeaderTooLarge;
@@ -88,7 +61,15 @@ HttpResult HttpParser::AfterFeedHeader(HttpMessage& msg, size_t bfsz) {
       StrView  value = StrFetchNoTrim(header, '\r');
       StrView  name = StrFetchNoTrim(value, ':');
       sname.FromStrView(origBegin, name);
-      msg.HeaderFields_.kfetch(sname).second.FromStrView(origBegin, StrTrim(&value));
+      HttpMessage::FieldValue* fld = &msg.HeaderFields_.kfetch(sname).second;
+      if (fld->Value_.Pos_ > 0) {
+         // 一般而言 header field 不會重複, 即使重複也不會太多, 所以就直接 loop 找到最後.
+         while (fld->Next_ > 0)
+            fld = &msg.ExHeaderValues_[fld->Next_ - 1];
+         msg.ExHeaderValues_.resize(fld->Next_ = msg.ExHeaderValues_.size() + 1);
+         fld = &msg.ExHeaderValues_.back();
+      }
+      fld->Value_.FromStrView(origBegin, StrTrim(&value));
    }
    StrView val = msg.FindHeadField("transfer-encoding");
    while (!val.empty()) {
@@ -181,7 +162,7 @@ HttpResult HttpParser::FetchChunkTrailer(HttpMessage& msg) {
       return HttpResult::FullMessage;
    }
    pos = (pos > 3 ? (msg.ChunkTrailer_.Pos_ + pos - 3) : msg.ChunkTrailer_.Pos_);
-   size_t pChunkTailerEnd = msg.OrigStr_.find("\r\n\r\n", pos, 4);
+   size_t pChunkTailerEnd = msg.OrigStr_.find(fon9_kCSTR_HTTPCRLN2, pos, 4);
    if (pChunkTailerEnd == std::string::npos) {
       msg.ChunkTrailer_.Size_ = msg.OrigStr_.size() - msg.ChunkTrailer_.Pos_;
       return HttpResult::Incomplete;

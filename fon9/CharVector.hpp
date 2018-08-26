@@ -57,5 +57,17 @@ struct CharVector : public ByteVector {
 };
 StrView ToStrView(const CharVector& pthis);
 
+struct CharVectorComparer {
+   inline bool operator()(const StrView& lhs, const CharVector& rhs) const {
+      return lhs < ToStrView(rhs);
+   }
+   inline bool operator()(const CharVector& lhs, const StrView& rhs) const {
+      return ToStrView(lhs) < rhs;
+   }
+   inline bool operator()(const CharVector& lhs, const CharVector& rhs) const {
+      return lhs < rhs;
+   }
+};
+
 } // namespaces
 #endif//__fon9_CharVector_hpp__

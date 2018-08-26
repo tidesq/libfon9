@@ -11,8 +11,9 @@
 #include "fon9/CmdArgs.hpp"
 #include "fon9/Log.hpp"
 
-#include "fon9/framework/HttpManSession.hpp"
 #include "fon9/framework/IoManager.hpp"
+#include "fon9/web/HttpSession.hpp"
+#include "fon9/web/HttpHandlerStatic.hpp"
 
 //--------------------------------------------------------------------------//
 
@@ -178,6 +179,32 @@ public:
 };
 
 //--------------------------------------------------------------------------//
+class HttpHome : public fon9::web::HttpHandlerStatic {
+   fon9_NON_COPY_NON_MOVE(HttpHome);
+   using base = fon9::web::HttpHandlerStatic;
+public:
+   using base::base;
+   fon9::io::RecvBufferSize OnHttpRequest(fon9::io::Device& dev, fon9::web::HttpRequest& req) override {
+      if (0);// below is for debug.
+      if (req.MessageSt_ == fon9::web::HttpMessageSt::ChunkAppended) {
+         printf("\n" "ChunkAppended:\n" "chunk-ext=[%s]\n" "chunk-data=[%s]\n",
+                req.Message_.ChunkExt().ToString().c_str(),
+                req.Message_.ChunkData().ToString().c_str());
+      }
+      else {
+         // FullMessage, HeaderReady.
+         printf("\n" "FullMessage:[%s]\n",
+                req.Message_.FullMessage().ToString().c_str());
+
+         if (req.Message_.IsChunked())
+            printf("chunk-ext=[%s]\n" "trailer=[%s]\n",
+                   req.Message_.ChunkExt().ToString().c_str(),
+                   req.Message_.ChunkTrailer().ToString().c_str());
+      }
+      return base::OnHttpRequest(dev, req);
+   }
+};
+
 
 int main(int argc, char** argv) {
    #if defined(_MSC_VER) && defined(_DEBUG)
@@ -204,7 +231,11 @@ int main(int argc, char** argv) {
    iomArgs.DeviceFactoryPark_->Add(fon9::GetIoFactoryTcpServer());
    fon9::NamedIoManager* iomgr;
    fon9sys.Root_->Add(iomgr = new fon9::NamedIoManager{iomArgs});
-   iomgr->GetIoManager().SessionFactoryPark_->Add(fon9::HttpManSession::MakeFactory(fon9sys));
+
+   #define fon9_kCSTR_HttpManSession   "HttpMan"
+   fon9::web::HttpHandlerSP wwwRootHandler{new HttpHome{"wwwroot/HttpStatic.cfg", "HttpRoot"}};
+   iomgr->GetIoManager().SessionFactoryPark_->Add(fon9::web::HttpSession::MakeFactory(fon9_kCSTR_HttpManSession, wwwRootHandler));
+   fon9sys.Root_->Add(wwwRootHandler);
 
    fon9::IoConfigItem iocfg;
    iocfg.Enabled_ = fon9::EnabledYN::Yes;

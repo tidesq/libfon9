@@ -22,6 +22,7 @@ public:
    using base::base;
    constexpr explicit TimeStamp(const DecimalBase& rhs) : base{rhs} {
    }
+   explicit TimeStamp(const struct tm& tm);
    /// 預設值 = 0 = 1970/01/01 00:00:00.
    constexpr TimeStamp() : base{} {
    }
@@ -92,6 +93,10 @@ inline TimeStamp::OrigType stdtm_ToEpochSeconds(const struct tm& t) {
    return timegm(const_cast<struct tm*>(&t));
 #endif
 }
+inline TimeStamp::TimeStamp(const struct tm& tm)
+   : base{TimeInterval_Second(stdtm_ToEpochSeconds(tm))} {
+}
+
 
 /// \ingroup AlNum
 /// 星期日=0, 星期一=1...

@@ -52,7 +52,7 @@ public:
       : Name_(std::move(name))
       , Title_(std::move(title))
       , Description_(std::move(description)) {
-      assert(ValidateName(&this->Name_));
+      assert(this->Name_.empty() || ValidateName(&this->Name_));
    }
 
    /// 取得物件標題用的字串: Title. 可能為 empty.

@@ -51,13 +51,13 @@ public:
    /// \retval nullptr  def.Name_ 已存在.
    SysEnvItemSP Add(int argc, char** argv, const CmdArgDef& def);
    SysEnvItemSP Add(SysEnvItemSP item) {
-      if (static_cast<MaTree*>(this->Sapling_.get())->Add(item))
+      if (static_cast<SysEnvTree*>(this->Sapling_.get())->Add(item))
          return item;
       return SysEnvItemSP{};
    }
 
    SysEnvItemSP Get(const StrView& name) const {
-      return static_cast<MaTree*>(this->Sapling_.get())->Get<SysEnvItem>(name);
+      return static_cast<SysEnvTree*>(this->Sapling_.get())->Get<SysEnvItem>(name);
    }
 
    #define fon9_kCSTR_SysEnvItem_ConfigPath   "ConfigPath"    // config 檔案的預設路徑.
