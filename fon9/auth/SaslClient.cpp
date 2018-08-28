@@ -40,11 +40,14 @@ static constexpr size_t  kMaxSaltSize       = 128;
 
 SaslScramClient::SaslScramClient(StrView authz, StrView authc, StrView pass)
    : Pass_{pass.ToString()} {
-   if (authz.empty())
+   if (authz.empty()) {
       this->ClientFirstMessage_ = "n,,n=";
+      this->Gs2HeaderSize_ = 3; //"n,,"
+   }
    else {
-      this->ClientFirstMessage_ = "n,,a=";
+      this->ClientFirstMessage_ = "n,a="; // "n,a=authzid"
       authz.AppendTo(this->ClientFirstMessage_);
+      this->Gs2HeaderSize_ = this->ClientFirstMessage_.size() + 1; // +1: include ','
       this->ClientFirstMessage_.append(",n=", 3);
    }
    authc.AppendTo(this->ClientFirstMessage_);
@@ -85,16 +88,24 @@ AuthR SaslScramClient::OnChallenge(StrView message) {
          if (this->ParseAndCalcSaltedPass(&this->Pass_, pNonceEnd + 1, message.end(), this->SaltedPass_) != message.end())
             break;
          // 建立 this->AuthMessage_ 及 clientFinalMessage.
-         const char* cliFirstMsg = this->ClientFirstMessage_.c_str();
-         if (cliFirstMsg[0] != 'n' || cliFirstMsg[1] != ',' || cliFirstMsg[2] != ',') // 移除 "n,,"
-            break;
-         this->AuthMessage_.assign(cliFirstMsg + 3, this->ClientFirstMessage_.size() - 3);
+         const char* const cliFirstMsg = this->ClientFirstMessage_.c_str();
+         this->AuthMessage_.assign(cliFirstMsg + this->Gs2HeaderSize_, this->ClientFirstMessage_.size() - this->Gs2HeaderSize_);
          this->AuthMessage_.push_back(',');
          message.AppendTo(this->AuthMessage_);
          this->AuthMessage_.push_back(',');
-         std::string clientFinalMessage{"c=biws,"};// "biws" = Base64Encode("n,,");
+         std::string clientFinalMessage;
+         clientFinalMessage.reserve(message.size() * 3);
+         if (this->Gs2HeaderSize_ == 3 && cliFirstMsg[0] == 'n' && cliFirstMsg[1] == ',' && cliFirstMsg[2] == ',')
+            clientFinalMessage.assign("c=biws,", 7); // "biws" = Base64Encode("n,,");
+         else {
+            clientFinalMessage.assign("c=", 2);
+            size_t e64sz = Base64EncodeLengthNoEOS(this->Gs2HeaderSize_);
+            clientFinalMessage.resize(2 + e64sz);
+            Base64Encode(&*(clientFinalMessage.begin() + 2), e64sz, cliFirstMsg, this->Gs2HeaderSize_);
+            clientFinalMessage.push_back(',');
+         }
          clientFinalMessage.append(message.begin(), pNonceEnd);// "r=" "ClientNonce" "ServerNonce"
-         if (!this->NewPass_.empty())
+         if (!this->NewPass_.empty()) // fon9 自己的擴充, for change password.
             clientFinalMessage.append(",s=", 3);
          this->AuthMessage_.append(clientFinalMessage);
          clientFinalMessage.append(",p=", 3);
@@ -119,7 +130,7 @@ AuthR SaslScramClient::OnChallenge(StrView message) {
          pIterEnd += 3;
          if (v.size() != static_cast<size_t>(message.end() - pIterEnd)
          && memcmp(v.c_str(), pIterEnd, v.size()) != 0)
-            return AuthR(fon9_Auth_EProof, "err verify for change pass");
+            return AuthR(fon9_Auth_EProof, "err verify for old pass");
          // 建立 client 改密碼訊息.
          std::string climsg;
          climsg.reserve(kMaxSaltSize * 3);

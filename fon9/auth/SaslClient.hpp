@@ -11,15 +11,20 @@ namespace fon9 { namespace auth {
 /// 提供 SASL Client 端的處理基底.
 class fon9_API SaslClient {
 protected:
-   std::string ClientFirstMessage_;
+   std::string ClientFirstMessage_; //= gs2-header client-first-message-bare
+   size_t      Gs2HeaderSize_;
 public:
    virtual ~SaslClient();
 
    const std::string& GetFirstMessage() const {
       return this->ClientFirstMessage_;
    }
-   void SetFirstMessage(std::string v) {
+   void SetFirstMessage(std::string v, size_t gs2HeaderSize) {
       this->ClientFirstMessage_ = std::move(v);
+      this->Gs2HeaderSize_ = gs2HeaderSize;
+   }
+   size_t GetGs2HeaderSize() const {
+      return this->Gs2HeaderSize_;
    }
 
    /// message = server challenge message.

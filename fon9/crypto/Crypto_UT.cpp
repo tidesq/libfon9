@@ -122,7 +122,7 @@ void TestSaslScram(TestSaslServer& server, fon9::auth::SaslClientSP saslcli, con
    std::string cmsg = saslcli->GetFirstMessage();
    cmsg.erase(cmsg.find(",r=") + 3);
    cmsg.append(*scramMessages++);
-   saslcli->SetFirstMessage(std::move(cmsg));
+   saslcli->SetFirstMessage(std::move(cmsg), saslcli->GetGs2HeaderSize());
 
    fon9::auth::AuthRequest req;
    req.UserFrom_ = "TestUT";

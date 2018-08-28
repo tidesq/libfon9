@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>fon9:signon unit test</title>
+</head>
+<body>
+Testing SASL: "SCRAM-SHA-1" and "SCRAM-SHA-256"...
+</body>
+  
+<script type="module">
+import SaslScram from './sasl-scram.js';
+
+function write_output(msg, isErr = '') {
+  console.log(msg);
+  let str;
+  if(typeof msg === 'object')
+    str = JSON.stringify(msg);
+  else
+    str = msg;
+  if (isErr === 'err')
+    str = '<p style="color:red">' + str;
+  else
+    str = '<p>' + str;
+  document.body.innerHTML += str + '</p>';
+}
+
+async function test_sha1() { // test case: https://tools.ietf.org/html/rfc5802#section-5
+  var scram = new SaslScram('SHA-1');
+  scram.genNonce = function () { return 'fyko+d2lbbFgONRv9qkxdawL'; }
+  
+  var msg = scram.initial({username:'user',password:'pencil'});
+  write_output(msg);
+  if (msg != 'n,,n=user,r=fyko+d2lbbFgONRv9qkxdawL')
+    write_output('not match. initial', 'err');
+  msg = await scram.challenge('r=fyko+d2lbbFgONRv9qkxdawL3rfcNHYJY1ZVvWVs7j,s=QSXCR+Q6sek8bf92,i=4096');
+  write_output(msg);
+  if (msg != 'c=biws,r=fyko+d2lbbFgONRv9qkxdawL3rfcNHYJY1ZVvWVs7j,p=v0X8v3Bz2T0CJGbJQyF0X+HI4Ts=')
+    write_output('not match. challenge', 'err');
+  msg = await scram.challenge('v=rmF9pqV8S7suAoZWja4dJRkFsKQ=');
+  write_output(msg, msg.hasOwnProperty('signed') ? '' : 'err');
+}
+
+async function test_sha256_NewPass() { // test case: https://github.com/fonwin/libfon9/blob/master/fon9/crypto/Crypto_UT.cpp#L215
+  var scram = new SaslScram('SHA-256');
+  scram.NewPass = 'i love fon9'; // 可以是任意長度的字串.
+  scram.genNonce = function () { return 'rOprNGfwEbeRWgbNEkqO'; }
+  var msg = scram.initial({username:'user',password:'pencil'});
+  // msg: C=>S: 使用者登入訊息.
+  write_output(msg);
+  if (msg != 'n,,n=user,r=rOprNGfwEbeRWgbNEkqO')
+    write_output('SHA-256: not match. initial', 'err');
+  // challenge(S=>C: 提供 s=SALT, i=ITERATOR 請 Client 計算 p=PROOF)
+  msg = await scram.challenge('r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,s=W22ZaJ0SNY7soEsUEjb6gQ==,i=4096');
+  // msg: C=>S: 提供舊密碼的 p=PROOF 給 Server 驗證, 加上 ',s=,' 表示Client要改密碼.
+  write_output(msg);
+  if (msg != 'c=biws,r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,s=,p=3hNK8VLY3MNYUtGPl7ZV22wxTdSSpqj3kBxhBzV67KI=')
+    write_output('SHA-256: not match. challenge', 'err');
+  // challenge(S=>C: 提供 s=NewSALT, i=NewITERATOR, v=舊密碼的驗證)
+  msg = await scram.challenge('s=WWqttC9+Us100/9vaS58VjcR,i=10000,v=fnDd96dJ1d44G+g3cEfZnunQpjoNUbGIfYjVmUHtv1k=');
+  // msg: C=>S: 新密碼訊息 h=NewPassInfo, p=NewPROOF
+  write_output(msg);
+  if (msg != 'h=kvHpTNCSD/LR4Xx45AgfNhSVd7QWfZC8ZP+U6tHf7mo=,p=eCM6XCJGqBxIAbuI6JN1EYv/2ZI41oNn09FINafSGsE=')
+    write_output('SHA-256: ChangePass, request not match', 'err');
+  // challenge(S=>C: 提供 h=新密碼的驗證)
+  msg = await scram.challenge('h=+ImOUvADbsuEao41MTJoLseHlUkglbz27m0fBjAAeBQ=');
+  write_output(msg, msg.hasOwnProperty('passChanged') ? '' : 'err');
+}
+
+async function test_all() {
+  if(window.crypto.subtle === undefined) {
+    write_output('Cryptography API not Supported.<br>Must use localhost or https.', 'err');
+    return;
+  }
+  write_output('<hr>Testing "<b>SCRAM-SHA-1</b>"');
+  await test_sha1();
+  write_output('<hr>Testing "<b>SCRAM-SHA-256</b>" & ChangePass');
+  await test_sha256_NewPass();
+  write_output('<hr>Test done!');
+}
+test_all();
+
+</script>
+</html>
