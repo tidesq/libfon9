@@ -118,6 +118,7 @@
     <ClInclude Include="..\..\..\fon9\ConfigParser.hpp" />
     <ClInclude Include="..\..\..\fon9\ConsoleIO.hpp" />
     <ClInclude Include="..\..\..\fon9\crypto\CryptoTools.hpp" />
+    <ClInclude Include="..\..\..\fon9\crypto\Sha1.hpp" />
     <ClInclude Include="..\..\..\fon9\crypto\Sha256.hpp" />
     <ClInclude Include="..\..\..\fon9\DyObj.hpp" />
     <ClInclude Include="..\..\..\fon9\Endian.hpp" />
@@ -255,6 +256,8 @@
     <ClInclude Include="..\..\..\fon9\web\HttpHandler.hpp" />
     <ClInclude Include="..\..\..\fon9\web\HttpSession.hpp" />
     <ClInclude Include="..\..\..\fon9\web\UrlCodec.hpp" />
+    <ClInclude Include="..\..\..\fon9\web\WebSocket.hpp" />
+    <ClInclude Include="..\..\..\fon9\web\WebSocketAuther.hpp" />
     <ClInclude Include="..\..\..\fon9\Worker.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -297,6 +300,7 @@
     <ClCompile Include="..\..\..\fon9\ConfigLoader.cpp" />
     <ClCompile Include="..\..\..\fon9\ConfigParser.cpp" />
     <ClCompile Include="..\..\..\fon9\ConsoleIO.cpp" />
+    <ClCompile Include="..\..\..\fon9\crypto\Sha1.cpp" />
     <ClCompile Include="..\..\..\fon9\crypto\Sha256.cpp" />
     <ClCompile Include="..\..\..\fon9\ErrC.cpp" />
     <ClCompile Include="..\..\..\fon9\FdrNotify.cpp" />
@@ -385,6 +389,8 @@
     <ClCompile Include="..\..\..\fon9\web\HttpHandler.cpp" />
     <ClCompile Include="..\..\..\fon9\web\HttpSession.cpp" />
     <ClCompile Include="..\..\..\fon9\web\UrlCodec.cpp" />
+    <ClCompile Include="..\..\..\fon9\web\WebSocket.cpp" />
+    <ClCompile Include="..\..\..\fon9\web\WebSocketAuther.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

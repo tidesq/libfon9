@@ -84,6 +84,8 @@ set(fon9src
  web/HttpDate.cpp
  web/HttpHandler.cpp
  web/HttpHandlerStatic.cpp
+ web/WebSocket.cpp
+ web/WebSocketAuther.cpp
 
  seed/SeedBase.cpp
  seed/Tab.cpp
@@ -104,6 +106,7 @@ set(fon9src
  seed/SeedFairy.cpp
  seed/SysEnv.cpp
 
+ crypto/Sha1.cpp
  crypto/Sha256.cpp
  auth/AuthMgr.cpp
  auth/RoleMgr.cpp

@@ -90,7 +90,6 @@ void IocpSocket::StartRecv(RecvBufferSize expectSize) {
       case WSA_IO_PENDING: // ERROR_IO_PENDING: 正常接收等候中.
          break;
       default: // 接收失敗, 不會產生 OnIocp_* 事件
-         this->IocpSocketReleaseRef();
          this->RecvBuffer_.Clear();
          this->OnIocp_Error(&this->RecvOverlapped_, static_cast<DWORD>(eno));
       }

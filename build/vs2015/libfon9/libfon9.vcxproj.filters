@@ -698,6 +698,15 @@
     <ClInclude Include="..\..\..\fon9\web\HttpSession.hpp">
       <Filter>Header Files\web</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\crypto\Sha1.hpp">
+      <Filter>Header Files\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\web\WebSocket.hpp">
+      <Filter>Header Files\web</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\web\WebSocketAuther.hpp">
+      <Filter>Header Files\web</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1067,6 +1076,15 @@
       <Filter>Source Files\web</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\web\HttpSession.cpp">
+      <Filter>Source Files\web</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\crypto\Sha1.cpp">
+      <Filter>Source Files\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\web\WebSocket.cpp">
+      <Filter>Source Files\web</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\web\WebSocketAuther.cpp">
       <Filter>Source Files\web</Filter>
     </ClCompile>
   </ItemGroup>

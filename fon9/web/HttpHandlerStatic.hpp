@@ -34,6 +34,7 @@ public:
 
    ~HttpHandlerStatic();
 };
+using HttpHandlerStaticSP = intrusive_ptr<HttpHandlerStatic>;
 
 } } // namespaces
 #endif//__fon9_web_HttpHandlerStatic_hpp__

@@ -129,6 +129,9 @@ public:
       }
       this->ThreadPool_.shrink_to_fit();
    }
+   size_t GetThreadCount() const {
+      return this->ThreadPool_.size();
+   }
 
    /// 通知結束，若有剩餘未執行的訊息，可透過 WaitForEndNow(remainMessageHandler) 處理。
    void NotifyForEndNow() {

@@ -65,7 +65,7 @@ __FILE_ERROR:
                "Seed: ", this->Name_, "<br>"
                "Error: ", errfn, ':', res,
                "</body></html>");
-      return this->SendErrorPrefix(dev, req, "404 Not found", rbuf);
+      return this->SendErrorPrefix(dev, req, "404 Not found", std::move(rbuf));
    }
    StrView contentType{"text/html; charset=utf-8"};
    std::string::size_type pos = fname.rfind('.');

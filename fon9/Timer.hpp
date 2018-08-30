@@ -171,6 +171,8 @@ class DataMemberEmitOnTimer : public DataMemberTimer {
    }
 public:
    using base::base;
+   /// 使用 GetDefaultTimerThread() 當作 timer thread.
+   DataMemberEmitOnTimer() = default;
 };
 fon9_MSC_WARN_POP;
 

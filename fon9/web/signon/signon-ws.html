@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+ <meta charset="UTF-8" />
+ <title>fon9:SASL WebSocket測試</title>
+ <link rel="stylesheet" href="fon9.css">
+</head>
+
+<body>
+ <form id="connectForm" method="dialog">
+ <fieldset class="fon9-fieldset">
+ <legend style="font-size:20px">fon9 WebSocket 測試：SASL 認證通過後才能收送訊息</legend>
+   <div class="fon9-form-item">
+     <label class="fon9-form-label">使用者代號</label>
+     <div class="fon9-input-block">
+       <input type="text" id="username" required placeholder="請輸入使用者代號" autocomplete="off" class="fon9-input">
+     </div>
+   </div>
+   <div class="fon9-form-item">
+     <label class="fon9-form-label">使用者密碼</label>
+     <div class="fon9-input-block">
+       <input type="password" id="password" placeholder="請輸入密码" autocomplete="off" class="fon9-input">
+     </div>
+   </div>
+   <div class="fon9-form-item">
+     <div class="fon9-input-block" style="float:right">
+       <button class="fon9-btn" id="btnConnect">建立連線</button>
+       <button class="fon9-btn" type="button" id="btnDisconnect" disabled>關閉連線</button>
+       <button class="fon9-btn" type="button" id="btnClear">清除訊息</button>
+     </div>
+   </div>
+ </fieldset>
+ </form>
+
+ <div>
+ <fieldset class="fon9-fieldset">
+ <legend style="font-size:20px">fon9 WebSocket 傳送測試</legend>
+   <input type="text" id="msgSend" placeholder="請輸入要送出的訊息" autocomplete="off" class="fon9-input" disabled style="float:left; width:430px">
+   <button class="fon9-btn" id="btnSend" style="float:right" disabled>送出</button>
+ </fieldset>
+ </div>
+
+ <fieldset style="border-width:0; border-top-width:1px;">
+  <legend>訊息</legend>
+  <div id="info">
+  </div>
+ </fieldset>
+
+<script type="module">
+import SaslScram from './sasl-scram.js'
+var wsConnection;
+
+(function() {
+  document.getElementById('connectForm').addEventListener('submit', connectFormSubmit);
+  document.getElementById('btnDisconnect').addEventListener('click', function() {
+    if (wsConnection) {
+      wsConnection.close();
+      wsConnection = undefined;
+    }
+    setEnableConnect(true);
+  });
+  document.getElementById('btnSend').addEventListener('click', function() {
+    if (wsConnection) {
+      let msg = document.getElementById('msgSend').value;
+      addInfo('Send:', msg);
+      wsConnection.send(msg);
+    }
+  });
+  document.getElementById('btnClear').addEventListener('click', function() {
+    document.getElementById('info').innerHTML = '';
+  });
+})();
+
+function setEnableConnect(isEnable = true) {
+  document.getElementById('username').disabled = !isEnable;
+  document.getElementById('password').disabled = !isEnable;
+  document.getElementById('btnConnect').disabled = !isEnable;
+  document.getElementById('btnDisconnect').disabled = isEnable;
+  document.getElementById('btnSend').disabled = isEnable;
+  document.getElementById('msgSend').disabled = isEnable;
+}
+
+function addInfo(head, msg, isErr = '') {
+  console.log(msg);
+  let str;
+  if (isErr === 'err')
+    str = '<p style="color:red">';
+  else
+    str = '<p>';
+  str += '<b>' + head + ' </b>';
+  if (msg !== '')
+    str += JSON.stringify(msg);
+  document.getElementById('info').innerHTML += str + '</p>';
+}
+
+function onWebSocketMessage(msg) {
+  // 認證成功後, WebSocket 的訊息, 會轉來這裡處理.
+  addInfo('Recv:', msg.data);
+}
+
+function onSaslChallenge(msg) {
+  if (wsConnection.challenging) { // 在 challenging 過程收到的訊息, 必定是已認證成功後的 [立即訊息].
+    onWebSocketMessage(msg);
+    return;
+  }
+  wsConnection.challenging = true;
+  addInfo('S=>C:', msg.data);
+  let saslRes;
+  if (!wsConnection.scram) { // msg.data = "SASL: mechList" 使用 ' ' 分隔 mechList
+    // 目前固定使用 'SCRAM-SHA-256'
+    wsConnection.mech = 'SCRAM-SHA-256';
+    addInfo('C=>S:', wsConnection.mech);
+    wsConnection.send(wsConnection.mech);
+    wsConnection.scram = new SaslScram('SHA-256');
+    saslRes = wsConnection.scram.initial(wsConnection);
+  }
+  else {
+    saslRes = wsConnection.scram.challenge(msg.data);
+  }
+  Promise.resolve(saslRes).then((res) => {
+    if (typeof res === 'string') {
+      wsConnection.challenging = false; // 在送出 response 之前必須先將 challenging 旗標關閉.
+      addInfo('C=>S:', res);
+      wsConnection.send(res);
+      return;
+    }
+    addInfo('Done:', res);
+    if (res.hasOwnProperty('signed')) {
+      wsConnection.onmessage = onWebSocketMessage;
+      wsConnection.challenging = false; // 認證成功, 設定新的 onmessage 之後, 才能關閉 challenging 旗標.
+      addInfo('認證成功:', res.signed);
+      addInfo('<hr>', '');
+      return;
+    }
+    wsConnection.challenging = false;
+    if (res.hasOwnProperty('passChanged'))
+      addInfo('密碼變更成功:', res.passChanged);
+    else if (res.hasOwnProperty('err')) {
+      wsConnection.err = res.err;
+      wsConnection.close();
+      addInfo('認證失敗:', res.err, 'err');
+    }
+  });
+}
+
+function connectFormSubmit(ev) {
+  if (wsConnection)
+    return false;//false:verify失敗 = 不要清除輸入區.
+  document.getElementById('info').innerHTML = '';
+  setEnableConnect(false);
+  let theForm = ev.currentTarget;
+  addInfo(theForm.username.value, 'connecting...');
+  wsConnection = new WebSocket('ws://localhost:6080/WsSeedMa');
+  wsConnection.username = theForm.username.value;
+  wsConnection.password = theForm.password.value;
+  wsConnection.onmessage = onSaslChallenge;
+  wsConnection.onclose =  function(evt) {
+    // 因為可能在處理 '認證失敗' 的訊息時, 收到斷線事件.
+    // 應先處理 '認證失敗', 所以延遲一會兒再處理斷線事件.
+    setTimeout(function(){
+      addInfo('與主機的連線中斷了!', '', 'err');
+      setEnableConnect(true);
+      wsConnection = undefined;
+    }, 50);
+  }
+  return false;//false:verify失敗 = 不要清除輸入區.
+}
+</script>
+</body>
+</html>

@@ -50,7 +50,7 @@ struct fon9_API HttpMessage {
    /// 傳回值==nullptr, 則表示沒有該欄位.
    /// 否則傳回該欄位首次提供的值.
    /// 如果要取得該欄位多次出現的值, 則應使用 FindHeadFieldList().
-   StrView FindHeadField(StrView name) {
+   StrView FindHeadField(StrView name) const {
       auto ifind = this->HeaderFields_.find(name);
       return ifind == this->HeaderFields_.end() ? StrView{nullptr}
          : ifind->second.Value_.ToStrView(this->OrigStr_.c_str());

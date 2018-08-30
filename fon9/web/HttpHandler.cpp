@@ -39,8 +39,8 @@ void HttpRequest::ParseStartLine() {
 
 HttpHandler::~HttpHandler() {
 }
-io::RecvBufferSize HttpHandler::SendErrorPrefix(io::Device& dev, HttpRequest& req, StrView httpStatus, RevBufferList& currbuf) {
-   if (req.IsMethod("HEAD")) {
+io::RecvBufferSize HttpHandler::SendErrorPrefix(io::Device& dev, HttpRequest& req, StrView httpStatus, RevBufferList&& currbuf) {
+   if (req.IsMethod("HEAD") || currbuf.cfront() == nullptr) {
       currbuf.MoveOut();
       RevPrint(currbuf, fon9_kCSTR_HTTPCRLN);
    }
@@ -109,7 +109,7 @@ io::RecvBufferSize HttpDispatcher::OnHttpHandlerNotFound(io::Device& dev, HttpRe
                   "</body></html>");
       }
    }
-   return this->SendErrorPrefix(dev, req, "404 Not found", rbuf);
+   return this->SendErrorPrefix(dev, req, "404 Not found", std::move(rbuf));
 }
 
 } } // namespaces

@@ -42,8 +42,9 @@ libfon9 TODO list
   * 如何找到要提供給 HttpHandler,HttpSession 的參數?
   * Http SASL: [標準還在草稿階段](https://tools.ietf.org/id/draft-vanrein-httpauth-sasl-00.html)
     看起來還有很遠的路要走，所以只好先用 js 頂著。
+  * HttpMessage 提供可將 chunk data 移除的功能.
 * TLS
-  
+  * https://github.com/facebookincubator/fizz
   
 * UDP/Multicast
 * FileDevice

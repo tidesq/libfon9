@@ -14,6 +14,8 @@
 #include "fon9/framework/IoManager.hpp"
 #include "fon9/web/HttpSession.hpp"
 #include "fon9/web/HttpHandlerStatic.hpp"
+#include "fon9/web/HttpDate.hpp"
+#include "fon9/web/WebSocketAuther.hpp"
 
 //--------------------------------------------------------------------------//
 
@@ -179,6 +181,71 @@ public:
 };
 
 //--------------------------------------------------------------------------//
+
+namespace fon9 {
+
+class HttpWsSeedAuthHandler : public web::HttpWebSocketAuthHandler {
+   fon9_NON_COPY_NON_MOVE(HttpWsSeedAuthHandler);
+   using base = web::HttpWebSocketAuthHandler;
+
+   web::WebSocketSP CreateWebSocketService(io::Device& dev, const auth::AuthResult& authResult) override;
+public:
+   fon9::Framework& Fon9Sys_;
+   
+   template <class... ArgsT>
+   HttpWsSeedAuthHandler(fon9::Framework& fon9sys, ArgsT&&... args)
+      : base(fon9sys.MaAuth_, std::forward<ArgsT>(args)...)
+      , Fon9Sys_(fon9sys) {
+   }
+};
+
+enum {
+   kWsSeedManagerHbIntervalSecs = 10
+};
+class WsSeedManager : public web::WebSocket {
+   fon9_NON_COPY_NON_MOVE(WsSeedManager);
+   using base = web::WebSocket;
+   io::RecvBufferSize OnWebSocketMessage() override {
+      RevBufferList  rbuf{128};
+      RevPrint(rbuf, UtcNow(), " GMT|You say: '", this->Payload_, '\'');
+      this->Send(web::WebSocketOpCode::TextFrame, std::move(rbuf));
+      return io::RecvBufferSize::Default;
+   }
+   static void EmitOnTimer(TimerEntry* timer, TimeStamp now);
+   using Timer = DataMemberEmitOnTimer<&WsSeedManager::EmitOnTimer>;
+   Timer HbTimer_;
+public:
+   const seed::MaTreeSP    Root_;
+   const auth::AuthResult  Authr_;
+   WsSeedManager(io::DeviceSP dev, seed::MaTreeSP root, const auth::AuthResult& authResult)
+      : base{std::move(dev)}
+      , Root_{std::move(root)}
+      , Authr_{authResult} {
+      RevBufferList rbuf{128};
+      RevPrint(rbuf, UtcNow(), " GMT| Hello, ", authResult.GetUserId(), "! ", authResult.ExtInfo_);
+      this->Send(fon9::web::WebSocketOpCode::TextFrame, std::move(rbuf));
+      this->HbTimer_.RunAfter(TimeInterval_Second(kWsSeedManagerHbIntervalSecs));
+   }
+   ~WsSeedManager() {
+      this->HbTimer_.StopAndWait();
+   }
+};
+void WsSeedManager::EmitOnTimer(TimerEntry* timer, TimeStamp now) {
+   timer->RunAfter(TimeInterval_Second(kWsSeedManagerHbIntervalSecs));
+   WsSeedManager& rthis = ContainerOf(*static_cast<decltype(WsSeedManager::HbTimer_)*>(timer), &WsSeedManager::HbTimer_);
+   rthis.Send(web::WebSocketOpCode::Ping, nullptr);
+
+   RevBufferList  rbuf{128};
+   RevPrint(rbuf, now, "|How are you?");
+   rthis.Send(web::WebSocketOpCode::TextFrame, std::move(rbuf));
+}
+
+web::WebSocketSP HttpWsSeedAuthHandler::CreateWebSocketService(io::Device& dev, const auth::AuthResult& authResult) {
+   return web::WebSocketSP{new WsSeedManager(&dev, this->Fon9Sys_.Root_, authResult)};
+}
+
+} // namespace
+
 class HttpHome : public fon9::web::HttpHandlerStatic {
    fon9_NON_COPY_NON_MOVE(HttpHome);
    using base = fon9::web::HttpHandlerStatic;
@@ -233,9 +300,10 @@ int main(int argc, char** argv) {
    fon9sys.Root_->Add(iomgr = new fon9::NamedIoManager{iomArgs});
 
    #define fon9_kCSTR_HttpManSession   "HttpMan"
-   fon9::web::HttpHandlerSP wwwRootHandler{new HttpHome{"wwwroot/HttpStatic.cfg", "HttpRoot"}};
+   fon9::web::HttpHandlerStaticSP wwwRootHandler{new HttpHome{"wwwroot/HttpStatic.cfg", "HttpRoot"}};
    iomgr->GetIoManager().SessionFactoryPark_->Add(fon9::web::HttpSession::MakeFactory(fon9_kCSTR_HttpManSession, wwwRootHandler));
    fon9sys.Root_->Add(wwwRootHandler);
+   wwwRootHandler->Add(new fon9::HttpWsSeedAuthHandler{fon9sys, "WsSeedMa"});
 
    fon9::IoConfigItem iocfg;
    iocfg.Enabled_ = fon9::EnabledYN::Yes;

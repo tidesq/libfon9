@@ -49,17 +49,6 @@ class fon9_API HttpHandler : public seed::NamedSeed {
    fon9_NON_COPY_NON_MOVE(HttpHandler);
    using base = NamedSeed;
 
-protected:
-   /// - 在 currbuf 前端, 增加底下訊息, 並加入 http header 之後, 送出:
-   ///  "<!DOCTYPE html>" "<html>"
-   ///  "<head>" "<meta charset='utf-8'/>" "<title>fon9:error</title>"
-   ///  "<style>.error{color:red;background:lightgray}</style>"
-   ///  "</head>"
-   /// - 所以您的 currbuf, 尾端必須有 "</html>"
-   /// - httpStatus 範例: "404 Not found"
-   io::RecvBufferSize SendErrorPrefix(io::Device& dev, HttpRequest& req,
-                                      StrView httpStatus, RevBufferList& currbuf);
-
 public:
    using base::base;
 
@@ -70,7 +59,22 @@ public:
    ///   - HttpMessageSt::Incomplete 則 assert(req.Message_.IsHeaderReady());
    ///   - 此時應尋找並設定 req.HttpHandler_, 如果確定沒有可用的 HttpHandler, 則應拒絕此 req.
    /// - 有可能直接提供 HttpMessageSt::FullMessage, 而沒有先提供 HeaderReady 事件.
+   /// - 若將 dev.Session_ 升級為 WebSocket, 因升級後 HttpMessageReceiver 會死亡,
+   ///   所以應返回 io::RecvBufferSize::NoLink 告知中斷解析, 否則會 crash!
    virtual io::RecvBufferSize OnHttpRequest(io::Device& dev, HttpRequest& req) = 0;
+
+   /// - 若 currbuf.cfront() != nullptr
+   ///   - 則在 currbuf 前端, 增加底下訊息, 並加入 http header 之後, 送出:
+   ///     "<!DOCTYPE html>" "<html>"
+   ///     "<head>" "<meta charset='utf-8'/>" "<title>fon9:error</title>"
+   ///     "<style>.error{color:red;background:lightgray}</style>"
+   ///     "</head>"
+   ///   - 所以您的 currbuf, 尾端必須有 "</html>"
+   /// - httpStatus 範例:
+   ///   - "404 Not found"
+   ///   - "400 Bad Request"
+   static io::RecvBufferSize SendErrorPrefix(io::Device& dev, HttpRequest& req,
+                                             StrView httpStatus, RevBufferList&& currbuf);
 };
 
 /// \ingroup web

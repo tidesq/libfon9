@@ -79,7 +79,7 @@ export function b64Decode(input) {
  */
 export function genNonce(uint8ArraySize = 12) {
   let rnds = new Uint8Array(uint8ArraySize);
-  Crypto.getRandomValues(rnds);
+  window.crypto.getRandomValues(rnds);
   return b64Encode(rnds);
 }
 

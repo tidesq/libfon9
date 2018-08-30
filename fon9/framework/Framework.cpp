@@ -9,6 +9,7 @@
 #include "fon9/Log.hpp"
 #include "fon9/HostId.hpp"
 #include "fon9/DefaultThreadPool.hpp"
+#include "fon9/CountDownLatch.hpp"
 
 #if !defined(fon9_WINDOWS)
 #include <sys/mman.h> // mlockall()
@@ -164,6 +165,17 @@ void Framework::Dispose() {
    this->Syncer_->StopSync();
    this->MaAuth_->Storage_->Close();
    this->Root_->OnParentSeedClear();
+
+   // 等候每個 DefaultThreadPool 的每個 thread 執行 n 次,
+   // 讓等候中的工作有機會全部做完.
+   unsigned L = static_cast<unsigned>(GetDefaultThreadPool().GetThreadCount() * 2);
+   CountDownLatch waiter{L};
+   for (; L > 0; --L) {
+      GetDefaultThreadPool().EmplaceMessage([&waiter]() {
+         waiter.CountDown();
+      });
+   }
+   waiter.Wait();
 }
 
 } // namespaces
