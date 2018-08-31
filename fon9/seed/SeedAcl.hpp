@@ -57,6 +57,19 @@ struct AclConfig {
       this->Home_.clear();
       this->Acl_.clear();
    }
+
+   /// - Home_ 設為 "/"
+   /// - "/" 及 "/.." 權限設為 AccessRight::Full;
+   void SetAdminMode() {
+      this->Home_.assign("/");
+      this->Acl_.kfetch(AclPath::MakeRef("/", 1)).second = AccessRight::Full;
+      this->Acl_.kfetch(AclPath::MakeRef("/..", 3)).second = AccessRight::Full;
+   }
+
+   /// 沒任何權限?
+   bool IsAccessDeny() const {
+      return this->Acl_.empty();
+   }
 };
 
 fon9_WARN_DISABLE_PADDING;
@@ -94,9 +107,9 @@ fon9_WARN_POP;
 fon9_API AclPath AclPathNormalize(StrView seedPath);
 
 /// \ingroup seed
-/// - 若 seedPath 為 "/.." 或 "/../" 開頭, 則為 SessionTree, 傳回移除 "/.." 之後的位置.
-/// - 否則不是 SessionTree, 傳回 nullptr;
-fon9_API const char* IsSessionTree(StrView seedPath);
+/// - 若 seedPath 為 "/.." 或 "/../" 開頭, 則為 VisitorsTree, 傳回移除 "/.." 之後的位置.
+/// - 否則不是 VisitorsTree, 傳回 nullptr;
+fon9_API const char* IsVisitorsTree(StrView seedPath);
 
 } } // namespaces
 #endif//__fon9_seed_SeedAcl_hpp__

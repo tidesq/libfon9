@@ -104,6 +104,7 @@ set(fon9src
  seed/SeedSearcher.cpp
  seed/SeedAcl.cpp
  seed/SeedFairy.cpp
+ seed/SeedVisitor.cpp
  seed/SysEnv.cpp
 
  crypto/Sha1.cpp

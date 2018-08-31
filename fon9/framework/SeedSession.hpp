@@ -2,7 +2,7 @@
 /// \author fonwinz@gmail.com
 #ifndef __fon9_framework_SeedSession_hpp__
 #define __fon9_framework_SeedSession_hpp__
-#include "fon9/seed/SeedFairy.hpp"
+#include "fon9/seed/SeedVisitor.hpp"
 #include "fon9/auth/AuthMgr.hpp"
 #include "fon9/seed/SeedSearcher.hpp"
 #include "fon9/buffer/DcQueue.hpp"
@@ -15,8 +15,9 @@ using SeedSessionSP = intrusive_ptr<SeedSession>;
 fon9_WARN_DISABLE_PADDING;
 /// \ingroup Misc
 /// 提供給 console 或 telnet 的管理介面.
-class fon9_API SeedSession : public intrusive_ref_counter<SeedSession> {
+class fon9_API SeedSession : public seed::SeedVisitor {
    fon9_NON_COPY_NON_MOVE(SeedSession);
+   using base = seed::SeedVisitor;
 
 public:
    SeedSession(seed::MaTreeSP root, auth::AuthMgrSP authMgr, bool isAdminMode);
@@ -55,52 +56,18 @@ public:
 
    /// 匯入一行指令.
    /// 只能同時執行一個指令, 若有指令正在執行, 則會放在尾端排隊.
-   /// 指令執行完畢會透過 OnRequestDone() 通知結果.
+   /// 指令執行完畢會透過 OnRequestDone() 或 OnRequestError() 通知結果.
    State FeedLine(StrView cmdln);
 
 protected:
-   struct fon9_API RequestBase {
-      fon9_NON_COPY_NON_MOVE(RequestBase);
-      const SeedSessionSP  Session_;
-      seed::MaTree*        Root_;
-      seed::AclPath        AclPath_;
-      size_t               ErrPos_; // AclPath_.begin() + ErrPos_ = 發生錯誤的位置.
-      seed::OpResult       OpResult_;
-      RequestBase(SeedSession* owner, StrView& seed, seed::AccessRight needsRights);
-      RequestBase(SeedSession* owner, seed::OpResult errn, StrView errmsg)
-         : Session_{owner}
-         , Root_{nullptr}
-         , AclPath_{errmsg}
-         , ErrPos_{errmsg.size() + 1}
-         , OpResult_{errn} {
-      }
-   };
-   class fon9_API Request : public RequestBase, public seed::SeedSearcher {
-      fon9_NON_COPY_NON_MOVE(Request);
-      using base = seed::SeedSearcher;
-   public:
-      Request(SeedSession* owner, StrView seed, seed::AccessRight needsRights)
-         : RequestBase{owner, seed, needsRights}
-         , base{seed} {
-      }
-      Request(SeedSession* owner, seed::OpResult errn, const StrView& errmsg)
-         : RequestBase{owner, errn, errmsg}
-         , base{StrView{}} {
-      }
-      void OnError(seed::OpResult res) override;
-      void OnLastStep(seed::TreeOp& op, StrView keyText, seed::Tab& tab) override;
-      virtual void OnLastSeedOp(const seed::PodOpResult& resPod, seed::PodOp* pod, seed::Tab& tab) = 0;
-   };
-   using RequestSP = intrusive_ptr<Request>;
-
    virtual void OnAuthEventInLocking(State st, DcQueue&& msg) = 0;
-   virtual void OnRequestDone(const Request& req, DcQueue&& extmsg) = 0;
-   virtual void OnRequestError(const Request& req, DcQueue&& errmsg) = 0;
+   virtual void OnRequestDone(const seed::TicketRunner& req, DcQueue&& extmsg) = 0;
+   virtual void OnRequestError(const seed::TicketRunner& req, DcQueue&& errmsg) = 0;
+
    /// 預設傳回 25.
    virtual uint16_t GetDefaultGridViewRowCount();
-   void SetCurrPathToHome() {
-      this->UpdatePrompt(ToStrView(this->Fairy_->Ac_.Home_));
-   }
+
+   void SetCurrPath(StrView currPath) override;
    void GetPrompt(std::string& prompt) {
       St::Locker st{this->St_};
       prompt.assign(st->Prompt_);
@@ -110,6 +77,8 @@ protected:
    }
 
 private:
+   using Request = seed::TicketRunner;
+   using RequestSP = intrusive_ptr<Request>;
    struct StateImpl {
       State       State_{State::None};
       std::string PendingCommandLines_;
@@ -118,31 +87,27 @@ private:
    };
    using St = MustLock<StateImpl>;
    St St_;
-   const seed::SeedFairySP Fairy_;
-   auth::AuthResult        Authr_;
+   auth::AuthResult  Authr_;
 
-   struct RequestOpError;
-   struct RequestTree;
-   struct SetSeedFields;
-   struct PrintSeed;
-   struct RemoveSeed;
    struct PrintLayout;
-   struct GridView;
-   using GridViewSP = intrusive_ptr<GridView>;
-   GridViewSP  LastGV_;
+   seed::TicketRunnerGridViewSP  LastGV_;
 
    void SetAdminMode();
-   void UpdatePrompt(StrView currPath);
-   void EmitRequestDone(RequestSP req, DcQueue&& extmsg);
+   void OnTicketRunnerDone(seed::TicketRunner&, DcQueue&& extmsg) override;
+   void OnTicketRunnerWrite(seed::TicketRunnerWrite&, const seed::SeedOpResult& res, const seed::RawWr& wr) override;
+   void OnTicketRunnerRead(seed::TicketRunnerRead&, const seed::SeedOpResult& res, const seed::RawRd& rd) override;
+   void OnTicketRunnerRemoved(seed::TicketRunnerRemove&, const seed::PodRemoveResult& res) override;
+   void OnTicketRunnerGridView(seed::TicketRunnerGridView&, seed::GridViewResult& res) override;
+   void OnTicketRunnerCommand(seed::TicketRunnerCommand&, const seed::SeedOpResult& res, StrView msg) override;
+   void OnTicketRunnerSetCurrPath(seed::TicketRunnerCommand&) override;
+
    void EmitAuthEvent(State st, DcQueue&& msg);
    void OnAuthDone(auth::AuthR&& authr);
    void ClearLogout(St::Locker&);
 
-   void OutputSeedFields(RequestSP req, const seed::SeedOpResult& res, const seed::RawRd& rd, StrView exhead);
+   void OutputSeedFields(seed::TicketRunner& runner, const seed::SeedOpResult& res, const seed::RawRd& rd, StrView exhead);
    void ExecuteCommand(St::Locker& st, StrView cmdln);
    RequestSP MakeRequest(StrView cmdln);
-   RequestSP MakeSeedCommandRequest(StrView seed, StrView cmdln);
-   RequestSP MakeCommandRequest(StrView cmd, StrView seed);
 };
 fon9_WARN_POP;
 

@@ -67,3 +67,8 @@ $OUTPUT_DIR/Tree_UT
 # unit tests: crypt / auth
 $OUTPUT_DIR/Crypto_UT
 $OUTPUT_DIR/AuthMgr_UT
+
+{ set +x; } 2>/dev/null
+echo '#####################################################'
+echo '#                 All tests passed!                 #'
+echo '#####################################################'

@@ -78,8 +78,10 @@ struct GridViewResult {
    Tab*        Tab_;
    OpResult    OpResult_;
 
-      /// 使用 "\n"(kRowSplitter) 分隔行, 使用 "\x01"(kCellSplitter) 分隔 cell.
+   /// 使用 kRowSplitter 分隔行, 使用 kCellSplitter 分隔 cell.
    std::string GridView_;
+   /// 存於 GridView_ 的最後一筆 key str.
+   StrView     LastKey_;
 
    /// GridView_ 裡面有幾個行(Row)資料?
    uint16_t    RowCount_{0};
@@ -109,8 +111,10 @@ struct GridViewResult {
       kNotSupported = static_cast<size_t>(-1)
    };
    enum : char {
-      kCellSplitter = '\t',
-      kRowSplitter = '\n'
+      #define fin9_kCSTR_CELLSPL "\x01"
+      #define fin9_kCSTR_ROWSPL  "\n"
+      kCellSplitter = *fin9_kCSTR_CELLSPL,
+      kRowSplitter = *fin9_kCSTR_ROWSPL,
    };
 
    template <class Container>
@@ -120,6 +124,12 @@ struct GridViewResult {
    template <class Container>
    void SetContainerSize(...) {
       this->ContainerSize_ = kNotSupported;
+   }
+
+   void SetLastKey(size_t lastLinePos) {
+      std::string::size_type spl = this->GridView_.find(kCellSplitter, lastLinePos);
+      this->LastKey_ = StrView{this->GridView_.c_str() + lastLinePos,
+                               (spl == std::string::npos ? this->GridView_.size() : spl) - lastLinePos};
    }
 };
 using FnGridViewOp = std::function<void(GridViewResult& result)>;
@@ -302,10 +312,12 @@ void MakeGridViewRange(Iterator istart, Iterator ibeg, Iterator iend,
       res.DistanceEnd_ = 0;
    else {
       RevBufferList  rbuf{256};
+      size_t         lastLinePos = 0;
       for (;;) {
          fnRowAppender(istart, req.Tab_, rbuf);
          if (!res.GridView_.empty())
             res.GridView_.push_back(res.kRowSplitter);
+         lastLinePos = res.GridView_.size();
          BufferAppendTo(rbuf.MoveOut(), res.GridView_);
          ++res.RowCount_;
          if (++istart == iend)
@@ -315,6 +327,7 @@ void MakeGridViewRange(Iterator istart, Iterator ibeg, Iterator iend,
          if (req.MaxBufferSize_ > 0 && (res.GridView_.size() >= req.MaxBufferSize_))
             break;
       }
+      res.SetLastKey(lastLinePos);
       res.DistanceEnd_ = (istart == iend) ? 1u : static_cast<size_t>(GridViewResult::kNotSupported);
    }
 }
@@ -354,6 +367,7 @@ void MakeGridViewArrayRange(Iterator istart, Iterator iend,
    res.DistanceBegin_ = istart;
    if ((res.DistanceEnd_ = (iend - istart)) != 0) {
       RevBufferList  rbuf{256};
+      size_t         lastLinePos = 0;
       for (;;) {
          if (!fnRowAppender(istart, req.Tab_, rbuf)) {
             assert(rbuf.cfront() == nullptr);
@@ -363,6 +377,7 @@ void MakeGridViewArrayRange(Iterator istart, Iterator iend,
          }
          if (!res.GridView_.empty())
             res.GridView_.push_back(res.kRowSplitter);
+         lastLinePos = res.GridView_.size();
          BufferAppendTo(rbuf.MoveOut(), res.GridView_);
          ++res.RowCount_;
          if (++istart == iend)
@@ -372,6 +387,7 @@ void MakeGridViewArrayRange(Iterator istart, Iterator iend,
          if (req.MaxBufferSize_ > 0 && (res.GridView_.size() >= req.MaxBufferSize_))
             break;
       }
+      res.SetLastKey(lastLinePos);
    }
 }
 

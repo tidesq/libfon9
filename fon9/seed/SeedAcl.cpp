@@ -17,7 +17,7 @@ fon9_API LayoutSP MakeAclTreeLayout() {
    return aclLayout;
 }
 
-fon9_API const char* IsSessionTree(StrView seedPath) {
+fon9_API const char* IsVisitorsTree(StrView seedPath) {
    if (seedPath.size() >= 3) {
       const char* pbeg = seedPath.begin();
       if (pbeg[0] == '/' && pbeg[1] == '.' && pbeg[2] == '.') {
@@ -30,7 +30,7 @@ fon9_API const char* IsSessionTree(StrView seedPath) {
 
 bool AclPathParser::NormalizePath(StrView& path) {
    StrView head{"/"};
-   if (IsSessionTree(path)) {
+   if (IsVisitorsTree(path)) {
       const char* pbeg = path.begin();
       head.Reset(pbeg, pbeg + 3);
       path.SetBegin(head.end());

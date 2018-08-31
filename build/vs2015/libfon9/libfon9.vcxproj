@@ -199,6 +199,7 @@
     <ClInclude Include="..\..\..\fon9\seed\MaTree.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\PodOp.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\SeedAcl.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\SeedVisitor.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\SeedSearcher.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\SysEnv.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\Tab.hpp" />
@@ -358,6 +359,7 @@
     <ClCompile Include="..\..\..\fon9\seed\MaTree.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\PodOp.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\SeedAcl.cpp" />
+    <ClCompile Include="..\..\..\fon9\seed\SeedVisitor.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\SeedSearcher.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\SysEnv.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\Tab.cpp" />

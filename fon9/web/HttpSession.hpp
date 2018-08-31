@@ -56,6 +56,11 @@ public:
    HttpSession(HttpHandlerSP rootHandler);
    /// maybe upgrade to WebSocket.
    void UpgradeTo(HttpRecvHandlerSP ws);
+
+   /// 可能會在 link broken 時刪除, 所以取用時必須是在 device 的事件裡面才安全.
+   HttpRecvHandler* GetRecvHandler() const {
+      return this->RecvHandler_.get();
+   }
 };
 
 } } // namespaces

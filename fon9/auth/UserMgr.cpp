@@ -210,7 +210,7 @@ AuthR UserTree::AuthUpdate(fon9_Auth_R rcode, const AuthRequest& req, AuthResult
 
 __ERR_RETURN:
    RevPrint(aux.RBuf_, "|err=", errstr);
-   return AuthR(rcode, errstr.ToString());
+   return AuthR(rcode, errstr.ToString("e="));
 }
 
 } } // namespaces

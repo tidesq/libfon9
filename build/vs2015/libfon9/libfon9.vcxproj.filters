@@ -632,17 +632,11 @@
     <ClInclude Include="..\..\..\fon9\ConsoleIO.hpp">
       <Filter>Header Files\_base\_Tools / Utility</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\seed\SeedSearcher.hpp">
-      <Filter>Header Files\seed\_tools</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\fon9\seed\SeedAcl.hpp">
       <Filter>Header Files\seed\_tools</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\seed\SeedFairy.hpp">
       <Filter>Header Files\seed\_tools</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\framework\SeedSession.hpp">
-      <Filter>Header Files\framework</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\CmdArgs.hpp">
       <Filter>Header Files\_base\_Tools / Utility</Filter>
@@ -706,6 +700,15 @@
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\web\WebSocketAuther.hpp">
       <Filter>Header Files\web</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\SeedSearcher.hpp">
+      <Filter>Header Files\seed\_tools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\framework\SeedSession.hpp">
+      <Filter>Header Files\framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\SeedVisitor.hpp">
+      <Filter>Header Files\seed\_tools</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1024,9 +1027,6 @@
     <ClCompile Include="..\..\..\fon9\seed\SeedFairy.cpp">
       <Filter>Source Files\seed\_tools</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\fon9\framework\SeedSession.cpp">
-      <Filter>Source Files\framework</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\fon9\CmdArgs.cpp">
       <Filter>Source Files\_base\_Tools / Utility</Filter>
     </ClCompile>
@@ -1086,6 +1086,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\web\WebSocketAuther.cpp">
       <Filter>Source Files\web</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\framework\SeedSession.cpp">
+      <Filter>Source Files\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\seed\SeedVisitor.cpp">
+      <Filter>Source Files\seed\_tools</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

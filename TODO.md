@@ -27,7 +27,6 @@ libfon9 TODO list
   * Linux: to daemon.
   * Windows: install to service.
   * 啟動時參數指定預設的 LogLevel.
-* SeedSession/SeedFairy/SeedSearcher: 還需要再整理其中的關連(並重新命名).
 
 ---------------------------------------
 ## 通訊基礎建設
@@ -42,7 +41,7 @@ libfon9 TODO list
   * 如何找到要提供給 HttpHandler,HttpSession 的參數?
   * Http SASL: [標準還在草稿階段](https://tools.ietf.org/id/draft-vanrein-httpauth-sasl-00.html)
     看起來還有很遠的路要走，所以只好先用 js 頂著。
-  * HttpMessage 提供可將 chunk data 移除的功能.
+  * HttpMessage 提供可將 chunk data 移除的功能, 避免 chunk data 一直長大.
 * TLS
   * https://github.com/facebookincubator/fizz
   

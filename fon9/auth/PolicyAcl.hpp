@@ -30,7 +30,7 @@ namespace fon9 { namespace auth {
 /// |----------------|-------------------------|
 /// | /home/{UserId} | xff                     |
 /// | /..            | xff                     |
-///  "/.." is SeedFairy.SessionTree_;
+///  "/.." is SeedFairy.VisitorsTree_;
 ///  目前有提供: "/../Acl" 可查看此次登入的 Acl.
 ///
 class fon9_API PolicyAclAgent : public PolicyAgent {

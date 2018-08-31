@@ -85,13 +85,11 @@ class ConsoleSeedSession : public fon9::SeedSession {
       this->WriteToConsole(std::move(msg));
       this->Wakeup();
    }
-   void OnRequestError(const Request& req, fon9::DcQueue&& errmsg) override {
-      (void)req;
+   void OnRequestError(const fon9::seed::TicketRunner&, fon9::DcQueue&& errmsg) override {
       this->WriteToConsole(std::move(errmsg));
       this->Wakeup();
    }
-   void OnRequestDone(const Request& req, fon9::DcQueue&& extmsg) override {
-      (void)req;
+   void OnRequestDone(const fon9::seed::TicketRunner&, fon9::DcQueue&& extmsg) override {
       if (!extmsg.empty())
          this->WriteToConsole(std::move(extmsg));
       this->Wakeup();
@@ -173,7 +171,7 @@ public:
    }
 
    State RunLoop() {
-      this->SetCurrPathToHome();
+      this->SetCurrPath(ToStrView(this->Fairy_->GetCurrPath()));
       State st = this->RunLoopImpl();
       this->Logout();
       return st;
@@ -200,7 +198,7 @@ public:
 };
 
 enum {
-   kWsSeedManagerHbIntervalSecs = 10
+   kWsSeedManagerHbIntervalSecs = 30
 };
 class WsSeedManager : public web::WebSocket {
    fon9_NON_COPY_NON_MOVE(WsSeedManager);
