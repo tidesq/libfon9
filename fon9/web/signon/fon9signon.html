@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1">
+ <title>fon9登入</title>
+ <link rel="stylesheet" href="./fon9.css">
+</head>
+<!-- 負責與 fon9 建立與 web socket 連線,
+     在連線成功後先進行 SASL 身分認證,
+     認證成功後, 會直接關閉 dialog, 然後透過 returnValue 返回 WebSocket.
+     在 showModal() 之前, 您必須先設定 onmessage,
+     因為有可能在認證成功後, fon9 會送來立即訊息,
+     如果此時沒有 onmessage 則可能遺漏訊息.
+ -->
+<body>
+<dialog id="signonDlg">
+ <form id="signonForm">
+ <fieldset class="fon9-fieldset">
+ <legend style="font-size:20px">登入</legend>
+  <div class="fon9-form-item">
+   <label class="fon9-form-label">使用者代號</label>
+   <div class="fon9-input-block">
+    <input type="text" id="username" required placeholder="請輸入使用者代號" autocomplete="off" class="fon9-input" autofocus >
+   </div>
+  </div>
+  <div class="fon9-form-item">
+   <label class="fon9-form-label">使用者密碼</label>
+   <div class="fon9-input-block">
+    <input type="password" id="password" placeholder="請輸入密码" autocomplete="off" class="fon9-input">
+   </div>
+  </div>
+  <div class="fon9-form-item">
+   <div class="fon9-input-block" style="float:right">
+    <button class="fon9-btn" id="btnSignonSubmit">登入</button>
+    <button class="fon9-btn" type="button" id="btnSignonCancel">取消</button>
+   </div>
+  </div>
+ </fieldset>
+ </form>
+ <div id="info">
+ </div>
+</dialog>
+
+<script>
+//public:
+/// dialog.showModal(); 之後, dialog 關閉的事件通知, 事件參數: signonDlg.
+/// 如果是因為登入成功而關閉, 則可透過 returnValue 可取得 WebSocket;
+var close;
+var returnValue;
+/// 處理認證成功後的訊息, 必須在 showModal() 之前設定.
+var onmessage;
+
+function showModal(url) {
+  setInfo('', '');// setInfo('url: ', url);
+  fon9maURL = url;
+  setEnableSignon(true);
+  signonDlg.returnValue = undefined;
+  saslws = undefined;
+  signonDlg.showModal();
+}
+
+//private:
+let saslws;
+let fon9maURL;
+let signonForm = document.getElementById('signonForm');
+let signonDlg = document.getElementById('signonDlg');
+let setEnableSignon = function(isEnable) {
+  signonForm.btnSignonSubmit.disabled = !isEnable;
+  signonForm.btnSignonCancel.disabled = !isEnable;
+  signonForm.username.disabled = !isEnable;
+  signonForm.password.disabled = !isEnable;
+  if (isEnable) {
+    signonForm.username.focus();
+    signonForm.password.value = '';
+  }
+}
+let setInfo = function(head, msg, isErr = '') {
+  console.log(msg);
+  let str;
+  if (isErr === 'err')
+    str = '<p style="color:red">';
+  else
+    str = '<p>';
+  str += '<b>' + head + ' </b>';
+  if (msg !== '')
+    str += JSON.stringify(msg);
+  document.getElementById('info').innerHTML = str + '</p>';
+}
+</script>
+<script type="module">
+import SaslWebSocket from './sasl-ws.js'
+
+function signonFormSubmit(ev) {
+  if (saslws)
+    return false;
+  let cred = { username : signonForm.username.value,
+               password : signonForm.password.value,
+             };
+  setInfo('','');
+  setEnableSignon(false);
+  signonForm.username.select();
+
+  setInfo(signonForm.username.value, '連線中...');
+  saslws = new SaslWebSocket;
+  // 先設定好事件再 open(), 才不會遺漏事件.
+  saslws.onclose = function(evt) {
+    if (!saslws.err)
+      setInfo('與主機的連線中斷了!', '', 'err');
+    setEnableSignon(true);
+    saslws = undefined;
+  };
+  saslws.onerror = function(msg) {
+    setInfo('認證失敗:', msg, 'err');
+    setEnableSignon(true);
+    saslws.close();
+  }
+  saslws.onsigned = function(msg) {
+    setInfo('認證成功:', msg);
+    returnValue = saslws;
+    signonDlg.close();
+  }
+  saslws.onpasschanged = function(msg) {
+    saslws.err = ''; // 為了讓 saslws.onclose 事件裡面, 不要再設定斷線訊息.
+    setInfo('密碼變更成功(登入作業不會來到這裡):', msg, 'err');
+  }
+  saslws.onmessage = onmessage;
+  // saslws.onchallenge = function(msg) {
+  //   setInfo('S=>C:', msg);
+  // }
+  // saslws.onresponse = function(msg) {
+  //   setInfo('C=>S:', msg);
+  // }
+  saslws.open(fon9maURL, cred);
+  return false;
+}
+(function() {
+  document.getElementById('signonForm').onsubmit = signonFormSubmit;
+  document.getElementById('btnSignonCancel').addEventListener('click', function() {
+    signonDlg.close();
+  });
+  signonDlg.addEventListener('close', function() {
+    if (saslws != returnValue)
+      saslws.close();
+    if (close)
+      close(signonDlg);
+  });
+})();
+</script>
+</body>
+</html>

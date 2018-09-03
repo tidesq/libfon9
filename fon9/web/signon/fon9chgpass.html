@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1">
+ <title>fon9改密碼</title>
+ <link rel="stylesheet" href="./fon9.css">
+</head>
+<!-- 建立與 fon9 的 WebSocket 改密碼連線,
+     為了簡化設計, 不在原本已登入的連線, 設計改密碼功能,
+     而直接建立新的連線, 然後用 fon9擴充的 SASL 改密碼協商功能。
+ -->
+<body>
+<dialog id="chgpassDlg">
+ <form id="chgpassForm">
+ <fieldset class="fon9-fieldset">
+ <legend style="font-size:20px">改密碼</legend>
+  <div class="fon9-form-item">
+   <label class="fon9-form-label">使用者代號</label>
+   <div class="fon9-input-block">
+    <input type="text" id="username" required placeholder="請輸入使用者代號" autocomplete="off" class="fon9-input" autofocus >
+   </div>
+  </div>
+  <div class="fon9-form-item">
+   <label class="fon9-form-label">舊密碼</label>
+   <div class="fon9-input-block">
+    <input type="password" id="oldPassword" placeholder="請輸入舊密码" autocomplete="off" class="fon9-input">
+   </div>
+  </div>
+  <div class="fon9-form-item">
+   <label class="fon9-form-label">新密碼</label>
+   <div class="fon9-input-block">
+    <input type="password" id="newPassword1" required placeholder="請輸入新密码(不限長度,例如:您可以輸入最喜歡的一句話)" autocomplete="off" class="fon9-input" onkeyup='checkNewPass();'>
+   </div>
+  </div>
+  <div class="fon9-form-item">
+   <label class="fon9-form-label">確認新密碼</label>
+   <div class="fon9-input-block">
+    <input type="password" id="newPassword2" required placeholder="請再次輸入新密码" autocomplete="off" class="fon9-input" onkeyup='checkNewPass();'>
+   </div>
+  </div>
+  <div class="fon9-form-item">
+   <div class="fon9-input-block" style="float:right">
+    <button class="fon9-btn" id="btnChgpassSubmit">改密碼</button>
+    <button class="fon9-btn" type="button" id="btnChgpassCancel"></button>
+   </div>
+  </div>
+ </fieldset>
+ </form>
+ <div id="info">
+ </div>
+</dialog>
+
+<script>
+//public:
+var close; // dialog.showModal(); 之後, dialog 關閉的事件通知, 事件參數: chgpassDlg.
+function showModal(url, user) {
+  setInfo('', ''); // setInfo('url: ', url);
+  fon9maURL = url;
+  chgpassForm.username.value = user;
+  chgpassForm.username.disabled = !(user==undefined || user=='');
+  setEnableChgpass(true);
+  chgpassDlg.showModal();
+}
+//private:
+let fon9maURL;
+let chgpassForm = document.getElementById('chgpassForm');
+let chgpassDlg = document.getElementById('chgpassDlg');
+let setEnableChgpass = function(isEnable) {
+  chgpassForm.btnChgpassSubmit.disabled = !isEnable;
+  chgpassForm.btnChgpassCancel.disabled = !isEnable;
+  chgpassForm.btnChgpassCancel.textContent = '取消';
+  chgpassForm.newPassword1.disabled = !isEnable;
+  chgpassForm.newPassword2.disabled = !isEnable;
+  chgpassForm.oldPassword.disabled = !isEnable;
+  if (isEnable) {
+    chgpassForm.newPassword1.value = '';
+    chgpassForm.newPassword2.value = '';
+    chgpassForm.oldPassword.value = '';
+  }
+}
+let setInfo = function(head, msg, isErr = '') {
+  console.log(msg);
+  let str;
+  if (isErr === 'err')
+    str = '<p style="color:red">';
+  else
+    str = '<p>';
+  str += '<b>' + head + ' </b>';
+  if (msg !== '')
+    str += JSON.stringify(msg);
+  document.getElementById('info').innerHTML = str + '</p>';
+}
+let checkNewPass = function() {
+  if (document.getElementById('newPassword1').value ==
+      document.getElementById('newPassword2').value) {
+    setInfo('','');
+  } else {
+    setInfo('請檢查:', '您輸入的「新密碼」與「確認新密碼」不相同!', 'err');
+  }
+}
+</script>
+<script type="module">
+import SaslWebSocket from './sasl-ws.js'
+let saslws;
+
+function chgpassFormSubmit(ev) {
+  if (chgpassForm.newPassword1.value != chgpassForm.newPassword2.value)
+    return false;
+  if (saslws)
+    return false;
+  let cred = { username : chgpassForm.username.value,
+               password : chgpassForm.oldPassword.value,
+               NewPass  : chgpassForm.newPassword1.value,
+             };
+  setInfo('','');
+  setEnableChgpass(false);
+  chgpassForm.username.select();
+
+  setInfo(chgpassForm.username.value, '連線中...');
+  saslws = new SaslWebSocket;
+  // 先設定好事件再 open(), 才不會遺漏事件.
+  saslws.onclose = function(evt) {
+    if (saslws) {
+      if (!saslws.hasOwnProperty('err')) {
+        setInfo('與主機的連線中斷了!', '請您檢查,密碼是否變更成功?', 'err');
+        setEnableChgpass(true);
+      }
+      saslws = undefined;
+    }
+  };
+  saslws.onerror = function(msg) {
+    setInfo('認證失敗:', msg, 'err');
+    setEnableChgpass(true);
+    saslws.close();
+  }
+  saslws.onsigned = function(msg) {
+    setInfo('認證成功(改密碼不會來到這裡):', msg, 'err');
+  }
+  saslws.onpasschanged = function(msg) {
+    saslws.err = ''; // 為了讓 saslws.onclose 事件裡面, 不要再設定斷線訊息.
+    setInfo('恭喜!', '密碼變更成功, 下次登入請使用新密碼.');
+    chgpassForm.btnChgpassCancel.disabled = false;
+    chgpassForm.btnChgpassCancel.textContent = '完成';
+    chgpassForm.btnChgpassCancel.focus();
+  }
+  // saslws.onchallenge = function(msg) {
+  //   setInfo('S=>C:', msg);
+  // }
+  // saslws.onresponse = function(msg) {
+  //   setInfo('C=>S:', msg);
+  // }
+  saslws.open(fon9maURL, cred);
+  return false;
+}
+(function() {
+  document.getElementById('chgpassForm').onsubmit = chgpassFormSubmit;
+  document.getElementById('btnChgpassCancel').addEventListener('click', function() {
+    chgpassDlg.close();
+    if (saslws)
+      saslws.close();
+  });
+  chgpassDlg.addEventListener('close', function() {
+    if (close)
+      close(chgpassDlg);
+  });
+})();
+</script>
+</body>
+</html>

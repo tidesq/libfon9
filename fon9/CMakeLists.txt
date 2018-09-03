@@ -86,6 +86,7 @@ set(fon9src
  web/HttpHandlerStatic.cpp
  web/WebSocket.cpp
  web/WebSocketAuther.cpp
+ web/WsSeedVisitor.cpp
 
  seed/SeedBase.cpp
  seed/Tab.cpp

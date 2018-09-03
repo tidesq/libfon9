@@ -181,5 +181,19 @@ inline void BufferListConsumeErr(BufferList&& src, const ErrC& errc) {
    DcQueueList{std::move(src)}.ConsumeErr(errc);
 }
 
+template <class RevBufferList>
+RevBufferList MakeRevBufferList(BufferNodeSize newAllocReserved, DcQueue&& extmsg) {
+   if (auto buf = dynamic_cast<DcQueueList*>(&extmsg))
+      return RevBufferList{newAllocReserved, buf->MoveOut()};
+   RevBufferList rbuf{newAllocReserved};
+   if (!extmsg.empty()) {
+      size_t sz = extmsg.CalcSize();
+      char*  pbuf = rbuf.AllocPrefix(sz) - sz;
+      rbuf.SetPrefixUsed(pbuf);
+      extmsg.Read(pbuf, sz);
+   }
+   return rbuf;
+}
+
 } // namespaces
 #endif//__fon9_buffer_DcQueueList_hpp__

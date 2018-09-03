@@ -68,7 +68,7 @@ void WebSocketAuther::OnAuthVerify(auth::AuthR authr, auth::AuthSessionSP authSe
             if (WebSocketSP ws = pthis->Owner_->CreateWebSocketService(dev, authSession->GetAuthResult()))
                httpSession->UpgradeTo(std::move(ws));
             else
-               dev.AsyncClose("WebSocketAuther|err=CreateWebSocketService()");
+               dev.AsyncClose("WebSocketAuther.CreateWebSocketService()|err=" + authSession->GetAuthResult().ExtInfo_);
          }
       }});
    }
@@ -83,7 +83,7 @@ void WebSocketAuther::OnAuthVerify(auth::AuthR authr, auth::AuthSessionSP authSe
       else // 認證尚未完成.
          return;
    }
-   // 認證完成, 必須清理認證要求物件(AuthSession_), 因為該物件包含了 dev, 如果不清理可能會有 memory leak.
+   // 認證完成, 必須清理認證要求物件(AuthSession_), 因為該物件的 callback 包含了 dev, 如果不清理可能會有 memory leak.
    this->AuthSession_.reset();
 }
 

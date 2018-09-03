@@ -710,6 +710,9 @@
     <ClInclude Include="..\..\..\fon9\seed\SeedVisitor.hpp">
       <Filter>Header Files\seed\_tools</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\web\WsSeedVisitor.hpp">
+      <Filter>Header Files\web</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1092,6 +1095,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\seed\SeedVisitor.cpp">
       <Filter>Source Files\seed\_tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\web\WsSeedVisitor.cpp">
+      <Filter>Source Files\web</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -24,13 +24,13 @@ protected:
    const SeedFairySP Fairy_;
 
 public:
-   SeedVisitor(SeedFairySP fairy) : Fairy_{std::move(fairy)} {
+   SeedVisitor(MaTreeSP root) : Fairy_{new SeedFairy{std::move(root)}} {
    }
    virtual ~SeedVisitor();
 
    virtual void SetCurrPath(StrView currPath);
 
-   /// 當 runner 事情完成(成功或失敗), 透過這裡通知 visitor.
+   /// 當 runner 事情完成(成功或失敗), 如果沒有觸發 OnTicketRunnerXXX() 事件, 則透過這裡通知 visitor.
    virtual void OnTicketRunnerDone(TicketRunner& runner, DcQueue&& extmsg) = 0;
 
    virtual void OnTicketRunnerWrite(TicketRunnerWrite&, const SeedOpResult& res, const RawWr& wr) = 0;

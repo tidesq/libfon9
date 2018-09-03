@@ -29,7 +29,8 @@ public:
    }
    ~HttpWebSocketAuthHandler();
 
-   virtual WebSocketSP CreateWebSocketService(io::Device& dev, const auth::AuthResult& authResult) = 0;
+   /// 若傳回 nullptr, 則 authResult.ExtInfo_ 必須包含錯誤原因.
+   virtual WebSocketSP CreateWebSocketService(io::Device& dev, auth::AuthResult& authResult) = 0;
 };
 using HttpWebSocketAuthHandlerSP = intrusive_ptr<HttpWebSocketAuthHandler>;
 

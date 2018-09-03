@@ -7,6 +7,8 @@
 
 namespace fon9 {
 
+class fon9_API DcQueue;
+
 /// \ingroup Buffer
 /// 一個由 **後往前** 填入資料的緩衝區節點.
 /// - 從 GetDataBegin()-1 開始往前填入資料.
@@ -91,7 +93,7 @@ public:
    }
 };
 
-class RevBufferList : public RevBuffer {
+class fon9_API RevBufferList : public RevBuffer {
    fon9_NON_COPYABLE(RevBufferList);
    RevBufferListBuilder Builder_;
    void SetFrontNodeUsed() {
@@ -118,6 +120,8 @@ public:
       if (RevBufferNode* front = static_cast<RevBufferNode*>(this->Builder_.GetFront()))
          this->ResetMemPtr(front);
    }
+   RevBufferList(BufferNodeSize newAllocReserved, DcQueue&& extmsg);
+
    RevBufferList(RevBufferList&& rhs) : Builder_{std::move(rhs.Builder_)} {
       this->MemBegin_ = rhs.MemBegin_;
       this->MemCurrent_ = rhs.MemCurrent_;

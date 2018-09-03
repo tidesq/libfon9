@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+ <script>
+  //var fon9maURL = 'ws://localhost:6080/WsSeedVisitor';
+  var fon9maURL = 'ws://192.168.1.16:6080/WsSeedVisitor';
+ </script>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1">
+ <title>fon9 管理測試</title>
+ <link rel="stylesheet" href="./fon9.css">
+ <style>
+  .fon9-header{
+    position: relative;
+    z-index: 1000;
+    height: 40px;
+    border-bottom: 1px solid lightgray;
+  }
+  .fon9-content{
+    position: absolute;
+    left: 200px;
+    right: 0;
+    top: 40px;
+    bottom: 44px;
+    z-index: 998;
+    width: auto;
+    overflow: hidden;
+    overflow-y: auto;
+    box-sizing: border-box;
+    border: 1px solid lightgray;
+  }
+  .fon9-footer{
+    position: absolute;
+    left: 200px;
+    right: 0;
+    bottom: 0;
+    height: 44px;
+    z-index: 998;
+    width: auto;
+    overflow: hidden;
+    overflow-y: auto;
+    box-sizing: border-box;
+    border: 1px solid lightgray;
+  }
+  .fon9-btn-signon{position:relative; right:1px; top:1px}
+ </style>
+</head>
+
+<body>
+<nav class="fon9-header">
+ <img src="./logo-40.png" alt="fon9">
+ <div style="float:right">
+  <button class="fon9-btn fon9-btn-signon" id="btnShowSignonDlg">登入</button>
+  <button class="fon9-btn fon9-btn-signon" id="btnUserProfile" style="display:none"></button>
+ </div>
+</nav>
+<div class="fon9-content">
+ <form onsubmit="return false;">
+ <fieldset class="fon9-fieldset" style="width:700px; padding-right:10px">
+ <legend style="font-size:20px">fon9 WebSocket 傳送測試</legend>
+  <input type="text" id="msgSend" placeholder="請輸入要送出的訊息" autocomplete="off" class="fon9-input" disabled style="float:left; width:535px; margin-right:3px;">
+  <button class="fon9-btn" id="btnSend" disabled>送出</button>
+  <button class="fon9-btn" type="button" id="btnClear">清除訊息</button>
+ </fieldset>
+ </form>
+
+ <div id="info">
+ </div>
+</div>
+<div class="fon9-footer">
+ © 風言軟體
+</div>
+
+<!-- 登入 & 建立與 fon9 的 WebSocket 管理連線-->
+<iframe id="signonFrame" src="./fon9signon.html" class="fon9-ext-dialog"></iframe>
+<script type="module">
+import SaslWebSocket from './sasl-ws.js'
+let webSocket;
+function onWebSocketClosed(evt) {
+  setEnableSignon(true);
+  webSocket = undefined;
+  alert('與主機的連線中斷了!');
+}
+function onWebSocketMessage(msg) {
+  // 認證成功後, WebSocket 的訊息, 才會轉來這裡處理.
+  addInfo('Recv:', msg.data);
+}
+
+let signonFrame = document.getElementById('signonFrame');
+let signonWindow = signonFrame.contentWindow;
+function addInfo(head, msg, isErr = '') {
+  console.log(msg);
+  let str;
+  if (isErr === 'err')
+    str = '<p style="color:red">';
+  else
+    str = '<p>';
+  str += '<b>' + head + ' </b>';
+  if (msg !== '')
+    str += JSON.stringify(msg);
+  document.getElementById('info').innerHTML += str + '</p>';
+}
+function setEnableSignon(isEnable = true) {
+  let btnUserProfile = document.getElementById('btnUserProfile');
+  btnUserProfile.style.display = !isEnable ? 'block' : 'none';
+  btnUserProfile.textContent = isEnable ? '' : signonWindow.document.getElementById('username').value;
+  document.getElementById('btnShowSignonDlg').style.display = isEnable ? 'block' : 'none';
+  document.getElementById('btnSend').disabled = isEnable;
+  document.getElementById('msgSend').disabled = isEnable;
+}
+function onSignonDlgClosed(dlg) {
+  signonFrame.style.display = 'none';
+  webSocket = signonWindow.returnValue;
+  if (webSocket) {
+    webSocket.onclose = onWebSocketClosed;
+    setEnableSignon(false);
+  }
+}
+(function() { // 設定登入元件初值, 設定登入元件的事件.
+  setEnableSignon(true);
+  signonWindow.close = onSignonDlgClosed;
+  signonWindow.onmessage = onWebSocketMessage;
+  document.getElementById('btnShowSignonDlg').addEventListener('click', function() {
+    signonFrame.style.display = 'block';
+    signonWindow.showModal(fon9maURL);
+  });
+  document.getElementById('btnSignout').addEventListener('click', function(){
+    if (webSocket) {
+      webSocket.onclose = undefined;
+      webSocket.close();
+      webSocket = undefined;
+    }
+    setEnableSignon(true);
+    document.getElementById('formUserProfile').style.display = 'none';
+  });
+})();
+(function() { // 設定送出訊息區初值, 及 click 事件.
+  document.getElementById('btnSend').addEventListener('click', function() {
+    if (webSocket) {
+      let msgSend = document.getElementById('msgSend');
+      let msg = msgSend.value;
+      addInfo('Send:', msg);
+      webSocket.send(msg);
+      msgSend.select();
+    }
+  });
+  document.getElementById('btnClear').addEventListener('click', function() {
+    document.getElementById('info').innerHTML = '';
+  });
+})();
+</script>
+
+<!-- 登入成功後: 可改密碼、帳戶設定(暱稱、頭像...)、登出 -->
+<style>
+#formUserProfile {
+  display: none;
+  position: fixed;
+  z-index: 1001; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgb(0,0,0); /* Fallback color */
+  background-color: rgba(0,0,0,0.1); /* Black w/ opacity */
+}
+#divUserProfile {
+  position: fixed;
+  top: 40px;
+  right: 5px;
+  width: 200px;
+  background-color: #fefefe;
+  padding: 20px;
+  border: 1px solid darkgray;
+  box-shadow: 0 0 3px 3px lightgray;
+}
+</style>
+<div id="formUserProfile">
+ <div id="divUserProfile">
+  <button id="btnChangePass" class="fon9-btn" style="width:100%">改密碼</button><br>
+  <button id="btnSignout" class="fon9-btn" style="width:100%">登出</button><br>
+ </div>
+</div>
+<script> // 控制 formUserProfile 的顯示/關閉.
+let formUserProfile = document.getElementById('formUserProfile');
+document.getElementById('btnUserProfile').onclick = function() {
+  formUserProfile.style.display = "block";
+}
+window.onclick = function(event) {
+  if (event.target == formUserProfile)
+    formUserProfile.style.display = 'none';
+}
+window.onkeyup = function(event) {
+  if (event.keyCode == 27 && formUserProfile.style.display != 'none')//escape
+    formUserProfile.style.display = 'none';
+}
+</script>
+
+<!-- 改密碼 -->
+<iframe id="chgpassFrame" src="./fon9chgpass.html" class="fon9-ext-dialog"></iframe>
+<script type="module">
+let chgpassFrame = document.getElementById('chgpassFrame');
+let chgpassWindow = chgpassFrame.contentWindow;
+chgpassWindow.close = function() {
+  chgpassFrame.style.display = 'none';
+};
+document.getElementById('btnChangePass').addEventListener('click', function() {
+  document.getElementById('formUserProfile').style.display = 'none';
+  chgpassFrame.style.display = 'block';
+  chgpassWindow.showModal(fon9maURL, document.getElementById('btnUserProfile').textContent);
+});
+</script>
+
+</body>
+</html>

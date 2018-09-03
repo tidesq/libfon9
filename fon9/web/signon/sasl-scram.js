@@ -92,9 +92,13 @@ class SaslScram {
     }
   }
   /**
+   * @cred {username:'user', password:'pass'}
+   *       如果要改密碼, 則須設定 cred.NewPass
    * @return 返回要傳遞給 server 的字串.
    */
   initial(cred) {
+    if (cred.hasOwnProperty('NewPass'))
+       this.NewPass = cred.NewPass;
     this.password = cred.password || '';
     this._stage = 0;
     this._cnonce = this.genNonce();

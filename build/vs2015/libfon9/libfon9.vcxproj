@@ -259,6 +259,7 @@
     <ClInclude Include="..\..\..\fon9\web\UrlCodec.hpp" />
     <ClInclude Include="..\..\..\fon9\web\WebSocket.hpp" />
     <ClInclude Include="..\..\..\fon9\web\WebSocketAuther.hpp" />
+    <ClInclude Include="..\..\..\fon9\web\WsSeedVisitor.hpp" />
     <ClInclude Include="..\..\..\fon9\Worker.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -393,6 +394,7 @@
     <ClCompile Include="..\..\..\fon9\web\UrlCodec.cpp" />
     <ClCompile Include="..\..\..\fon9\web\WebSocket.cpp" />
     <ClCompile Include="..\..\..\fon9\web\WebSocketAuther.cpp" />
+    <ClCompile Include="..\..\..\fon9\web\WsSeedVisitor.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

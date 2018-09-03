@@ -86,10 +86,10 @@ public:
    /// 如果認證過程, 有多個步驟, 一樣透過這裡處理.
    virtual void AuthVerify(const AuthRequest& req) = 0;
 
-   /// 僅保證在 FnOnAuthVerifyCB 事件, 或認證結束後, 才能安全的取得.
+   /// 僅保證在 FnOnAuthVerifyCB 事件, 或認證結束後, 才能安全的取得及使用.
    /// 在認證處理的過程中, 不應該呼叫此處.
    /// 一旦認證結束, 此處的資料都不會再變動(包含 ExtInfo_ 也不會變).
-   const AuthResult& GetAuthResult() const {
+   AuthResult& GetAuthResult() {
       return this->AuthResult_;
    }
 };

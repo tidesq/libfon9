@@ -10,7 +10,7 @@
 namespace fon9 {
 
 SeedSession::SeedSession(seed::MaTreeSP root, auth::AuthMgrSP authMgr, bool isAdminMode)
-   : base{new seed::SeedFairy{std::move(root)}}
+   : base{std::move(root)}
    , Authr_{std::move(authMgr)} {
    if (isAdminMode)
       this->SetAdminMode();
@@ -174,7 +174,7 @@ SeedSession::State SeedSession::FeedLine(StrView cmdln) {
 
 void SeedSession::OnTicketRunnerDone(seed::TicketRunner& runner, DcQueue&& extmsg) {
    if (runner.OpResult_ < seed::OpResult::no_error) {
-      RevBufferList rbuf{128};
+      RevBufferList rbuf{128, std::move(extmsg)};
       if (runner.ErrPos_ <= runner.Path_.size()) {
          RevPutChar(rbuf, '^');
          RevPutFill(rbuf, runner.ErrPos_, ' ');

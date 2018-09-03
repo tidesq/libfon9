@@ -1,12 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-Hant-TW">
 <head>
   <meta charset="utf-8">
   <title>fon9:signon unit test</title>
 </head>
 <body>
 Testing SASL: "SCRAM-SHA-1" and "SCRAM-SHA-256"...
-</body>
   
 <script type="module">
 import SaslScram from './sasl-scram.js';
@@ -43,9 +42,8 @@ async function test_sha1() { // test case: https://tools.ietf.org/html/rfc5802#s
 
 async function test_sha256_NewPass() { // test case: https://github.com/fonwin/libfon9/blob/master/fon9/crypto/Crypto_UT.cpp#L215
   var scram = new SaslScram('SHA-256');
-  scram.NewPass = 'i love fon9'; // 可以是任意長度的字串.
   scram.genNonce = function () { return 'rOprNGfwEbeRWgbNEkqO'; }
-  var msg = scram.initial({username:'user',password:'pencil'});
+  var msg = scram.initial({username:'user',password:'pencil',NewPass:'i love fon9'}); // NewPass 可以是任意長度的字串.
   // msg: C=>S: 使用者登入訊息.
   write_output(msg);
   if (msg != 'n,,n=user,r=rOprNGfwEbeRWgbNEkqO')
@@ -81,4 +79,5 @@ async function test_all() {
 test_all();
 
 </script>
+</body>
 </html>
