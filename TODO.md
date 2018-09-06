@@ -15,14 +15,18 @@ libfon9 TODO list
   * InnSyncFileList: 同步匯入檔, 可能包含來源 HostId, 定時掃描全部的來源檔.
 ---------------------------------------
 ## 系統管理工具
-
 * 盡量從 [非侵入式] 方向思考:
   * 例如: 已有一個 `商品資料表`，則現有程式碼不變，
     只要設計一個: 連接 `root` 與 `商品資料表` 的 `entry`，就可以透過該 entry 管理 `商品資料表`。
 * TreeFlag::NeedsApply: 使用「套用」方式處理資料異動。
 * DllManager
 * WebUI
-  * js: [fetch API](https://notfalse.net/31/fetch-api)
+  * Edit cell / Add row / Remove row / Copy / Paste
+  * needsApply / 主管確認機制
+  * 資料量太大時的顯示方式(分頁? 捲動時自動載入?)
+  * Seed command
+  * Column resize
+  * History
 * Fon9Co
   * Linux: to daemon.
   * Windows: install to service.

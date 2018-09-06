@@ -11,6 +11,7 @@ class fon9_API WsSeedVisitor : public WebSocket {
    fon9_NON_COPY_NON_MOVE(WsSeedVisitor);
    using base = WebSocket;
    struct SeedVisitor;
+   struct PrintLayout;
    using SeedVisitorSP = intrusive_ptr<SeedVisitor>;
    io::RecvBufferSize OnWebSocketMessage() override;
    static void EmitOnTimer(TimerEntry* timer, TimeStamp now);

@@ -64,6 +64,82 @@ struct WsSeedVisitor::SeedVisitor : public seed::SeedVisitor {
    }
 };
 
+struct WsSeedVisitor::PrintLayout : public seed::TicketRunnerTree {
+   fon9_NON_COPY_NON_MOVE(PrintLayout);
+   using base = seed::TicketRunnerTree;
+   using base::base;
+
+   static void NamedToJSON(RevBufferList& rbuf, const Named& named) {
+      if (!named.GetDescription().empty()) // ,"description":"named.GetDescription()"
+         RevPrint(rbuf, R"(,"description":")", named.GetDescription(), '"');
+      if (!named.GetTitle().empty()) // ,"title":"named.GetTitle()"
+         RevPrint(rbuf, R"(,"title":")", named.GetTitle(), '"');
+      RevPrint(rbuf, R"("name":")", named.Name_, '"');
+   }
+   static void FieldToJSON(RevBufferList& rbuf, const seed::Field& fld) {
+      RevPutChar(rbuf, '}');
+      NumOutBuf nbuf;
+      if (fld.Flags_ != seed::FieldFlag{})
+         RevPrint(rbuf, R"(,"flags":")", fld.Flags_, '"');
+      RevPrint(rbuf, R"(,"type":")", fld.GetTypeId(nbuf), '"');
+      NamedToJSON(rbuf, fld);
+      RevPutChar(rbuf, '{');
+   }
+   static void LayoutToJSON(RevBufferList& rbuf, seed::Layout& layout) {
+      size_t tabIdx = layout.GetTabCount();
+      RevPrint(rbuf, "]}");
+      while (tabIdx > 0) {
+         RevPrint(rbuf, '}');
+         seed::Tab& tab = *layout.GetTab(--tabIdx);
+         if (seed::Layout* sapling = tab.SaplingLayout_.get()) {
+            LayoutToJSON(rbuf, *sapling);
+            RevPrint(rbuf, R"(,"sapling":)");
+         }
+         RevPutChar(rbuf, ']');
+         size_t fldIdx = tab.Fields_.size();
+         while (fldIdx > 0) {
+            FieldToJSON(rbuf, *tab.Fields_.Get(--fldIdx));
+            if (fldIdx != 0)
+               RevPutChar(rbuf, ',');
+         }
+         RevPrint(rbuf, R"(,"fields":[)");
+         // tab.Flags_;
+         NamedToJSON(rbuf, tab);
+         RevPrint(rbuf, tabIdx == 0 ? "{" : ",{");
+      }
+      RevPrint(rbuf, R"(,"tabs":[)");
+      FieldToJSON(rbuf, *layout.KeyField_);
+      RevPrint(rbuf, R"({"key":)");
+   }
+   void OnFoundTree(seed::TreeOp& op) override {
+      // layout 使用 JSON 格式, 方便 js 處理.
+      //    layout:{
+      //       "key"        : field,
+      //       "tabs"       : [tab]
+      //    }
+      //    field:{
+      //      "name"        : fld->Name_,
+      //      "title"       : fld->GetTitle(),
+      //      "description" : fld->GetDescription(),
+      //      "type"        : fld->GetTypeId(),
+      //      "flags"       : fld->Flags_,
+      //    }
+      //    tab:{
+      //      "name"        : tab->Name_,
+      //      "title"       : tab->GetTitle(),
+      //      "description" : tab->GetDescription(),
+      //      "flags"       : ,
+      //      "fields"      : [field],
+      //      "sapling"     : tab->SaplingLayout_,
+      //    }
+      RevBufferList rbuf{128};
+      LayoutToJSON(rbuf, *op.Tree_.LayoutSP_);
+      this->Visitor_->OnTicketRunnerDone(*this, DcQueueList{rbuf.MoveOut()});
+
+      // op.GridView();
+   }
+};
+
 //--------------------------------------------------------------------------//
 
 WsSeedVisitor::WsSeedVisitor(io::DeviceSP dev, seed::MaTreeSP root, const auth::AuthResult& authResult, seed::AclConfig&& aclcfg)
@@ -84,43 +160,12 @@ void WsSeedVisitor::EmitOnTimer(TimerEntry* timer, TimeStamp now) {
 
 io::RecvBufferSize WsSeedVisitor::OnWebSocketMessage() {
    seed::SeedFairy::Request req(*this->Visitor_, &this->Payload_);
-
-   struct PrintLayout : public seed::TicketRunnerTree {
-      fon9_NON_COPY_NON_MOVE(PrintLayout);
-      using base = seed::TicketRunnerTree;
-      using base::base;
-      void OnFoundTree(seed::TreeOp& op) override {
-         // layout 使用 JSON 格式, 方便 js 處理.
-         //    field:{
-         //      "name"        : fld->Name_,
-         //      "title"       : fld->GetTitle(),
-         //      "description" : fld->GetDescription(),
-         //      "type"        : fld->GetTypeId(),
-         //      "readonly"    : true/false
-         //    }
-         //    tab:{
-         //      "name"        : tab->Name_,
-         //      "title"       : tab->GetTitle(),
-         //      "description" : tab->GetDescription(),
-         //      "readonly"    : true/false,
-         //      "needsApply"  : true/false,
-         //      "fields"      : [field],
-         //      "sapling"     : tab->SaplingLayout_,
-         //    }
-         //    layout:
-         //       "key"        : field,
-         //       "tabs"       : [tab]
-         //    }
-         this->Visitor_->OnTicketRunnerDone(*this, DcQueueFixedMem{""});
-      }
-   };
-
    if (!req.Runner_) {
       if(req.Command_ == "pl")
          req.Runner_ = new PrintLayout(*this->Visitor_, req.SeedName_);
    }
    if (req.Runner_) {
-      req.Runner_->Bookmark_.assign(req.Command_);
+      req.Runner_->Bookmark_.assign(req.Command_.begin(), req.CommandArgs_.end());
       req.Runner_->Run();
    }
    else {

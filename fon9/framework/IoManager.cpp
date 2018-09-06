@@ -231,7 +231,7 @@ seed::LayoutSP IoManager::MakeAcceptedClientLayout() {
          fields.Add(fon9_MakeField(Named{"SessionSt"}, DeviceRun, SessionSt_));
          fields.Add(fon9_MakeField(Named{"DeviceSt"},  DeviceRun, DeviceSt_));
          fields.Add(fon9_MakeField(Named{"OpenArgs"},  DeviceRun, OpenArgs_));
-         seed::TabSP tabSt{new seed::Tab(Named{"St"}, std::move(fields))};
+         seed::TabSP tabSt{new seed::Tab(Named{"Status"}, std::move(fields))};
          return new seed::Layout1(seed::MakeField(Named{"Id"}, 0, *static_cast<const io::DeviceAcceptedClientSeq*>(nullptr)),
                                   std::move(tabSt));
       }
@@ -249,7 +249,7 @@ seed::LayoutSP IoManager::Tree::MakeLayout() {
          fields.Add(fon9_MakeField(Named{"Device"},    DeviceItem, Config_.DeviceName_));
          fields.Add(fon9_MakeField(Named{"DeviceSt"},  DeviceItem, DeviceSt_));
          fields.Add(fon9_MakeField(Named{"OpenArgs"},  DeviceItem, OpenArgs_));
-         seed::TabSP tabSt{new seed::Tab(Named{"St"}, std::move(fields), saplingLayout)};
+         seed::TabSP tabSt{new seed::Tab(Named{"Status"}, std::move(fields), saplingLayout)};
 
          fields.Add(fon9_MakeField(Named{"Enabled"},     DeviceItem, Config_.Enabled_));
          fields.Add(fon9_MakeField(Named{"Sch"},         DeviceItem, Config_.SchArgs_));

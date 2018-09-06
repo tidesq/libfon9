@@ -2,8 +2,8 @@
 <html lang="zh-Hant-TW">
 <head>
  <script>
-  //var fon9maURL = 'ws://localhost:6080/WsSeedVisitor';
-  var fon9maURL = 'ws://192.168.1.16:6080/WsSeedVisitor';
+  var fon9maURL = 'ws://localhost:6080/WsSeedVisitor';
+  //var fon9maURL = 'ws://192.168.1.16:6080/WsSeedVisitor';
  </script>
  <meta charset="UTF-8">
  <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -18,7 +18,7 @@
   }
   .fon9-content{
     position: absolute;
-    left: 200px;
+    left: 0;
     right: 0;
     top: 40px;
     bottom: 44px;
@@ -31,10 +31,10 @@
   }
   .fon9-footer{
     position: absolute;
-    left: 200px;
+    left: 0;
     right: 0;
     bottom: 0;
-    height: 44px;
+    height: 1.5em;
     z-index: 998;
     width: auto;
     overflow: hidden;
@@ -50,22 +50,23 @@
 <nav class="fon9-header">
  <img src="./logo-40.png" alt="fon9">
  <div style="float:right">
-  <button class="fon9-btn fon9-btn-signon" id="btnShowSignonDlg">登入</button>
+  <button class="fon9-btn fon9-btn-signon" id="btnShowSignonDlg" autofocus>登入</button>
   <button class="fon9-btn fon9-btn-signon" id="btnUserProfile" style="display:none"></button>
  </div>
 </nav>
 <div class="fon9-content">
+ <iframe id="seedFrame" src="./fon9seed.html"
+   style="border:none;top:0;left:0;width:100%;height:50%;">
+ </iframe>
  <form onsubmit="return false;">
- <fieldset class="fon9-fieldset" style="width:700px; padding-right:10px">
- <legend style="font-size:20px">fon9 WebSocket 傳送測試</legend>
-  <input type="text" id="msgSend" placeholder="請輸入要送出的訊息" autocomplete="off" class="fon9-input" disabled style="float:left; width:535px; margin-right:3px;">
-  <button class="fon9-btn" id="btnSend" disabled>送出</button>
-  <button class="fon9-btn" type="button" id="btnClear">清除訊息</button>
- </fieldset>
+  <fieldset class="fon9-fieldset" style="width:700px; padding-right:10px">
+  <legend style="font-size:20px">fon9 WebSocket 傳送測試</legend>
+   <input type="text" id="msgSend" placeholder="請輸入要送出的訊息" autocomplete="off" class="fon9-input" disabled style="float:left; width:535px; margin-right:3px;">
+   <button class="fon9-btn" id="btnSend" disabled>送出</button>
+   <button class="fon9-btn" type="button" id="btnClear">清除訊息</button>
+  </fieldset>
+  <div id="info"></div>
  </form>
-
- <div id="info">
- </div>
 </div>
 <div class="fon9-footer">
  © 風言軟體
@@ -74,8 +75,46 @@
 <!-- 登入 & 建立與 fon9 的 WebSocket 管理連線-->
 <iframe id="signonFrame" src="./fon9signon.html" class="fon9-ext-dialog"></iframe>
 <script type="module">
-import SaslWebSocket from './sasl-ws.js'
+let seedWindow = document.getElementById('seedFrame').contentWindow;
 let webSocket;
+
+function normalizeKeyText(key) {
+  if (!key)
+    return '';
+  if (key.length <= 0)
+    return '""';
+  if (key.indexOf('/') >= 0 || key.indexOf(' ') >= 0)
+    return '`' + key + '`';
+  return key;
+}
+seedWindow.onKeyCellClick = function(path, key, tab) {
+  console.log('onKeyCellClick: ', path, key, tab);
+  path += '/' + normalizeKeyText(key);
+  if (tab != '')
+    path += '^' + tab;
+  webSocket.send('pl ' + path);
+  //console.log('onKeyCellClick.send>>pl ' + path);
+}
+seedWindow.onTabChanged = function(path, startkey, tab) {
+  let gvcmd = 'gv';
+  if (startkey == undefined) {
+    if (tab != '')
+      gvcmd += ',,^' + tab;
+  }
+  else {
+    gvcmd += ',,' + normalizeKeyText(startkey);
+    if (tab != '')
+      gvcmd += '^' + tab;
+  }
+  if (webSocket)
+    webSocket.send(gvcmd + ' ' + path);
+  //console.log('onTabChanged.send>>' + gvcmd + ' ' + path);
+}
+seedWindow.onPathChanged = function(newPath) {
+  webSocket.send('pl ' + newPath);
+  //console.log('onPathChanged.send>>pl ' + newPath);
+}
+
 function onWebSocketClosed(evt) {
   setEnableSignon(true);
   webSocket = undefined;
@@ -84,6 +123,32 @@ function onWebSocketClosed(evt) {
 function onWebSocketMessage(msg) {
   // 認證成功後, WebSocket 的訊息, 才會轉來這裡處理.
   addInfo('Recv:', msg.data);
+  msg = msg.data;
+  if (msg[0] != '>') // 失敗訊息: msg : 'e=...';
+    return;
+  // 成功訊息.
+  let pln = msg.indexOf("\n");
+  if (msg[1]=='p' && msg[2]=='l') // "pl" print layout.
+    seedWindow.renderLayout(msg.substring(4,pln), msg.substring(pln+1));
+  else if (msg[1]=='g' && msg[2]=='v') { // "gv[,args] path" gridview
+    // argsPath = msg.substring(3,pln) 藉由判斷 argsPath[0]==',' or ' ' 來決定是否有 args.
+    let args;
+    let path;
+    if (msg.length > 3 && msg[3] == ',') {
+      args = msg.slice(4, pln);
+      let pspc = args.indexOf(" ");
+      if (pspc < 0)
+        path = '';
+      else {
+        path = args.substring(pspc+1);
+        args = args.substring(0, pspc);
+      }
+    }
+    else {
+      path = msg.substring(4,pln);
+    }
+    seedWindow.renderGridView(args, path, msg.substring(pln+1));
+  }
 }
 
 let signonFrame = document.getElementById('signonFrame');
@@ -98,7 +163,7 @@ function addInfo(head, msg, isErr = '') {
   str += '<b>' + head + ' </b>';
   if (msg !== '')
     str += JSON.stringify(msg);
-  document.getElementById('info').innerHTML += str + '</p>';
+  document.getElementById('info').innerHTML = str + '</p>';
 }
 function setEnableSignon(isEnable = true) {
   let btnUserProfile = document.getElementById('btnUserProfile');
@@ -107,12 +172,14 @@ function setEnableSignon(isEnable = true) {
   document.getElementById('btnShowSignonDlg').style.display = isEnable ? 'block' : 'none';
   document.getElementById('btnSend').disabled = isEnable;
   document.getElementById('msgSend').disabled = isEnable;
+  document.getElementById('seedFrame').style.display = !isEnable ? 'block' : 'none';
 }
 function onSignonDlgClosed(dlg) {
   signonFrame.style.display = 'none';
   webSocket = signonWindow.returnValue;
   if (webSocket) {
     webSocket.onclose = onWebSocketClosed;
+    webSocket.send('pl'); // get home path layout.
     setEnableSignon(false);
   }
 }

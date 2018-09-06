@@ -1,0 +1,366 @@
+<!-- 顯示從 WsSeedVisitor 取得的資料. -->
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1">
+ <title>fon9seed</title>
+ <link rel="stylesheet" href="./fon9.css">
+<style>
+body, .seed, #edPath {
+  font-family: Consolas;
+}
+
+#topContainer {
+  position: relative;
+  height: 1.5em;
+  clear: both;
+  background: #eee;
+}
+#topLeft {
+  position: absolute;
+  left: 0px;
+  right: calc(1.5em + 1px);
+  height: calc(1.5em - 1px);
+}
+#edPath {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  border: none;
+  color: #eee;
+  background: #eee;
+}
+#edPath:focus {
+  z-index: 20;
+  color: black;
+  background: white;
+}
+#tabsArea {
+  position: relative;
+  float: left;
+  z-index: 10;
+}
+.tab {
+  float: left;
+}
+.tab label {
+  position: relative;
+  left: 1px;
+  padding: 5px;
+  margin-left: -1px;
+  border: 1px solid #ccc;
+  border-radius: 15px 15px 0 0;
+  background: #ddd;
+}
+.tab label:hover{
+  background: #eff;
+}
+.tab [type=radio] {
+  display: none;
+}
+.tab [type=radio]:checked ~ label {
+  background: white;
+  border-bottom: 1px solid white;
+  z-index: 2;
+}
+.seed {
+  float: left;
+  height: 1.5em;
+  padding: 0 5px;
+  outline: none;
+  border: none;
+  border-radius: 2px;
+  background: #ddd;
+}
+.seed:hover {
+  background: #eff;
+  cursor: default;
+}
+.seed:disabled {
+  background: #ddd;
+}
+
+#gvArea {
+  position: fixed;
+  left: 0;
+  top: 1.5em;
+  bottom: 0;
+  width: 100%;
+  border-top: 1px solid #ccc;
+  overflow: auto;
+  cursor: default;
+}
+.gridView {
+  border-collapse: collapse;
+  width: 100%;
+  line-height: 1.5em;
+}
+.gridView thead th {
+  position: sticky;
+  top: 0;
+  background: #eee;
+  box-shadow: 0 2px 3px -1px #aaa;
+}
+.gridView thead th:first-child {
+  z-index: 1;
+  left: 0;
+}
+.gridView tbody th {
+  position: sticky;
+  left: 0;
+  background: #eee;
+  box-shadow: 2px 0 3px -1px #aaa;
+}
+.gridView th,
+.gridView td {
+  border-right: 1px solid #ccc;
+  border-bottom: 1px solid #ccc;
+  text-align: left;
+}
+.gridView th:last-child,
+.gridView td:last-child {
+  border-right: 0;
+}
+.gridView tr:nth-child(odd) {
+  background: #f9f9f9;
+}
+.gridView tr:hover {
+  background: #eff;
+}
+.gridView tbody th:hover {
+  background: #eff;
+}
+</style>
+</head>
+<body>
+<div>
+ <div id="topContainer">
+   <div id="topLeft">
+     <div id="tabsArea"></div>
+     <input type="text" id="edPath" autocomplete="off" onfocus="this.value=currPath; this.select();" onkeydown="return edPathKeyDown(event)"/>
+   </div>
+   <div id="topRight">
+     <button id="btnReload" type="button" class="seed" style="float:right" onclick="reload();">
+     &#8635;</button>
+   </div>
+ </div>
+ <div id="gvArea">
+  <table id="gridView" class="gridView">
+   <thead></thead>
+   <tbody></tbody>
+  </table>
+ </div>
+</div>
+
+<script>
+// public:
+/// 當 KeyCell click 時觸發 onKeyCellClick(currPath, key, tab);
+var onKeyCellClick;
+/// 當 Tab click 時觸發 onTabChanged(currPath, startkey, tab);
+/// startkey 有可能是 undefined;
+var onTabChanged;
+/// 當選定新的路徑時觸發 onPathChanged(newPath);
+var onPathChanged;
+
+function renderLayout(path, strLayout) {
+  if (currPath == path)
+    return;
+  gridView.tBodies[0].innerHTML = '';
+  currPath = path;
+  layout = JSON.parse(strLayout);
+  currTabIdx = -1;
+  addSeeds(path);
+  if (layout.tabs.length > 1) {
+    let btn = document.createElement('button');
+    btn.textContent = '^';
+    btn.className = 'seed';
+    btn.disabled = true;
+    tabsArea.appendChild(btn);
+    for (let tab of layout.tabs)
+      addTab(++currTabIdx, tab);
+  }
+  setCurrTabIdx(0);
+}
+function renderGridView(args, path, gv) {
+  if (path != currPath)
+    return;
+  if (getTabIdx(args) != currTabIdx)
+    return;
+  let rowsBody = gridView.tBodies[0];
+  rowsBody.innerHTML = '';
+  if (gv == '')
+    return;
+  let rows = gv.split('\n');
+  for (let row of rows) {
+    let flds = row.split('\x01');
+    let rowe = rowsBody.insertRow(-1)
+    let cell = rowe.insertCell(-1);
+    cell.outerHTML = '<th>' + flds[0] + '</th>';
+    cell = rowe.cells[0]; // 因為使用 outerHTML, cell 已經不是 rowe 的 cell, 所以要重新取得.
+    cell.onclick = function() {
+      if (onKeyCellClick)
+        onKeyCellClick(currPath, this.innerHTML, currTabIdx <= 0 ? '' : layout.tabs[currTabIdx].name);
+    };
+    for (let i = 1; i < flds.length; ++i)
+      rowe.insertCell(-1).innerHTML = flds[i];
+  }
+}
+
+// private:
+let tabsArea = document.getElementById('tabsArea');
+let gvArea = document.getElementById('gvArea');
+let gridView = document.getElementById('gridView');
+let layout;
+let currTabIdx;
+let currPath;
+
+let getTitleOrName = function(n) {
+  return (n.title ? n.title : n.name);
+}
+let addTab = function(tabIdx, tab) {
+  let div = document.createElement('div');
+  div.className = 'tab';
+  let elm = document.createElement('input');
+  elm.id = tab.name;
+  elm.type = 'radio';
+  elm.name = 'tabs';
+  elm.index = tabIdx;
+  elm.onchange = setCurrTabIdx;
+  div.appendChild(elm);
+  elm = document.createElement('label');
+  elm.htmlFor = tab.name;
+  elm.textContent = getTitleOrName(tab);
+  div.appendChild(elm);
+  tabsArea.appendChild(div);
+}
+let emitTabChanged = function(startkey) {
+  if (onTabChanged) {
+    let tab = layout.tabs[currTabIdx];
+    onTabChanged(currPath, startkey, (currTabIdx <= 0 ? '' : tab.name));
+  }
+}
+let setCurrTabIdx = function(idx) {
+  if (typeof idx !== 'number')
+    idx = idx.target.index;
+  if (currTabIdx == idx)
+    return;
+  currTabIdx = idx;
+  let rowsBody = gridView.tBodies[0];
+  emitTabChanged((rowsBody.rows.length > 0 ? rowsBody.rows[0].cells[0].innerHTML : undefined));
+  rowsBody.innerHTML = '';
+  let tab = layout.tabs[idx];
+  let tabEle = document.getElementById(tab.name);
+  if (tabEle)
+    tabEle.checked = true;
+  let strHeader = '<th>' + getTitleOrName(layout.key) + '</th>';
+  for (let fld of tab.fields)
+    strHeader += '<th>' + getTitleOrName(fld) + '</th>';
+  gridView.tHead.innerHTML = '<tr>' + strHeader + '</tr>';
+}
+
+let parsePath = function(path) {
+  let res = [];
+  let start = 0;
+  while (start < path.length) {
+    let ch = path[start];
+    if (ch == '/') {
+      if (++start >= path.length)
+        break;
+      ch = path[start];
+    }
+    let node = {seed:'', tab:''};
+    switch(ch) {
+    case "'":
+    case '"':
+    case '`':
+      let pquot = path.indexOf(ch, ++start);
+      if (pquot < 0) {
+        res.push({seed:path.substring(start), tab:''});
+        break;
+      }
+      node.seed = path.substring(start, pquot);
+      ch = path[start = pquot + 1];
+      break;
+    }
+    let pspl = path.indexOf('/', start);
+    let subs = pspl < 0 ? path.substring(start) : path.substring(start, pspl);
+    let ptab = subs.indexOf('^');
+    if (ptab >= 0) {
+      node.tab = subs.substring(ptab+1);
+      subs = subs.substring(0, ptab);
+    }
+    node.seed += subs;
+    res.push(node);
+    if (pspl < 0)
+      break;
+    start = pspl + 1;
+  }
+  return res;
+}
+let addSeeds = function(path) {
+  let nodes = parsePath(path);
+  tabsArea.innerHTML = '';
+  path = '/';
+  for (let i = 0;;) {
+    let btn = document.createElement('button');
+    btn.textContent = '/';
+    btn.className = 'seed';
+    btn.type = 'button';
+    btn.value = path;
+    btn.onclick = function() {
+      if (onPathChanged && this.value != currPath)
+        onPathChanged(this.value);
+    }
+    tabsArea.appendChild(btn);
+    if (i >= nodes.length)
+      break;
+    let n = nodes[i++];
+    let isLast = (i >= nodes.length);
+    btn = document.createElement('button');
+    btn.className = 'seed';
+    btn.disabled = true;
+    let str = n.seed;
+    if (n.tab != '')
+      str += '^' + n.tab;
+    path += str + '/';
+    btn.textContent = str;
+    tabsArea.appendChild(btn);
+    if (isLast)
+      break;
+  }
+}
+
+let getTabIdx = function(args) {
+  // args: '[[rowCount],[[key][^tab]]]
+  if (args && args.length > 0) {
+    let pTab = args.indexOf("^");
+    if (pTab >= 0) {
+      if (args.substring(pTab+1) == layout.tabs[currTabIdx].name)
+        return currTabIdx;
+      return -1;
+    }
+  }
+  return 0;
+}
+
+let reload = function() {
+  emitTabChanged(undefined);
+  return false;
+}
+let edPathKeyDown = function(ev) {
+  if (ev.keyCode == 27)
+    ev.target.blur();
+  else if(ev.keyCode == 13) {
+    ev.target.blur();
+    if (onPathChanged && ev.target.value != currPath)
+      onPathChanged(ev.target.value);
+  }
+  return true;
+}
+</script>
+
+</body>
+</html>
