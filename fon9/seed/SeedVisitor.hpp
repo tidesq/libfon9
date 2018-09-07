@@ -103,6 +103,10 @@ public:
    void OnFoundTree(TreeOp&) override;
    void OnLastStep(TreeOp& op, StrView keyText, Tab& tab) override;
    void OnLastSeedOp(const PodOpResult& resPod, PodOp* pod, Tab& tab) override;
+
+   /// 若有錯誤, 則傳回錯誤訊息, 例如: "fieldName=xxx|err=field not found\n";
+   /// 若有多個錯誤, 則會產生多行訊息.
+   RevBufferList ParseSetValues(const SeedOpResult& res, const RawWr& wr);
 };
 
 /// \ingroup seed

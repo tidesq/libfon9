@@ -38,7 +38,7 @@ struct WsSeedVisitor::SeedVisitor : public seed::SeedVisitor {
       return dynamic_cast<WsSeedVisitor*>(static_cast<HttpSession*>(this->Device_->Session_.get())->GetRecvHandler());
    }
    void OnTicketRunnerDone(seed::TicketRunner& runner, DcQueue&& extmsg) override {
-      if (auto ws = GetWsSeedVisitor()) {
+      if (auto ws = this->GetWsSeedVisitor()) {
          RevBufferList rbuf{128, std::move(extmsg)};
          RevPrint(rbuf, runner.Bookmark_, ' ', runner.Path_, '\n');//first list: [seedName]
          if (runner.OpResult_ < seed::OpResult::no_error)
@@ -48,9 +48,18 @@ struct WsSeedVisitor::SeedVisitor : public seed::SeedVisitor {
          ws->Send(WebSocketOpCode::TextFrame, std::move(rbuf));
       }
    }
-   void OnTicketRunnerWrite(seed::TicketRunnerWrite&, const seed::SeedOpResult& res, const seed::RawWr& wr) override {
+   void OnTicketRunnerWrite(seed::TicketRunnerWrite& runner, const seed::SeedOpResult& res, const seed::RawWr& wr) override {
+      RevBufferList rbuf{runner.ParseSetValues(res, wr)};
+      RevPutChar(rbuf, '\n');
+      size_t ifld = res.Tab_->Fields_.size();
+      while (auto fld = res.Tab_->Fields_.Get(--ifld)) {
+         fld->CellRevPrint(wr, nullptr, rbuf);
+         if (ifld > 0)
+            RevPutChar(rbuf, seed::GridViewResult::kCellSplitter);
+      }
+      this->OnTicketRunnerDone(runner, DcQueueList{rbuf.MoveOut()});
    }
-   void OnTicketRunnerRead(seed::TicketRunnerRead&, const seed::SeedOpResult& res, const seed::RawRd& rd) override {
+   void OnTicketRunnerRead(seed::TicketRunnerRead&, const seed::SeedOpResult&, const seed::RawRd&) override {
    }
    void OnTicketRunnerRemoved(seed::TicketRunnerRemove&, const seed::PodRemoveResult& res) override {
    }
@@ -135,8 +144,6 @@ struct WsSeedVisitor::PrintLayout : public seed::TicketRunnerTree {
       RevBufferList rbuf{128};
       LayoutToJSON(rbuf, *op.Tree_.LayoutSP_);
       this->Visitor_->OnTicketRunnerDone(*this, DcQueueList{rbuf.MoveOut()});
-
-      // op.GridView();
    }
 };
 

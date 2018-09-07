@@ -74,6 +74,23 @@ void TicketRunnerWrite::OnWriteOp(const SeedOpResult& res, const RawWr* wr) {
    else
       this->OnError(res.OpResult_);
 }
+RevBufferList TicketRunnerWrite::ParseSetValues(const SeedOpResult& res, const RawWr& wr) {
+   StrView       fldvals{&this->FieldValues_};
+   RevBufferList rbuf{128};
+   while (!fldvals.empty()) {
+      StrView val = SbrFetchFieldNoTrim(fldvals, ',');
+      StrView fldName = StrFetchTrim(val, '=');
+      auto    fld = res.Tab_->Fields_.Get(fldName);
+      if (fld == nullptr)
+         RevPrint(rbuf, "fieldName=", fldName, "|err=field not found\n");
+      else {
+         seed::OpResult r = fld->StrToCell(wr, StrNoTrimRemoveQuotes(val));
+         if (r != seed::OpResult::no_error)
+            RevPrint(rbuf, "fieldName=", fldName, "|err=StrToCell():", r, ':', seed::GetOpResultMessage(r), '\n');
+      }
+   }
+   return rbuf;
+}
 //--------------------------------------------------------------------------//
 TicketRunnerRemove::TicketRunnerRemove(SeedVisitor& visitor, StrView seed)
    : base(visitor, seed, AccessRight::Write) {

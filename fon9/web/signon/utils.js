@@ -2,7 +2,7 @@ const encUtf8 = new TextEncoder();
 
 /**
  * @return {Uint8Array} 字串 str 轉為 Uint8Array.
-*/
+ */
 export function strToUint8Array(str) {
   return encUtf8.encode(str);
 }
@@ -22,23 +22,23 @@ export function b64Encode(input) {
   let chr1, chr2, chr3, enc1, enc2, enc3, enc4;
   let i = 0;
   const len = input.length;
- 
+
   while (i < len) {
     chr1 = input[i++];
     chr2 = i < len ? input[i++] : Number.NaN;
     chr3 = i < len ? input[i++] : Number.NaN;
- 
+
     enc1 = chr1 >> 2;
     enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
     enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
     enc4 = chr3 & 63;
- 
+
     if (isNaN(chr2)) {
       enc3 = enc4 = 64;
     } else if (isNaN(chr3)) {
       enc4 = 64;
     }
-    output += b64KeyStr.charAt(enc1) + b64KeyStr.charAt(enc2) + 
+    output += b64KeyStr.charAt(enc1) + b64KeyStr.charAt(enc2) +
               b64KeyStr.charAt(enc3) + b64KeyStr.charAt(enc4);
   }
   return output;
@@ -55,7 +55,7 @@ export function b64Decode(input) {
   let enc1, enc2, enc3, enc4;
   let i = 0;
   let j = 0;
-  for (i=0; i < bytes; i += 3) {	
+  for (i=0; i < bytes; i += 3) {
     enc1 = b64KeyStr.indexOf(input.charAt(j++));
     enc2 = b64KeyStr.indexOf(input.charAt(j++));
     enc3 = b64KeyStr.indexOf(input.charAt(j++));
@@ -70,7 +70,7 @@ export function b64Decode(input) {
     if (enc4 != 64) res[i+2] = chr3;
     else return res.slice(0,i+2);
   }
-  return res;	
+  return res;
 }
 
 /**

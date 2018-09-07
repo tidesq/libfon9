@@ -74,45 +74,34 @@
 
 <!-- 登入 & 建立與 fon9 的 WebSocket 管理連線-->
 <iframe id="signonFrame" src="./fon9signon.html" class="fon9-ext-dialog"></iframe>
+<script type="text/javascript" src="./utils-seed.js"></script>
 <script type="module">
 let seedWindow = document.getElementById('seedFrame').contentWindow;
 let webSocket;
 
-function normalizeKeyText(key) {
-  if (!key)
-    return '';
-  if (key.length <= 0)
-    return '""';
-  if (key.indexOf('/') >= 0 || key.indexOf(' ') >= 0)
-    return '`' + key + '`';
-  return key;
+seedWindow.onKeyCellClick = function(path, key, tabName) {
+  webSocket.send('pl ' + mergePathKeyTab(path, key, tabName));
 }
-seedWindow.onKeyCellClick = function(path, key, tab) {
-  console.log('onKeyCellClick: ', path, key, tab);
-  path += '/' + normalizeKeyText(key);
-  if (tab != '')
-    path += '^' + tab;
-  webSocket.send('pl ' + path);
-  //console.log('onKeyCellClick.send>>pl ' + path);
-}
-seedWindow.onTabChanged = function(path, startkey, tab) {
+seedWindow.onTabChanged = function(path, startkey, tabName) {
   let gvcmd = 'gv';
   if (startkey == undefined) {
-    if (tab != '')
-      gvcmd += ',,^' + tab;
+    if (tabName != '')
+      gvcmd += ',,^' + tabName;
   }
   else {
     gvcmd += ',,' + normalizeKeyText(startkey);
-    if (tab != '')
-      gvcmd += '^' + tab;
+    if (tabName != '')
+      gvcmd += '^' + tabName;
   }
   if (webSocket)
     webSocket.send(gvcmd + ' ' + path);
-  //console.log('onTabChanged.send>>' + gvcmd + ' ' + path);
 }
 seedWindow.onPathChanged = function(newPath) {
   webSocket.send('pl ' + newPath);
-  //console.log('onPathChanged.send>>pl ' + newPath);
+}
+seedWindow.onFieldChanged = function(path, key, tabName, fldName, newValue) {
+  let cmd = 'ss,' + fldName + '=`' + newValue + '` ' + mergePathKeyTab(path, key, tabName);
+  webSocket.send(cmd);
 }
 
 function onWebSocketClosed(evt) {
@@ -130,7 +119,7 @@ function onWebSocketMessage(msg) {
   let pln = msg.indexOf("\n");
   if (msg[1]=='p' && msg[2]=='l') // "pl" print layout.
     seedWindow.renderLayout(msg.substring(4,pln), msg.substring(pln+1));
-  else if (msg[1]=='g' && msg[2]=='v') { // "gv[,args] path" gridview
+  else {
     // argsPath = msg.substring(3,pln) 藉由判斷 argsPath[0]==',' or ' ' 來決定是否有 args.
     let args;
     let path;
@@ -147,7 +136,10 @@ function onWebSocketMessage(msg) {
     else {
       path = msg.substring(4,pln);
     }
-    seedWindow.renderGridView(args, path, msg.substring(pln+1));
+    if (msg[1]=='g' && msg[2]=='v') // "gv[,args] path" gridview
+      seedWindow.renderGridView(args, path, msg.substring(pln+1));
+    else if (msg[1]=='s' && msg[2]=='s') // "ss[,fieldName=newValue] path/key^tab" + \n" + "fields"
+      seedWindow.onRowUpdate(args, path, msg.substring(pln+1));
   }
 }
 
@@ -169,10 +161,18 @@ function setEnableSignon(isEnable = true) {
   let btnUserProfile = document.getElementById('btnUserProfile');
   btnUserProfile.style.display = !isEnable ? 'block' : 'none';
   btnUserProfile.textContent = isEnable ? '' : signonWindow.document.getElementById('username').value;
-  document.getElementById('btnShowSignonDlg').style.display = isEnable ? 'block' : 'none';
   document.getElementById('btnSend').disabled = isEnable;
   document.getElementById('msgSend').disabled = isEnable;
   document.getElementById('seedFrame').style.display = !isEnable ? 'block' : 'none';
+  seedWindow.clearAll();
+
+  let btnShowSignonDlg = document.getElementById('btnShowSignonDlg');
+  if (!isEnable)
+    btnShowSignonDlg.style.display = 'none';
+  else {
+    btnShowSignonDlg.style.display = 'block';
+    btnShowSignonDlg.focus();
+  }
 }
 function onSignonDlgClosed(dlg) {
   signonFrame.style.display = 'none';
@@ -183,7 +183,10 @@ function onSignonDlgClosed(dlg) {
     setEnableSignon(false);
   }
 }
-(function() { // 設定登入元件初值, 設定登入元件的事件.
+
+// 等 seedFrame 載入完畢, 再執行初始化.
+document.getElementById('seedFrame').addEventListener("load", function() {
+  // 設定登入元件初值, 設定登入元件的事件.
   setEnableSignon(true);
   signonWindow.close = onSignonDlgClosed;
   signonWindow.onmessage = onWebSocketMessage;
@@ -200,8 +203,7 @@ function onSignonDlgClosed(dlg) {
     setEnableSignon(true);
     document.getElementById('formUserProfile').style.display = 'none';
   });
-})();
-(function() { // 設定送出訊息區初值, 及 click 事件.
+  // 設定送出訊息區初值, 及 click 事件.
   document.getElementById('btnSend').addEventListener('click', function() {
     if (webSocket) {
       let msgSend = document.getElementById('msgSend');
@@ -214,7 +216,7 @@ function onSignonDlgClosed(dlg) {
   document.getElementById('btnClear').addEventListener('click', function() {
     document.getElementById('info').innerHTML = '';
   });
-})();
+});
 </script>
 
 <!-- 登入成功後: 可改密碼、帳戶設定(暱稱、頭像...)、登出 -->

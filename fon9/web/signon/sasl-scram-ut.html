@@ -6,7 +6,7 @@
 </head>
 <body>
 Testing SASL: "SCRAM-SHA-1" and "SCRAM-SHA-256"...
-  
+
 <script type="module">
 import SaslScram from './sasl-scram.js';
 
@@ -27,7 +27,7 @@ function write_output(msg, isErr = '') {
 async function test_sha1() { // test case: https://tools.ietf.org/html/rfc5802#section-5
   var scram = new SaslScram('SHA-1');
   scram.genNonce = function () { return 'fyko+d2lbbFgONRv9qkxdawL'; }
-  
+
   var msg = scram.initial({username:'user',password:'pencil'});
   write_output(msg);
   if (msg != 'n,,n=user,r=fyko+d2lbbFgONRv9qkxdawL')

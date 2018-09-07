@@ -2,7 +2,7 @@
 /// \author fonwinz@gmail.com
 #ifndef __fon9_seed_PodOp_hpp__
 #define __fon9_seed_PodOp_hpp__
-#include "fon9/seed/TreeOp.hpp"
+#include "fon9/seed/Tree.hpp"
 
 namespace fon9 { namespace seed {
 

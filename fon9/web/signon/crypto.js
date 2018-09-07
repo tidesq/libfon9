@@ -21,8 +21,8 @@ export function pbkdf2(params) {
   return CryptoSubtle.importKey(
             'raw',
             utils.strToUint8Array(params.password),
-            {name: 'PBKDF2'}, 
-            false, 
+            {name: 'PBKDF2'},
+            false,
             ['deriveKey', 'deriveBits']
   ).then(key => CryptoSubtle.deriveBits(params, key, params.bitsSize)
   ).then(bits => new Uint8Array(bits)

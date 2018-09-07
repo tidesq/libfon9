@@ -217,20 +217,7 @@ void SeedSession::OnTicketRunnerRead(seed::TicketRunnerRead& runner, const seed:
    this->OutputSeedFields(runner, res, rd, StrView{});
 }
 void SeedSession::OnTicketRunnerWrite(seed::TicketRunnerWrite& runner, const seed::SeedOpResult& res, const seed::RawWr& wr) {
-   StrView       fldvals{&runner.FieldValues_};
-   RevBufferList rbuf{128};
-   while (!fldvals.empty()) {
-      StrView val = SbrFetchFieldNoTrim(fldvals, ',');
-      StrView fldName = StrFetchTrim(val, '=');
-      auto    fld = res.Tab_->Fields_.Get(fldName);
-      if (fld == nullptr)
-         RevPrint(rbuf, "fieldName=", fldName, "|err=field not found\n");
-      else {
-         seed::OpResult r = fld->StrToCell(wr, StrNoTrimRemoveQuotes(val));
-         if (r != seed::OpResult::no_error)
-            RevPrint(rbuf, "fieldName=", fldName, "|err=StrToCell():", r, ':', seed::GetOpResultMessage(r), '\n');
-      }
-   }
+   RevBufferList rbuf{runner.ParseSetValues(res, wr)};
    this->OutputSeedFields(runner, res, wr, ToStrView(BufferTo<std::string>(rbuf.MoveOut())));
 }
 void SeedSession::OnTicketRunnerRemoved(seed::TicketRunnerRemove& runner, const seed::PodRemoveResult& res) {
