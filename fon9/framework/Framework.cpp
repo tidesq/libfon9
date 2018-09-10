@@ -168,14 +168,17 @@ void Framework::Dispose() {
 
    // 等候每個 DefaultThreadPool 的每個 thread 執行 n 次,
    // 讓等候中的工作有機會全部做完.
-   unsigned L = static_cast<unsigned>(GetDefaultThreadPool().GetThreadCount() * 2);
-   CountDownLatch waiter{L};
-   for (; L > 0; --L) {
-      GetDefaultThreadPool().EmplaceMessage([&waiter]() {
-         waiter.CountDown();
-      });
+   for (unsigned count = 3; count > 0; --count) {
+      unsigned L = static_cast<unsigned>(GetDefaultThreadPool().GetThreadCount());
+      CountDownLatch waiter{L};
+      for (; L > 0; --L) {
+         GetDefaultThreadPool().EmplaceMessage([&waiter]() {
+            // TODO: 如何確定每次執行都是在不同的 thread?
+            waiter.CountDown();
+         });
+      }
+      waiter.Wait();
    }
-   waiter.Wait();
 }
 
 } // namespaces

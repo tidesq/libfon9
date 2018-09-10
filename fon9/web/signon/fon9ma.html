@@ -82,7 +82,7 @@ let webSocket;
 seedWindow.onKeyCellClick = function(path, key, tabName) {
   webSocket.send('pl ' + mergePathKeyTab(path, key, tabName));
 }
-seedWindow.onTabChanged = function(path, startkey, tabName) {
+seedWindow.onLoadGridView = function(path, startkey, tabName) {
   let gvcmd = 'gv';
   if (startkey == undefined) {
     if (tabName != '')
@@ -99,9 +99,14 @@ seedWindow.onTabChanged = function(path, startkey, tabName) {
 seedWindow.onPathChanged = function(newPath) {
   webSocket.send('pl ' + newPath);
 }
-seedWindow.onFieldChanged = function(path, key, tabName, fldName, newValue) {
-  let cmd = 'ss,' + fldName + '=`' + newValue + '` ' + mergePathKeyTab(path, key, tabName);
-  webSocket.send(cmd);
+seedWindow.onFieldChanged = function(path, key, tabName, fieldValues) {
+  let cmd = 'ss,';
+  if (fieldValues)
+    cmd += fieldValues;
+  webSocket.send(cmd + ' ' + mergePathKeyTab(path, key, tabName));
+}
+seedWindow.onDeleteRow = function(path, key) {
+  webSocket.send('rs ' + mergePathKeyTab(path, key, ''));
 }
 
 function onWebSocketClosed(evt) {
@@ -119,6 +124,8 @@ function onWebSocketMessage(msg) {
   let pln = msg.indexOf("\n");
   if (msg[1]=='p' && msg[2]=='l') // "pl" print layout.
     seedWindow.renderLayout(msg.substring(4,pln), msg.substring(pln+1));
+  else if (msg[1]=='r' && msg[2]=='s') // "rs" remove
+    seedWindow.seedRemoved(msg.substring(4,pln), msg.substring(pln+1));
   else {
     // argsPath = msg.substring(3,pln) 藉由判斷 argsPath[0]==',' or ' ' 來決定是否有 args.
     let args;
@@ -139,7 +146,7 @@ function onWebSocketMessage(msg) {
     if (msg[1]=='g' && msg[2]=='v') // "gv[,args] path" gridview
       seedWindow.renderGridView(args, path, msg.substring(pln+1));
     else if (msg[1]=='s' && msg[2]=='s') // "ss[,fieldName=newValue] path/key^tab" + \n" + "fields"
-      seedWindow.onRowUpdate(args, path, msg.substring(pln+1));
+      seedWindow.updateRow(args, path, msg.substring(pln+1));
   }
 }
 

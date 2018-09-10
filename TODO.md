@@ -20,12 +20,6 @@ libfon9 TODO list
     只要設計一個: 連接 `root` 與 `商品資料表` 的 `entry`，就可以透過該 entry 管理 `商品資料表`。
 * TreeFlag::NeedsApply: 使用「套用」方式處理資料異動。
 * WebUI
-  * Add row / Remove(Cut) row / Copy row / Paste row
-    * [Ins]: Add row
-    * [Ctrl-Ins]: Copy row
-    * [Shift-Ins]: Paste row
-    * [Ctrl-Del]: Delete row
-    * [Shift-Del]: Cut row
   * hide column(field)
   * tree flags 有些應該屬於 tab flags.
   * needsApply / 主管確認機制
@@ -40,14 +34,20 @@ libfon9 TODO list
   * fon9seed.html 操作說明頁:
     * 鍵盤操作: <kbd>
       * ← ↑ → ↓ Move cell focus
+      * Home, PgUp, PgDn, End.
       * ESC:   Cancel edit
       * Enter: Start edit, or [Confirm], or [@KeyColumn: Move to sapling].
       * F2:    Start edit
       * Space: @KeyColumn: Move to sapling.
+      * [Ins]:       Add row
+      * [Ctrl-Ins]:  Copy row
+      * [Shift-Ins]: Paste row
+      * [Ctrl-Del]:  Delete row
+      * [Shift-Del]: Cut row
       * ????:  Move to prev tree. (使用 Browser History API)
     * 滑鼠操作:
       * double click: Start edit, or [@KeyColumn: Move to sapling].
-      * 路徑列: 切換路徑 or 輸入路徑 or [reload].
+      * 路徑列: 切換路徑 or 輸入路徑
 * DllManager
 * Fon9Co
   * Linux: to daemon.

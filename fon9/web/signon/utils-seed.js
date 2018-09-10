@@ -1,6 +1,6 @@
 /**
  * @return 若 key 為 undefined || null 傳回 ''; 若為空字串傳回 '""';
- *         若 key[0]=='/' 則傳回 '`' + key '`';
+ *         若 key 裡面有 '/' 則傳回 '`' + key '`';
  *         其餘傳回 key;
  */
 function normalizeKeyText(key) {

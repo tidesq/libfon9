@@ -21,7 +21,7 @@ body, .seed, #edPath {
 #topLeft {
   position: absolute;
   left: 0px;
-  right: calc(1.5em + 1px);
+  right: 5em;
   height: calc(1.5em - 1px);
 }
 #edPath {
@@ -83,6 +83,9 @@ body, .seed, #edPath {
 .seed:disabled {
   background: #ddd;
 }
+.topRight {
+  float: right;
+}
 
 #gvArea {
   position: fixed;
@@ -135,20 +138,24 @@ body, .seed, #edPath {
 .gvTable tbody th:hover {
   background: #eff;
 }
-.gvTable td:focus,
-.gvTable th:focus {
-  outline: none;
-  box-shadow: 0 0 2px 1px blue inset;
-}
 .gvTable [contentEditable="true"]:focus {
   background: #FFFFD3;
   cursor: default;
+  box-shadow: 0 0 2px 1px blue inset !important;
 }
 .gvCellUpdating {
-  background: #ffe6ea;
+  background: #ffe6ea !important;
+}
+.gvCellSelected {
+  outline: none !important;
+  box-shadow: 0 0 2px 1px #076 inset !important;
+}
+.gvCellSelected:focus {
+  box-shadow: 0 0 2px 1px #0ba inset !important;
 }
 </style>
 </head>
+
 <body>
 <div>
  <div id="topContainer">
@@ -157,8 +164,12 @@ body, .seed, #edPath {
      <input type="text" id="edPath" autocomplete="off" onfocus="this.value=currPath; this.select();" onkeydown="return edPathKeyDown(event)"/>
    </div>
    <div id="topRight">
-     <button id="btnReload" type="button" class="seed" style="float:right" onclick="reload();">
+     <button id="btnReload" type="button" class="seed topRight" onclick="reload();">
      &#8635;</button>
+     <button id="btnAddNewRow" type="button" class="seed topRight" onclick="addNewRow();" title="Add a row">
+     &#65291;</button>
+     <button id="btnDeleteRow" type="button" class="seed topRight" onclick="deleteRow();">
+     &#65293;</button>
    </div>
  </div>
  <div id="gvArea">
@@ -167,19 +178,22 @@ body, .seed, #edPath {
    <tbody></tbody>
   </table>
  </div>
+ <textarea id="clipboard" style="display:none"></textarea>
 </div>
 
 <script>
 // public:
 /// 當 KeyCell click 時觸發 onKeyCellClick(currPath, key, tabName);
 var onKeyCellClick;
-/// 當 Tab click 時觸發 onTabChanged(currPath, startkey, tabName);
-/// startkey 有可能是 undefined;
-var onTabChanged;
+/// 當 Tab click 或需要 reload 時觸發 onLoadGridView(currPath, startkey, tabName);
+/// startkey 有可能是 undefined, 表示從第一筆開始;
+var onLoadGridView;
 /// 當選定新的路徑時觸發 onPathChanged(newPath);
 var onPathChanged;
-/// 當欄位異動時觸發 onFieldChanged(currPath, key, tabName, fldName, newValue);
+/// 當欄位異動 或 add a row 時觸發 onFieldChanged(currPath, key, tabName, fieldValues);
 var onFieldChanged;
+/// 當想要刪除 row 時觸發 onDeleteRow(currPath, key);
+var onDeleteRow;
 
 function clearAll() {
   currPath = '';
@@ -187,6 +201,8 @@ function clearAll() {
   gvTable.tHead.innerHTML = '';
   gvTable.tBodies[0].innerHTML = '';
   tabsArea.innerHTML = '';
+  document.getElementById('btnDeleteRow').removeAttribute('title');
+  document.getElementById('btnReload').removeAttribute('title');
 }
 function renderLayout(path, strLayout) {
   if (currPath == path)
@@ -195,7 +211,7 @@ function renderLayout(path, strLayout) {
   currPath = path;
   layout = JSON.parse(strLayout);
   currTabIdx = -1;
-  addPathSeeds(path);
+  addPathSeedElements(path);
   if (layout.tabs.length > 1) {
     let btn = document.createElement('button');
     btn.textContent = '^';
@@ -203,88 +219,107 @@ function renderLayout(path, strLayout) {
     btn.disabled = true;
     tabsArea.appendChild(btn);
     for (let tab of layout.tabs)
-      addTab(++currTabIdx, tab);
+      addTabElements(++currTabIdx, tab);
   }
   setCurrTabIdx(0);
 }
 function renderGridView(args, path, gv) {
   if (path != currPath)
     return;
-  if (getTabIdx(args) != currTabIdx)
+  if (parseTabIdx(args) != currTabIdx)
     return;
-  let rowsBody = gvTable.tBodies[0];
-  rowsBody.innerHTML = '';
+  gvTable.tBodies[0].innerHTML = '';
   if (gv == '')
     return;
   let rows = gv.split('\n');
   for (let row of rows) {
     let flds = row.split('\x01');
-    let rowe = rowsBody.insertRow(-1)
-    let cell = rowe.insertCell(-1);
-    cell.outerHTML = '<th>' + flds[0] + '</th>';
-    cell = rowe.cells[0]; // 因為使用 outerHTML, cell 已經不是 rowe 的 cell, 所以要重新取得.
-    cell.tabIndex = 0;
-    cell.ondblclick = (ev => keyCellClick(ev.currentTarget));
-    for (let i = 1; i < flds.length; ++i) {
-      cell = rowe.insertCell(-1);
-      cell.textContent = flds[i];
-      cell.tabIndex = 0;
-      cell.onfocus = gvTableCellFocus;
-    }
+    let rowe = addRowElement(flds[0]);
+    for (let i = 1; i < flds.length; ++i)
+      addCellElement(rowe, flds[i]);
   }
-  setTableFocusCell(1,1);
+  setTableCellFocus(1,0);
 }
-function onRowUpdate(args, path, gv) {
-  if (path.substring(0, currPath.length) != currPath)
+function updateRow(args, path, gv) {
+  let row = searchRowByFullPathName(path);
+  if (!row)
     return;
-  let keytab = parsePath(path.substring(currPath.length));
-  if (keytab.length <= 0)
-    return;
-  keytab = keytab[0];
-  if (keytab.tab == '') {
-    if (currTabIdx != 0)
-      return;
-  }
-  else if (keytab.tab != layout.tabs[currTabIdx].name)
-    return;
-  for (let row of gvTable.rows) {
-    if (row.cells[0].textContent == keytab.seed) {
-      let cells = row.cells;
-      let lines = gv.split('\n');
-      let flds = lines[0].split('\x01');
-      let i = 1;
-      for (let fld of flds) {
-        let cell;
-        if (i < cells.length) {
-          cell = cells[i++];
-          // 應該要檢查 args = 'fieldName=newValue' 其中的 fieldName.
-          // 如果是當初要求的異動, 才移除 gvCellUpdating;
-          cell.classList.remove('gvCellUpdating');
-        }
-        else {
-          cell = row.insertCell(-1);
-          cell.tabIndex = 0;
-          cell.onfocus = gvTableCellFocus;
-        }
-        cell.textContent = fld;
-      }
-      break;
+  let cells = row.cells;
+  cells[0].classList.remove('gvCellUpdating'); // 移除 addNewRow() 時設定的 class.
+  let lines = gv.split('\n');
+  let flds = lines[0].split('\x01');
+  let i = 1;
+  for (let fld of flds) {
+    if (i >= cells.length)
+      addCellElement(row, fld);
+    else {
+      // 應該要檢查 args = 'fieldName=newValue' 其中的 fieldName.
+      // 如果是當初要求的異動, 才移除 gvCellUpdating;
+      let cell = cells[i];
+      cell.classList.remove('gvCellUpdating');
+      cell.textContent = fld;
     }
+    ++i;
+  }
+}
+function seedRemoved(seedName, info) {
+  let row = searchRowByFullPathName(seedName);
+  if (row) {
+    let rowParent = row.parentNode;
+    if (row.rowIndex == currSelectedCell.parentNode.rowIndex) {
+      let ridx = row.rowIndex;
+      setTableCellFocus(ridx + 1 >= rowParent.rows.length ? (ridx - 1) : (ridx + 1),
+                        currSelectedCell.cellIndex);
+    }
+    rowParent.removeChild(row);
   }
 }
 
 // private:
+// key 欄位被按下, 觸發 onKeyCellClick() 事件.
+let emitKeyCellClick = function(cell) {
+  if (onKeyCellClick)
+    onKeyCellClick(currPath, cell.textContent, getCurrTabName());
+}
+// 觸發異動訊息, 等 updateRow() 收到結果後再更新 cell.textContent
+let emitFieldChanged = function(cell) {
+  cell.classList.add('gvCellUpdating');
+  if (onFieldChanged) {
+    let fieldValues = layout.tabs[currTabIdx].fields[cell.cellIndex - 1].name
+                    + '=`' + cell.textContent.replace(/(?:\r\n|\r|\n)/g, ' ') + '`';
+    onFieldChanged(currPath, getCurrKeyValue(cell), getCurrTabName(), fieldValues);
+  }
+  cell.textContent = beforeEditText;
+}
+// 觸發 onLoadGridView() 事件.
+let emitLoadGridView = function(startkey) {
+  if (onLoadGridView)
+    onLoadGridView(currPath, startkey, getCurrTabName());
+}
+
 let tabsArea = document.getElementById('tabsArea');
 let gvArea = document.getElementById('gvArea');
 let gvTable = document.getElementById('gvTable');
+let clipboard = document.getElementById('clipboard');
 let layout;
 let currTabIdx;
 let currPath;
+let beforeEditText;
+let currSelectedCell;
 
+// 若 currTabIdx 為 0(這是最常發生的情況) 則傳回 ''; 否則傳回 tabName.
+let getCurrTabName = function() {
+  return (currTabIdx <= 0 ? '' : tab.name);
+}
+// tab, field 這類物件都有 name, title 屬性, 但若 title 為空, 則應使用 name 來顯示該物件.
 let getTitleOrName = function(n) {
   return (n.title ? n.title : n.name);
 }
-let addTab = function(tabIdx, tab) {
+let getCurrKeyValue = function(cell) {
+  return gvTable.rows[cell.parentNode.rowIndex].cells[0].textContent;
+}
+// 配合 renderLayout(), 在 tab 區, 增加選擇 tab 的 UI元素.
+let addTabElements = function(tabIdx, tab) {
   let div = document.createElement('div');
   div.className = 'tab';
   let elm = document.createElement('input');
@@ -300,20 +335,15 @@ let addTab = function(tabIdx, tab) {
   div.appendChild(elm);
   tabsArea.appendChild(div);
 }
-let emitTabChanged = function(startkey) {
-  if (onTabChanged) {
-    let tab = layout.tabs[currTabIdx];
-    onTabChanged(currPath, startkey, (currTabIdx <= 0 ? '' : tab.name));
-  }
-}
+// 切換到選定的 tab, 配合選定的 tab 調整畫面, 並觸發載入事件: emitLoadGridView().
 let setCurrTabIdx = function(idx) {
-  if (typeof idx !== 'number')
-    idx = idx.target.index;
+  if (typeof idx !== 'number') // 如果不是 number, 則是 idx = tab UI元素的事件物件.
+    idx = idx.target.index;    // idx.target = tab UI元素, index 在 addTabElements() 設定.
   if (currTabIdx == idx)
     return;
   currTabIdx = idx;
   let rowsBody = gvTable.tBodies[0];
-  emitTabChanged((rowsBody.rows.length > 0 ? rowsBody.rows[0].cells[0].textContent : undefined));
+  emitLoadGridView(rowsBody.rows.length > 0 ? rowsBody.rows[0].cells[0].textContent : undefined);
   rowsBody.innerHTML = '';
   let tab = layout.tabs[idx];
   let tabEle = document.getElementById(tab.name);
@@ -323,9 +353,11 @@ let setCurrTabIdx = function(idx) {
   for (let fld of tab.fields)
     strHeader += '<th>' + getTitleOrName(fld) + '</th>';
   gvTable.tHead.innerHTML = '<tr>' + strHeader + '</tr>';
+  document.getElementById('btnReload').title = 'reload:\n'
+      + mergePathKeyTab(currPath, undefined, idx==0 ? '' : tab.name);
 }
-
-let addPathSeeds = function(path) {
+// 配合 renderLayout(), 在 seed 區(tab區的左邊), 增加路徑顯示及操作用的UI元件.
+let addPathSeedElements = function(path) {
   let nodes = parsePath(path);
   tabsArea.innerHTML = '';
   path = '/';
@@ -357,8 +389,8 @@ let addPathSeeds = function(path) {
       break;
   }
 }
-
-let getTabIdx = function(args) {
+// 當收到 updateRow() 時, 解析 args, 找出要更新的是哪個 tab.
+let parseTabIdx = function(args) {
   // args: '[[rowCount],[[key][^tab]]]
   if (args && args.length > 0) {
     let pTab = args.indexOf("^");
@@ -371,10 +403,32 @@ let getTabIdx = function(args) {
   return 0;
 }
 
-let reload = function() {
-  emitTabChanged(undefined);
-  return false;
+// 若 path 為 currPath, 則解析 path 最後的 key^tab;
+// 且 tab 為 currTabIdx, 則傳回: { seed:key, tab:tabName }; 否則傳回 undefined;
+let parseLastKeyTab = function(path) {
+  if (path.substring(0, currPath.length) != currPath)
+    return undefined;
+  let keytab = parsePath(path.substring(currPath.length));
+  if (keytab.length <= 0)
+    return undefined;
+  keytab = keytab[0];
+  if (keytab.tab == '') {
+    if (currTabIdx != 0)
+      return undefined;
+  }
+  else if (keytab.tab != layout.tabs[currTabIdx].name)
+    return undefined;
+  return keytab;
 }
+// 使用 parseLastKeyTab() 取得最後的 key, tab 後, 透過 searchRow(key) 取得 row;
+function searchRowByFullPathName(path) {
+  let keytab = parseLastKeyTab(path);
+  if (keytab)
+    return searchRow(keytab.seed);
+  return undefined;
+}
+
+// 當 edPath 輸入 [Esc]=取消輸入, [Enter]=確認移動到指定路徑.
 let edPathKeyDown = function(ev) {
   if (window.event)
     ev = window.event;
@@ -387,51 +441,67 @@ let edPathKeyDown = function(ev) {
   }
   return true;
 }
-
-let setTableFocusCell = function(rowIndex, cellIndex) {
-  if (rowIndex <= 0) // [0] = header.
-    return false;
-  if (cellIndex < 0)
-    return false;
-  let rows = gvTable.rows;
-  if (rowIndex >= rows.length)
-    return false;
-  let row = rows[rowIndex];
-  if (cellIndex >= row.cells.length)
-    return false;
-  // 如果 focus row 往上移動(且有需要捲動),
-  // 因為最上面的那行可能被 head row 遮住,
-  // 但 scroll bar 可能不認為需要往下捲,
-  // 所以這裡必須自己計算, 排除被 head row 遮住的情況.
-  let headHeight = rows[0].offsetHeight;
-  if (row.offsetTop < gvArea.scrollTop + headHeight)
-    gvArea.scrollTop = row.offsetTop - headHeight;
-  rows[rowIndex].cells[cellIndex].focus();
-  return true;
-}
-
-let keyCellClick = function(cell) {
-  if (onKeyCellClick)
-    onKeyCellClick(currPath, cell.textContent, currTabIdx <= 0 ? '' : layout.tabs[currTabIdx].name);
-}
+// 處理 gvTable 的鍵盤操作: ← ↑ → ↓ Move cell focus; 取消編輯、確認編輯內容...
 let gvTableKeyDown = function(ev) {
   if (window.event)
     ev = window.event;
   let cell = document.activeElement;
-  let rowIndex = cell.parentElement.rowIndex;
-  if (!cell.isContentEditable) { // 沒有在 edit mode 才要判斷上下左右鍵,
-    if (ev.keyCode == 37) // left
-      return !setTableFocusCell(rowIndex, cell.cellIndex - 1);
-    if (ev.keyCode == 38) // up
-      return !setTableFocusCell(rowIndex - 1, cell.cellIndex);
-    if (ev.keyCode == 39) // right
-      return !setTableFocusCell(rowIndex, cell.cellIndex + 1);
-    if (ev.keyCode == 40) // down
-      return !setTableFocusCell(rowIndex + 1, cell.cellIndex);
+  if (ev.keyCode == 45) { // Insert
+    if (cell.isContentEditable)
+      return true;
+    if (ev.shiftKey) { // Paste a row
+      let fieldValues = clipboardToFieldValues();
+      if (fieldValues)
+        addNewRow(fieldValues);
+    }
+    else if (ev.ctrlKey) // Copy current row.
+      rowToClipboard(cell);
+    else {
+      addNewRow();
+    }
   }
-  if (cell.cellIndex == 0) {
+  if (ev.keyCode == 46) { // Delete
+    if (cell.isContentEditable || ev.altKey)
+      return true;
+    if (ev.ctrlKey) // [Ctrl-Del]:  Delete a row
+      deleteRow(cell);
+    else if (ev.shiftKey) { // [Shift-Del]: Cut a row
+      rowToClipboard(cell);
+      deleteRow(cell);
+    }
+  }
+
+  let rowIndex = cell.parentNode.rowIndex;
+  if (!cell.isContentEditable) { // 沒有在 edit mode 才要判斷上下左右鍵,
+    if (ev.keyCode == 33) // PgUp
+      return !pageTableCellFocus(-1, rowIndex, cell.cellIndex);
+    if (ev.keyCode == 34) // PgDn
+      return !pageTableCellFocus(1, rowIndex, cell.cellIndex);
+
+    if (ev.keyCode == 35) { // End
+      let iend = layout.tabs[currTabIdx].fields.length + 1;
+      if (ev.ctrlKey)
+        return !setTableCellFocus(gvTable.rows.length, iend);
+      return !setTableCellFocus(rowIndex, iend);
+    }
+    if (ev.keyCode == 36) { // Home
+      if (ev.ctrlKey)
+        return !setTableCellFocus(0, 0);
+      return !setTableCellFocus(rowIndex, 0);
+    }
+
+    if (ev.keyCode == 37) // left
+      return !setTableCellFocus(rowIndex, cell.cellIndex - 1);
+    if (ev.keyCode == 38) // up
+      return !setTableCellFocus(rowIndex - 1, cell.cellIndex);
+    if (ev.keyCode == 39) // right
+      return !setTableCellFocus(rowIndex, cell.cellIndex + 1);
+    if (ev.keyCode == 40) // down
+      return !setTableCellFocus(rowIndex + 1, cell.cellIndex);
+  }
+  if (cell.cellIndex == 0) { // @KeyField: click/enter/space
     if (ev.keyCode == 32 || ev.keyCode == 13) { // space or enter key.
-      keyCellClick(cell);
+      emitKeyCellClick(cell);
       return false;
     }
     return true;
@@ -453,8 +523,13 @@ let gvTableKeyDown = function(ev) {
   return false;
 }
 let gvTableCellFocus = function(ev) {
+  if (currSelectedCell)
+    currSelectedCell.classList.remove('gvCellSelected');
   // 進入 focus 之後, 再 double click cell 才進入 edit 模式.
   let cell = ev.currentTarget;
+  currSelectedCell = cell;
+  currSelectedCell.classList.add('gvCellSelected');
+  document.getElementById('btnDeleteRow').title = 'delete: \"' + getCurrKeyValue(cell) + '"';
   if (isCellReadonly(cell))
     return;
   cell.onblur = gvTableCellBlur;
@@ -470,22 +545,132 @@ let gvTableCellBlur = function(ev) {
   cell.onblur = undefined;
   beforeEditText = undefined;
 }
-
-let beforeEditText;
-// 送出異動訊息, 等收到結果後再更新 cell.textContent
-let emitFieldChanged = function(cell) {
-  cell.className = 'gvCellUpdating';
-  if (onFieldChanged) {
-    let tab = layout.tabs[currTabIdx];
-    let newValue = cell.textContent.replace(/(?:\r\n|\r|\n)/g, ' ');
-    onFieldChanged(currPath,
-                   gvTable.rows[cell.parentElement.rowIndex].cells[0].textContent, // keyText
-                   currTabIdx <= 0 ? '' : tab.name,
-                   tab.fields[cell.cellIndex - 1].name,
-                   newValue);
-  }
-  cell.textContent = beforeEditText;
+// 處理 btnReload 按下.
+let reload = function() {
+  emitLoadGridView(undefined);
+  return false;
 }
+
+// 在 gvTable 增加一行 UI row & key cell.
+let addRowElement = function(key) {
+  let rowe = gvTable.tBodies[0].insertRow(-1)
+  let cell = rowe.insertCell(-1);
+  cell.outerHTML = '<th>' + key + '</th>';
+  cell = rowe.cells[0]; // 因為使用 outerHTML, cell 已經不是 rowe 的 cell, 所以要重新取得.
+  cell.ondblclick = (ev => emitKeyCellClick(ev.currentTarget));
+  cell.tabIndex = 0;
+  cell.onfocus = gvTableCellFocus;
+  rowe.id = key;
+  return rowe;
+}
+// 在 row 尾端增加一個 UI cell, 並設定相關事件及屬性.
+let addCellElement = function(row, fldValue) {
+  let cell = row.insertCell(-1);
+  cell.textContent = fldValue;
+  cell.tabIndex = 0;
+  cell.onfocus = gvTableCellFocus;
+}
+// 用 key 尋找 row.
+let searchRow = function(key) {
+  return gvTable.rows.namedItem(key);
+}
+// 增加一筆 row.
+let addNewRow = function(fieldValues) {
+  // if (!fieldValues) 需要顯示加入的欄位嗎?
+    fieldValues = '';
+  let currKey = getCurrKeyValue(currSelectedCell);
+  let key = prompt("在 " + getTitleOrName(layout.tabs[currTabIdx])
+                   + " 新增一筆資料\n" + fieldValues + "\n請輸入要新增的「"
+                   + getTitleOrName(layout.key) + "」"
+                  , currKey);
+  if (!key || key == currKey)
+    return;
+  let row = searchRow(key);
+  if (!row) {
+    row = addRowElement(key);
+    row.cells[0].classList.add('gvCellUpdating');
+    if (onFieldChanged)
+      onFieldChanged(currPath, key, getCurrTabName(), fieldValues);
+  }
+  setTableCellFocus(row.rowIndex, 0);
+}
+// 移除 row.
+let deleteRow = function(cell) {
+  let key = getCurrKeyValue(cell ? cell : currSelectedCell);
+  if (onDeleteRow)
+    onDeleteRow(currPath, key);
+}
+
+// 將 row 的內容複製到 clipboard, lines[0]=curPath, lines[1]="fld=`value`,...";
+let rowToClipboard = function(cell) {
+  let cells = cell.parentNode.cells;
+  let info = mergePathKeyTab(currPath, getCurrKeyValue(cell), getCurrTabName())
+           + '\n';
+  let fields = layout.tabs[currTabIdx].fields;
+  for (let i = 1; i < cells.length; ++i) {
+    if (i != 1)
+      info += ',';
+    info += fields[i-1].name + '=`' + cells[i].textContent + '`';
+  }
+  clipboard.textContent = info;
+}
+// 從 clipboard 取出先前儲存的欄位列表字串: "fld=`value`,...", 不包含 key.
+let clipboardToFieldValues = function() {
+  let lines = clipboard.textContent.split('\n');
+  let keytab = parseLastKeyTab(lines[0]);
+  if (keytab)
+    return lines[1];
+  return undefined;
+}
+
+// PageUp(direction = -1) or PageDown(direction = +1)
+let pageTableCellFocus = function(direction, rowIndex, cellIndex) {
+  let rows = gvTable.rows;
+  let hcli = gvArea.clientHeight - rows[0].offsetHeight;
+  let hmov = 0;
+  for (; ;) {
+    if (direction < 0) {
+      if (rowIndex <= 1)
+        break;
+    }
+    else if (rowIndex + 1 >= rows.length)
+      break;
+    hmov += rows[rowIndex += direction].offsetHeight;
+    if (hmov == hcli)
+      break;
+    if (hmov > hcli) {
+      hmov -= rows[rowIndex -= direction].offsetHeight;
+      break;
+    }
+  }
+  gvArea.scrollTop += hmov * direction;
+  return setTableCellFocus(rowIndex, cellIndex);
+}
+// 設定 gvTable 的焦點 cell;
+let setTableCellFocus = function(rowIndex, cellIndex) {
+  if (rowIndex <= 0) // [0] = header.
+    rowIndex = 1;
+  if (cellIndex < 0)
+    cellIndex = 0
+  let rows = gvTable.rows;
+  if (rowIndex >= rows.length)
+    rowIndex = rows.length - 1;
+  let row = rows[rowIndex];
+  if (cellIndex >= row.cells.length)
+    cellIndex = row.cells.length - 1;
+  // 如果 focus row 往上移動(且有需要捲動),
+  // 因為最上面的那行可能被 head row 遮住,
+  // 但 scroll bar 可能不認為需要往下捲,
+  // 所以這裡必須自己計算, 排除被 head row 遮住的情況.
+  let headHeight = rows[0].offsetHeight;
+  if (row.offsetTop < gvArea.scrollTop + headHeight)
+    gvArea.scrollTop = row.offsetTop - headHeight;
+  if (cellIndex <= 0)
+    gvArea.scrollLeft = 0;
+  rows[rowIndex].cells[cellIndex].focus();
+  return true;
+}
+// 讓 cell 進入編輯模式, 開始編輯 cell 內容.
 let startCellEdit = function(cell) {
   beforeEditText = cell.textContent;
   cell.ondblclick = undefined;
@@ -499,19 +684,23 @@ let startCellEdit = function(cell) {
   sel.removeAllRanges();
   sel.addRange(range);
 }
+// 確認 cell 的編輯內容, 若有一棟則觸發 emitFieldChanged(), 然後離開編輯模式.
 let confirmCellEdit = function(cell) {
   if (beforeEditText != cell.textContent)
     emitFieldChanged(cell);
   setExitEditMode(cell);
 }
+// 取消編輯內容, 並離開編輯模式.
 let cancelCellEdit = function(cell) {
   cell.textContent = beforeEditText;
   setExitEditMode(cell);
 }
+// 讓 cell 離開編輯模式.
 let setExitEditMode = function(cell) {
   cell.blur();
   cell.focus();
 }
+
 let isCellReadonly = function(cell) {
   let fldIndex = (cell.cellIndex - 1);
   if (fldIndex < 0)
