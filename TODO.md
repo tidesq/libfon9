@@ -18,13 +18,14 @@ libfon9 TODO list
 * 盡量從 [非侵入式] 方向思考:
   * 例如: 已有一個 `商品資料表`，則現有程式碼不變，
     只要設計一個: 連接 `root` 與 `商品資料表` 的 `entry`，就可以透過該 entry 管理 `商品資料表`。
-* TreeFlag::NeedsApply: 使用「套用」方式處理資料異動。
 * WebUI
+  * Tab flags(Tree flags), access right: 控制是否允許 edit, add, delete, command...
   * hide column(field)
-  * tree flags 有些應該屬於 tab flags.
-  * needsApply / 主管確認機制
+  * NeedsApply:
+    * 使用「套用」方式處理資料異動。
+    * 主管確認機制。
   * 資料量太大時的顯示方式(分頁? 捲動時自動載入?)
-  * Seed command
+  * Seed command: command list(help info), contextmenu...
   * Column:
     * resize:
       * maybe use <colgroup> & <col> & {resize:horizontal}
@@ -39,6 +40,7 @@ libfon9 TODO list
       * Enter: Start edit, or [Confirm], or [@KeyColumn: Move to sapling].
       * F2:    Start edit
       * Space: @KeyColumn: Move to sapling.
+      * Backspace: 回到上一層.
       * [Ins]:       Add row
       * [Ctrl-Ins]:  Copy row
       * [Shift-Ins]: Paste row

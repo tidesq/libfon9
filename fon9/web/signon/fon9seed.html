@@ -6,23 +6,23 @@
  <meta name="viewport" content="width=device-width, initial-scale=1">
  <title>fon9seed</title>
  <link rel="stylesheet" href="./fon9.css">
- <script type="text/javascript" src="./utils-seed.js"></script>
+ <script src="./utils-seed.js"></script>
 <style>
-body, .seed, #edPath {
+* {
   font-family: Consolas;
 }
 
 #topContainer {
   position: relative;
   height: 1.5em;
+  display: flex;
   clear: both;
   background: #eee;
 }
 #topLeft {
-  position: absolute;
-  left: 0px;
-  right: 5em;
+  position: relative;
   height: calc(1.5em - 1px);
+  flex-grow: 1;
 }
 #edPath {
   position: absolute;
@@ -82,9 +82,6 @@ body, .seed, #edPath {
 }
 .seed:disabled {
   background: #ddd;
-}
-.topRight {
-  float: right;
 }
 
 #gvArea {
@@ -151,7 +148,7 @@ body, .seed, #edPath {
   box-shadow: 0 0 2px 1px #076 inset !important;
 }
 .gvCellSelected:focus {
-  box-shadow: 0 0 2px 1px #0ba inset !important;
+  box-shadow: 0 0 2px 1px #0dc inset !important;
 }
 </style>
 </head>
@@ -164,11 +161,11 @@ body, .seed, #edPath {
      <input type="text" id="edPath" autocomplete="off" onfocus="this.value=currPath; this.select();" onkeydown="return edPathKeyDown(event)"/>
    </div>
    <div id="topRight">
-     <button id="btnReload" type="button" class="seed topRight" onclick="reload();">
+     <button id="btnReload" type="button" class="seed" onclick="reload();">
      &#8635;</button>
-     <button id="btnAddNewRow" type="button" class="seed topRight" onclick="addNewRow();" title="Add a row">
+     <button id="btnAddNewRow" type="button" class="seed" onclick="addNewRow();" title="Add a row">
      &#65291;</button>
-     <button id="btnDeleteRow" type="button" class="seed topRight" onclick="deleteRow();">
+     <button id="btnDeleteRow" type="button" class="seed" onclick="deleteRow();">
      &#65293;</button>
    </div>
  </div>
@@ -296,6 +293,11 @@ let emitLoadGridView = function(startkey) {
   if (onLoadGridView)
     onLoadGridView(currPath, startkey, getCurrTabName());
 }
+// 觸發 onPathChanged() 事件.
+let emitPathChange = function (newPath) {
+  if (onPathChanged && newPath != currPath)
+    onPathChanged(newPath);
+}
 
 let tabsArea = document.getElementById('tabsArea');
 let gvArea = document.getElementById('gvArea');
@@ -306,10 +308,11 @@ let currTabIdx;
 let currPath;
 let beforeEditText;
 let currSelectedCell;
+let prevPath; // for [Backspace]
 
 // 若 currTabIdx 為 0(這是最常發生的情況) 則傳回 ''; 否則傳回 tabName.
 let getCurrTabName = function() {
-  return (currTabIdx <= 0 ? '' : tab.name);
+  return (currTabIdx <= 0 ? '' : layout.tabs[currTabIdx].name);
 }
 // tab, field 這類物件都有 name, title 屬性, 但若 title 為空, 則應使用 name 來顯示該物件.
 let getTitleOrName = function(n) {
@@ -367,10 +370,8 @@ let addPathSeedElements = function(path) {
     btn.className = 'seed';
     btn.type = 'button';
     btn.value = path;
-    btn.onclick = function() {
-      if (onPathChanged && this.value != currPath)
-        onPathChanged(this.value);
-    }
+    prevPath = path;
+    btn.onclick = ((ev) => emitPathChange(ev.target.value));
     tabsArea.appendChild(btn);
     if (i >= nodes.length)
       break;
@@ -436,8 +437,7 @@ let edPathKeyDown = function(ev) {
     ev.target.blur();
   else if(ev.keyCode == 13) {
     ev.target.blur();
-    if (onPathChanged && ev.target.value != currPath)
-      onPathChanged(ev.target.value);
+    emitPathChange(ev.target.value);
   }
   return true;
 }
@@ -498,6 +498,9 @@ let gvTableKeyDown = function(ev) {
       return !setTableCellFocus(rowIndex, cell.cellIndex + 1);
     if (ev.keyCode == 40) // down
       return !setTableCellFocus(rowIndex + 1, cell.cellIndex);
+
+    if (ev.keyCode == 8) // Backspace: 回到上一層.
+      emitPathChange(prevPath);
   }
   if (cell.cellIndex == 0) { // @KeyField: click/enter/space
     if (ev.keyCode == 32 || ev.keyCode == 13) { // space or enter key.
