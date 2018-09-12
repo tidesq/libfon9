@@ -165,11 +165,15 @@ void Framework::Dispose() {
    this->Syncer_->StopSync();
    this->MaAuth_->Storage_->Close();
    this->Root_->OnParentSeedClear();
+}
 
-   // 等候每個 DefaultThreadPool 的每個 thread 執行 n 次,
+void Framework::DisposeForAppQuit() {
+   this->Dispose();
+
    // 讓等候中的工作有機會全部做完.
+   // 等候每個 DefaultThreadPool 的每個 thread 執行 n 次,
    for (unsigned count = 3; count > 0; --count) {
-      unsigned L = static_cast<unsigned>(GetDefaultThreadPool().GetThreadCount());
+      unsigned       L = static_cast<unsigned>(GetDefaultThreadPool().GetThreadCount());
       CountDownLatch waiter{L};
       for (; L > 0; --L) {
          GetDefaultThreadPool().EmplaceMessage([&waiter]() {
@@ -178,7 +182,13 @@ void Framework::Dispose() {
          });
       }
       waiter.Wait();
+      // 有些 thread 會花比較久的時間結束(e.g. IoService),
+      // 要如何等候這些 thread 呢? 用 global CountDownLatch 嗎?
+      std::this_thread::sleep_for(std::chrono::milliseconds{50});
    }
+
+   // 結束 DefaultThreadPool, 不會再處理後續加入的工作!!
+   GetDefaultThreadPool().WaitForEndAfterWorkDone();
 }
 
 } // namespaces

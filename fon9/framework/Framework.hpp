@@ -35,6 +35,9 @@ struct fon9_API Framework {
 
    /// syncer.StopSync(), dbf.Close(), root.OnParentSeedClear(), ...
    void Dispose();
+
+   /// Dispose() 並且等候相關 thread 執行完畢.
+   void DisposeForAppQuit();
 };
 
 } // namespaces

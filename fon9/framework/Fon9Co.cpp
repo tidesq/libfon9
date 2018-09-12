@@ -36,6 +36,7 @@ void FixBug_use_std_thread(pthread_t* thread, void *(*start_routine) (void *)) {
 static const char* AppBreakMsg_ = nullptr;
 
 #ifdef fon9_WINDOWS
+fon9::ThreadId::IdType mainThreadId;
 static BOOL WINAPI WindowsCtrlBreakHandler(DWORD dwCtrlType) {
    switch (dwCtrlType) {
    case CTRL_C_EVENT:         AppBreakMsg_ = "<Ctrl-C>";      break;// Handle the CTRL-C signal.
@@ -45,17 +46,26 @@ static BOOL WINAPI WindowsCtrlBreakHandler(DWORD dwCtrlType) {
    case CTRL_SHUTDOWN_EVENT:  AppBreakMsg_ = "<Shutdown>";    break;
    default:                   AppBreakMsg_ = "<Unknow Ctrl>"; break;
    }
-   while(AppBreakMsg_) {
-      CancelIoEx(GetStdHandle(STD_INPUT_HANDLE), nullptr);
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
-   }
-   std::this_thread::sleep_for(std::chrono::milliseconds(100));
-   //GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0);
    //FILE* fstdin = nullptr;
    //freopen_s(&fstdin, "NUL:", "r", stdin); // 如果遇到 CTRL_CLOSE_EVENT(或其他?) 會卡死在這兒!?
+   //所以改用 CancelIoEx() 一樣可以強制中斷 gets();
+   CancelIoEx(GetStdHandle(STD_INPUT_HANDLE), nullptr);
+   // 雖然 [MSDN](https://docs.microsoft.com/en-us/windows/console/handlerroutine)
+   // 說: When the signal is received, the system creates a new thread in the process to execute the function.
+   // 但這裡還是多此一舉的判斷一下 (this thread 不是 main thread 才要等 main thread 做完).
+   if (mainThreadId != fon9::GetThisThreadId().ThreadId_) {
+      do {
+         CancelIoEx(GetStdHandle(STD_INPUT_HANDLE), nullptr);
+         std::this_thread::sleep_for(std::chrono::milliseconds(20));
+      } while (AppBreakMsg_);
+      // 因為從這裡返回後 Windows 會直接呼叫 ExitProcess(); 造成 main thread 事情還沒做完.
+      // 所以這裡直接結束 this thread, 讓 main thread 可以正常結束, 而不是 ExitProcess(); 強制結束程式.
+      ExitThread(0);
+   }
    return TRUE;
 }
 static void SetupCtrlBreakHandler() {
+   mainThreadId = fon9::GetThisThreadId().ThreadId_;
    SetConsoleCP(CP_UTF8);
    SetConsoleOutputCP(CP_UTF8);
    SetConsoleCtrlHandler(&WindowsCtrlBreakHandler, TRUE);
@@ -275,7 +285,8 @@ int main(int argc, char** argv) {
          res = coSession->RunLoop();
          break;
       case ConsoleSeedSession::State::QuitApp:
-         return 0;
+         AppBreakMsg_ = "Normal QuitApp";
+         break;
       default:
       case ConsoleSeedSession::State::Authing:
       case ConsoleSeedSession::State::Logouting:
@@ -300,5 +311,6 @@ int main(int argc, char** argv) {
    fon9_LOG_IMP("main.quit|cause=console:", AppBreakMsg_);
    puts(AppBreakMsg_);
    AppBreakMsg_ = nullptr;
+   fon9sys.DisposeForAppQuit();
    return 0;
 }
