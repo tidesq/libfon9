@@ -166,9 +166,17 @@ inline auto ToStrRev(char* pout, IntT value) -> enable_if_t<std::is_unsigned<Int
    return UIntToStrRev(pout, static_cast<uintmax_t>(value));
 }
 
+template <typename EnumUnderlyingT>
+inline char* UnderlyingToStrRev(char* pout, EnumUnderlyingT value) {
+   return ToStrRev(pout, value);
+}
+inline char* UnderlyingToStrRev(char* pout, char value) {
+   *--pout = value;
+   return pout;
+}
 template <typename EnumT>
 inline auto ToStrRev(char* pout, EnumT value) -> enable_if_t<std::is_enum<EnumT>::value && !HasBitOpT<EnumT>::value, char*> {
-   return ToStrRev(pout, static_cast<underlying_type_t<EnumT>>(value));
+   return UnderlyingToStrRev(pout, static_cast<underlying_type_t<EnumT>>(value));
 }
 template <typename EnumT>
 inline auto ToStrRev(char* pout, EnumT value) -> enable_if_t<std::is_enum<EnumT>::value && HasBitOpT<EnumT>::value, char*> {

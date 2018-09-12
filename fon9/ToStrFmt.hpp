@@ -38,9 +38,17 @@ inline auto ToStrRev(char* pout, IntT value, const FmtDef& fmt) -> enable_if_t<s
    return IntToStrRev(pout, abs_cast(value), value < 0, fmt);
 }
 
+template <typename EnumUnderlyingT>
+inline char* UnderlyingToStrRev(char* pout, EnumUnderlyingT value, const FmtDef& fmt) {
+   return ToStrRev(pout, value, fmt);
+}
+inline char* UnderlyingToStrRev(char* pstart, char value, const FmtDef& fmt) {
+   *pstart = value;
+   return IntToStrRev_LastJustify(pstart -1, pstart, false, fmt);
+}
 template <typename EnumT>
 inline auto ToStrRev(char* pout, EnumT value, const FmtDef& fmt) -> enable_if_t<std::is_enum<EnumT>::value && !HasBitOpT<EnumT>::value, char*> {
-   return ToStrRev(pout, static_cast<underlying_type_t<EnumT>>(value), fmt);
+   return UnderlyingToStrRev(pout, static_cast<underlying_type_t<EnumT>>(value), fmt);
 }
 template <typename EnumT>
 inline auto ToStrRev(char* pout, EnumT value, FmtDef fmt) -> enable_if_t<std::is_enum<EnumT>::value && HasBitOpT<EnumT>::value, char*> {
