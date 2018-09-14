@@ -4,11 +4,6 @@
 
 namespace fon9 { namespace seed {
 
-Tree::Tree(LayoutSP layout, TreeFlag flags)
-   : TreeFlags_{flags}
-   , LayoutSP_ {std::move(layout)} {
-}
-
 Tree::~Tree() {
 }
 

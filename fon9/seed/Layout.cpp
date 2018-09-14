@@ -10,7 +10,9 @@ Layout::~Layout() {
 
 //--------------------------------------------------------------------------//
 
-Layout1::Layout1(FieldSP&& keyField, TabSP&& keyTab) : Layout{std::move(keyField)}, KeyTab_(keyTab) {
+Layout1::Layout1(FieldSP&& keyField, TabSP&& keyTab, TreeFlag flags)
+   : Layout(std::move(keyField), flags)
+   , KeyTab_(keyTab) {
    this->KeyTab_->SetIndex(0);
 }
 Layout1::~Layout1() {

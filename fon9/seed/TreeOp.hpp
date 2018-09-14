@@ -89,9 +89,12 @@ struct GridViewResult {
    /// GridView_ 裡面第一行距離 begin 多遠?
    /// 如果不支援計算距離, 則為 GridViewResult::kNotSupported;
    size_t      DistanceBegin_{kNotSupported};
+
    /// GridView_ 裡面最後行距離 end 多遠?
+   /// 1 表示 this->GridView_ 裡面的最後一筆 == Container 裡面的最後一筆.
    /// 如果不支援計算距離, 則為 GridViewResult::kNotSupported;
    size_t      DistanceEnd_{kNotSupported};
+
    /// Container 共有幾筆資料.
    size_t      ContainerSize_{kNotSupported};
 
@@ -151,6 +154,60 @@ using ContainerIterator = conditional_t<std::is_const<Container>::value,
    typename Container::const_iterator,
    typename Container::iterator>;
 
+/// 當用此當作 OnPodOp(), OnPodOpRange() 的參數時, 則表示 container->begin();
+static constexpr const char* const  kStrKeyText_Begin_ = nullptr;
+static constexpr StrView TextBegin() {
+   return StrView{kStrKeyText_Begin_, static_cast<size_t>(0)};
+}
+static constexpr bool IsTextBegin(const StrView& k) {
+   return k.begin() == kStrKeyText_Begin_;
+}
+
+/// 當用此當作 OnPodOp(), OnPodOpRange() 的參數時, 則表示 container->end();
+/// 也可用在支援 append 的 Tree, 例: AddPod(StrView{TreeOp::kStrKeyText_End_,0}); 用來表示 append.
+static constexpr const char* const  kStrKeyText_End_ = reinterpret_cast<const char*>(-1);
+static constexpr StrView TextEnd() {
+   return StrView{kStrKeyText_End_, static_cast<size_t>(0)};
+}
+static constexpr bool IsTextEnd(const StrView& k) {
+   // return k.begin() == kStrKeyText_End_; 這樣寫, VC 不允許: C3249: illegal statement or sub-expression for 'constexpr' function
+   return reinterpret_cast<intptr_t>(k.begin()) == reinterpret_cast<intptr_t>(kStrKeyText_End_);
+}
+
+static constexpr bool IsTextBeginOrEnd(const StrView& k) {
+   return IsTextBegin(k) || IsTextEnd(k);
+}
+
+//--------------------------------------------------------------------------//
+
+template <class Container, class Iterator>
+static bool GetIteratorForGv(Container& container, Iterator& istart, const char* strKeyText) {
+   if (strKeyText == kStrKeyText_Begin_)
+      istart = container.begin();
+   else if (strKeyText == kStrKeyText_End_)
+      istart = container.end();
+   else
+      return false;
+   return true;
+}
+
+template <class Container, class Iterator = ContainerIterator<Container> >
+static Iterator GetIteratorForGv(Container& container, StrView strKeyText) {
+   Iterator ivalue;
+   if (GetIteratorForGv(container, ivalue, strKeyText.begin()))
+      return ivalue;
+   return ContainerLowerBound(container, strKeyText);
+}
+
+template <class Container, class Iterator = ContainerIterator<Container>>
+static Iterator GetIteratorForPod(Container& container, StrView strKeyText) {
+   if (strKeyText.begin() == kStrKeyText_Begin_)
+      return container.begin();
+   return ContainerFind(container, strKeyText);
+}
+
+//--------------------------------------------------------------------------//
+
 /// \ingroup seed
 /// Tree 的(管理)操作不是放在 class Tree's methods? 因為:
 /// - 無法在操作前知道如何安全的操作 tree:
@@ -172,55 +229,7 @@ protected:
 public:
    Tree& Tree_;
 
-   /// 當用此當作 OnPodOp(), OnPodOpRange() 的參數時, 則表示 container->begin();
-   static constexpr const char* const  kStrKeyText_Begin_ = nullptr;
-   static constexpr StrView TextBegin() {
-      return StrView{kStrKeyText_Begin_, static_cast<size_t>(0)};
-   }
-   static constexpr bool IsTextBegin(const StrView& k) {
-      return k.begin() == kStrKeyText_Begin_;
-   }
-
-   /// 當用此當作 OnPodOp(), OnPodOpRange() 的參數時, 則表示 container->end();
-   /// 也可用在支援 append 的 Tree, 例: AddPod(StrView{TreeOp::kStrKeyText_End_,0}); 用來表示 append.
-   static constexpr const char* const  kStrKeyText_End_ = reinterpret_cast<const char*>(-1);
-   static constexpr StrView TextEnd() {
-      return StrView{kStrKeyText_End_, static_cast<size_t>(0)};
-   }
-   static constexpr bool IsTextEnd(const StrView& k) {
-      // return k.begin() == kStrKeyText_End_; 這樣寫, VC 不允許: C3249: illegal statement or sub-expression for 'constexpr' function
-      return reinterpret_cast<intptr_t>(k.begin()) == reinterpret_cast<intptr_t>(kStrKeyText_End_);
-   }
-
-   //--------------------------------------------------------------------------//
-   template <class Container, class Iterator>
-   static bool GetIteratorForGv(Container& container, Iterator& istart, const char* strKeyText) {
-      if (strKeyText == kStrKeyText_Begin_)
-         istart = container.begin();
-      else if (strKeyText == kStrKeyText_End_)
-         istart = container.end();
-      else
-         return false;
-      return true;
-   }
-   
-   template <class Container, class Iterator = ContainerIterator<Container> >
-   static Iterator GetIteratorForGv(Container& container, StrView strKeyText) {
-      Iterator ivalue;
-      if (GetIteratorForGv(container, ivalue, strKeyText.begin()))
-         return ivalue;
-      return ContainerLowerBound(container, strKeyText);
-   }
-
    virtual void GridView(const GridViewRequest& req, FnGridViewOp fnCallback);
-
-   //--------------------------------------------------------------------------//
-   template <class Container, class Iterator = ContainerIterator<Container>>
-   static Iterator GetIteratorForPod(Container& container, StrView strKeyText) {
-      if (strKeyText.begin() == kStrKeyText_Begin_)
-         return container.begin();
-      return ContainerFind(container, strKeyText);
-   }
 
    /// 增加一個 pod.
    /// - 當 key 存在時, 視為成功, 會呼叫: fnCallback(OpResult::key_exists, op);
@@ -400,7 +409,7 @@ void TreeOp_GridView_MustLock(TreeOp& op, MustLockContainer& c,
    GridViewResult res{op.Tree_, req.Tab_};
    {
       typename MustLockContainer::Locker container{c};
-      MakeGridView(*container, op.GetIteratorForGv(*container, req.OrigKey_),
+      MakeGridView(*container, GetIteratorForGv(*container, req.OrigKey_),
                    req, res, std::move(fnRowAppender));
    } // unlock.
    fnCallback(res);
@@ -410,7 +419,7 @@ template <class PodOp, class TreeOp, class MustLockContainer>
 void TreeOp_Get_MustLock(TreeOp& treeOp, MustLockContainer& c, StrView strKeyText, FnPodOp&& fnCallback) {
    {
       typename MustLockContainer::Locker container{c};
-      auto   ifind = treeOp.GetIteratorForPod(*container, strKeyText);
+      auto   ifind = GetIteratorForPod(*container, strKeyText);
       if (ifind != container->end()) {
          PodOp podOp{*ifind, treeOp.Tree_, OpResult::no_error, strKeyText, container};
          fnCallback(podOp, &podOp);

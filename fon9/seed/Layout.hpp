@@ -8,7 +8,26 @@
 
 namespace fon9 { namespace seed {
 
-fon9_WARN_DISABLE_PADDING;
+///  \ingroup seed
+/// 指出 tree 允許的操作、tree 的特性(unordered)...
+/// 這裡的旗標只是在取得 layout 時, 提供操作的提示.
+/// 還需要配合 TreeOp 的實作.
+enum TreeFlag {
+   Addable = 0x01,
+   Removable = 0x02,
+   AddableRemovable = Addable | Removable,
+
+   /// 新增時可使用 TreeOp::TextEnd() 當成 key, 在尾端增加新資料.
+   /// 實際新增的 key 由 tree 決定, 例如: 最後一筆的序號+1.
+   Appendable = 0x04,
+
+   /// Tree 操作的是無排序的容器,
+   /// 因此 GridView 僅能針對每個指定的 key 取得 view.
+   /// 無法使用範圍 OrigKey_ + Offset_ + RowCount_ 的方式取得 view.
+   Unordered = 0x10,
+};
+fon9_ENABLE_ENUM_BITWISE_OP(TreeFlag);
+
 /// \ingroup seed
 /// 透過 Layout 描述 Tree 所產的 Pod(Seed).
 /// - 一個 Layout 包含 1~N 個 Tab
@@ -17,10 +36,11 @@ fon9_WARN_DISABLE_PADDING;
 class fon9_API Layout : public intrusive_ref_counter<Layout> {
    fon9_NON_COPY_NON_MOVE(Layout);
 public:
+   const TreeFlag Flags_;
    /// KeyField 不列入 Tab::Fields_.
    const FieldSPT<const Field>  KeyField_;
 
-   Layout(FieldSP keyField) : KeyField_{std::move(keyField)} {
+   Layout(FieldSP keyField, TreeFlag flags) : Flags_{flags}, KeyField_{std::move(keyField)} {
    }
 
    virtual ~Layout();
@@ -28,7 +48,6 @@ public:
    virtual Tab* GetTab(size_t index) const = 0;
    virtual size_t GetTabCount() const = 0;
 };
-fon9_WARN_POP;
 
 /// \ingroup seed
 /// 每個 Pod 僅包含一顆 Seed.
@@ -36,7 +55,7 @@ class fon9_API Layout1 : public Layout {
    fon9_NON_COPY_NON_MOVE(Layout1);
 public:
    const TabSP   KeyTab_;
-   Layout1(FieldSP&& keyField, TabSP&& keyTab);
+   Layout1(FieldSP&& keyField, TabSP&& keyTab, TreeFlag flags = TreeFlag{});
    ~Layout1();
    virtual Tab* GetTab(StrView name) const override;
    virtual Tab* GetTab(size_t index) const override;
@@ -51,11 +70,16 @@ class fon9_API LayoutN : public Layout {
    void InitTabIndex();
 public:
    template <class... ArgsT>
-   LayoutN(FieldSP&& keyField, ArgsT&&... args)
-      : Layout{std::move(keyField)}
+   LayoutN(FieldSP&& keyField, TreeFlag flags, ArgsT&&... args)
+      : Layout(std::move(keyField), flags)
       , Tabs_{std::forward<ArgsT>(args)...} {
       this->InitTabIndex();
    }
+   template <class... ArgsT>
+   LayoutN(FieldSP&& keyField, ArgsT&&... args)
+      : LayoutN(std::move(keyField), TreeFlag{}, std::forward<ArgsT>(args)...) {
+   }
+
    ~LayoutN();
    virtual size_t GetTabCount() const override;
    virtual Tab* GetTab(StrView name) const override;
@@ -76,9 +100,9 @@ using TabsDy = NamedIxMapNoRemove<TabSP>;
 class fon9_API LayoutDy : public Layout, public MustLock<TabsDy> {
    fon9_NON_COPY_NON_MOVE(LayoutDy);
 public:
-   LayoutDy(FieldSP&& keyField) : Layout{std::move(keyField)} {
+   LayoutDy(FieldSP&& keyField, TreeFlag flags = TreeFlag{}) : Layout(std::move(keyField), flags) {
    }
-   LayoutDy(FieldSP&& keyField, TabSP&& keyTab) : Layout{std::move(keyField)} {
+   LayoutDy(FieldSP&& keyField, TabSP&& keyTab, TreeFlag flags = TreeFlag{}) : Layout(std::move(keyField), flags) {
       Locker locker(*this);
       locker->Add(std::move(keyTab));
    }

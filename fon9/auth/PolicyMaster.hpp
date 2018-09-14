@@ -171,7 +171,7 @@ public:
          seed::GridViewResult res{this->Tree_, req.Tab_};
          {
             DetailTableLocker   map{static_cast<DetailPolicyTreeTable*>(&this->Tree_)->DetailTable_};
-            seed::MakeGridView(*map, this->GetIteratorForGv(*map, req.OrigKey_),
+            seed::MakeGridView(*map, seed::GetIteratorForGv(*map, req.OrigKey_),
                                req, res, &seed::SimpleMakeRowView<typename DetailTableImpl::iterator>);
          } // unlock.
          fnCallback(res);
@@ -186,7 +186,7 @@ public:
       void Get(StrView strKeyText, seed::FnPodOp fnCallback) override {
          {
             DetailTableLocker lockedMap{static_cast<DetailPolicyTreeTable*>(&this->Tree_)->DetailTable_};
-            auto              ifind = this->GetIteratorForPod(*lockedMap, strKeyText);
+            auto              ifind = seed::GetIteratorForPod(*lockedMap, strKeyText);
             if (ifind != lockedMap->end()) {
                this->OnPodOp(lockedMap, strKeyText, *ifind, std::move(fnCallback));
                return;
@@ -195,7 +195,7 @@ public:
          fnCallback(seed::PodOpResult{this->Tree_, seed::OpResult::not_found_key, strKeyText}, nullptr);
       }
       void Add(StrView strKeyText, seed::FnPodOp fnCallback) override {
-         if (this->IsTextBegin(strKeyText) || this->IsTextEnd(strKeyText)) {
+         if (seed::IsTextBeginOrEnd(strKeyText)) {
             fnCallback(seed::PodOpResult{this->Tree_, seed::OpResult::not_found_key, strKeyText}, nullptr);
             return;
          }

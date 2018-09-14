@@ -355,7 +355,7 @@ SeedSession::RequestSP SeedSession::MakeRequest(StrView cmdln) {
          this->LastGV_.reset(new seed::TicketRunnerGridView(*this,
                                                             req.SeedName_,
                                                             AdjustGridViewRowCount(this->GetDefaultGridViewRowCount()),
-                                                            seed::TreeOp::TextBegin(),
+                                                            seed::TextBegin(),
                                                             req.CommandArgs_ //tabName
                            ));
       return this->LastGV_;

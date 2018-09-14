@@ -34,8 +34,9 @@ uint32_t CalcDyMemSize(Fields& flds, Tab* tab) {
 }
 
 fon9_MSC_WARN_DISABLE(4355);
-Tab::Tab(const Named& named, Fields&& fields, LayoutSP saplingLayout)
+Tab::Tab(const Named& named, Fields&& fields, LayoutSP saplingLayout, TabFlag flags)
    : NamedIx{named}
+   , Flags_{flags}
    , DyBlobCount_{}
    , DyMemSize_{CalcDyMemSize(fields, this)}
    , Fields_{std::move(fields)}

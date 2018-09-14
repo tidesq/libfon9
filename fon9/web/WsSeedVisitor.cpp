@@ -48,24 +48,44 @@ struct WsSeedVisitor::SeedVisitor : public seed::SeedVisitor {
          ws->Send(WebSocketOpCode::TextFrame, std::move(rbuf));
       }
    }
+
    void OnTicketRunnerWrite(seed::TicketRunnerWrite& runner, const seed::SeedOpResult& res, const seed::RawWr& wr) override {
       RevBufferList rbuf{runner.ParseSetValues(res, wr)};
       RevPutChar(rbuf, '\n');
+      this->OnTicketRunnerOutputSeed(runner, res, wr, std::move(rbuf));
+   }
+   void OnTicketRunnerRead(seed::TicketRunnerRead& runner, const seed::SeedOpResult& res, const seed::RawRd& rd) override {
+      this->OnTicketRunnerOutputSeed(runner, res, rd, RevBufferList{128});
+   }
+   void OnTicketRunnerOutputSeed(seed::TicketRunner& runner, const seed::SeedOpResult& res, const seed::RawRd& rd, RevBufferList&& rbuf) {
       size_t ifld = res.Tab_->Fields_.size();
       while (auto fld = res.Tab_->Fields_.Get(--ifld)) {
-         fld->CellRevPrint(wr, nullptr, rbuf);
+         fld->CellRevPrint(rd, nullptr, rbuf);
          if (ifld > 0)
             RevPutChar(rbuf, seed::GridViewResult::kCellSplitter);
       }
       this->OnTicketRunnerDone(runner, DcQueueList{rbuf.MoveOut()});
    }
-   void OnTicketRunnerRead(seed::TicketRunnerRead&, const seed::SeedOpResult&, const seed::RawRd&) override {
-   }
+
    void OnTicketRunnerRemoved(seed::TicketRunnerRemove& runner, const seed::PodRemoveResult& res) override {
       this->OnTicketRunnerDone(runner, DcQueueFixedMem{});
    }
    void OnTicketRunnerGridView(seed::TicketRunnerGridView& runner, seed::GridViewResult& res) override {
-      this->OnTicketRunnerDone(runner, DcQueueFixedMem{res.GridView_});
+      struct Output {
+         static inline void gvSize(RevBufferList& rbuf, size_t n, char chSpl) {
+            RevPutChar(rbuf, chSpl);
+            if (n != seed::GridViewResult::kNotSupported)
+               RevPrint(rbuf, n);
+         }
+      };
+      RevBufferList rbuf{128};
+      if (!res.GridView_.empty()) {
+         RevPrint(rbuf, res.GridView_);
+         Output::gvSize(rbuf, res.DistanceEnd_, res.kRowSplitter);
+      }
+      Output::gvSize(rbuf, res.DistanceBegin_, ',');
+      Output::gvSize(rbuf, res.ContainerSize_, ',');
+      this->OnTicketRunnerDone(runner, DcQueueList{rbuf.MoveOut()});
    }
    void OnTicketRunnerCommand(seed::TicketRunnerCommand&, const seed::SeedOpResult& res, StrView msg) override {
    }
@@ -95,7 +115,7 @@ struct WsSeedVisitor::PrintLayout : public seed::TicketRunnerTree {
       NamedToJSON(rbuf, fld);
       RevPutChar(rbuf, '{');
    }
-   static void LayoutToJSON(RevBufferList& rbuf, seed::Layout& layout) {
+   void LayoutToJSON(RevBufferList& rbuf, seed::Layout& layout) {
       size_t tabIdx = layout.GetTabCount();
       RevPrint(rbuf, "]}");
       while (tabIdx > 0) {
@@ -113,11 +133,14 @@ struct WsSeedVisitor::PrintLayout : public seed::TicketRunnerTree {
                RevPutChar(rbuf, ',');
          }
          RevPrint(rbuf, R"(,"fields":[)");
-         // tab.Flags_;
+         if (tab.Flags_ != seed::TabFlag{})
+            RevPrint(rbuf, R"(,"flags":")", tab.Flags_, '"');
          NamedToJSON(rbuf, tab);
          RevPrint(rbuf, tabIdx == 0 ? "{" : ",{");
       }
       RevPrint(rbuf, R"(,"tabs":[)");
+      if (layout.Flags_ != seed::TreeFlag{})
+         RevPrint(rbuf, R"(,"flags":")", layout.Flags_, '"');
       FieldToJSON(rbuf, *layout.KeyField_);
       RevPrint(rbuf, R"({"key":)");
    }
@@ -138,12 +161,16 @@ struct WsSeedVisitor::PrintLayout : public seed::TicketRunnerTree {
       //      "name"        : tab->Name_,
       //      "title"       : tab->GetTitle(),
       //      "description" : tab->GetDescription(),
-      //      "flags"       : ,
+      //      "flags"       : tab->Flags_,
       //      "fields"      : [field],
       //      "sapling"     : tab->SaplingLayout_,
       //    }
       RevBufferList rbuf{128};
       LayoutToJSON(rbuf, *op.Tree_.LayoutSP_);
+      // - 輸出內容:
+      //   accessRights\n
+      //   layout_JSON
+      RevPrint(rbuf, this->Rights_, '\n'); // TODO: 是否可能針對不同 tab 設定不同的權限?
       this->Visitor_->OnTicketRunnerDone(*this, DcQueueList{rbuf.MoveOut()});
    }
 };

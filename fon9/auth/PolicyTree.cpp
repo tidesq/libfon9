@@ -8,7 +8,8 @@ namespace fon9 { namespace auth {
 
 PolicyTree::PolicyTree(std::string tabName, std::string keyName, seed::Fields&& fields)
    : base{new seed::Layout1(fon9_MakeField(Named{std::move(keyName)}, PolicyItem, PolicyId_),
-                            new seed::Tab{Named{std::move(tabName)}, std::move(fields)})} {
+                            new seed::Tab{Named{std::move(tabName)}, std::move(fields), seed::TabFlag::Writable},
+                            seed::TreeFlag::AddableRemovable)} {
 }
 
 void PolicyTree::OnParentSeedClear() {
@@ -66,7 +67,7 @@ struct PolicyTree::TreeOp : public seed::TreeOp {
       seed::GridViewResult res{this->Tree_, req.Tab_};
       {
          PolicyMaps::Locker maps{static_cast<PolicyTree*>(&this->Tree_)->PolicyMaps_};
-         seed::MakeGridView(maps->ItemMap_, this->GetIteratorForGv(maps->ItemMap_, req.OrigKey_),
+         seed::MakeGridView(maps->ItemMap_, seed::GetIteratorForGv(maps->ItemMap_, req.OrigKey_),
                             req, res, &MakePolicyRecordView);
       } // unlock.
       fnCallback(res);
@@ -83,7 +84,7 @@ struct PolicyTree::TreeOp : public seed::TreeOp {
    void Get(StrView strKeyText, seed::FnPodOp fnCallback) override {
       {
          PolicyMaps::Locker maps{static_cast<PolicyTree*>(&this->Tree_)->PolicyMaps_};
-         auto               ifind = this->GetIteratorForPod(maps->ItemMap_, strKeyText);
+         auto               ifind = seed::GetIteratorForPod(maps->ItemMap_, strKeyText);
          if (ifind != maps->ItemMap_.end()) {
             this->OnPodOp(maps, **ifind, std::move(fnCallback));
             return;
@@ -92,7 +93,7 @@ struct PolicyTree::TreeOp : public seed::TreeOp {
       fnCallback(seed::PodOpResult{this->Tree_, seed::OpResult::not_found_key, strKeyText}, nullptr);
    }
    void Add(StrView strKeyText, seed::FnPodOp fnCallback) override {
-      if (this->IsTextBegin(strKeyText) || this->IsTextEnd(strKeyText)) {
+      if (seed::IsTextBeginOrEnd(strKeyText)) {
          fnCallback(seed::PodOpResult{this->Tree_, seed::OpResult::not_found_key, strKeyText}, nullptr);
          return;
       }

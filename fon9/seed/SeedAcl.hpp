@@ -20,6 +20,8 @@ enum class AccessRight : uint8_t {
    Write = 0x02,
    /// 允許執行 OnSeedCommand().
    Exec = 0x04,
+   /// 允許在 NeedsApply 的資料表執行 [套用].
+   Apply = 0x10,
 };
 fon9_ENABLE_ENUM_BITWISE_OP(AccessRight);
 
@@ -44,6 +46,7 @@ struct AccessList : public SortedVector<AclPath, AccessRight> {
 /// - Tab[0]    = "AclRights";
 /// - Fields[0] = "Rights";
 fon9_API LayoutSP MakeAclTreeLayout();
+fon9_API LayoutSP MakeAclTreeLayoutWritable();
 
 /// \ingroup seed
 struct AclConfig {

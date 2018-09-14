@@ -45,12 +45,15 @@ class RoleTree : public MasterPolicyTree {
       fields.Add(fon9_MakeField(Named{"PolicyId"}, DetailTableImpl::value_type, second));
       seed::LayoutSP saplingLayout{
          new seed::Layout1(fon9_MakeField(Named{"PolicyName"}, DetailTableImpl::value_type, first),
-                           new seed::Tab{Named{"RoleConfig"}, std::move(fields)})};
+                           new seed::Tab{Named{"RoleConfig"}, std::move(fields),
+                                         seed::TabFlag::NoSapling | seed::TabFlag::Writable},
+                           seed::TreeFlag::AddableRemovable)};
 
       fields.Add(fon9_MakeField(Named{"Description"}, RoleItem, Description_));
-      seed::TabSP tab{new seed::Tab(Named{"RoleCfg"}, std::move(fields), std::move(saplingLayout))};
+      seed::TabSP tab{new seed::Tab(Named{"RoleCfg"}, std::move(fields), std::move(saplingLayout),
+                                    seed::TabFlag::HasSapling | seed::TabFlag::Writable)};
       return new seed::Layout1(fon9_MakeField(Named{"RoleId"}, PolicyItem, PolicyId_),
-                               std::move(tab));
+                               std::move(tab), seed::TreeFlag::AddableRemovable);
    }
 
 public:

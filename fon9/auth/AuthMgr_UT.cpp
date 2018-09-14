@@ -170,7 +170,7 @@ void TestInitPoAcl(fon9::seed::Tree& root) {
 void CheckGridView(fon9::seed::Tree& root, const char* path, const char* gvExpect) {
    std::cout << "[TEST ] GridView|path=" << path;
    fon9::seed::GetGridView(root, fon9::ToStrView(path),
-                           fon9::seed::GridViewRequest{fon9::seed::TreeOp::TextBegin()}, 0,
+                           fon9::seed::GridViewRequest{fon9::seed::TextBegin()}, 0,
                            [gvExpect](fon9::seed::GridViewResult& res) {
       if (res.GridView_ != gvExpect) {
          std::cout << "|gv=" << "\r[ERROR]\n" << res.GridView_ << std::endl;

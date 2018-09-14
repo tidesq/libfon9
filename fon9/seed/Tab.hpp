@@ -8,6 +8,37 @@
 namespace fon9 { namespace seed {
 
 /// \ingroup seed
+/// 這裡的旗標只是在取得 layout 時, 提供操作的提示.
+/// 還需要配合 TreeOp, PodOp 的實作.
+enum TabFlag {
+   /// 支援 PodOp::BeginWrite(); 修改欄位內容.
+   Writable = 0x01,
+
+   // 確定每個 seed 都有 sapling.
+   /// 但不保證 sapling 會有資料,
+   /// 例如: 投資帳號確定都有庫存表, 但不是每個帳號都有庫存.
+   HasSapling = 0x02,
+   /// 確定每個 seed 都沒有 sapling.
+   /// 如果沒有 NoSapling, 也沒有 HasSapling,
+   /// 則表示由 PodOp::GetSapling(); PodOp::MakeSapling(); 決定是否有 sapling.
+   NoSapling = 0x04,
+
+   /// 支援 PodOp::OnSeedCommand(); 執行指令.
+   HasSeedCommand = 0x08,
+
+   /// 需使用「套用」方式處理資料異動。
+   /// - 修改中的資料會放在另一個 mtable.
+   /// - 有 Write 權限者可以編修套用前的 mtable.
+   /// - 但需有 Apply 權限, 才能按下 [套用]. 也就是編修與套用可以是不同 user.
+   /// - 修改 mtable 前, 會先保留 [原資料].
+   /// - 修改時會比對有異動的地方(增、刪、改), 讓修改者(或套用者)查看異動處.
+   /// - 套用時, 檢查先前保留的 [原資料] 是否正確(沒有變動過), 正確才允許 [套用].
+   /// - 若 [原資料] 有變動過, 則需再次取得 [原資料] 比對, 然後再次 [套用].
+   NeedsApply = 0x10,
+};
+fon9_ENABLE_ENUM_BITWISE_OP(TabFlag);
+
+/// \ingroup seed
 /// 欄位列表.
 class fon9_API Fields {
    Fields(const Fields&) = delete;
@@ -46,9 +77,11 @@ public:
 /// 用來描述 Seed 的外觀:
 /// - 透過 Fields 描述資料.
 /// - 若有 DyMem, 則必需透過 MakeDyMemRaw() 建立資料.
-class fon9_API Tab : public intrusive_ref_counter<Tab>, public NamedIx {
+class fon9_API Tab : public NamedIx, public intrusive_ref_counter<Tab> {
    fon9_NON_COPY_NON_MOVE(Tab);
 public:
+   const TabFlag  Flags_;
+
    /// Blob欄位的數量.
    const uint32_t DyBlobCount_;
    /// 若 Tab 建立的資料有動態分配的欄位,
@@ -65,7 +98,10 @@ public:
    /// 必須在建構前就先定義好欄位,
    /// Tab 運行中不允許增減欄位.
    /// 若有 DyMem 欄位, 建構時會調整 field 的 offset.
-   Tab(const Named& named, Fields&& fields, LayoutSP saplingLayout = LayoutSP{});
+   Tab(const Named& named, Fields&& fields, LayoutSP saplingLayout = LayoutSP{}, TabFlag flags = TabFlag{});
+   Tab(const Named& named, Fields&& fields, TabFlag flags)
+      : Tab(named, std::move(fields), LayoutSP{}, flags) {
+   }
 
    virtual ~Tab();
 };

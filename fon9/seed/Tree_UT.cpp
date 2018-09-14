@@ -162,8 +162,7 @@ public:
    static constexpr size_t kTabVol = 1;
 
    IvacSymbTree(IvacSymbMap& symbs)
-      : base(new fon9::seed::LayoutN(MakeKeyField(), MakeTabBal(),MakeTabVol()),
-             fon9::seed::TreeFlag::Shadow | fon9::seed::TreeFlag::AddableRemovable)
+      : base(new fon9::seed::LayoutN(MakeKeyField(), fon9::seed::TreeFlag::AddableRemovable, MakeTabBal(), MakeTabVol()))
       , Symbs_(symbs) {
    }
 
@@ -221,12 +220,12 @@ public:
       void Get(fon9::StrView strKeyText, fon9::seed::FnPodOp fnCallback) override {
          GetPod(*static_cast<IvacSymbTree*>(&this->Tree_),
                 static_cast<IvacSymbTree*>(&this->Tree_)->Symbs_,
-                this->GetIteratorForPod(static_cast<IvacSymbTree*>(&this->Tree_)->Symbs_, strKeyText),
+                fon9::seed::GetIteratorForPod(static_cast<IvacSymbTree*>(&this->Tree_)->Symbs_, strKeyText),
                 strKeyText,
                 std::move(fnCallback));
       }
       void GridView(const fon9::seed::GridViewRequest& req, fon9::seed::FnGridViewOp fnCallback) override {
-         IvacSymbMap::iterator      istart = this->GetIteratorForGv(static_cast<IvacSymbTree*>(&this->Tree_)->Symbs_, req.OrigKey_);
+         IvacSymbMap::iterator      istart = fon9::seed::GetIteratorForGv(static_cast<IvacSymbTree*>(&this->Tree_)->Symbs_, req.OrigKey_);
          fon9::seed::GridViewResult res{this->Tree_, req.Tab_};
          if (req.Tab_ && req.Tab_->GetIndex() == kTabVol) {
             fon9::seed::MakeGridView(static_cast<IvacSymbTree*>(&this->Tree_)->Symbs_, istart, req, res,
@@ -293,9 +292,9 @@ public:
    IvacTree(IvacMap& ivacs)
       : base(new fon9::seed::LayoutN(
                      fon9_MakeField(fon9::Named{"IvacNo"}, Pod, IvacNo_),
+                     fon9::seed::TreeFlag::AddableRemovable,
                      MakeTabBasic(),
-                     MakeTabSymbs()),
-             fon9::seed::TreeFlag::Shadow | fon9::seed::TreeFlag::AddableRemovable)
+                     MakeTabSymbs()))
       , Ivacs_(ivacs) {
    }
 
@@ -345,9 +344,9 @@ public:
       TreeOp(IvacTree& tree) : base(tree) {
       }
       bool GetIvacNoChk(IvacNo& ivalue, fon9::StrView strKeyText) {
-         if (strKeyText.begin() == kStrKeyText_Begin_)
+         if (strKeyText.begin() == fon9::seed::kStrKeyText_Begin_)
             ivalue = 0;
-         else if (strKeyText.begin() == kStrKeyText_End_)
+         else if (strKeyText.begin() == fon9::seed::kStrKeyText_End_)
             ivalue = kEndIvacNoChk;
          else {
             IvacNo key = fon9::StrTo(strKeyText, 0u);
@@ -465,8 +464,9 @@ public:
    static constexpr size_t kTabIvacs = 0;
 
    BrkTree()
-      : base(new fon9::seed::Layout1(fon9_MakeField(fon9::Named{"BrkNo"}, Pod, first), MakeTab()),
-             fon9::seed::TreeFlag::AddableRemovable) {
+      : base(new fon9::seed::Layout1(fon9_MakeField(fon9::Named{"BrkNo"}, Pod, first),
+                                     MakeTab(),
+                                     fon9::seed::TreeFlag::AddableRemovable)) {
    }
 
    fon9_MSC_WARN_DISABLE(4265);//class has virtual functions, but destructor is not virtual
@@ -492,14 +492,14 @@ public:
       void Get(fon9::StrView strKeyText, fon9::seed::FnPodOp fnCallback) override {
          auto& brkmap = static_cast<BrkTree*>(&this->Tree_)->BrkMap_;
          GetPod(*static_cast<BrkTree*>(&this->Tree_), brkmap,
-                this->GetIteratorForPod(brkmap, strKeyText),
+                fon9::seed::GetIteratorForPod(brkmap, strKeyText),
                 strKeyText,
                 std::move(fnCallback));
       }
       void GridView(const fon9::seed::GridViewRequest& req, fon9::seed::FnGridViewOp fnCallback) override {
          fon9::seed::GridViewResult res{this->Tree_, req.Tab_};
          auto&                      brkmap = static_cast<BrkTree*>(&this->Tree_)->BrkMap_;
-         fon9::seed::MakeGridView(brkmap, this->GetIteratorForGv(brkmap, req.OrigKey_), req, res,
+         fon9::seed::MakeGridView(brkmap, fon9::seed::GetIteratorForGv(brkmap, req.OrigKey_), req, res,
                                   &fon9::seed::SimpleMakeRowView<BrkMap::iterator>);
          fnCallback(res);
       }
@@ -536,7 +536,7 @@ public:
 void CheckGridView(fon9::seed::TreeOp* op, fon9::seed::Tab* tab, fon9::StrView expectResult) {
    const std::string& name = (tab ? tab->Name_ : op->Tree_.LayoutSP_->KeyField_->Name_);
    std::cout << '\n' << name;
-   fon9::seed::GridViewRequest req{fon9::seed::TreeOp::TextBegin()};
+   fon9::seed::GridViewRequest req{fon9::seed::TextBegin()};
    req.Tab_ = tab;
    op->GridView(req, [expectResult](fon9::seed::GridViewResult& res) {
       std::cout << "|RowCount=" << res.RowCount_;

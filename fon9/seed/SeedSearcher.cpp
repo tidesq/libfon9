@@ -10,7 +10,7 @@ fon9_API StrView ParseKeyTextAndTabName(StrView& tabName) {
    StrView keyText = SbrFetchInsideNoTrim(tabName, StrBrArg::Quotation_);
    if (keyText.begin() == nullptr) { // 沒有引號時 keyText 為 nullptr, 此時採用無引號的方法.
       keyText = StrFetchNoTrim(tabName, '^');
-      return keyText.empty() ? TreeOp::TextBegin() : keyText;
+      return keyText.empty() ? TextBegin() : keyText;
    }
    // 執行到此: keyText = 移除引號後的字串, tabName = 引號之後的字串.
    // 所以 tab = 移除 '^'(包含) 之前的字元.
@@ -111,7 +111,7 @@ GridViewSearcher::GridViewSearcher(const StrView& path, const GridViewRequest& r
    : base{path}
    , Request_{req}
    , Handler_{std::move(handler)} {
-   if (!TreeOp::IsTextBegin(req.OrigKey_) && !TreeOp::IsTextEnd(req.OrigKey_)) {
+   if (!IsTextBeginOrEnd(req.OrigKey_)) {
       this->OrigKey_.assign(req.OrigKey_);
       this->Request_.OrigKey_ = ToStrView(this->OrigKey_);
    }

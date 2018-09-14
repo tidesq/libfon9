@@ -7,13 +7,21 @@
 namespace fon9 { namespace seed {
 
 static Fields MakeAclTreeFields() {
-   seed::Fields fields;
+   Fields fields;
    fields.Add(fon9_MakeField(Named{"Rights"}, AccessList::value_type, second));
    return fields;
 }
+static LayoutSP MakeAclTreeLayout(TabFlag tabFlags, TreeFlag treeFlags) {
+   return LayoutSP{new Layout1(fon9_MakeField(Named{"Path"}, AccessList::value_type, first),
+                               new Tab{Named{"AclRights"}, MakeAclTreeFields(), tabFlags},
+                               treeFlags)};
+}
 fon9_API LayoutSP MakeAclTreeLayout() {
-   static LayoutSP aclLayout{new Layout1(fon9_MakeField(Named{"Path"}, AccessList::value_type, first),
-                                         new Tab{Named{"AclRights"}, MakeAclTreeFields()})};
+   static LayoutSP aclLayout{MakeAclTreeLayout(TabFlag::NoSapling, TreeFlag{})};
+   return aclLayout;
+}
+fon9_API LayoutSP MakeAclTreeLayoutWritable() {
+   static LayoutSP aclLayout{MakeAclTreeLayout(TabFlag::NoSapling | TabFlag::Writable, TreeFlag::AddableRemovable)};
    return aclLayout;
 }
 

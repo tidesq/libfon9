@@ -58,21 +58,25 @@ public:
    ///   - if(seed.Get1st()=='~') 則將 this->Ac_.Home_ 加到 seed 前端後再正規畫.
    ///   - if(seed.Get1st()=='/') 則直接正規畫 seed.
    ///   - 其餘, 則將 this->CurrPath_ 加到 seed 前端後再正規畫.
-   /// - 不論結果如何, 返回時 seed 會指向 outpath.
+   /// - 不論結果如何, 返回時:
+   ///   - seed 指向 outpath
+   ///   - *reRights = 實際的可用權限.
    ///
    /// \retval OpResult::no_error 正規化成功, 且有期望的權限.
    /// \retval OpResult::path_format_error 格式有錯, seed.begin() 為 outpath 的錯誤位置.
    /// \retval OpResult::access_denied 無權限:
-   ///      - 若 needsRights != AccessRight::None, 則必須要有 needsRights 的完整權限.
-   ///      - 若 needsRights == AccessRight::None, 則有任一權限即可.
-   OpResult NormalizeSeedPath(StrView& seed, AclPath& outpath, AccessRight needsRights = AccessRight::None) const;
+   ///      - 若 *reRights != AccessRight::None, 則必須要有 *reRights 的完整權限.
+   ///      - 若 *reRights == AccessRight::None, 則有任一權限即可.
+   OpResult NormalizeSeedPath(StrView& seed, AclPath& outpath, AccessRight* reRights) const;
 
    /// - 先透過 NormalizeSeedPath()「正規化 path & 檢查權限」, 如果有權限, 則會傳回:
    ///   - if (!IsVisitorsTree(path)) 傳回 this->Root_;
    ///   - if (IsVisitorsTree(path))  傳回 this->VisitorsTree_;
    /// - 如果傳回 nullptr, 則應檢查 opResult, 請參閱 NormalizeSeedPath() 的傳回值.
-   /// - 不論是否成功, 返回時 seed 指向 outpath.
-   MaTree* GetRootPath(OpResult& opResult, StrView& seed, AclPath& outpath, AccessRight needsRights = AccessRight::None) const;
+   /// - 不論是否成功, 返回時:
+   ///   - seed 指向 outpath
+   ///   - *reRights = 實際的可用權限.
+   MaTree* GetRootPath(OpResult& opResult, StrView& seed, AclPath& outpath, AccessRight* reRights) const;
 
    /// 根據 cmdln 建立對應的 TicketRunner.
    /// - 取得 runner 之後, 您必須自行決定何時執行 runner.Run();
@@ -118,9 +122,10 @@ using SeedFairySP = intrusive_ptr<SeedFairy>;
 struct fon9_API SeedTicket {
    fon9_NON_COPY_NON_MOVE(SeedTicket);
    OpResult          OpResult_;
+   /// 實際在 Acl 設定的可用權限.
+   const AccessRight Rights_{AccessRight::None};
    const AclPath     Path_;
    const MaTreeSP    Root_{nullptr};
-   const AccessRight Rights_{AccessRight::None};
    /// 在到達指定地點前, 有可能在某處中斷, 中斷原因可從 OpResult_ 得到,
    /// 而這裡則記錄了發生錯誤的位置 = Path_.begin() + ErrPos_;
    size_t            ErrPos_{0};
@@ -128,9 +133,9 @@ struct fon9_API SeedTicket {
    /// 透過 fairy.GetRootPath() 建構.
    SeedTicket(SeedFairy& fairy, StrView& seed, AccessRight needsRights)
       : OpResult_{OpResult::no_error}
+      , Rights_{needsRights}
       , Path_{}
-      , Root_{fairy.GetRootPath(OpResult_, seed, *const_cast<AclPath*>(&Path_), needsRights)}
-      , Rights_{Root_ ? needsRights : AccessRight::None}
+      , Root_{fairy.GetRootPath(OpResult_, seed, *const_cast<AclPath*>(&Path_), const_cast<AccessRight*>(&Rights_))}
       , ErrPos_{static_cast<size_t>(seed.begin() - Path_.begin())} {
    }
    SeedTicket(OpResult errn, StrView errmsg)

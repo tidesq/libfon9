@@ -117,7 +117,7 @@ TicketRunnerGridView::TicketRunnerGridView(SeedVisitor& visitor, StrView seed, u
    , StartKey_{startKey}
    , TabName_{tabName}
    , RowCount_{rowCount} {
-   if (!TreeOp::IsTextBegin(startKey) && !TreeOp::IsTextEnd(startKey))
+   if (!IsTextBeginOrEnd(startKey))
       this->StartKey_ = ToStrView(this->StartKeyBuf_);
 }
 void TicketRunnerGridView::Continue() {

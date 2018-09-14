@@ -320,7 +320,7 @@ struct IoManager::Tree::TreeOp : public seed::TreeOp {
       seed::GridViewResult res{this->Tree_, req.Tab_};
       {
          DeviceMap::Locker  map{static_cast<Tree*>(&this->Tree_)->IoManager_->DeviceMap_};
-         seed::MakeGridView(*map, this->GetIteratorForGv(*map, req.OrigKey_),
+         seed::MakeGridView(*map, seed::GetIteratorForGv(*map, req.OrigKey_),
                             req, res, &MakePolicyRecordView);
       } // unlock.
       fnCallback(res);
@@ -328,7 +328,7 @@ struct IoManager::Tree::TreeOp : public seed::TreeOp {
    void Get(StrView strKeyText, seed::FnPodOp fnCallback) override {
       {
          DeviceMap::Locker  map{static_cast<Tree*>(&this->Tree_)->IoManager_->DeviceMap_};
-         auto               ifind = this->GetIteratorForPod(*map, strKeyText);
+         auto               ifind = seed::GetIteratorForPod(*map, strKeyText);
          if (ifind != map->end()) {
             PodOp op(**ifind, *static_cast<Tree*>(&this->Tree_), seed::OpResult::no_error, map);
             fnCallback(op, &op);
@@ -396,7 +396,7 @@ struct IoManager::AcceptedTree : public seed::Tree {
          seed::GridViewResult res{this->Tree_, req.Tab_};
          {
             auto  map = static_cast<AcceptedTree*>(&this->Tree_)->Listener_->Lock();
-            seed::MakeGridView(*map, this->GetIteratorForGv(*map, req.OrigKey_),
+            seed::MakeGridView(*map, seed::GetIteratorForGv(*map, req.OrigKey_),
                                req, res, &MakePolicyRecordView);
          } // unlock.
          fnCallback(res);
@@ -404,7 +404,7 @@ struct IoManager::AcceptedTree : public seed::Tree {
       void Get(StrView strKeyText, seed::FnPodOp fnCallback) override {
          {
             auto  map = static_cast<AcceptedTree*>(&this->Tree_)->Listener_->Lock();
-            auto  ifind = this->GetIteratorForPod(*map, strKeyText);
+            auto  ifind = seed::GetIteratorForPod(*map, strKeyText);
             if (ifind != map->end()) {
                PodOp op(*ifind, this->Tree_, strKeyText, map);
                fnCallback(op, &op);

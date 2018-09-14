@@ -10,7 +10,7 @@ struct SeedFairy::AclTree : public Tree {
    fon9_NON_COPY_NON_MOVE(AclTree);
    AccessList& Acl_;
    AclTree(AccessList& acl)
-      : Tree(MakeAclTreeLayout(), TreeFlag::Shadow)
+      : Tree(MakeAclTreeLayout())
       , Acl_(acl) {
    }
 
@@ -23,13 +23,13 @@ struct SeedFairy::AclTree : public Tree {
       void GridView(const GridViewRequest& req, FnGridViewOp fnCallback) override {
          GridViewResult res{this->Tree_, req.Tab_};
          AccessList&    acl = static_cast<AclTree*>(&this->Tree_)->Acl_;
-         MakeGridView(acl, this->GetIteratorForGv(acl, req.OrigKey_),
+         MakeGridView(acl, GetIteratorForGv(acl, req.OrigKey_),
                       req, res, &SimpleMakeRowView<AccessList::iterator>);
          fnCallback(res);
       }
       void Get(StrView strKeyText, FnPodOp fnCallback) override {
          AccessList& acl = static_cast<AclTree*>(&this->Tree_)->Acl_;
-         auto        ifind = this->GetIteratorForPod(acl, strKeyText);
+         auto        ifind = GetIteratorForPod(acl, strKeyText);
          if (ifind == acl.end())
             fnCallback(PodOpResult{this->Tree_, OpResult::not_found_key, strKeyText}, nullptr);
          else {
@@ -57,7 +57,7 @@ SeedFairy::~SeedFairy() {
    this->VisitorsTree_->OnParentSeedClear();
 }
 
-OpResult SeedFairy::NormalizeSeedPath(StrView& seed, AclPath& outpath, AccessRight needsRights) const {
+OpResult SeedFairy::NormalizeSeedPath(StrView& seed, AclPath& outpath, AccessRight* reRights) const {
    switch (seed.Get1st()) {
    case '/':
       break;
@@ -76,15 +76,20 @@ OpResult SeedFairy::NormalizeSeedPath(StrView& seed, AclPath& outpath, AccessRig
    seed = ToStrView(outpath);
 
    AclPathParser pathParser;
-   if (!pathParser.NormalizePath(seed))
+   if (!pathParser.NormalizePath(seed)) {
+      *reRights = AccessRight::None;
       return OpResult::path_format_error;
-   AccessRight rights = pathParser.CheckAccess(this->Ac_.Acl_, needsRights);
+   }
+   AccessRight needs = *reRights;
+   *reRights = pathParser.GetAccess(this->Ac_.Acl_);
+   OpResult res = (*reRights == AccessRight::None || (needs != AccessRight::None && !IsEnumContains(*reRights, needs)))
+      ? OpResult::access_denied : OpResult::no_error;
    outpath = std::move(pathParser.Path_);
    seed = ToStrView(outpath);
-   return rights == AccessRight::None ? OpResult::access_denied : OpResult::no_error;
+   return res;
 }
-MaTree* SeedFairy::GetRootPath(OpResult& opResult, StrView& seed, AclPath& outpath, AccessRight needsRights) const {
-   if ((opResult = this->NormalizeSeedPath(seed, outpath, needsRights)) != OpResult::no_error)
+MaTree* SeedFairy::GetRootPath(OpResult& opResult, StrView& seed, AclPath& outpath, AccessRight* reRights) const {
+   if ((opResult = this->NormalizeSeedPath(seed, outpath, reRights)) != OpResult::no_error)
       return nullptr;
    if (const char* pbeg = IsVisitorsTree(seed)) {
       seed.SetBegin(pbeg);
@@ -133,7 +138,7 @@ __ARGS_MUST_EMPTY:
    if (this->Command_ == "gv") {
       uint16_t rowCount = 0;
       StrView  args = this->CommandArgs_;
-      StrView  startKey = TreeOp::TextBegin();
+      StrView  startKey = TextBegin();
       if (isdigit(args.Get1st())) {
          const char* pend;
          rowCount = StrTo(args, static_cast<uint16_t>(0), &pend);

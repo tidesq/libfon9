@@ -43,9 +43,10 @@ class PolicyAclTree : public MasterPolicyTree {
    static seed::LayoutSP MakeLayout() {
       seed::Fields fields;
       fields.Add(fon9_MakeField(Named{"HomePath"}, MasterItem, Home_));
-      seed::TabSP tab{new seed::Tab(Named{"Acl"}, std::move(fields), seed::MakeAclTreeLayout())};
+      seed::TabSP tab{new seed::Tab(Named{"Acl"}, std::move(fields), seed::MakeAclTreeLayoutWritable(),
+                                    seed::TabFlag::Writable | seed::TabFlag::HasSapling)};
       return new seed::Layout1(fon9_MakeField(Named{"PolicyId"}, PolicyItem, PolicyId_),
-                               std::move(tab));
+                               std::move(tab), seed::TreeFlag::AddableRemovable);
    }
 
 public:

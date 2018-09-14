@@ -21,30 +21,10 @@ fon9_WARN_POP;
 
 using FnTreeOp = std::function<void(const TreeOpResult& res, TreeOp* op)>;
 
-enum TreeFlag {
-   Addable    = 0x01,
-   Removable  = 0x02,
-   Appendable = 0x04,
-
-   AddableRemovable = Addable|Removable,
-
-   /// Tree 操作的是無排序的容器,
-   /// 因此 GridView 僅能針對每個指定的 key 取得 view.
-   /// 無法使用範圍 OrigKey_ + Offset_ + RowCount_ 的方式取得 view.
-   Unordered  = 0x10,
-
-   /// Tree 所操作的容器, 只是實際容器的參考,
-   /// 不應保留 TreeSP, 因為實際的容器可能會比 tree 先死.
-   Shadow     = 0x20,
-
-   /// 使用「套用」方式處理資料異動。
-   NeedsApply = 0x40,
-};
-fon9_ENABLE_ENUM_BITWISE_OP(TreeFlag);
-
+fon9_WARN_DISABLE_PADDING;
 /// \ingroup seed
 /// - 這裡提供的是 **管理用** 介面.
-/// - 實際應用時, 您應該會先找到需要的 Tree or Seed, 然後直接操作 (例: MaTree, DllMgr)
+/// - 實際應用時, 您應該會先找到需要的 Tree or Seed, 然後直接操作 (例: MaAuth, DllMgr)
 class fon9_API Tree : public intrusive_ref_counter<Tree> {
    fon9_NON_COPY_NON_MOVE(Tree);
 protected:
@@ -58,13 +38,13 @@ protected:
    }
 
 public:
-   const TreeFlag TreeFlags_;
    /// 建構時會確保 LayoutSP_ 有效, 必定不會為 nullptr.
    const LayoutSP LayoutSP_;
 
-   /// 如果 layout 不可是 nullptr.
+   /// layout 不可是 nullptr.
    /// 允許多個 Tree 共用同一個 Layout.
-   Tree(LayoutSP layout, TreeFlag flags = TreeFlag{});
+   Tree(LayoutSP layout) : LayoutSP_{std::move(layout)} {
+   }
 
    virtual ~Tree();
 
@@ -83,6 +63,7 @@ public:
    /// \endcode
    virtual void OnParentSeedClear();
 };
+fon9_WARN_POP;
 
 } } // namespaces
 #endif//__fon9_seed_Tree_hpp__
