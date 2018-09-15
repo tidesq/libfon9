@@ -77,7 +77,7 @@ void StressSubr() {
       SubrBase(Subj& subj) : Subj_(subj) {
       }
       virtual ~SubrBase() {
-         this->Thr_.join();
+         // this->Thr_.join(); 因為 ThrRun 是衍生者實作, 所以應由衍生者呼叫 join();
       }
       virtual void operator()(const SubrMsg& msg) {
          (void)msg;
@@ -90,7 +90,7 @@ void StressSubr() {
       fon9_NON_COPY_NON_MOVE(Subj);
       using base = Subject<fon9::ObjCallback<SubrBase>>;
    public:
-      std::atomic<bool> IsPubEnd_{};
+      std::atomic<bool> IsPubEnd_{false};
       Subj() : base{128} {
       }
       ~Subj() {
@@ -115,6 +115,7 @@ void StressSubr() {
          this->Thr_ = std::thread(&SubrA::ThrRun, this);
       }
       ~SubrA() {
+         this->Thr_.join();
          std::cout << "SubrA"
             << "|MsgCount=" << this->MsgCount_
             << "|MaxConnCount=" << this->MaxConnCount_
@@ -171,6 +172,7 @@ void StressSubr() {
          this->Thr_ = std::thread(&SubrB::ThrRun, this);
       }
       ~SubrB() {
+         this->Thr_.join();
          std::cout << "SubrB"
             << "|MsgCount=" << this->MsgCount_
             << "|MaxConnCount=" << this->MaxConnCount_
@@ -205,6 +207,7 @@ void StressSubr() {
          this->Thr_ = std::thread(&SubrC::ThrRun, this);
       }
       ~SubrC() {
+         this->Thr_.join();
          std::cout << "SubrC|MsgCount=" << this->MsgCount_ << std::endl;
       }
       void ThrRun() {
@@ -224,6 +227,7 @@ void StressSubr() {
          this->Thr_ = std::thread(&SubrD::ThrRun, this);
       }
       ~SubrD() {
+         this->Thr_.join();
          std::cout << "SubrD|MsgCount=" << this->MsgCount_ << std::endl;
       }
       void ThrRun() {
