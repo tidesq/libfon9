@@ -1,0 +1,80 @@
+.gvArea {
+  position: fixed;
+  left: 0;
+  top: 1.5em;
+  bottom: 0;
+  width: 100%;
+  border-top: 1px solid #ccc;
+  overflow: auto;
+  cursor: default;
+}
+
+.gvTable {
+  border-collapse: collapse;
+  width: 100%;
+  line-height: 1.5em;
+  white-space: nowrap;
+}
+.gvTable thead th {
+  position: sticky;
+  top: 0;
+  background: #eee;
+  box-shadow: 0 2px 3px -1px #aaa;
+}
+.gvTable thead th:first-child {
+  z-index: 1;
+  left: 0;
+}
+.gvTable tbody th {
+  position: sticky;
+  left: 0;
+  background: #eee;
+  box-shadow: 2px 0 3px -1px #aaa;
+}
+.gvTable th,
+.gvTable td {
+  border-right: 1px solid #ccc;
+  border-bottom: 1px solid #ccc;
+  text-align: left;
+}
+.gvTable th:last-child,
+.gvTable td:last-child {
+  border-right: 0;
+}
+.gvTable tr:nth-child(odd) {
+  background: #f9f9f9;
+}
+.gvTable tr:hover {
+  background: #eff;
+}
+.gvTable tbody th:hover {
+  background: #eff;
+}
+.gvTable [contentEditable="true"]:focus {
+  background: #FFFFD3;
+  cursor: default;
+  box-shadow: 0 0 2px 1px blue inset !important;
+}
+
+/* 異動中, 尚未收到異動更新結果 */
+.gvUpdatingCell {
+  background: #ffe6ea !important;
+}
+
+/* 被選中的 cell, 不一定會是 focus. 因為 browser 可能不是 focus. */
+.gvSelectedCellEditable {
+  outline: none !important;
+  box-shadow: 0 0 2px 1px #076 inset !important;
+}
+/* 被選中的 cell, 而且現在是 focus. */
+.gvSelectedCellEditable:focus {
+  box-shadow: 0 0 2px 1px #0dc inset !important;
+}
+
+.gvSelectedCellReadonly {
+  outline: none !important;
+  box-shadow: 0 0 2px 1px #f93 inset !important;
+}
+.gvSelectedCellReadonly:focus {
+  box-shadow: 0 0 2px 1px #ff8000 inset !important;
+}
