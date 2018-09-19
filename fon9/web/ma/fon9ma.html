@@ -79,8 +79,11 @@
 let seedWindow = document.getElementById('seedFrame').contentWindow;
 let webSocket;
 
-seedWindow.onKeyCellClick = function(path, key, tabName) {
+seedWindow.onLoadLayout = function(path, key, tabName) {
   webSocket.send('pl ' + mergePathKeyTab(path, key, tabName));
+}
+seedWindow.onSeedCommand = function(seedName, command) {
+  webSocket.send(seedName + ' ' + command);
 }
 seedWindow.onLoadGridView = function(path, startkey, tabName) {
   let gvcmd = 'gv';
@@ -118,16 +121,25 @@ function onWebSocketMessage(msg) {
   // 認證成功後, WebSocket 的訊息, 才會轉來這裡處理.
   addInfo('Recv:', msg.data);
   msg = msg.data;
-  if (msg[0] != '>') // 失敗訊息: msg : 'e=...';
-    return;
-  // 成功訊息.
+  if (msg.length <= 3)
+     return;
+  let errmsg;
   let pln = msg.indexOf("\n");
+  if (msg.substring(0,2) == "e=") { // 失敗訊息: "e=..." + "\n" + "...";
+    errmsg = msg.substring(2, pln);
+    msg = msg.substring(pln + 1);
+  }
+  if (msg[0] == '\x01') { // SeedCommand: '\x01' + 'command' + '\x01' + path + '\n' + result
+    seedWindow.seedCommandResult(msg.substring(1), errmsg);
+    return;
+  }
+  // 成功訊息: '>cmd,args' + ' ' + path + '\n' + result
   if (msg[1]=='p' && msg[2]=='l') // "pl" print layout.
-    seedWindow.renderLayout(msg.substring(4,pln), msg.substring(pln+1));
+    seedWindow.renderLayout(msg.substring(4,pln), msg.substring(pln+1), errmsg);
   else if (msg[1]=='r' && msg[2]=='s') // "rs" remove
-    seedWindow.seedRemoved(msg.substring(4,pln), msg.substring(pln+1));
+    seedWindow.seedRemoved(msg.substring(4,pln), msg.substring(pln+1), errmsg);
   else {
-    // argsPath = msg.substring(3,pln) 藉由判斷 argsPath[0]==',' or ' ' 來決定是否有 args.
+    // argsPath = msg.substring(3,pln) 藉由判斷 argsPath[0]==',' 來決定是否有 args.
     let args;
     let path;
     if (msg.length > 3 && msg[3] == ',') {
@@ -144,9 +156,9 @@ function onWebSocketMessage(msg) {
       path = msg.substring(4,pln);
     }
     if (msg[1]=='g' && msg[2]=='v') // "gv[,args] path" gridview
-      seedWindow.renderGridView(args, path, msg.substring(pln+1));
+      seedWindow.renderGridView(args, path, msg.substring(pln+1), errmsg);
     else if (msg[1]=='s' && msg[2]=='s') // "ss[,fieldName=newValue] path/key^tab" + \n" + "fields"
-      seedWindow.updateRow(args, path, msg.substring(pln+1));
+      seedWindow.updateRow(args, path, msg.substring(pln+1), errmsg);
   }
 }
 
@@ -228,17 +240,6 @@ document.getElementById('seedFrame').addEventListener("load", function() {
 
 <!-- 登入成功後: 可改密碼、帳戶設定(暱稱、頭像...)、登出 -->
 <style>
-#formUserProfile {
-  display: none;
-  position: fixed;
-  z-index: 1001; /* Sit on top */
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgb(0,0,0); /* Fallback color */
-  background-color: rgba(0,0,0,0.1); /* Black w/ opacity */
-}
 #divUserProfile {
   position: fixed;
   top: 40px;
@@ -250,7 +251,7 @@ document.getElementById('seedFrame').addEventListener("load", function() {
   box-shadow: 0 0 3px 3px lightgray;
 }
 </style>
-<div id="formUserProfile">
+<div id="formUserProfile" class="fon9-fullWindowBack">
  <div id="divUserProfile">
   <button id="btnChangePass" class="fon9-btn" style="width:100%">改密碼</button><br>
   <button id="btnSignout" class="fon9-btn" style="width:100%">登出</button><br>
@@ -261,7 +262,7 @@ let formUserProfile = document.getElementById('formUserProfile');
 document.getElementById('btnUserProfile').onclick = function() {
   formUserProfile.style.display = "block";
 }
-window.onclick = function(event) {
+window.onclick = function (event) {
   if (event.target == formUserProfile)
     formUserProfile.style.display = 'none';
 }

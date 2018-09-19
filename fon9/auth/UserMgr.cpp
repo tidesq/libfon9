@@ -75,6 +75,12 @@ void UserRec::OnSeedCommand(PolicyMaps::Locker& locker, seed::SeedOpResult& res,
       return;
    }
    locker.unlock();
+   if (cmd == "?") {
+      res.OpResult_ = seed::OpResult::no_error;
+      resHandler(res,
+                 "repw" fon9_kCSTR_CELLSPL "Reset password" fon9_kCSTR_CELLSPL "[NewPass] or Random new password.");
+      return;
+   }
    res.OpResult_ = seed::OpResult::not_supported_cmd;
    resHandler(res, cmd);
 }

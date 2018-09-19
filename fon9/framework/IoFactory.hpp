@@ -48,8 +48,8 @@ class fon9_API SessionFactory : public seed::NamedSeed {
 public:
    using base::base;
 
-   virtual io::SessionSP CreateSession(IoManager& mgr, const IoConfigItem& cfg) = 0;
-   virtual io::SessionServerSP CreateSessionServer(IoManager& mgr, const IoConfigItem& cfg) = 0;
+   virtual io::SessionSP CreateSession(IoManager& mgr, const IoConfigItem& cfg, std::string& errReason) = 0;
+   virtual io::SessionServerSP CreateSessionServer(IoManager& mgr, const IoConfigItem& cfg, std::string& errReason) = 0;
 };
 using SessionFactoryPark = seed::NamedPark<SessionFactory>;
 using SessionFactoryParkSP = intrusive_ptr<SessionFactoryPark>;
@@ -63,7 +63,8 @@ class fon9_API DeviceFactory : public seed::NamedSeed {
 public:
    using base::base;
 
-   virtual io::DeviceSP CreateDevice(IoManagerSP mgr, SessionFactory& sesFactory, const IoConfigItem& cfg) = 0;
+   virtual io::DeviceSP CreateDevice(IoManagerSP mgr, SessionFactory& sesFactory, const IoConfigItem& cfg,
+                                     std::string& errReason) = 0;
 };
 using DeviceFactoryPark = seed::NamedPark<DeviceFactory>;
 using DeviceFactoryParkSP = intrusive_ptr<DeviceFactoryPark>;

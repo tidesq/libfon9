@@ -23,8 +23,13 @@ enum TabFlag {
    /// 則表示由 PodOp::GetSapling(); PodOp::MakeSapling(); 決定是否有 sapling.
    NoSapling = 0x04,
 
-   /// 支援 PodOp::OnSeedCommand(); 執行指令.
-   HasSeedCommand = 0x08,
+   /// 支援 PodOp::OnSeedCommand(); 執行指令, 且每個 Seed 都使用相同的指令集.
+   /// 例如: /MaAuth/UserSha256/ 底下的每個 user 都支援相同的指令.
+   HasSameCommandsSet = 0x10,
+   /// 確定不支援 PodOp::OnSeedCommand(); 執行指令.
+   /// 如果沒有 HasSameCommandsSet, 也沒有 HasSameCommandsSet,
+   /// 則表示由各個 Seed 自行決定是否支援 OnSeedCommand();
+   NoSeedCommand = 0x20,
 
    /// 需使用「套用」方式處理資料異動。
    /// - 修改中的資料會放在另一個 mtable.
@@ -34,7 +39,7 @@ enum TabFlag {
    /// - 修改時會比對有異動的地方(增、刪、改), 讓修改者(或套用者)查看異動處.
    /// - 套用時, 檢查先前保留的 [原資料] 是否正確(沒有變動過), 正確才允許 [套用].
    /// - 若 [原資料] 有變動過, 則需再次取得 [原資料] 比對, 然後再次 [套用].
-   NeedsApply = 0x10,
+   NeedsApply = 0x80,
 };
 fon9_ENABLE_ENUM_BITWISE_OP(TabFlag);
 

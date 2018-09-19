@@ -82,8 +82,10 @@ bool IoManager::CreateDevice(DeviceItem& item) {
       return false;
    }
    if (auto devFactory = this->DeviceFactoryPark_->Get(ToStrView(item.Config_.DeviceName_))) {
-      if (!(item.Device_ = devFactory->CreateDevice(this, *sesFactory, item.Config_))) {
-         item.DeviceSt_.assign("IoManager.CreateDevice|err=cannot create this device.");
+      std::string errReason;
+      if (!(item.Device_ = devFactory->CreateDevice(this, *sesFactory, item.Config_, errReason))) {
+         item.DeviceSt_.assign("IoManager.CreateDevice|err=");
+         item.DeviceSt_.append(&errReason);
          return false;
       }
       item.Device_->SetManagerBookmark(reinterpret_cast<io::Bookmark>(&item));
@@ -231,7 +233,7 @@ seed::LayoutSP IoManager::MakeAcceptedClientLayout() {
          fields.Add(fon9_MakeField(Named{"SessionSt"}, DeviceRun, SessionSt_));
          fields.Add(fon9_MakeField(Named{"DeviceSt"},  DeviceRun, DeviceSt_));
          fields.Add(fon9_MakeField(Named{"OpenArgs"},  DeviceRun, OpenArgs_));
-         seed::TabSP tabSt{new seed::Tab(Named{"Status"}, std::move(fields))};
+         seed::TabSP tabSt{new seed::Tab(Named{"Status"}, std::move(fields), seed::TabFlag::HasSameCommandsSet)};
          return new seed::Layout1(seed::MakeField(Named{"Id"}, 0, *static_cast<const io::DeviceAcceptedClientSeq*>(nullptr)),
                                   std::move(tabSt));
       }
@@ -257,7 +259,7 @@ seed::LayoutSP IoManager::Tree::MakeLayout() {
          fields.Add(fon9_MakeField(Named{"SessionArgs"}, DeviceItem, Config_.SessionArgs_));
          fields.Add(fon9_MakeField(Named{"Device"},      DeviceItem, Config_.DeviceName_));
          fields.Add(fon9_MakeField(Named{"DeviceArgs"},  DeviceItem, Config_.DeviceArgs_));
-         seed::TabSP tabConfig{new seed::Tab(Named{"Config"}, std::move(fields), saplingLayout)};
+         seed::TabSP tabConfig{new seed::Tab(Named{"Config"}, std::move(fields), saplingLayout, seed::TabFlag::NeedsApply)};
 
          return new seed::LayoutN(fon9_MakeField(Named{"Id"}, DeviceItem, Id_),
                                   std::move(tabSt),
@@ -296,14 +298,37 @@ struct IoManager::Tree::PodOp : public seed::PodOpLockerNoWrite<PodOp, DeviceMap
       return this->Seed_->Sapling_;
    }
    void HandleSeedCommand(DeviceMap::Locker& locker, SeedOpResult& res, StrView cmdln, seed::FnCommandResultHandler&& resHandler) {
+      res.OpResult_ = seed::OpResult::no_error;
       io::DeviceSP dev = this->Seed_->Device_;
-      if(!dev) {
-         // cmd = "open" => 建立 device & open.
+      if (dev) {
+         locker.unlock();
+         std::string msg = dev->DeviceCommand(cmdln);
+         resHandler(res, &msg);
+         return;
+      }
+      StrView cmd = StrFetchTrim(cmdln, &isspace);
+      if (cmd == "open") {
+         if (static_cast<Tree*>(this->Sender_)->IoManager_->CreateDevice(*this->Seed_)) {
+            if (cmdln.empty())
+               cmdln = ToStrView(this->Seed_->Config_.DeviceArgs_);
+            this->Seed_->DeviceSt_.assign("Async opening by command.");
+            this->Seed_->Device_->AsyncOpen(cmdln.ToString());
+         }
+         auto msg = this->Seed_->DeviceSt_;
+         locker.unlock();
+         resHandler(res, ToStrView(msg));
          return;
       }
       locker.unlock();
-      std::string msg = dev->DeviceCommand(cmdln);
-      resHandler(res, &msg);
+      if (cmd == "?") {
+         res.OpResult_ = seed::OpResult::no_error;
+         resHandler(res,
+                    "open" fon9_kCSTR_CELLSPL "Open device" fon9_kCSTR_CELLSPL "[ConfigString] or Default config.");
+      }
+      else {
+         res.OpResult_ = seed::OpResult::not_supported_cmd;
+         resHandler(res, cmdln);
+      }
    }
 };
 struct IoManager::Tree::TreeOp : public seed::TreeOp {

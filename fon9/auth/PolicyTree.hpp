@@ -20,7 +20,8 @@ public:
    /// - KeyField = seed::FieldCharVector(keyName)
    /// - Tab = {tabName, fields}
    /// - 若上述 Layout 不符, 您也可以直接使用 seed::Tree 的建構參數.
-   PolicyTree(std::string tabName, std::string keyName, seed::Fields&& fields);
+   PolicyTree(std::string tabName, std::string keyName, seed::Fields&& fields,
+              seed::TabFlag tabFlags = seed::TabFlag::Writable | seed::TabFlag::NoSapling);
 
    virtual void OnTreeOp(seed::FnTreeOp fnCallback) override;
    virtual void OnParentSeedClear() override;

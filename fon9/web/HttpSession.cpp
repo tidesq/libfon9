@@ -26,10 +26,13 @@ SessionFactorySP HttpSession::MakeFactory(std::string factoryName, HttpHandlerSP
          : SessionFactory(std::move(factoryName))
          , RootHandler_(std::move(wwwRootHandler)) {
       }
-      io::SessionSP CreateSession(IoManager&, const IoConfigItem&) override {
-         return io::SessionSP{}; // 僅允許透過 server 建立, 所以這裡不提供 session.
+      io::SessionSP CreateSession(IoManager&, const IoConfigItem&, std::string& errReason) override {
+         // 僅允許透過 server 建立, 所以這裡不提供 session.
+         errReason = this->Name_ + ": Only support server device.";
+         return io::SessionSP{};
       }
-      io::SessionServerSP CreateSessionServer(IoManager&, const IoConfigItem&) override {
+      io::SessionServerSP CreateSessionServer(IoManager&, const IoConfigItem&, std::string& errReason) override {
+         (void)errReason;
          return new HttpSession::Server{this->RootHandler_};
       }
    };

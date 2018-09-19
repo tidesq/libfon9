@@ -238,6 +238,29 @@ std::string Device::OnDevice_Command(StrView cmd, StrView param) {
       return this->WaitSetProperty(param);
    else if (cmd == "ses")
       return this->Session_->SessionCommand(*this, param);
+   else if (cmd == "?") {
+      static const char cstrHelp[] =
+"open"    fon9_kCSTR_CELLSPL "Open device"         fon9_kCSTR_CELLSPL "[ConfigString] or Default config." fon9_kCSTR_ROWSPL
+"close"   fon9_kCSTR_CELLSPL "Close device"        fon9_kCSTR_CELLSPL "close reason."                     fon9_kCSTR_ROWSPL
+"lclose"  fon9_kCSTR_CELLSPL "Linger close device" fon9_kCSTR_CELLSPL "close reason."                     fon9_kCSTR_ROWSPL
+"dispose" fon9_kCSTR_CELLSPL "Dispose device"      fon9_kCSTR_CELLSPL "dispose reason."                   fon9_kCSTR_ROWSPL
+"info"    fon9_kCSTR_CELLSPL "Get device info"                                                            fon9_kCSTR_ROWSPL
+"set"     fon9_kCSTR_CELLSPL "Set device property" fon9_kCSTR_CELLSPL "PropertyName=Value"                fon9_kCSTR_ROWSPL;
+      std::string sesCommandHelp = this->Session_->SessionCommand(*this, "?");
+      if (sesCommandHelp.find(fon9_kCSTR_CELLSPL) == std::string::npos) // 沒有 fon9_kCSTR_CELLSPL 表示不支援用 "?" 取得 help info.
+         return std::string(cstrHelp, sizeof(cstrHelp) - 2); // -2: 移除尾端 "\n\0"
+      std::string res{cstrHelp};
+      res.append("-" fon9_kCSTR_ROWSPL);
+      StrView     sesCommands{&sesCommandHelp};
+      while (!sesCommands.empty()) {
+         StrView  sesCmd = StrFetchNoTrim(sesCommands, *fon9_kCSTR_ROWSPL);
+         if (!sesCmd.empty()) {
+            res.append("ses ");
+            res.append(sesCmd.begin(), sesCmd.size() + 1); // +1 = fon9_kCSTR_ROWSPL;
+         }
+      }
+      return res;
+   }
    else return std::string{"unknown device command"};
    return std::string();
 }

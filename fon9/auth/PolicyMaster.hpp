@@ -64,6 +64,10 @@ class fon9_API MasterPolicyTree : public PolicyTree {
 
 public:
    using base::base;
+   MasterPolicyTree(std::string tabName, std::string keyName, seed::Fields&& fields)
+      : base(std::move(tabName), std::move(keyName), std::move(fields),
+             seed::TabFlag::Writable | seed::TabFlag::HasSapling) {
+   }
 
    /// \code
    /// struct ResultHandler {

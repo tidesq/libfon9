@@ -21,11 +21,10 @@ fon9_API DeviceFactorySP GetIoFactoryTcpServer() {
       fon9_NON_COPY_NON_MOVE(Factory);
       Factory() : DeviceFactory("TcpServer") {
       }
-      io::DeviceSP CreateDevice(IoManagerSP mgr, SessionFactory& sesFactory, const IoConfigItem& cfg) override {
-         auto ses = sesFactory.CreateSessionServer(*mgr, cfg);
-         if (!ses)
-            return io::DeviceSP{};
-         return ::CreateDevice(*mgr, std::move(ses));
+      io::DeviceSP CreateDevice(IoManagerSP mgr, SessionFactory& sesFactory, const IoConfigItem& cfg, std::string& errReason) override {
+         if (auto ses = sesFactory.CreateSessionServer(*mgr, cfg, errReason))
+            return ::CreateDevice(*mgr, std::move(ses));
+         return io::DeviceSP{};
       }
    };
    return new Factory;

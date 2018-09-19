@@ -66,8 +66,8 @@ static const RoleItem RoleItems[] = {
    {"trader01", "TraderRoom01",  {{"PoOrder", "trader"}}},
    {"dealer01", "DealerRoom01",  {{"PoOrder", "dealer"}}},
 };
-#define kSPL      fin9_kCSTR_CELLSPL
-#define kROWSPL   fin9_kCSTR_ROWSPL
+#define kSPL      fon9_kCSTR_CELLSPL
+#define kROWSPL   fon9_kCSTR_ROWSPL
 
 static const char kGridViewRoleMgr[] =
 "admin"    kSPL "Administrator" kROWSPL

@@ -40,11 +40,9 @@ struct WsSeedVisitor::SeedVisitor : public seed::SeedVisitor {
    void OnTicketRunnerDone(seed::TicketRunner& runner, DcQueue&& extmsg) override {
       if (auto ws = this->GetWsSeedVisitor()) {
          RevBufferList rbuf{128, std::move(extmsg)};
-         RevPrint(rbuf, runner.Bookmark_, ' ', runner.Path_, '\n');//first list: [seedName]
+         RevPrint(rbuf, runner.Bookmark_, runner.Path_, '\n');//first list: [seedName]
          if (runner.OpResult_ < seed::OpResult::no_error)
             RevPrint(rbuf, "e=", runner.OpResult_, ':', seed::GetOpResultMessage(runner.OpResult_), '\n');
-         else
-            RevPrint(rbuf, '>');
          ws->Send(WebSocketOpCode::TextFrame, std::move(rbuf));
       }
    }
@@ -87,7 +85,8 @@ struct WsSeedVisitor::SeedVisitor : public seed::SeedVisitor {
       Output::gvSize(rbuf, res.ContainerSize_, ',');
       this->OnTicketRunnerDone(runner, DcQueueList{rbuf.MoveOut()});
    }
-   void OnTicketRunnerCommand(seed::TicketRunnerCommand&, const seed::SeedOpResult& res, StrView msg) override {
+   void OnTicketRunnerCommand(seed::TicketRunnerCommand& runner, const seed::SeedOpResult& res, StrView msg) override {
+      this->OnTicketRunnerDone(runner, DcQueueFixedMem{msg});
    }
    void OnTicketRunnerSetCurrPath(seed::TicketRunnerCommand& runner) override {
       this->OnTicketRunnerDone(runner, DcQueueFixedMem{});
@@ -200,7 +199,23 @@ io::RecvBufferSize WsSeedVisitor::OnWebSocketMessage() {
          req.Runner_ = new PrintLayout(*this->Visitor_, req.SeedName_);
    }
    if (req.Runner_) {
-      req.Runner_->Bookmark_.assign(req.Command_.begin(), req.CommandArgs_.end());
+      size_t cmdsz = static_cast<size_t>(req.CommandArgs_.end() - req.Command_.begin());
+      char*  bmbuf = static_cast<char*>(req.Runner_->Bookmark_.alloc(cmdsz + 2));
+      char   chSpl;
+      if (fon9_UNLIKELY(dynamic_cast<seed::TicketRunnerCommand*>(req.Runner_.get()))) {
+         // SeedCommand 回覆: fon9_kCSTR_CELLSPL + "command" + fon9_kCSTR_CELLSPL + "seedName"
+         // 因為 command 可能會有 '/', ' ' 之類的字元, 所以用 fon9_kCSTR_CELLSPL 分隔比較保險.
+         // 因為 command 指令可能為任意字串(無控制字元), 無法保證不跟一般指令(pl, gv...)重複,
+         // 所以使用 fon9_kCSTR_CELLSPL 開頭當作雨衣般指令的區別.
+         *bmbuf = chSpl = *fon9_kCSTR_CELLSPL;
+      }
+      else {
+         // 一般指令(pl, gv...) 回覆: ">command,args" + " " + "path"
+         *bmbuf = '>';
+         chSpl = ' ';
+      }
+      memcpy(bmbuf + 1, req.Command_.begin(), cmdsz);
+      bmbuf[cmdsz + 1] = chSpl;
       req.Runner_->Run();
    }
    else {

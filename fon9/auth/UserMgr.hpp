@@ -116,7 +116,8 @@ public:
    const FnHashPass  FnHashPass_;
 
    UserTree(seed::Fields&& fields, FnHashPass fnHashPass)
-      : base("User", "UserId", std::move(fields))
+      : base("User", "UserId", std::move(fields),
+             seed::TabFlag::Writable | seed::TabFlag::NoSapling | seed::TabFlag::HasSameCommandsSet)
       , FnHashPass_{std::move(fnHashPass)} {
    }
 

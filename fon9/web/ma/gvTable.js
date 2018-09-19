@@ -241,7 +241,7 @@ class GridView {
       return this.gvTable.rows.namedItem(key);
    }
    /** 取得 cell 所在行的 key text. */
-   getKeyValue(cell) {
+   getKeyText(cell) {
       let ridx = cell.parentNode.rowIndex;
       return ridx <= 0 ? "" : this.gvTable.rows[ridx].cells[0].textContent;
    }

@@ -235,5 +235,8 @@ constexpr bool IsEnumContainsAny(enum_t a, enum_t b) { \
 } \
 //----- fon9_ENABLE_ENUM_BITWISE_OP();
 
+#define fon9_kCSTR_CELLSPL "\x01"
+#define fon9_kCSTR_ROWSPL  "\n"
+
 } // namespace
 #endif//__fon9_Utility_hpp__

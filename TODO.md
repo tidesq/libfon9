@@ -19,13 +19,12 @@ libfon9 TODO list
   * 例如: 已有一個 `商品資料表`，則現有程式碼不變，
     只要設計一個: 連接 `root` 與 `商品資料表` 的 `entry`，就可以透過該 entry 管理 `商品資料表`。
 * WebUI
-  * Seed command: command list(help info), contextmenu...
-  * hide column(field)
-  * 根據欄位 typeid 決定 cell text align.
   * NeedsApply:
     * 使用「套用」方式處理資料異動。
     * 主管確認機制。
   * 資料量太大時的顯示方式(分頁? 捲動時自動載入?)
+  * hide column(field)
+  * 根據欄位 typeid 決定 cell text align.
   * Column:
     * resize:
       * maybe use <colgroup> & <col> & {resize:horizontal}

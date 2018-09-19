@@ -110,7 +110,7 @@ SeedFairy::Request::Request(SeedVisitor& visitor, StrView cmdln) {
    case '.':
    case '~':
       this->SeedName_ = this->CommandArgs_;
-      this->Command_ = cmdln;
+      this->Command_ = this->CommandArgs_ = cmdln;
       this->Runner_ = new TicketRunnerCommand(visitor, this->SeedName_, cmdln);
       return;
    }

@@ -114,10 +114,8 @@ struct GridViewResult {
       kNotSupported = static_cast<size_t>(-1)
    };
    enum : char {
-      #define fin9_kCSTR_CELLSPL "\x01"
-      #define fin9_kCSTR_ROWSPL  "\n"
-      kCellSplitter = *fin9_kCSTR_CELLSPL,
-      kRowSplitter = *fin9_kCSTR_ROWSPL,
+      kCellSplitter = *fon9_kCSTR_CELLSPL,
+      kRowSplitter = *fon9_kCSTR_ROWSPL,
    };
 
    template <class Container>

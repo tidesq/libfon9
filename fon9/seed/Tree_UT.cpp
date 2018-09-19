@@ -11,8 +11,8 @@
 
 //--------------------------------------------------------------------------//
 
-#define kSPL      fin9_kCSTR_CELLSPL
-#define kROWSPL   fin9_kCSTR_ROWSPL
+#define kSPL      fon9_kCSTR_CELLSPL
+#define kROWSPL   fon9_kCSTR_ROWSPL
 
 // 因為在 64 位元系統裡面, 保證在 23 bytes 之內不用分配記憶體.
 // 而商品 Id、姓名之類的字串，一般而言也不會太長.

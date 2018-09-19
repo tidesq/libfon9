@@ -106,10 +106,9 @@
       <textarea id="clipboard" style="display: none"></textarea>
    </div>
 
-   <script>
-   // public:
-      /// 當 KeyCell click 時觸發 onKeyCellClick(currPath, key, tabName);
-      var onKeyCellClick;
+   <!-- public --> <script>
+      /// 當 KeyCell click 時觸發 onLoadLayout(currPath, key, tabName);
+      var onLoadLayout;
       /// 當 Tab click 或需要 reload 時觸發 onLoadGridView(currPath, startkey, tabName);
       /// startkey 有可能是 undefined, 表示從第一筆開始;
       var onLoadGridView;
@@ -119,6 +118,8 @@
       var onFieldChanged;
       /// 當想要刪除 row 時觸發 onDeleteRow(currPath, key);
       var onDeleteRow;
+      /// 執行 seed 命令, onSeedCommand(seedName, command);
+      var onSeedCommand;
 
       function clearAll() {
          currPath = '';
@@ -128,8 +129,8 @@
          document.getElementById('btnReload').removeAttribute('title');
          gview.clearAll();
       }
-      function renderLayout(path, strLayout) {
-         if (currPath == path)
+      function renderLayout(path, strLayout, errmsg) {
+         if (currPath == path || errmsg)
             return;
          gview.clearAll();
          currPath = path;
@@ -163,8 +164,8 @@
          // 使用首個 tab, 並載入 gridview.
          setCurrTabIdx(0);
       }
-      function renderGridView(args, path, res) {
-         if (path != currPath)
+      function renderGridView(args, path, res, errmsg) {
+         if (path != currPath || errmsg)
             return;
          if (parseTabIdx(args) != currTabIdx)
             return;
@@ -183,7 +184,9 @@
          // 載入表格資料之後, 把第一格設為 focus.
          gview.setFirstCellFocus();
       }
-      function updateRow(args, path, res) {
+      function updateRow(args, path, res, errmsg) {
+         if (errmsg)
+            return;
          let row = searchRowByFullPathName(path);
          if (!row)
             return;
@@ -205,11 +208,31 @@
             ++i;
          }
       }
-      function seedRemoved(seedName, info) {
+      function seedRemoved(seedName, info, errmsg) {
+         if (errmsg)
+            return;
          gview.removeRow(searchRowByFullPathName(seedName));
       }
-
-   // private:
+      function seedCommandResult(res, errmsg) {
+         if (res[0] == '?') {
+            buildSeedMenuItems(res, errmsg);
+            return;
+         }
+         if (!errmsg)
+            errmsg = '';
+         // res = cmd + '\x01' + seedName + '\n' + result;
+         let pln = res.indexOf('\n');
+         if (pln >= 0) {
+            errmsg += res.substring(pln);
+            res = res.substring(0, pln);
+            if (errmsg.trim() === '')
+               errmsg = "\nSeedCommand done.";
+         }
+         res = res.replace('\x01', '\n');
+         alert(res + '\n' + errmsg);
+      }
+   </script>
+   <!-- private --> <script>
       // 觸發 onLoadGridView() 事件.
       let emitLoadGridView = function (startkey) {
          if (onLoadGridView)
@@ -237,6 +260,9 @@
       // tab, field 這類物件都有 name, title 屬性, 但若 title 為空, 則應使用 name 來顯示該物件.
       let getTitleOrName = function (n) {
          return (n.title ? n.title : n.name);
+      }
+      let getSeedName = function(cell) {
+         return mergePathKeyTab(currPath, gview.getKeyText(cell), getCurrTabName());
       }
       // 配合 renderLayout(), 在 tab 區, 增加選擇 tab 的 UI元素.
       let addTabElements = function (tabIdx, tab) {
@@ -325,7 +351,7 @@
       }
       // 判斷 accessRight 是否有寫入權限.
       let hasWriteAccess = function () {
-         return (accessRights & 0x02);
+         return (accessRights & 0x02); // AccessRight::Write;
       }
 
       // 若 path 為 currPath, 則解析 path 最後的 key^tab;
@@ -377,7 +403,7 @@
             return;
          // if (!fieldValues) 需要顯示加入的欄位嗎?
          fieldValues = '';
-         let currKey = gview.getKeyValue(gview.selectedCell);
+         let currKey = gview.getKeyText(gview.selectedCell);
          let key = prompt("在 " + getTitleOrName(layout.tabs[currTabIdx])
                           + " 新增一筆資料\n" + fieldValues + "\n請輸入要新增的「"
                           + getTitleOrName(layout.key) + "」"
@@ -396,14 +422,13 @@
       // 移除 row, 若 !cell (btnDeleteRow.onclick 事件) 則使用 gview.selectedCell
       let deleteRow = function (cell) {
          if (onDeleteRow && !document.getElementById('btnDeleteRow').disabled)
-            onDeleteRow(currPath, gview.getKeyValue(cell ? cell : gview.selectedCell));
+            onDeleteRow(currPath, gview.getKeyText(cell ? cell : gview.selectedCell));
       }
 
       // 將 row 的內容複製到 clipboard, lines[0]=curPath, lines[1]="fld=`value`,...";
       let rowToClipboard = function (cell) {
+         let info = getSeedName(cell) + '\n';
          let cells = cell.parentNode.cells;
-         let info = mergePathKeyTab(currPath, gview.getKeyValue(cell), getCurrTabName())
-                  + '\n';
          let fields = layout.tabs[currTabIdx].fields;
          for (let i = 1; i < cells.length; ++i) {
             if (i != 1)
@@ -421,19 +446,21 @@
          return undefined;
       }
    </script>
-   <script type="module">
+   <!-- create GridView UI element --> <script type="module">
       import {GridView} from "./gvTable.js"
       gview = new GridView(document.body);
 
       // 在 key cell click 時, 切換到 sapling.
       gview.onKeyCellClick = function(cell) {
-         if (onKeyCellClick)
-            onKeyCellClick(currPath, cell.textContent, getCurrTabName());
+         if (layout.tabs[currTabIdx].flags & 0x04) // TabFlag::NoSapling;
+            return;
+         if (onLoadLayout)
+            onLoadLayout(currPath, cell.textContent, getCurrTabName());
       }
 
       // 在 selected cell 變動時, 變更相關 UI 元素的 title(hint) 訊息.
       gview.onSelectedCellChanged = function(cell) {
-         document.getElementById('btnDeleteRow').title = 'delete: \"' + gview.getKeyValue(cell) + '"';
+         document.getElementById('btnDeleteRow').title = 'delete: \"' + gview.getKeyText(cell) + '"';
       }
 
       // 在 gview.onEditConfirm() 觸發 onFieldChanged() 異動訊息,
@@ -443,7 +470,7 @@
          if (onFieldChanged) {
             let fieldValues = layout.tabs[currTabIdx].fields[cell.cellIndex - 1].name
                             + '=`' + cell.textContent.replace(/(?:\r\n|\r|\n)/g, ' ') + '`';
-            onFieldChanged(currPath, gview.getKeyValue(cell), getCurrTabName(), fieldValues);
+            onFieldChanged(currPath, gview.getKeyText(cell), getCurrTabName(), fieldValues);
          }
          cell.textContent = beforeText;
       }
@@ -499,6 +526,119 @@
             return false;
          }
          return true;
+      }
+
+      // 使用「oncontextmenu 事件」處理 SeedCommand.
+      gview.gvTable.oncontextmenu = gvTable_oncontextmenu;
+   </script>
+   <!-- ContextMenu for SeedCommand -->
+   <div id="formSeedMenu" class="fon9-fullWindowBack" oncontextmenu="return false;">
+      <div id="divSeedMenu" class="fon9-contextMenu" tabindex="0" onblur="closeSeedContextMenu();">
+         <div id="divSeedMenuTitle" class="fon9-contextMenuTitle"></div>
+         <div id="divSeedMenuItems"></div>
+      </div>
+   </div>
+   <script>
+      let prevPathCommandsSet;
+      function gvTable_oncontextmenu(ev) {
+         let cell = ev.target;
+         if (cell != gview.selectedCell)
+            cell.focus();
+         if (cell.parentNode.rowIndex >= gview.getFirstBodyRowIndex()
+         && !cell.isContentEditable
+         && !(layout.tabs[currTabIdx].flags & 0x20) // TabFlag::NoSeedCommand
+         && (accessRights & 0x04) // AccessRight::Exec;
+         && onSeedCommand) {
+            let curSeedPath = mergePathKeyTab(currPath, '', getCurrTabName());
+            if ((layout.tabs[currTabIdx].flags & 0x10) // TabFlag::HasSameCommandsSet = 0x10;
+             && curSeedPath == prevPathCommandsSet
+             && divSeedMenuItems.innerHTML) {
+               // 只需查一次可用指令: 使用上次查到的 divSeedMenuItems;
+            }
+            else {
+               prevPathCommandsSet = curSeedPath;
+               divSeedMenuItems.innerHTML = '';
+               onSeedCommand(getSeedName(cell), "?");
+            }
+            displaySeedContextMenu(ev);
+         }
+         return false;
+      }
+      function displaySeedContextMenu(ev) {
+         formSeedMenu.style.display = "block"; // 要先設定 display, 底下的 offsetWidth, offsetHeight 才會正確.
+         divSeedMenuTitle.textContent = gview.getKeyText(ev.target);
+         divSeedMenu.focus();
+         let varea = document.documentElement;
+         let left = ev.clientX, right = varea.clientWidth - divSeedMenu.offsetWidth;
+         divSeedMenu.style.left = (left > right ? right : left) + "px";
+         let top = ev.clientY, bottom = varea.clientHeight - divSeedMenu.offsetHeight;
+         divSeedMenu.style.top = (top > bottom ? bottom : top) + "px";
+      }
+      function adjustSeedContextMenu() {
+         let varea = document.documentElement;
+         let right = varea.clientWidth - divSeedMenu.offsetWidth;
+         if (divSeedMenu.offsetLeft > right)
+            divSeedMenu.style.left = right + "px";
+         let bottom = varea.clientHeight - divSeedMenu.offsetHeight;
+         if (divSeedMenu.offsetTop > bottom)
+            divSeedMenu.style.top = bottom + "px";
+      }
+      function closeSeedContextMenu() {
+         if (formSeedMenu.style.display != 'none') {
+            gview.gvArea.disabled = false;
+            formSeedMenu.style.display = 'none';
+            if (gview.selectedCell)
+               gview.selectedCell.focus();
+         }
+      }
+      window.onclick = function (event) {
+         if (event.target == formSeedMenu)
+            closeSeedContextMenu();
+      }
+      window.onkeyup = function(event) {
+         if (event.keyCode == 27)//escape
+            closeSeedContextMenu();
+      }
+      function buildSeedMenuItems(res, errmsg) {
+         if (formSeedMenu.style.display == 'none')
+            return;
+         let cmds = res.split('\n');
+         let seedName = cmds[0].substring(2); // remove "?\x01" = seedName;
+         if (seedName != getSeedName(gview.selectedCell))
+            return;
+         let mitem;
+         if (errmsg) {
+            mitem = document.createElement('div');
+            mitem.textContent = errmsg;
+            mitem.className = 'fon9-contextMenuItem';
+            mitem.onclick = closeSeedContextMenu;
+            divSeedMenuItems.appendChild(mitem);
+            adjustSeedContextMenu();
+            return;
+         }
+         for (let i = 1; i < cmds.length; ++i) {
+            let cmd = cmds[i].split('\x01');
+            if (cmd.length >= 3) // cmd + DisplayText + Prompt(for input text)
+               cmd[1] += '\u2026'; // "..."
+            mitem = document.createElement('div');
+            mitem.seedcmd = cmd;
+            mitem.textContent = (cmd.length > 1 ? cmd[1] : cmd[0]);
+            mitem.className = 'fon9-contextMenuItem';
+            divSeedMenuItems.appendChild(mitem);
+            mitem.onclick = function (ev) {
+               closeSeedContextMenu();
+               let seedcmd = ev.target.seedcmd;
+               let cmd = seedcmd[0];
+               if (seedcmd.length >= 3) {
+                  let args = prompt(seedcmd[2]);
+                  if (args == null)
+                     return;
+                  cmd += ' ' + args;
+               }
+               onSeedCommand(seedName, cmd);
+            }
+         }
+         adjustSeedContextMenu();
       }
    </script>
 </body>
