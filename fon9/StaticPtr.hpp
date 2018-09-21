@@ -18,6 +18,9 @@ public:
    StaticPtr(T* p = nullptr) : Ptr_{p} {
    }
    ~StaticPtr() {
+      this->dispose();
+   }
+   void dispose() {
       this->reset(reinterpret_cast<T*>(1));
    }
    void reset(T* p) {

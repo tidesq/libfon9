@@ -130,7 +130,8 @@ void MemBlockCenter::EmitOnTimer(TimerEntry* timer, TimeStamp) {
 using MemBlockCenterSP = intrusive_ptr<MemBlockCenter>;
 static MemBlockCenterSP GetMemBlockCenter() {
    static MemBlockCenterSP MemBlockCenter{new impl::MemBlockCenter{}};
-   return MemBlockCenter;
+   // 如果系統正在結束 MemBlockCenter 已死, 此時應傳回 nullptr, 然後使用 MemBlock::UseMalloc();
+   return MemBlockCenter->use_count() ? MemBlockCenter : nullptr;
 }
 
 fon9_API bool MemBlockInit(MemBlockSize size, size_t reserveFreeListCount, size_t maxNodeCount) {
@@ -150,8 +151,8 @@ using namespace impl;
 class MemBlock::TCache {
    fon9_NON_COPY_NON_MOVE(TCache);
    TCacheLevelPools        Levels_;
-   const MemBlockCenterSP  Center_;
 public:
+   const MemBlockCenterSP  Center_;
    TCache() : Center_{GetMemBlockCenter()} {
    }
    ~TCache() {
@@ -219,12 +220,17 @@ static thread_local StaticPtr<MemBlock::TCache> TCache_;
 //--------------------------------------------------------------------------//
 
 byte* MemBlock::Alloc(MemBlockSize sz) {
-   if (fon9_UNLIKELY(!TCache_)) {
-      if (TCache_.IsDisposed())
-         return TCache::UseMalloc(*this, sz);
-      TCache_.reset(new MemBlock::TCache);
+   if (fon9_LIKELY(TCache_)) {
+__TCACHE_READY:
+      return TCache_->Alloc(*this, sz);
    }
-   return TCache_->Alloc(*this, sz);
+   if (!TCache_.IsDisposed()) {
+      TCache_.reset(new MemBlock::TCache);
+      if (TCache_->Center_)
+         goto __TCACHE_READY;
+      TCache_.dispose();
+   }
+   return TCache::UseMalloc(*this, sz);
 }
 void MemBlock::FreeBlock(void* mem, MemBlockSize sz) {
    if (fon9_LIKELY(mem)) {
