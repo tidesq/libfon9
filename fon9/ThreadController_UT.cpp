@@ -46,7 +46,9 @@ struct WorkContentBase : public fon9::WorkContentBase {
             this->MessageSum_ += v;
          lk.lock();
       }
-      return this->GetWorkerState() == fon9::WorkerState::Disposing ? fon9::WorkerState::Disposed : fon9::WorkerState::Sleeping;
+      return this->GetWorkerState() >= fon9::WorkerState::Disposing
+               ? fon9::WorkerState::Disposed
+               : fon9::WorkerState::Sleeping;
    }
 
    void CheckResult(const char* msg, WorkMessageType messageSum) const {

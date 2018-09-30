@@ -12,6 +12,7 @@ enum class WorkerState {
    Ringing,
    Working,
    Disposing,
+   DisposeWorking,
    Disposed,
 };
 
@@ -37,14 +38,13 @@ public:
       }
       return false;
    }
-   /// \retval true  現在狀態為 < Disposing, 則設為 Disposing, 然後返回 true.
-   /// \retval false 現在狀態 >= Disposing, 不改變狀態.
+   /// \retval true  現在狀態為 < WorkerState::Disposing, 則設為 WorkerState::Disposing 或 WorkerState::DisposeWorking;
+   /// \retval false 現在狀態 >= WorkerState::Disposing, 不改變狀態.
    bool SetToDisposing() {
-      if (this->State_ < WorkerState::Disposing) {
-         this->State_ = WorkerState::Disposing;
-         return true;
-      }
-      return false;
+      if (this->State_ >= WorkerState::Disposing)
+         return false;
+      this->State_ = (this->State_ == WorkerState::Working ? WorkerState::DisposeWorking : WorkerState::Disposing);
+      return true;
    }
 
    /// 正在喚醒「非同步工作」, 一旦喚醒就會開始工作。
@@ -103,11 +103,12 @@ public:
 ///         lk.unlock();
 ///         處理工作.
 ///         lk.lock();
-///         return fon9::WorkerState::Working  = 還有工作, 返回後檢查現在狀態, 如果允許(現在非 Disposed), 則立即繼續工作;
-///                其他 = 新的狀態, 結束此次工作階段:
+///         return 還有工作, 返回後檢查現在狀態, 如果允許(現在非 Disposed), 則立即繼續工作
+///                  fon9::WorkerState::Working
+///                  fon9::WorkerState::DisposeWorking
+///                其他: 新的狀態, 結束此次工作階段:
 ///                  fon9::WorkerState::Sleeping  = 事情全部做完;
 ///                  fon9::WorkerState::Ringing   = 返回前已經調用過 this->NotifyOne(); or this->MakeCall(); or ...
-///                  fon9::WorkerState::Disposing = 返回前已經呼叫 this->Dispose();
 ///                  fon9::WorkerState::Disposed  = 已進入結束狀態, 無法再透過 Worker::TakeCall() 進入 this->TakeCall(lk);
 ///      }
 ///   };
@@ -154,12 +155,14 @@ public:
       default:
       case WorkerState::Working:
       case WorkerState::Disposed:
-         return ctx->GetWorkerState();
+      case WorkerState::DisposeWorking:
+         return res;
       case WorkerState::Sleeping:
       case WorkerState::Ringing:
          ctx->SetWorkerState(WorkerState::Working);
          break;
       case WorkerState::Disposing:
+         ctx->SetWorkerState(WorkerState::DisposeWorking);
          break;
       }
 
@@ -171,8 +174,8 @@ public:
             ctx->ClrTakingCallThreadId();
             return cur;
          }
-         assert(cur == WorkerState::Working || cur == WorkerState::Disposing);
-      } while (res == WorkerState::Working || res == WorkerState::Disposing);
+         assert(cur == WorkerState::Working || cur == WorkerState::DisposeWorking);
+      } while (res == WorkerState::Working || res == WorkerState::DisposeWorking);
       ctx->SetWorkerState(res);
       ctx->ClrTakingCallThreadId();
       return res;
