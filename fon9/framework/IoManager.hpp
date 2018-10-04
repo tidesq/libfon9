@@ -61,13 +61,12 @@ public:
       struct TreeOp;
       struct PodOp;
       static seed::LayoutSP MakeLayout();
+      seed::TreeSP TabTreeOp_; // for NeedsApply.
    public:
       const IoManagerSP  IoManager_;
-      Tree(const IoManagerArgs& args)
-         : base{MakeLayout()}
-         , IoManager_{new IoManager{args}} {
-      }
+      Tree(const IoManagerArgs& args);
       void OnTreeOp(seed::FnTreeOp fnCallback) override;
+      void OnTabTreeOp(seed::FnTreeOp fnCallback) override;
       void OnParentSeedClear() override;
    };
 

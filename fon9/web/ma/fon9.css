@@ -19,7 +19,7 @@ body{margin:0; line-height:24px; font:14px Helvetica,微软雅黑,Tahoma,Arial,s
 
 .fon9-ext-dialog{border:none; display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index: 1000;}
 
-.fon9-fullWindowBack{
+.fon9-fullWindowMask{
   display: none;
   position: fixed;
   z-index: 1001; /* Sit on top */

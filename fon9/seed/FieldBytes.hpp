@@ -49,6 +49,7 @@ public:
    virtual OpResult SetNull(const RawWr& wr) const override;
 
    virtual OpResult Copy(const RawWr& wr, const RawRd& rd) const override;
+   virtual int Compare(const RawRd& lhs, const RawRd& rhs) const override;
 };
 
 template <size_t arysz>
@@ -104,6 +105,7 @@ public:
    virtual OpResult SetNull(const RawWr& wr) const override;
 
    virtual OpResult Copy(const RawWr& wr, const RawRd& rd) const override;
+   virtual int Compare(const RawRd& lhs, const RawRd& rhs) const override;
 };
 
 inline FieldSPT<FieldByteVector> MakeField(Named&& named, int32_t ofs, ByteVector&) {

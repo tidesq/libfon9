@@ -98,6 +98,11 @@ public:
       this->PutValue(wr, this->GetValue(rd));
       return OpResult::no_error;
    }
+   virtual int Compare(const RawRd& lhs, const RawRd& rhs) const override {
+      auto L = this->GetValue(lhs);
+      auto R = this->GetValue(rhs);
+      return (L < R) ? -1 : (L == R) ? 0 : 1;
+   }
 };
 
 template class FieldInt<int8_t> fon9_API;

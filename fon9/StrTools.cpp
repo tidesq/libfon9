@@ -196,7 +196,7 @@ static const char* SbrFindSplit(const char* pbeg, const char* pend, char chDelim
    return nullptr;
 }
 
-fon9_API StrView SbrFetchFieldNoTrim(StrView& src, char chDelim, const StrBrArg& brArg) {
+fon9_API StrView SbrFetchNoTrim(StrView& src, char chDelim, const StrBrArg& brArg) {
    if (const char* pDelim = SbrFindSplit(src.begin(), src.end(), chDelim, brArg)) {
       StrView retval{src.begin(), pDelim};
       src.SetBegin(pDelim + 1);
@@ -208,15 +208,17 @@ fon9_API StrView SbrFetchFieldNoTrim(StrView& src, char chDelim, const StrBrArg&
 }
 
 fon9_API StrView SbrFetchInsideNoTrim(StrView& src, const StrBrArg& brArg) {
-   const char* pbeg = src.begin();
-   if (const StrBrPair* br = brArg.Find(*pbeg)) {
-      ++pbeg;
-      const char* pBrEnd = SbrFindEnd(*br, pbeg, src.end(), brArg);
-      if (pBrEnd)
-         src.SetBegin(pBrEnd + 1);
-      else
-         src.SetBegin(pBrEnd = src.end());
-      return StrView{pbeg, pBrEnd};
+   if (src.size() > 0) {
+      const char* pbeg = src.begin();
+      if (const StrBrPair* br = brArg.Find(*pbeg)) {
+         ++pbeg;
+         const char* pBrEnd = SbrFindEnd(*br, pbeg, src.end(), brArg);
+         if (pBrEnd)
+            src.SetBegin(pBrEnd + 1);
+         else
+            src.SetBegin(pBrEnd = src.end());
+         return StrView{pbeg, pBrEnd};
+      }
    }
    return StrView{nullptr};
 }

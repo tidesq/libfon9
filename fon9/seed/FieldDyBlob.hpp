@@ -48,6 +48,7 @@ public:
    virtual OpResult PutNumber(const RawWr& wr, FieldNumberT num, DecScaleT decScale) const override;
 
    virtual OpResult Copy(const RawWr& wr, const RawRd& rd) const override;
+   virtual int Compare(const RawRd& lhs, const RawRd& rhs) const override;
 };
 
 } } // namespaces

@@ -66,6 +66,7 @@ struct WsSeedVisitor::SeedVisitor : public seed::SeedVisitor {
    }
 
    void OnTicketRunnerRemoved(seed::TicketRunnerRemove& runner, const seed::PodRemoveResult& res) override {
+      (void)res; assert(runner.OpResult_ == res.OpResult_);
       this->OnTicketRunnerDone(runner, DcQueueFixedMem{});
    }
    void OnTicketRunnerGridView(seed::TicketRunnerGridView& runner, seed::GridViewResult& res) override {
@@ -86,6 +87,7 @@ struct WsSeedVisitor::SeedVisitor : public seed::SeedVisitor {
       this->OnTicketRunnerDone(runner, DcQueueList{rbuf.MoveOut()});
    }
    void OnTicketRunnerCommand(seed::TicketRunnerCommand& runner, const seed::SeedOpResult& res, StrView msg) override {
+      (void)res; assert(runner.OpResult_ == res.OpResult_);
       this->OnTicketRunnerDone(runner, DcQueueFixedMem{msg});
    }
    void OnTicketRunnerSetCurrPath(seed::TicketRunnerCommand& runner) override {

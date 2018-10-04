@@ -57,6 +57,9 @@ OpResult FieldChars::Copy(const RawWr& wr, const RawRd& rd) const {
    memcpy(wr.GetCellPtr<char>(*this), rd.GetCellPtr<char>(*this), this->Size_);
    return OpResult::no_error;
 }
+int FieldChars::Compare(const RawRd& lhs, const RawRd& rhs) const {
+   return memcmp(lhs.GetCellPtr<char>(*this), rhs.GetCellPtr<char>(*this), this->Size_);
+}
 
 //--------------------------------------------------------------------------//
 
@@ -65,7 +68,10 @@ StrView FieldChar1::GetTypeId(NumOutBuf&) const {
 }
 
 void FieldChar1::CellRevPrint(const RawRd& rd, StrView fmt, RevBuffer& out) const {
-   FmtRevPrint(fmt, out, this->GetValue(rd));
+   if (char ch = this->GetValue(rd))
+      FmtRevPrint(fmt, out, ch);
+   else if (!fmt.empty())
+      RevPrint(out, StrView{}, FmtDef{fmt});
 }
 
 OpResult FieldChar1::StrToCell(const RawWr& wr, StrView value) const {
@@ -76,6 +82,11 @@ OpResult FieldChar1::StrToCell(const RawWr& wr, StrView value) const {
 OpResult FieldChar1::Copy(const RawWr& wr, const RawRd& rd) const {
    *wr.GetCellPtr<char>(*this) = *rd.GetCellPtr<char>(*this);
    return OpResult::no_error;
+}
+int FieldChar1::Compare(const RawRd& lhs, const RawRd& rhs) const {
+   char L = *lhs.GetCellPtr<char>(*this);
+   char R = *rhs.GetCellPtr<char>(*this);
+   return (L < R) ? -1 : (L == R) ? 0 : 1;
 }
 
 } } // namespaces

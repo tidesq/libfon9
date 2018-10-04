@@ -105,7 +105,6 @@ struct fon9_API FieldsMaker {
    /// exProp = 移除大括號後的字串.
    /// 預設不支援, 傳回: OpResult::not_supported_cmd
    virtual OpResult OnFieldExProperty(Field& fld, StrView exProp);
-   
 };
 
 /// \ingroup seed
@@ -115,9 +114,10 @@ inline OpResult MakeFields(StrView& fldcfg, char chSpl, char chTail, Fields& fie
 }
 
 /// \ingroup seed
-/// 將 field 的設定(不含 Named) 加到 fldcfg 尾端.
-/// 格式: `Type` 或 `(flags) Type` 尾端不含空白
-fon9_API void AppendFieldConfig(std::string& fldcfg, const Field& field);
+/// 將 field 的設定(包含 Named) 加到 fldcfg 尾端.
+/// - 格式: `Type Named` 或 `(flags) Type Named` 尾端不含空白
+/// - 若 chTail == -1; 則表示不加尾端字元.
+fon9_API void AppendFieldConfig(std::string& fldcfg, const Field& field, char chSpl, int chTail);
 /// \ingroup seed
 /// 將 fields 的設定(包含 Named) 加到 fldcfg 尾端.
 /// 格式: `Type FieldName|Title|Description\n` 或 `(flags) Type FieldName|Title|Description\n`

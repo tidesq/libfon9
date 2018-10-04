@@ -75,6 +75,9 @@ public:
       wr.GetMemberCell<StringT>(*this) = rd.GetMemberCell<StringT>(*this);
       return OpResult::no_error;
    }
+   virtual int Compare(const RawRd& lhs, const RawRd& rhs) const override {
+      return lhs.GetMemberCell<StringT>(*this).compare(rhs.GetMemberCell<StringT>(*this));
+   }
 };
 
 template <class StringT, class FieldT = FieldString<decay_t<StringT>>>

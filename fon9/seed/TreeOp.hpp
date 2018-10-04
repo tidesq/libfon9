@@ -4,6 +4,7 @@
 #define __fon9_seed_TreeOp_hpp__
 #include "fon9/seed/RawRd.hpp"
 #include "fon9/buffer/RevBufferList.hpp"
+#include "fon9/StrVref.hpp"
 
 namespace fon9 { namespace seed {
 fon9_WARN_DISABLE_PADDING;
@@ -45,95 +46,22 @@ using FnPodRemoved = std::function<void(const PodRemoveResult& res)>;
 
 //--------------------------------------------------------------------------//
 
-struct GridViewRequest {
-   /// 在 TreeOp::GetGridView() 實作時要注意:
-   /// - 如果要切到另一 thread 處理:
-   ///   若 OrigKey_ 不是 TreeOp::kStrKeyText_Begin_; 或 TreeOp::kStrKeyText_End_;
-   ///   則 OrigKey_ **必須** 要用 std::string 複製一份.
-   StrView  OrigKey_{nullptr};
-
-   /// nullptr: 只取出 Key.
-   /// !nullptr: 指定 Tab.
-   Tab*     Tab_{nullptr};
-
-   /// 用 ifind = lower_bound(OrigKey_) 之後.
-   /// ifind 移動幾步之後才開始抓取資料;
-   int16_t  Offset_{0};
-
-   /// 最多取出幾筆資料, 0 = 不限制(由實作者自行決定).
-   uint16_t MaxRowCount_{0};
-
-   /// GridViewResult::GridView_ 最多最大容量限制, 0則表示不限制.
-   /// 實際取出的資料量可能 >= MaxBufferSize_;
-   uint32_t MaxBufferSize_{1024 * 1024};
-
-   GridViewRequest(const StrView& origKey) : OrigKey_{origKey} {
+struct SeedOpResult : public PodOpResult {
+   SeedOpResult(Tree& sender, OpResult res, const StrView& key, Tab* tab = nullptr)
+      : PodOpResult{sender, res, key}
+      , Tab_{tab} {
    }
+   /// - 在 FnCommandResultHandler() 裡面:
+   ///   - 若為 nullptr 表示 Pod Command 的結果.
+   ///   - 若為 !nullptr 表示 Seed Command的結果.
+   /// - 在 FnReadOp() 或 FnWriteOp()
+   ///   - 此值必定有效, 不會是 nullptr.
+   Tab*     Tab_;
 };
 
-struct GridViewResult {
-   fon9_NON_COPY_NON_MOVE(GridViewResult);
-
-   Tree*       Sender_;
-   Tab*        Tab_;
-   OpResult    OpResult_;
-
-   /// 使用 kRowSplitter 分隔行, 使用 kCellSplitter 分隔 cell.
-   std::string GridView_;
-   /// 存於 GridView_ 的最後一筆 key str.
-   StrView     LastKey_;
-
-   /// GridView_ 裡面有幾個行(Row)資料?
-   uint16_t    RowCount_{0};
-
-   /// GridView_ 裡面第一行距離 begin 多遠?
-   /// 如果不支援計算距離, 則為 GridViewResult::kNotSupported;
-   size_t      DistanceBegin_{kNotSupported};
-
-   /// GridView_ 裡面最後行距離 end 多遠?
-   /// 1 表示 this->GridView_ 裡面的最後一筆 == Container 裡面的最後一筆.
-   /// 如果不支援計算距離, 則為 GridViewResult::kNotSupported;
-   size_t      DistanceEnd_{kNotSupported};
-
-   /// Container 共有幾筆資料.
-   size_t      ContainerSize_{kNotSupported};
-
-   GridViewResult(Tree& sender, Tab* tab, OpResult res)
-      : Sender_(&sender)
-      , Tab_(tab)
-      , OpResult_{res} {
-   }
-   GridViewResult(Tree& sender, Tab* tab) : GridViewResult(sender, tab, OpResult::no_error) {
-   }
-
-   GridViewResult(OpResult res) : Sender_{nullptr}, Tab_{nullptr}, OpResult_{res} {
-   }
-
-   enum : size_t {
-      /// 如果 DistanceBegin_, DistanceEnd_ 不支援, 則等於此值.
-      kNotSupported = static_cast<size_t>(-1)
-   };
-   enum : char {
-      kCellSplitter = *fon9_kCSTR_CELLSPL,
-      kRowSplitter = *fon9_kCSTR_ROWSPL,
-   };
-
-   template <class Container>
-   auto SetContainerSize(Container& container) -> decltype(container.size(), void()) {
-      this->ContainerSize_ = container.size();
-   }
-   template <class Container>
-   void SetContainerSize(...) {
-      this->ContainerSize_ = kNotSupported;
-   }
-
-   void SetLastKey(size_t lastLinePos) {
-      std::string::size_type spl = this->GridView_.find(kCellSplitter, lastLinePos);
-      this->LastKey_ = StrView{this->GridView_.c_str() + lastLinePos,
-                               (spl == std::string::npos ? this->GridView_.size() : spl) - lastLinePos};
-   }
-};
-using FnGridViewOp = std::function<void(GridViewResult& result)>;
+using FnReadOp = std::function<void(const SeedOpResult& res, const RawRd* rd)>;
+using FnWriteOp = std::function<void(const SeedOpResult& res, const RawWr* wr)>;
+using FnCommandResultHandler = std::function<void(const SeedOpResult& res, StrView msg)>;
 
 //--------------------------------------------------------------------------//
 
@@ -175,6 +103,116 @@ static constexpr bool IsTextEnd(const StrView& k) {
 static constexpr bool IsTextBeginOrEnd(const StrView& k) {
    return IsTextBegin(k) || IsTextEnd(k);
 }
+
+//--------------------------------------------------------------------------//
+
+struct GridViewRequest {
+   /// 在 TreeOp::GetGridView() 實作時要注意:
+   /// - 如果要切到另一 thread 處理:
+   ///   若 OrigKey_ 不是 TreeOp::kStrKeyText_Begin_; 或 TreeOp::kStrKeyText_End_;
+   ///   則 OrigKey_ **必須** 要用 std::string 複製一份.
+   StrView  OrigKey_{nullptr};
+
+   /// nullptr: 只取出 Key.
+   /// !nullptr: 指定 Tab.
+   Tab*     Tab_{nullptr};
+
+   /// 用 ifind = lower_bound(OrigKey_) 之後.
+   /// ifind 移動幾步之後才開始抓取資料;
+   int16_t  Offset_{0};
+
+   /// 最多取出幾筆資料, 0 = 不限制(由實作者自行決定).
+   uint16_t MaxRowCount_{0};
+
+   /// GridViewResult::GridView_ 最多最大容量限制, 0則表示不限制.
+   /// 實際取出的資料量可能 >= MaxBufferSize_;
+   uint32_t MaxBufferSize_{1024 * 1024};
+
+   GridViewRequest(const StrView& origKey) : OrigKey_{origKey} {
+   }
+};
+struct GridViewRequestFull : public GridViewRequest {
+   GridViewRequestFull(Tab& tab) : GridViewRequest{TextBegin()} {
+      this->Tab_ = &tab;
+      this->MaxBufferSize_ = 0;
+   }
+};
+struct GridViewResult {
+   Tree*       Sender_;
+   Tab*        Tab_;
+   OpResult    OpResult_;
+
+   /// 使用 kRowSplitter 分隔行, 使用 kCellSplitter 分隔 cell.
+   std::string GridView_;
+   /// 存於 GridView_ 的最後一筆 key str.
+   StrVref     LastKey_;
+
+   /// GridView_ 裡面有幾個行(Row)資料?
+   uint16_t    RowCount_{0};
+
+   /// GridView_ 裡面第一行距離 begin 多遠?
+   /// 如果不支援計算距離, 則為 GridViewResult::kNotSupported;
+   size_t      DistanceBegin_{kNotSupported};
+
+   /// GridView_ 裡面最後行距離 end 多遠?
+   /// 1 表示 this->GridView_ 裡面的最後一筆 == Container 裡面的最後一筆.
+   /// 如果不支援計算距離, 則為 GridViewResult::kNotSupported;
+   size_t      DistanceEnd_{kNotSupported};
+
+   /// Container 共有幾筆資料.
+   size_t      ContainerSize_{kNotSupported};
+
+   GridViewResult(Tree& sender, Tab* tab, OpResult res = OpResult::no_error)
+      : Sender_(&sender)
+      , Tab_(tab)
+      , OpResult_{res} {
+   }
+   GridViewResult(OpResult res) : Sender_{nullptr}, Tab_{nullptr}, OpResult_{res} {
+   }
+
+   enum : size_t {
+      /// 如果 DistanceBegin_, DistanceEnd_ 不支援, 則等於此值.
+      kNotSupported = static_cast<size_t>(-1)
+   };
+   enum : char {
+      kCellSplitter = *fon9_kCSTR_CELLSPL,
+      kRowSplitter = *fon9_kCSTR_ROWSPL,
+      /// 用在 "^apply:tab" 分隔修改前後的 gv:
+      /// 若改前、改後資料不同, 則返回:
+      /// - 改前 gv + kRowSplitter
+      /// - kApplySplitter + "SubmitId=" + IdForApplySubmit
+      /// - 改前 gv
+      kApplySplitter = '\f',
+   };
+
+   template <class Container>
+   auto SetContainerSize(Container& container) -> decltype(container.size(), void()) {
+      this->ContainerSize_ = container.size();
+   }
+   template <class Container>
+   void SetContainerSize(...) {
+      this->ContainerSize_ = kNotSupported;
+   }
+
+   void SetLastKey(size_t lastLinePos) {
+      std::string::size_type spl = this->GridView_.find(kCellSplitter, lastLinePos);
+      this->LastKey_.SetPosSize(lastLinePos,
+         (spl == std::string::npos ? this->GridView_.size() : spl) - lastLinePos);
+   }
+   StrView GetLastKey() const {
+      return this->LastKey_.ToStrView(this->GridView_.c_str());
+   }
+};
+using FnGridViewOp = std::function<void(GridViewResult& result)>;
+
+struct GridApplySubmitRequest {
+   Tab*     Tab_;
+   /// 要 ApplySubmit 的資料表(GridView).
+   StrView  EditingGrid_;
+   /// 若 BeforeGrid_.begin() != nullptr,
+   /// 則在套用前必須檢查:「現在gv」== BeforeGrid_ 才能執行套用.
+   StrView  BeforeGrid_;
+};
 
 //--------------------------------------------------------------------------//
 
@@ -220,7 +258,6 @@ class fon9_API TreeOp {
 protected:
    ~TreeOp() {
    }
-
    TreeOp(Tree& tree) : Tree_(tree) {
    }
 
@@ -228,6 +265,7 @@ public:
    Tree& Tree_;
 
    virtual void GridView(const GridViewRequest& req, FnGridViewOp fnCallback);
+   virtual void GridApplySubmit(const GridApplySubmitRequest& req, FnCommandResultHandler fnCallback);
 
    /// 增加一個 pod.
    /// - 當 key 存在時, 視為成功, 會呼叫: fnCallback(OpResult::key_exists, op);

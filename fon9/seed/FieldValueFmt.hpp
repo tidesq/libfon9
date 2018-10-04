@@ -71,6 +71,9 @@ public:
       this->PutValue(wr, this->GetValue(rd));
       return OpResult::no_error;
    }
+   virtual int Compare(const RawRd& lhs, const RawRd& rhs) const override {
+      return this->GetValue(lhs).Compare(this->GetValue(rhs));
+   }
 };
 
 } } // namespaces

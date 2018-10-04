@@ -73,8 +73,8 @@ public:
    SimpleRawWr(Raw* raw) : RawWr(raw) {
    }
 
-   template <class Seed>
-   SimpleRawWr(Seed& seed) : RawWr(CastToRawPointer(&seed)) {
+   template <class Seed, typename SFINAE = enable_if_t<!std::is_pointer<Seed>::value, void>>
+   SimpleRawWr(Seed& seed, SFINAE* = nullptr) : RawWr(CastToRawPointer(&seed)) {
    }
 };
 

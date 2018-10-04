@@ -120,7 +120,7 @@ function gvTableCellFocus(gv, cell) {
 // 處理 cell blur 事件.
 function gvTableCellBlur(gv, cell) {
    if (gv.beforeEditText != undefined)
-      emitEditConfirm(cell);
+      emitEditConfirm(gv, cell);
    gv.beforeEditText = undefined;
    cell.ondblclick = undefined;
    cell.onblur = undefined;
@@ -137,6 +137,11 @@ function emitKeyCellClick(gv, cell) {
 function emitEditConfirm(gv, cell) {
    if (gv.onEditConfirm && gv.beforeEditText != cell.textContent)
       gv.onEditConfirm(cell, gv.beforeEditText);
+}
+
+function onclickSelectCell(gv, ev) {
+   if (gv.selectedCell)
+      gv.selectedCell.focus();
 }
 
 /** 建立 gv table.
@@ -168,6 +173,7 @@ class GridView {
    constructor(parent) {
       this.gvArea = document.createElement("div");
       this.gvArea.className = "gvArea";
+      this.gvArea.onmouseup = (ev => onclickSelectCell(this, ev));
 
       this.gvTable = document.createElement("table");
       this.gvTable.className = "gvTable";
@@ -217,12 +223,15 @@ class GridView {
       row.id = keyText;
       return row;
    }
-   /** 在 body row 尾端增加一個 UI cell, 並設定相關事件及屬性. */
+   /** 在 body row 尾端增加一個 UI cell, 並設定相關事件及屬性.
+    *  返回新增加的 cell.
+    */
    addBodyCell(row, fldValue) {
       let cell = row.insertCell(-1);
       cell.textContent = fldValue;
       cell.tabIndex = 0;
       cell.onfocus = (ev => gvTableCellFocus(this, ev.currentTarget));
+      return cell;
    }
    /** 從 gvTable 移除 row, 若有需要會自動調整 focus cell. */
    removeRow(row) {

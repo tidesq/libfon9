@@ -252,23 +252,25 @@ void SeedSession::OnTicketRunnerGridView(seed::TicketRunnerGridView& runner, see
       const char* ValPos_;
       size_t      FldIdx_;
    };
-   std::vector<FldPos>  fldPos(res.RowCount_ * fldIdx);
-   auto    iFldPosBeg = fldPos.begin();
-   auto    iFldPos = iFldPosBeg;
+   std::vector<FldPos>  fldPos;
+   fldPos.reserve((res.RowCount_ + 1) * fldIdx);
    StrView gv{&res.GridView_};
    while (!gv.empty()) {
       StrView ln = StrFetchNoTrim(gv, static_cast<char>(res.kRowSplitter));
       for (size_t L = 0; L < fmts.size(); ++L) {
          StrView val = StrFetchNoTrim(ln, static_cast<char>(res.kCellSplitter));
-         iFldPos->ValPos_ = val.begin();
-         iFldPos->FldIdx_ = L;
-         ++iFldPos;
+         FldPos  pos{val.begin(), L};
+         fldPos.push_back(pos);
          if (fmts[L].Width_ < val.size())
             fmts[L].Width_ = static_cast<FmtDef::WidthType>(val.size());
+         if (ln.empty())
+            break;
       }
    }
-   if (iFldPos != iFldPosBeg) {
+   if (!fldPos.empty()) {
       const char* pend = gv.end();
+      auto        iFldPos = fldPos.end();
+      auto        iFldPosBeg = fldPos.begin();
       for (;;) {
          --iFldPos;
          StrView val(iFldPos->ValPos_, pend);
@@ -315,9 +317,7 @@ struct SeedSession::PrintLayout : public seed::TicketRunnerTree {
          RevPrint(rbuf, "Tab[", iTab, "] ", tab->Name_, '\n');
       }
       std::string fldcfg;
-      seed::AppendFieldConfig(fldcfg, *layout->KeyField_);
-      fldcfg.push_back(' ');
-      SerializeNamed(fldcfg, *layout->KeyField_, '|', '\n');
+      seed::AppendFieldConfig(fldcfg, *layout->KeyField_, '|', '\n');
       RevPrint(rbuf, this->Path_, "\n" "KeyField: ", fldcfg);
       this->Visitor_->OnTicketRunnerDone(*this, DcQueueList{rbuf.MoveOut()});
    }

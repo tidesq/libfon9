@@ -55,7 +55,8 @@ int fon9_CAPI_CALL fon9_Blob_Set(fon9_Blob* blob, const void* mem, fon9_Blob_Siz
    blob->MemUsed_ = (uint32_t)memsz;
    if (mem)
       memmove(blob->MemPtr_, mem, memsz);
-   *((char*)(blob->MemPtr_) + memsz) = '\0';
+   if (blob->MemPtr_) // if (blob is empty && memsz==0) 就不需要填 '\0'
+      *((char*)(blob->MemPtr_) + memsz) = '\0';
    return 1;
 }
 int fon9_CAPI_CALL fon9_CompareBytes(const void* lhs, size_t lhsSize, const void* rhs, size_t rhsSize) {

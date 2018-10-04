@@ -99,11 +99,11 @@ public:
       return ByteVector{pbeg,static_cast<size_t>(reinterpret_cast<const char*>(pend) - reinterpret_cast<const char*>(pbeg))};
    }
 
-   int Compare(const ByteVector& rhs) const {
+   int compare(const ByteVector& rhs) const {
       return fon9_CompareBytes(this->begin(), this->size(), rhs.begin(), rhs.size());
    }
    bool operator< (const ByteVector& rhs) const {
-      return this->Compare(rhs) < 0;
+      return this->compare(rhs) < 0;
    }
    bool operator== (const ByteVector& rhs) const {
       size_t lsz = this->size();

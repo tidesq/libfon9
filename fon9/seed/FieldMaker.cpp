@@ -208,7 +208,7 @@ OpResult FieldsMaker::Parse(StrView& fldcfg, char chSpl, char chTail, Fields& fi
       StrView exProp;
       if (fldcfg.Get1st() == '{') {// {exProp}
          fldcfg.SetBegin(fldcfg.begin() + 1);
-         exProp = SbrFetchFieldNoTrim(fldcfg, '}');
+         exProp = SbrFetchNoTrim(fldcfg, '}');
          StrTrimHead(&fldcfg);
          StrTrim(&exProp);
       }
@@ -240,7 +240,7 @@ OpResult FieldsMaker::Parse(StrView& fldcfg, char chSpl, char chTail, Fields& fi
 
 //--------------------------------------------------------------------------//
 
-fon9_API void AppendFieldConfig(std::string& fldcfg, const Field& field) {
+fon9_API void AppendFieldConfig(std::string& fldcfg, const Field& field, char chSpl, int chTail) {
    FieldFlag flags = field.Flags_;
    if (flags != FieldFlag{}) {
       fldcfg.push_back('(');
@@ -256,15 +256,14 @@ fon9_API void AppendFieldConfig(std::string& fldcfg, const Field& field) {
    }
    fon9::NumOutBuf nbuf;
    field.GetTypeId(nbuf).AppendTo(fldcfg);
+   fldcfg.push_back(' ');
+   SerializeNamed(fldcfg, field, chSpl, chTail);
 }
 
 fon9_API void AppendFieldsConfig(std::string& fldcfg, const Fields& fields, char chSpl, char chTail) {
    size_t L = 0;
-   while (const Field* fld = fields.Get(L++)) {
-      AppendFieldConfig(fldcfg, *fld);
-      fldcfg.push_back(' ');
-      SerializeNamed(fldcfg, *fld, chSpl, chTail);
-   }
+   while (const Field* fld = fields.Get(L++))
+      AppendFieldConfig(fldcfg, *fld, chSpl, chTail);
 }
 
 } } // namespaces

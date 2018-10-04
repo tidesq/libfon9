@@ -107,6 +107,8 @@ set(fon9src
  seed/SeedFairy.cpp
  seed/SeedVisitor.cpp
  seed/SysEnv.cpp
+ seed/CloneTree.cpp
+ seed/TabTreeOp.cpp
 
  crypto/Sha1.cpp
  crypto/Sha256.cpp

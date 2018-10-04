@@ -51,7 +51,7 @@ class fon9_API Fields {
 
    using NamedFields = NamedIxMapNoRemove<FieldSP>;
    NamedFields Fields_;
-   friend uint32_t CalcDyMemSize(Fields& fields, Tab* tab);
+   friend uint32_t CalcDyMemSize(Fields& fields, Tab* tab, Field* keyfld);
 public:
    Fields() = default;
    Fields(Fields&& r) : Fields_(std::move(r.Fields_)) {
@@ -103,9 +103,9 @@ public:
    /// 必須在建構前就先定義好欄位,
    /// Tab 運行中不允許增減欄位.
    /// 若有 DyMem 欄位, 建構時會調整 field 的 offset.
-   Tab(const Named& named, Fields&& fields, LayoutSP saplingLayout = LayoutSP{}, TabFlag flags = TabFlag{});
-   Tab(const Named& named, Fields&& fields, TabFlag flags)
-      : Tab(named, std::move(fields), LayoutSP{}, flags) {
+   Tab(const Named& named, Fields&& fields, LayoutSP saplingLayout = LayoutSP{}, TabFlag flags = TabFlag{}, Field* keyfld = nullptr);
+   Tab(const Named& named, Fields&& fields, TabFlag flags, Field* keyfld = nullptr)
+      : Tab(named, std::move(fields), LayoutSP{}, flags, keyfld) {
    }
 
    virtual ~Tab();

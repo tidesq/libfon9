@@ -51,6 +51,12 @@ public:
    /// 預設: fnCallback(TreeOpResult{this, OpResult::not_supported_tree_op}, nullptr);
    virtual void OnTreeOp(FnTreeOp fnCallback);
 
+   /// 用在 NeedsApply 建立另一個編輯用的 tree.
+   /// 當 SeedSearcher.cpp: ContinueSeedSearch() 收到 "^edit:Config", "^apply:Config" 之類的要求,
+   /// 就會呼叫此處, 可參考或直接使用 TabTreeOp.cpp; 
+   /// 預設: fnCallback(TreeOpResult{this, OpResult::not_supported_tree_op}, nullptr);
+   virtual void OnTabTreeOp(FnTreeOp fnCallback);
+
    /// 清除全部的 seeds. 通常用在 parent 死亡時.
    /// 為了避免 seed 擁有 Parent tree SP, 因循環參考造成 memory leak.
    /// 預設 do nothing.

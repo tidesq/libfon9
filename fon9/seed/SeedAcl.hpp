@@ -21,7 +21,7 @@ enum class AccessRight : uint8_t {
    /// 允許執行 OnSeedCommand().
    Exec = 0x04,
    /// 允許在 NeedsApply 的資料表執行 [套用].
-   Apply = 0x10,
+   Apply = 0x80,
 };
 fon9_ENABLE_ENUM_BITWISE_OP(AccessRight);
 

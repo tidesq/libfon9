@@ -20,5 +20,9 @@ void TreeOp::GridView(const GridViewRequest& req, FnGridViewOp fnCallback) {
    GridViewResult res{this->Tree_, req.Tab_, OpResult::not_supported_grid_view};
    fnCallback(res);
 }
+void TreeOp::GridApplySubmit(const GridApplySubmitRequest& req, FnCommandResultHandler fnCallback) {
+   SeedOpResult res{this->Tree_, OpResult::not_supported_grid_apply, StrView{}, req.Tab_};
+   fnCallback(res, StrView{});
+}
 
 } } // namespaces

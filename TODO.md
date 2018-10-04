@@ -6,6 +6,8 @@ libfon9 TODO list
 ---------------------------------------
 ## 雜項
 * DefaultThreadPoolArgs: ThreadCount_, CpuAffinity_;
+* SerializeNamed() 改用 RevPrint().
+  * 及 AppendFieldConfig(); AppendFieldsConfig(); 也一起改.
 
 ---------------------------------------
 ## 檔案/儲存/載入
@@ -19,10 +21,12 @@ libfon9 TODO list
   * 例如: 已有一個 `商品資料表`，則現有程式碼不變，
     只要設計一個: 連接 `root` 與 `商品資料表` 的 `entry`，就可以透過該 entry 管理 `商品資料表`。
 * WebUI
-  * NeedsApply:
-    * 使用「套用」方式處理資料異動。
+  * TabFlag::NeedsApply:
     * 主管確認機制。
-  * 資料量太大時的顯示方式(分頁? 捲動時自動載入?)
+  * 資料量太大時的顯示方式:
+    * 分頁?
+    * 捲動時自動載入?
+    * 與 Unordered 使用相同方式?: 需要時增加要顯示的 key.
   * hide column(field)
   * 根據欄位 typeid 決定 cell text align.
   * Column:
@@ -36,7 +40,7 @@ libfon9 TODO list
       * ← ↑ → ↓ Move cell focus
       * Home, PgUp, PgDn, End.
       * ESC:   Cancel edit
-      * Enter: Start edit, or [Confirm], or [@KeyColumn: Move to sapling].
+      * Enter: Start edit, or [Confirm edit], or [@KeyColumn: Move to sapling].
       * F2:    Start edit
       * Space: @KeyColumn: Move to sapling.
       * Backspace: 回到上一層.
@@ -49,7 +53,8 @@ libfon9 TODO list
     * 滑鼠操作:
       * double click: Start edit, or [@KeyColumn: Move to sapling].
       * 路徑列: 切換路徑 or 輸入路徑
-* DllManager
+* MaDll
+  * 如果 Fon9Co 使用 static library, 如何載入執行檔中的動態模組?
 * Fon9Co
   * Linux: to daemon.
   * Windows: install to service.

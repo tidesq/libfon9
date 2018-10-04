@@ -12,7 +12,7 @@
  <style>
   .fon9-header{
     position: relative;
-    z-index: 1000;
+    z-index: 900;
     height: 40px;
     border-bottom: 1px solid lightgray;
   }
@@ -21,13 +21,11 @@
     left: 0;
     right: 0;
     top: 40px;
-    bottom: 44px;
+    bottom: 1.5em;
     z-index: 998;
     width: auto;
     overflow: hidden;
     overflow-y: auto;
-    box-sizing: border-box;
-    border: 1px solid lightgray;
   }
   .fon9-footer{
     position: absolute;
@@ -56,8 +54,9 @@
 </nav>
 <div class="fon9-content">
  <iframe id="seedFrame" src="./fon9seed.html"
-   style="border:none;top:0;left:0;width:100%;height:50%;">
+   style="border:none;top:0;left:0;width:100%;height:100%;">
  </iframe>
+ <!-- 手動輸入與 WsSeedVisitor 溝通的指令.
  <form onsubmit="return false;">
   <fieldset class="fon9-fieldset" style="width:700px; padding-right:10px">
   <legend style="font-size:20px">fon9 WebSocket 傳送測試</legend>
@@ -67,6 +66,7 @@
   </fieldset>
   <div id="info"></div>
  </form>
+ -->
 </div>
 <div class="fon9-footer">
  © 風言軟體
@@ -79,8 +79,8 @@
 let seedWindow = document.getElementById('seedFrame').contentWindow;
 let webSocket;
 
-seedWindow.onLoadLayout = function(path, key, tabName) {
-  webSocket.send('pl ' + mergePathKeyTab(path, key, tabName));
+seedWindow.onPathChanged = function(newPath) {
+  webSocket.send('pl ' + newPath);
 }
 seedWindow.onSeedCommand = function(seedName, command) {
   webSocket.send(seedName + ' ' + command);
@@ -98,9 +98,6 @@ seedWindow.onLoadGridView = function(path, startkey, tabName) {
   }
   if (webSocket)
     webSocket.send(gvcmd + ' ' + path);
-}
-seedWindow.onPathChanged = function(newPath) {
-  webSocket.send('pl ' + newPath);
 }
 seedWindow.onFieldChanged = function(path, key, tabName, fieldValues) {
   let cmd = 'ss,';
@@ -144,12 +141,25 @@ function onWebSocketMessage(msg) {
     let path;
     if (msg.length > 3 && msg[3] == ',') {
       args = msg.slice(4, pln);
-      let pspc = args.indexOf(" ");
-      if (pspc < 0)
-        path = '';
-      else {
-        path = args.substring(pspc+1);
-        args = args.substring(0, pspc);
+      path = '';
+      for (let i = 0; i < args.length; ++i) {
+         switch(args[i]) {
+         case ' ':
+            path = args.substring(i+1);
+            args = args.substring(0, i);
+            i = args.length;
+            break;
+         case '"': case '`': case "'":
+            for (;;) {
+               i = args.indexOf(args[i], i + 1);
+               if (i > 0 && args[i-1]=='\\')
+                  continue;
+               if (i < 0)
+                  i = args.length;
+               break;
+            }
+            break;
+         }
       }
     }
     else {
@@ -166,22 +176,22 @@ let signonFrame = document.getElementById('signonFrame');
 let signonWindow = signonFrame.contentWindow;
 function addInfo(head, msg, isErr = '') {
   console.log(msg);
-  let str;
-  if (isErr === 'err')
-    str = '<p style="color:red">';
-  else
-    str = '<p>';
-  str += '<b>' + head + ' </b>';
-  if (msg !== '')
-    str += JSON.stringify(msg);
-  document.getElementById('info').innerHTML = str + '</p>';
+  // let str;
+  // if (isErr === 'err')
+  //   str = '<p style="color:red">';
+  // else
+  //   str = '<p>';
+  // str += '<b>' + head + ' </b>';
+  // if (msg !== '')
+  //   str += JSON.stringify(msg);
+  // document.getElementById('info').innerHTML = str + '</p>';
 }
 function setEnableSignon(isEnable = true) {
   let btnUserProfile = document.getElementById('btnUserProfile');
   btnUserProfile.style.display = !isEnable ? 'block' : 'none';
   btnUserProfile.textContent = isEnable ? '' : signonWindow.document.getElementById('username').value;
-  document.getElementById('btnSend').disabled = isEnable;
-  document.getElementById('msgSend').disabled = isEnable;
+  // document.getElementById('btnSend').disabled = isEnable;
+  // document.getElementById('msgSend').disabled = isEnable;
   document.getElementById('seedFrame').style.display = !isEnable ? 'block' : 'none';
   seedWindow.clearAll();
 
@@ -223,18 +233,18 @@ document.getElementById('seedFrame').addEventListener("load", function() {
     document.getElementById('formUserProfile').style.display = 'none';
   });
   // 設定送出訊息區初值, 及 click 事件.
-  document.getElementById('btnSend').addEventListener('click', function() {
-    if (webSocket) {
-      let msgSend = document.getElementById('msgSend');
-      let msg = msgSend.value;
-      addInfo('Send:', msg);
-      webSocket.send(msg);
-      msgSend.select();
-    }
-  });
-  document.getElementById('btnClear').addEventListener('click', function() {
-    document.getElementById('info').innerHTML = '';
-  });
+  // document.getElementById('btnSend').addEventListener('click', function() {
+  //   if (webSocket) {
+  //     let msgSend = document.getElementById('msgSend');
+  //     let msg = msgSend.value;
+  //     addInfo('Send:', msg);
+  //     webSocket.send(msg);
+  //     msgSend.select();
+  //   }
+  // });
+  // document.getElementById('btnClear').addEventListener('click', function() {
+  //   document.getElementById('info').innerHTML = '';
+  // });
 });
 </script>
 
@@ -251,7 +261,7 @@ document.getElementById('seedFrame').addEventListener("load", function() {
   box-shadow: 0 0 3px 3px lightgray;
 }
 </style>
-<div id="formUserProfile" class="fon9-fullWindowBack">
+<div id="formUserProfile" class="fon9-fullWindowMask">
  <div id="divUserProfile">
   <button id="btnChangePass" class="fon9-btn" style="width:100%">改密碼</button><br>
   <button id="btnSignout" class="fon9-btn" style="width:100%">登出</button><br>

@@ -2,6 +2,7 @@
 /// \author fonwinz@gmail.com
 #include "fon9/framework/IoManager.hpp"
 #include "fon9/seed/FieldMaker.hpp"
+#include "fon9/seed/TabTreeOp.hpp"
 #include "fon9/Log.hpp"
 
 namespace fon9 {
@@ -169,12 +170,11 @@ void IoManager::UpdateDeviceState(io::Device& dev, const io::StateUpdatedArgs& e
 }
 void IoManager::UpdateDeviceStateLocked(io::Device& dev, const io::StateUpdatedArgs& e) {
    RevBufferList rbuf{128};
-   RevPutChar(rbuf, '\n');
+   RevPrint(rbuf,
+            "|st=", GetStateStr(e.State_),
+            "|id={", e.DeviceId_, "}"
+            "|info=", e.Info_, '\n');
    if (auto item = this->FromManagerBookmark(dev)) {
-      RevPrint(rbuf,
-               "|st=", GetStateStr(e.State_),
-               "|id={", e.DeviceId_, "}"
-               "|info=", e.Info_);
       const BufferNode* bnode = rbuf.cfront();
       char* pmsg = static_cast<char*>(item->DeviceSt_.alloc(kDateTimeStrWidth + CalcDataSize(bnode)));
       ToStrRev(pmsg += kDateTimeStrWidth, UtcNow());
@@ -261,6 +261,7 @@ seed::LayoutSP IoManager::Tree::MakeLayout() {
          fields.Add(fon9_MakeField(Named{"DeviceArgs"},  DeviceItem, Config_.DeviceArgs_));
          seed::TabSP tabConfig{new seed::Tab(Named{"Config"}, std::move(fields), saplingLayout, seed::TabFlag::NeedsApply)};
 
+         #define kTabConfigIndex  1
          return new seed::LayoutN(fon9_MakeField(Named{"Id"}, DeviceItem, Id_),
                                   std::move(tabSt),
                                   std::move(tabConfig));
@@ -283,6 +284,12 @@ void IoManager::Tree::OnParentSeedClear() {
 fon9_WARN_DISABLE_PADDING;
 fon9_MSC_WARN_DISABLE_NO_PUSH(4265 /* class has virtual functions, but destructor is not virtual. */
                               4355 /* 'this' : used in base member initializer list*/);
+IoManager::Tree::Tree(const IoManagerArgs& args)
+   : base{MakeLayout()}
+   , TabTreeOp_{new seed::TabTreeOp(*this->LayoutSP_->GetTab(kTabConfigIndex))}
+   , IoManager_{new IoManager{args}} {
+}
+
 struct IoManager::Tree::PodOp : public seed::PodOpLockerNoWrite<PodOp, DeviceMap::Locker> {
    fon9_NON_COPY_NON_MOVE(PodOp);
    using base = seed::PodOpLockerNoWrite<PodOp, DeviceMap::Locker>;
@@ -362,10 +369,76 @@ struct IoManager::Tree::TreeOp : public seed::TreeOp {
       } // unlock.
       fnCallback(seed::PodOpResult{this->Tree_, seed::OpResult::not_found_key, strKeyText}, nullptr);
    }
+   void GridApplySubmit(const seed::GridApplySubmitRequest& req, seed::FnCommandResultHandler fnCallback) override {
+      if (!req.Tab_ || req.Tab_->GetIndex() != kTabConfigIndex)
+         return base::GridApplySubmit(req, std::move(fnCallback));
+
+      StrView              resmsg;
+      seed::SeedOpResult   res{this->Tree_, seed::OpResult::no_error, seed::kTabTree_KeyApply, req.Tab_};
+      seed::GridViewResult gvres{this->Tree_, req.Tab_};
+      DeviceMapImpl        oldmap;
+      do {
+         using value_type = DeviceMapImpl::value_type;
+         DeviceMap::Locker map{static_cast<Tree*>(&this->Tree_)->IoManager_->DeviceMap_};
+         if (req.BeforeGrid_.begin() != nullptr) {
+            seed::MakeGridView(*map, map->begin(), seed::GridViewRequestFull{*req.Tab_}, gvres, &MakePolicyRecordView);
+            if (req.BeforeGrid_ != ToStrView(gvres.GridView_)) {
+               res.OpResult_ = seed::OpResult::bad_apply_submit;
+               resmsg = "Orig tree changed";
+               break;
+            }
+         }
+         map->swap(oldmap);
+         StrView src = req.EditingGrid_;
+         while (!src.empty()) {
+            StrView ln = StrFetchNoTrim(src, static_cast<char>(gvres.kRowSplitter));
+            StrView keystr = StrFetchNoTrim(ln, static_cast<char>(gvres.kCellSplitter));
+            auto    ifind = seed::ContainerFind(oldmap, keystr);
+            value_type* mapval;
+            if (ifind == oldmap.end()) {
+               value_type item{new DeviceItem};
+               item->Id_.assign(keystr);
+               mapval = &*map->insert(std::move(item)).first;
+            }
+            else {
+               mapval = &*map->insert(std::move(*ifind)).first;
+               oldmap.erase(ifind);
+            }
+            size_t            fldidx = 0;
+            seed::SimpleRawWr wr(**mapval);
+            while (!ln.empty()) {
+               if (const seed::Field* fld = req.Tab_->Fields_.Get(fldidx++))
+                  fld->StrToCell(wr, StrFetchNoTrim(ln, static_cast<char>(gvres.kCellSplitter)));
+               else
+                  break;
+            }
+            // After write. 將欄位欄位內容調整正確.
+            DeviceItem* item = mapval->get();
+            if (item->Config_.Enabled_ != EnabledYN::Yes)
+               item->Config_.Enabled_ = EnabledYN{};
+            StrView sch{ToStrView(item->Config_.SchArgs_)};
+            if (StrTrim(&sch).empty())
+               item->Config_.SchArgs_.clear();
+         }
+      } while (false);
+      // After grid view apply. oldmap = removed items.
+      for (auto& i : oldmap) {
+         if (i->Device_) {
+            i->Device_->SetManagerBookmark(0);
+            i->Device_->AsyncDispose("Removed from ApplySubmit");
+         }
+      }
+      if (0);//(1) 儲存設定. (2) n秒後檢查 sch: 重新啟動 or 關閉 dev.
+      fnCallback(res, resmsg);
+   }
 };
 void IoManager::Tree::OnTreeOp(seed::FnTreeOp fnCallback) {
    TreeOp op{*this};
    fnCallback(seed::TreeOpResult{this, seed::OpResult::no_error}, &op);
+}
+void IoManager::Tree::OnTabTreeOp(seed::FnTreeOp fnCallback) {
+   TreeOp op{*this};
+   static_cast<seed::TabTreeOp*>(this->TabTreeOp_.get())->HandleTabTreeOp(op, std::move(fnCallback));
 }
 
 //--------------------------------------------------------------------------//

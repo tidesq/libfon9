@@ -78,7 +78,7 @@ RevBufferList TicketRunnerWrite::ParseSetValues(const SeedOpResult& res, const R
    StrView       fldvals{&this->FieldValues_};
    RevBufferList rbuf{128};
    while (!fldvals.empty()) {
-      StrView val = SbrFetchFieldNoTrim(fldvals, ',');
+      StrView val = SbrFetchNoTrim(fldvals, ',');
       StrView fldName = StrFetchTrim(val, '=');
       auto    fld = res.Tab_->Fields_.Get(fldName);
       if (fld == nullptr)
@@ -142,7 +142,7 @@ void TicketRunnerGridView::OnGridViewOp(GridViewResult& res) {
    if (res.OpResult_ != OpResult::no_error)
       this->OnError(res.OpResult_);
    else {
-      this->LastKey_.assign(res.LastKey_);
+      this->LastKey_.assign(res.GetLastKey());
       this->Visitor_->OnTicketRunnerGridView(*this, res);
    }
 }

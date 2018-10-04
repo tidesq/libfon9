@@ -320,7 +320,7 @@ inline StrView StrTrimSplit(StrView& src, char chDelim) {
 /// - tag, value 都會移除前後空白.
 /// - 如果沒有找到 chEqual, 則 value 為 nullptr.
 /// - src.begin() 移到 chFieldDelim 分割位置+1(沒有移除空白), 如果沒有 chFieldDelim, 則移到 src.end()
-/// - **不考慮括號** 包住的巢狀欄位, 如果有需要考慮括號, 則應使用 `SbrFetchFieldNoTrim()`
+/// - **不考慮括號** 包住的巢狀欄位, 如果有需要考慮括號, 則應使用 `SbrFetchNoTrim()`
 fon9_API bool StrFetchTagValue(StrView& src, StrView& tag, StrView& value, char chFieldDelim = '|', char chEqual = '=');
 
 /// \ingroup AlNum
@@ -401,14 +401,7 @@ struct fon9_API StrBrArg {
 /// - 若沒找到 chDelim 則傳回 src, 且將 src 移到尾端: src.SetBegin(src.end()).
 /// - 若有找到 chDelim 則傳回 StrView{src.begin(), pDelim}; 且將 src 移到 pDelim 的下一個字元: src.SetBegin(pDelim+1);
 /// - 傳回值 & src 都不會移除任何的空白.
-/// \code
-///   while (!cfgstr.empty()) {
-///      fon9::StrView value = fon9::FetchField(cfgstr, '|');
-///      fon9::StrView tag = fon9::StrTrimSplit(value, '=');
-///      ...處理 tag & value...
-///   }
-/// \endcode
-fon9_API StrView SbrFetchFieldNoTrim(StrView& src, char chDelim, const StrBrArg& brArg = StrBrArg::Default_);
+fon9_API StrView SbrFetchNoTrim(StrView& src, char chDelim, const StrBrArg& brArg = StrBrArg::Default_);
 
 /// \ingroup AlNum
 /// 取出「括號或引號」內的字串.

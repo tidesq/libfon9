@@ -49,14 +49,12 @@ HttpResult HttpParser::AfterFeedHeader(HttpMessage& msg, size_t bfsz) {
          return HttpResult::HeaderTooLarge;
       return HttpResult::Incomplete;
    }
-   msg.Body_.Pos_ = pHeadEnd + 4;
-   msg.Body_.Size_ = 0;
+   msg.Body_.SetPosSize(pHeadEnd + 4, 0);
 
    const char* const origBegin = msg.OrigStr_.c_str();
    StrView           header{origBegin, pHeadEnd};
    msg.StartLine_.FromStrView(origBegin, StrFetchTrim(header, '\r'));
-   using SubStr = HttpMessage::SubStr;
-   SubStr sname;
+   StrVref sname;
    while (!StrTrim(&header).empty()) {
       StrView  value = StrFetchNoTrim(header, '\r');
       StrView  name = StrFetchNoTrim(value, ':');
@@ -120,13 +118,13 @@ HttpResult HttpParser::FetchNextChunkSize(HttpMessage& msg) {
    if (pCR == nullptr || pCR == chunk.end() - 1) {
       if (chunk.size() > kHttpMaxChunkLineLength)
          return HttpResult::ChunkSizeLineTooLong;
-      msg.ChunkTrailer_.Pos_ = static_cast<size_t>(chunk.begin() - origBegin);
+      msg.ChunkTrailer_.SetPos(chunk.begin() - origBegin);
       return HttpResult::Incomplete;
    }
    if (pCR[1] != '\n')
       return HttpResult::BadChunked;
    const char* pHexEnd;
-   msg.NextChunkSize_ = HexStrTo(chunk, &pHexEnd);
+   msg.NextChunkSize_ = static_cast<uint32_t>(HexStrTo(chunk, &pHexEnd));
    if (msg.NextChunkSize_ > kHttpMaxChunkedSize)
       return HttpResult::ChunkSizeTooLarge;
    while (pHexEnd != pCR) {
@@ -147,7 +145,7 @@ HttpResult HttpParser::FetchNextChunkSize(HttpMessage& msg) {
    }
    // msg.NextChunkSize_==0: last-chunk.
    msg.CurrChunkFrom_ = msg.Body_.Pos_;
-   msg.ChunkTrailer_.Pos_ = static_cast<size_t>(chunk.begin() - origBegin);
+   msg.ChunkTrailer_.SetPos(chunk.begin() - origBegin);
    if (chunk.Get1st() == '\r') // 懶惰一下: 不檢查 '\n', 直接排除 trailer '\r'及之後的空白.
       return HttpResult::FullMessage;
    // trailer = *(entity-header CRLF);
@@ -164,10 +162,10 @@ HttpResult HttpParser::FetchChunkTrailer(HttpMessage& msg) {
    pos = (pos > 3 ? (msg.ChunkTrailer_.Pos_ + pos - 3) : msg.ChunkTrailer_.Pos_);
    size_t pChunkTailerEnd = msg.OrigStr_.find(fon9_kCSTR_HTTPCRLN2, pos, 4);
    if (pChunkTailerEnd == std::string::npos) {
-      msg.ChunkTrailer_.Size_ = msg.OrigStr_.size() - msg.ChunkTrailer_.Pos_;
+      msg.ChunkTrailer_.SetSize(msg.OrigStr_.size() - msg.ChunkTrailer_.Pos_);
       return HttpResult::Incomplete;
    }
-   msg.ChunkTrailer_.Size_ = pChunkTailerEnd - msg.ChunkTrailer_.Pos_;
+   msg.ChunkTrailer_.SetSize(pChunkTailerEnd - msg.ChunkTrailer_.Pos_);
    return HttpResult::FullMessage;
 }
 HttpResult HttpParser::ContinueEat(HttpMessage& msg) {

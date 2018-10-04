@@ -72,5 +72,10 @@ OpResult FieldDyBlob::Copy(const RawWr& wr, const RawRd& rd) const {
    wr.PutCellValue(*this, dst);
    return OpResult::no_error;
 }
+int FieldDyBlob::Compare(const RawRd& lhs, const RawRd& rhs) const {
+   fon9_Blob L = GetUnaligned(lhs.GetCellPtr<fon9_Blob>(*this));
+   fon9_Blob R = GetUnaligned(rhs.GetCellPtr<fon9_Blob>(*this));
+   return fon9_CompareBytes(L.MemPtr_, L.MemUsed_, R.MemPtr_, R.MemUsed_);
+}
 
 } } // namespaces

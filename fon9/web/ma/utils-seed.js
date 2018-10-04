@@ -1,6 +1,6 @@
 /**
  * @return 若 key 為 undefined || null 傳回 ''; 若為空字串傳回 '""';
- *         若 key 裡面有 '/' 則傳回 '`' + key '`';
+ *         若 key 裡面有特殊字元('/', ' ', '^'), 則傳回 addQuots(key);
  *         其餘傳回 key;
  */
 function normalizeKeyText(key) {
@@ -8,9 +8,42 @@ function normalizeKeyText(key) {
     return '';
   if (key.length <= 0)
     return '""';
-  if (key.indexOf('/') >= 0 || key.indexOf(' ') >= 0)
-    return '`' + key + '`';
+  if (key[0]=='.' || key.indexOf('/') >= 0 || key.indexOf(' ') >= 0 || key.indexOf('^') >= 0)
+    return addQuotes(key);
   return key;
+}
+
+/**
+ * @return 若 value 為 undefined || null 傳回 ''; 若為空字串傳回 '""';
+ *         若 value 裡面有「空白 或 ','」或 value[0]為引號,
+ *         則傳回沒用到的引號框起的 value, 例如: '`' + value '`';
+ *         其餘傳回 value;
+ */
+function normalizeValue(value) {
+  if (value == undefined || value == null)
+    return '';
+  if (value.length <= 0)
+    return '""';
+  if (value.indexOf(' ') >= 0 || value.indexOf(',') >= 0)
+    return addQuotes(value);
+  switch(value[0]) {
+  case '"':
+  case '`':
+  case "'":
+    return addQuotes(value);
+  }
+  return value;
+}
+
+/**
+ * @return 將 value 頭尾加上引號.
+ */
+function addQuotes(value) {
+  if (value.indexOf('`') < 0)
+    return '`' + value + '`';
+  if (value.indexOf('"') < 0)
+    return '"' + value + '"';
+  return "'" + value + "'";
 }
 
 /**

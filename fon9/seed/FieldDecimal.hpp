@@ -115,6 +115,11 @@ public:
       this->PutOrigValue(wr, this->GetOrigValue(rd));
       return OpResult::no_error;
    }
+   virtual int Compare(const RawRd& lhs, const RawRd& rhs) const override {
+      auto L = this->GetOrigValue(lhs);
+      auto R = this->GetOrigValue(rhs);
+      return (L < R) ? -1 : (L == R) ? 0 : 1;
+   }
 };
 
 } } // namespaces

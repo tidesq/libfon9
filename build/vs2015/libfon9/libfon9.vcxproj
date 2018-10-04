@@ -201,6 +201,7 @@
     <ClInclude Include="..\..\..\fon9\seed\SeedAcl.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\SeedVisitor.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\SeedSearcher.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\CloneTree.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\SysEnv.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\Tab.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\Field.hpp" />
@@ -218,6 +219,7 @@
     <ClInclude Include="..\..\..\fon9\seed\RawRd.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\RawWr.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\SeedBase.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\TabTreeOp.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\Tree.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\TreeLockContainerT.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\TreeOp.hpp" />
@@ -228,6 +230,7 @@
     <ClInclude Include="..\..\..\fon9\StrTo.hpp" />
     <ClInclude Include="..\..\..\fon9\StrTools.hpp" />
     <ClInclude Include="..\..\..\fon9\StrView.hpp" />
+    <ClInclude Include="..\..\..\fon9\StrVref.hpp" />
     <ClInclude Include="..\..\..\fon9\Subr.hpp" />
     <ClInclude Include="..\..\..\fon9\sys\Config.h" />
     <ClInclude Include="..\..\..\fon9\sys\Config.hpp" />
@@ -362,6 +365,7 @@
     <ClCompile Include="..\..\..\fon9\seed\SeedAcl.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\SeedVisitor.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\SeedSearcher.cpp" />
+    <ClCompile Include="..\..\..\fon9\seed\CloneTree.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\SysEnv.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\Tab.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\Field.cpp" />
@@ -372,6 +376,7 @@
     <ClCompile Include="..\..\..\fon9\seed\Layout.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\Raw.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\SeedBase.cpp" />
+    <ClCompile Include="..\..\..\fon9\seed\TabTreeOp.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\Tree.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\TreeOp.cpp" />
     <ClCompile Include="..\..\..\fon9\StrTo.cpp" />

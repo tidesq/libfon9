@@ -147,6 +147,9 @@ public:
 
    /// 複製欄位內容.
    virtual OpResult Copy(const RawWr& wr, const RawRd& rd) const = 0;
+
+   /// 比較欄位內容的大小.
+   virtual int Compare(const RawRd& lhs, const RawRd& rhs) const = 0;
 };
 fon9_WARN_POP;
 

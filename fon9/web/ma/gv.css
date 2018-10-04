@@ -1,9 +1,9 @@
 .gvArea {
   position: fixed;
   left: 0;
-  top: 1.5em;
+  top: 0;
   bottom: 0;
-  width: 100%;
+  right: 0;
   border-top: 1px solid #ccc;
   overflow: auto;
   cursor: default;
@@ -53,7 +53,7 @@
 .gvTable [contentEditable="true"]:focus {
   background: #FFFFD3;
   cursor: default;
-  box-shadow: 0 0 2px 1px blue inset !important;
+  box-shadow: 0 0 1px 1px cyan inset !important;
 }
 
 /* 異動中, 尚未收到異動更新結果 */
@@ -73,8 +73,19 @@
 
 .gvSelectedCellReadonly {
   outline: none !important;
-  box-shadow: 0 0 2px 1px #f93 inset !important;
+  box-shadow: 0 0 2px 1px #a40 inset !important;
 }
 .gvSelectedCellReadonly:focus {
-  box-shadow: 0 0 2px 1px #ff8000 inset !important;
+  box-shadow: 0 0 2px 1px #f80 inset !important;
+}
+
+.gvTextDel, .gvRowDel {
+  text-decoration: line-through;
+  color: lightgray;
+}
+.gvCellChanged, .gvRowDel {
+  background: #fef !important;
+}
+.gvRowNew {
+  background: #ffd !important;
 }

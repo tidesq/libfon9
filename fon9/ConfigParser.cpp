@@ -11,7 +11,7 @@ ConfigParser::~ConfigParser() {
 ConfigParser::Result ConfigParser::Parse(StrView& cfgstr, char chFieldDelim, char chEqual) {
    ErrorEventArgs args;
    while (!cfgstr.empty()) {
-      args.Value_ = SbrFetchFieldNoTrim(cfgstr, chFieldDelim);
+      args.Value_ = SbrFetchNoTrim(cfgstr, chFieldDelim);
       args.Tag_   = StrTrimSplit(args.Value_, chEqual);
       const char* const pvalbeg = args.Value_.begin();
       args.Result_ = this->OnTagValue(args.Tag_, args.Value_);

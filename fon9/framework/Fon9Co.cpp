@@ -197,6 +197,7 @@ public:
    using base::base;
    fon9::io::RecvBufferSize OnHttpRequest(fon9::io::Device& dev, fon9::web::HttpRequest& req) override {
       if (0);// below is for debug.
+      /*
       if (req.MessageSt_ == fon9::web::HttpMessageSt::ChunkAppended) {
          printf("\n" "ChunkAppended:\n" "chunk-ext=[%s]\n" "chunk-data=[%s]\n",
                 req.Message_.ChunkExt().ToString().c_str(),
@@ -212,6 +213,7 @@ public:
                    req.Message_.ChunkExt().ToString().c_str(),
                    req.Message_.ChunkTrailer().ToString().c_str());
       }
+      */
       return base::OnHttpRequest(dev, req);
    }
 };
@@ -256,11 +258,12 @@ int main(int argc, char** argv) {
 
    iocfg.DeviceName_.assign("TcpServer");
    iocfg.DeviceArgs_.assign("6080");
-   iomgr->GetIoManager().AddConfig("Id001", iocfg);
+   iomgr->GetIoManager().AddConfig("MaHttp", iocfg);
 
    iocfg.DeviceName_.assign("TcpClient");
    iocfg.DeviceArgs_.assign("dn=NoHost:6080");
-   iomgr->GetIoManager().AddConfig("Id002", iocfg);
+   iomgr->GetIoManager().AddConfig("test-1", iocfg);
+   iomgr->GetIoManager().AddConfig("test^2", iocfg);
    //------^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    fon9sys.Start();
 

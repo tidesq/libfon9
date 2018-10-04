@@ -197,6 +197,9 @@ public:
    constexpr friend bool operator<(const Decimal& lhs, const Decimal& rhs) {
       return lhs.Value_ < rhs.Value_;
    }
+   constexpr int Compare(Decimal rhs) const {
+      return (this->Value_ < rhs.Value_) ? -1 : (this->Value_ == rhs.Value_) ? 0 : 1;
+   }
 
    /// 四則運算說明: 為了降低精確度轉換的複雜及不確定性，所以僅支援底下運算.
    /// 其餘運算(乘除、其他小數位)則建議使用 To<double>() 轉成 double 之後計算.

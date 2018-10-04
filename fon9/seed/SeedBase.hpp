@@ -69,6 +69,14 @@ enum class OpResult {
 
    not_supported_grid_view   = -130,
    not_supported_tree_op     = -131,
+   not_supported_tab_tree_op = -132,
+   not_supported_grid_apply  = -133,
+   /// 在 TreeOp::GridApplySubmit() 比對修改前的確認資料時又有其他變動了!
+   /// (1) TreeOp::GridApplyCheck() 比對編輯中資料.
+   /// (2) 使用者確認有變動的地方.
+   /// (3) TreeOp::GridApplySubmit() 確認變動.
+   /// 如果在 (2)=>(3) 之間, 有其他人又變動了「編輯中資料」, 則在執行(3)時會產生此錯誤!
+   bad_apply_submit = -134,
 
    not_found_key      = -200,
    /// 指定的 tabName 找不到, 或 tabIndex 有誤.

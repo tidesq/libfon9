@@ -56,6 +56,7 @@ public:
    virtual OpResult PutNumber(const RawWr& wr, FieldNumberT num, DecScaleT decScale) const override;
 
    virtual OpResult Copy(const RawWr& wr, const RawRd& rd) const override;
+   virtual int Compare(const RawRd& lhs, const RawRd& rhs) const override;
 };
 
 template <size_t arysz>
@@ -104,6 +105,7 @@ public:
    virtual OpResult StrToCell(const RawWr& wr, StrView value) const override;
 
    virtual OpResult Copy(const RawWr& wr, const RawRd& rd) const override;
+   virtual int Compare(const RawRd& lhs, const RawRd& rhs) const override;
 };
 
 inline FieldSPT<FieldChar1> MakeField(Named&& named, int32_t ofs, char&) {

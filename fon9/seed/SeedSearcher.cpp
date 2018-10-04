@@ -6,6 +6,8 @@
 
 namespace fon9 { namespace seed {
 
+//--------------------------------------------------------------------------//
+
 fon9_API StrView ParseKeyTextAndTabName(StrView& tabName) {
    StrView keyText = SbrFetchInsideNoTrim(tabName, StrBrArg::Quotation_);
    if (keyText.begin() == nullptr) { // 沒有引號時 keyText 為 nullptr, 此時採用無引號的方法.
@@ -40,53 +42,55 @@ void SeedSearcher::ContinuePod(TreeOp& opTree, StrView keyText, StrView tabName)
          this->ContinueSeed(opTree, keyText, *tab);
    }
    else {
-      this->RemainPath_.SetBegin(tabName.empty() ? keyText.begin() : tabName.begin());
+      this->RemainPath_.SetBegin(tabName.empty() && keyText.begin() != nullptr ? keyText.begin() : tabName.begin());
       this->OnError(OpResult::not_found_tab);
-   }
-}
-void SeedSearcher::ContinuePodForRemove(TreeOp& opTree, StrView keyText, StrView tabName, FnPodRemoved& removedHandler) {
-   if (!this->RemainPath_.empty())
-      this->SeedSearcher::ContinuePod(opTree, keyText, tabName);
-   else {
-      Tab* tab;
-      if (tabName.empty())
-         tab = nullptr;
-      else if ((tab = opTree.Tree_.LayoutSP_->GetTab(tabName)) == nullptr) {
-         this->RemainPath_.SetBegin(tabName.begin());
-         this->OnError(OpResult::not_found_tab);
-         return;
-      }
-      this->RemainPath_.SetBegin(keyText.begin());
-      opTree.Remove(keyText, tab, [this, &removedHandler](const PodRemoveResult& res) {
-         if (res.OpResult_ == OpResult::removed_pod || res.OpResult_ == OpResult::removed_seed)
-            removedHandler(res);
-         else
-            this->OnError(res.OpResult_);
-      });
    }
 }
 
 //--------------------------------------------------------------------------//
 
 static void ContinueSeedSearch(Tree& curr, SeedSearcherSP searcher) {
-   // 如果現在是 Thread-A.
-   curr.OnTreeOp([searcher](const TreeOpResult& resTree, TreeOp* opTree) {
-      // 此時這裡可能仍在 Thread-A, 但也可能在 Thread-B.
-      if (opTree == nullptr)
-         searcher->OnError(resTree.OpResult_);
-      else if (searcher->RemainPath_.empty())
-         searcher->OnFoundTree(*opTree);
-      else {
-         // Parse: keyText^tabName/Remain
-         // keyText 允許使用引號.
-         StrView tabName = SbrFetchFieldNoTrim(searcher->RemainPath_, '/', StrBrArg::Quotation_);
-         StrView keyText = ParseKeyTextAndTabName(tabName);
-         searcher->RemainPath_ = FilePath::RemovePathHead(searcher->RemainPath_);
-         searcher->ContinuePod(*opTree, keyText, tabName);
+   struct TreeOpHandler {
+      SeedSearcherSP Searcher_;
+      StrView        TabName_;
+      StrView        KeyText_;
+      TreeOpHandler(SeedSearcher* searcher)
+         : Searcher_{searcher}
+         , TabName_{nullptr} {
+         if (!searcher->RemainPath_.empty()) {
+            this->TabName_ = SbrFetchNoTrim(searcher->RemainPath_, '/', StrBrArg::Quotation_);
+            searcher->RemainPath_ = FilePath::RemovePathHead(searcher->RemainPath_);
+         }
       }
-   });
-}
+      void operator()(const TreeOpResult& resTree, TreeOp* opTree) {
+         if (opTree == nullptr)
+            this->Searcher_->OnError(resTree.OpResult_);
+         else if (this->TabName_.begin() == nullptr) // 建構時 searcher->RemainPath_.empty()
+            this->Searcher_->OnFoundTree(*opTree);
+         else
+            this->Searcher_->ContinuePod(*opTree, this->KeyText_, this->TabName_);
+      }
+   };
 
+   // 如果現在是 Thread-A.
+   // 則 hdr.operator(); 可能仍在 Thread-A, 但也可能在 Thread-B.
+   TreeOpHandler hdr(searcher.get());
+   if (fon9_UNLIKELY(hdr.TabName_.Get1st() == '^')) {
+      if (const char* pspl = hdr.TabName_.Find(':')) {
+         hdr.KeyText_.Reset(hdr.TabName_.begin() + 1, pspl);
+         hdr.TabName_.SetBegin(pspl + 1);
+         curr.OnTabTreeOp(hdr);
+         return;
+      }
+   }
+   else {
+      // Parse: keyText^tabName/Remain
+      // keyText 允許使用引號.
+      // tabName = "key" or "key^tabName"
+      hdr.KeyText_ = ParseKeyTextAndTabName(hdr.TabName_);
+   }
+   curr.OnTreeOp(hdr);
+}
 void SeedSearcher::PodHandler::operator()(const PodOpResult& resPod, PodOp* opPod) {
    if (opPod == nullptr) {
       this->Searcher_->RemainPath_.SetBegin(this->KeyPos_);
@@ -139,6 +143,27 @@ void RemoveSeedSearcher::OnFoundTree(TreeOp&) {
 }
 void RemoveSeedSearcher::ContinuePod(TreeOp& opTree, StrView keyText, StrView tabName) {
    this->ContinuePodForRemove(opTree, keyText, tabName, this->Handler_);
+}
+void SeedSearcher::ContinuePodForRemove(TreeOp& opTree, StrView keyText, StrView tabName, FnPodRemoved& removedHandler) {
+   if (!this->RemainPath_.empty())
+      this->SeedSearcher::ContinuePod(opTree, keyText, tabName);
+   else {
+      Tab* tab;
+      if (tabName.empty())
+         tab = nullptr;
+      else if ((tab = opTree.Tree_.LayoutSP_->GetTab(tabName)) == nullptr) {
+         this->RemainPath_.SetBegin(tabName.begin());
+         this->OnError(OpResult::not_found_tab);
+         return;
+      }
+      this->RemainPath_.SetBegin(keyText.begin());
+      opTree.Remove(keyText, tab, [this, &removedHandler](const PodRemoveResult& res) {
+         if (res.OpResult_ == OpResult::removed_pod || res.OpResult_ == OpResult::removed_seed)
+            removedHandler(res);
+         else
+            this->OnError(res.OpResult_);
+      });
+   }
 }
 
 //--------------------------------------------------------------------------//

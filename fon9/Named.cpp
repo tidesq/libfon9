@@ -18,16 +18,17 @@ fon9_API const char* FindInvalidNameChar(StrView str) {
 }
 
 fon9_API Named DeserializeNamed(StrView& cfg, char chSpl, int chTail) {
-   StrView  descr = chTail == -1 ? cfg : SbrFetchFieldNoTrim(cfg, static_cast<char>(chTail));
-   StrView  name  = SbrFetchFieldNoTrim(descr, chSpl);
-   StrView  title = SbrFetchFieldNoTrim(descr, chSpl);
+   StrView  descr = chTail == -1 ? cfg : SbrFetchNoTrim(cfg, static_cast<char>(chTail));
+   StrView  name  = SbrFetchNoTrim(descr, chSpl);
+   StrView  title = SbrFetchNoTrim(descr, chSpl);
    
    StrTrim(&name);
    if (const char* pInvalid = FindInvalidNameChar(name)) {
       cfg.SetBegin(pInvalid);
       return Named{};
    }
-   cfg.SetBegin(descr.end() + (chTail != -1));
+   if (!cfg.empty())
+      cfg.SetBegin(descr.end() + (chTail != -1));
    return Named(name.ToString(),
       StrView_ToNormalizeStr(StrTrimRemoveQuotes(title)),
       StrView_ToNormalizeStr(StrTrimRemoveQuotes(descr)));

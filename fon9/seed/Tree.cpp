@@ -16,6 +16,10 @@ void Tree::OnTreeOp(FnTreeOp fnCallback) {
    fnCallback(TreeOpResult{this, OpResult::not_supported_tree_op}, nullptr);
 }
 
+void Tree::OnTabTreeOp(FnTreeOp fnCallback) {
+   fnCallback(TreeOpResult{this, OpResult::not_supported_tree_op}, nullptr);
+}
+
 void Tree::OnParentSeedClear() {
 }
 

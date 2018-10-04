@@ -236,7 +236,7 @@ FilePath::StrList FilePath::SplitPathList(StrView& fname) {
          }
          break;
       }
-      StrView item{SbrFetchFieldNoTrim(fname, '/', StrBrArg::Quotation_)};
+      StrView item{SbrFetchNoTrim(fname, '/', StrBrArg::Quotation_)};
       if (item.empty())
          break;
       plist.push_back(item);

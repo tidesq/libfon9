@@ -6,27 +6,6 @@
 
 namespace fon9 { namespace seed {
 
-fon9_WARN_DISABLE_PADDING;
-struct SeedOpResult : public PodOpResult {
-   SeedOpResult(Tree& sender, OpResult res, const StrView& key, Tab* tab = nullptr)
-      : PodOpResult{sender, res, key}
-      , Tab_{tab} {
-   }
-   /// - 在 FnCommandResultHandler() 裡面:
-   ///   - 若為 nullptr 表示 Pod Command 的結果.
-   ///   - 若為 !nullptr 表示 Seed Command的結果.
-   /// - 在 FnReadOp() 或 FnWriteOp()
-   ///   - 此值必定有效, 不會是 nullptr.
-   Tab*     Tab_;
-};
-fon9_WARN_POP;
-
-using FnReadOp = std::function<void(const SeedOpResult& res, const RawRd* rd)>;
-using FnWriteOp = std::function<void(const SeedOpResult& res, const RawWr* wr)>;
-using FnCommandResultHandler = std::function<void(const SeedOpResult& res, StrView msg)>;
-
-//--------------------------------------------------------------------------//
-
 class fon9_API PodOp {
    fon9_NON_COPY_NON_MOVE(PodOp);
 public:

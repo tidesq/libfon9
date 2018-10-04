@@ -58,6 +58,9 @@ OpResult FieldBytes::Copy(const RawWr& wr, const RawRd& rd) const {
    memcpy(wr.GetCellPtr<byte>(*this), rd.GetCellPtr<byte>(*this), this->Size_);
    return OpResult::no_error;
 }
+int FieldBytes::Compare(const RawRd& lhs, const RawRd& rhs) const {
+   return memcmp(lhs.GetCellPtr<byte>(*this), rhs.GetCellPtr<byte>(*this), this->Size_);
+}
 
 //--------------------------------------------------------------------------//
 
@@ -107,6 +110,9 @@ bool FieldByteVector::IsNull(const RawRd& rd) const {
 OpResult FieldByteVector::Copy(const RawWr& wr, const RawRd& rd) const {
    wr.GetMemberCell<ByteVector>(*this) = rd.GetMemberCell<ByteVector>(*this);
    return OpResult::no_error;
+}
+int FieldByteVector::Compare(const RawRd& lhs, const RawRd& rhs) const {
+   return lhs.GetMemberCell<ByteVector>(*this).compare(rhs.GetMemberCell<ByteVector>(*this));
 }
 
 } } // namespaces

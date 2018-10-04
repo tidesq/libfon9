@@ -99,7 +99,7 @@ MaTree* SeedFairy::GetRootPath(OpResult& opResult, StrView& seed, AclPath& outpa
 }
 
 SeedFairy::Request::Request(SeedVisitor& visitor, StrView cmdln) {
-   this->CommandArgs_ = SbrFetchFieldNoTrim(cmdln, ' ');
+   this->CommandArgs_ = SbrFetchNoTrim(cmdln, ' ');
    StrTrimHead(&cmdln);
    switch (this->CommandArgs_.Get1st()) {
    case '`':

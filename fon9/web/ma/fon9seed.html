@@ -12,13 +12,13 @@
       * {
         font-family: Consolas;
       }
-
       #topContainer {
         position: relative;
         height: 1.5em;
         display: flex;
         clear: both;
         background: #eee;
+        overflow: hidden;
       }
       #topLeft {
         position: relative;
@@ -27,9 +27,9 @@
       }
       #edPath {
         position: absolute;
-        top: 0;
-        left: 0;
-        height: 100%;
+        top: 1px;
+        left: 1px;
+        bottom: 0;
         width: 100%;
         border: none;
         color: #eee;
@@ -50,11 +50,12 @@
       }
       .tab label {
         position: relative;
-        left: 1px;
-        padding: 5px;
+        left: 2px;
+        top: 2px;
+        padding: 0px 8px 2px;
         margin-left: -1px;
         border: 1px solid #ccc;
-        border-radius: 15px 15px 0 0;
+        border-radius: 8px 8px 0 0;
         background: #ddd;
       }
       .tab label:hover{
@@ -95,44 +96,80 @@
             <input type="text" id="edPath" autocomplete="off" onfocus="this.value=currPath; this.select();" onkeydown="return edPathKeyDown(event)" />
          </div>
          <div id="topRight">
-            <button id="btnReload" type="button" class="seed" onclick="reload();">
+            <button id="btnReload" type="button" class="seed" onclick="emitLoadGridView();">
                &#8635;</button>
             <button id="btnAddNewRow" type="button" class="seed" onclick="addNewRow();" title="Add a row">
                &#65291;</button>
             <button id="btnDeleteRow" type="button" class="seed" onclick="deleteRow();">
                &#65293;</button>
+            <button id="btnLoadEditForApply" type="button" class="seed" onclick="loadEditForApply();" title="Modify for applying">
+               &#128221;</button>
          </div>
       </div>
-      <textarea id="clipboard" style="display: none"></textarea>
+      <textarea id="clipboard" style="display:none"></textarea>
    </div>
 
-   <!-- public --> <script>
-      /// 當 KeyCell click 時觸發 onLoadLayout(currPath, key, tabName);
-      var onLoadLayout;
+   <!-- public -->
+   <script>
+      /// 當選定新的路徑時觸發 onPathChanged(newPath);
+      /// 然後取得 layout 之後透過 renderLayout() 告知結果.
+      var onPathChanged;
+      let emitPathChange = function (newPath) {
+         if (onPathChanged && newPath != currPath)
+            onPathChanged(newPath);
+      }
       /// 當 Tab click 或需要 reload 時觸發 onLoadGridView(currPath, startkey, tabName);
       /// startkey 有可能是 undefined, 表示從第一筆開始;
+      /// 然後透過 renderGridView() 告知結果.
       var onLoadGridView;
-      /// 當選定新的路徑時觸發 onPathChanged(newPath);
-      var onPathChanged;
+      let emitLoadGridView = function (startkey) {
+         if (onLoadGridView)
+            onLoadGridView(currPath, startkey, getCurrTabName());
+      }
       /// 當欄位異動 或 add a row 時觸發 onFieldChanged(currPath, key, tabName, fieldValues);
+      /// 然後透過 updateRow() 告知結果.
       var onFieldChanged;
+      let emitFieldChanged = function (key, fieldValues) {
+         if (onFieldChanged)
+            onFieldChanged(currPath, key, getCurrTabName(), fieldValues);
+      }
       /// 當想要刪除 row 時觸發 onDeleteRow(currPath, key);
+      /// 然後透過 seedRemoved() 告知結果.
       var onDeleteRow;
       /// 執行 seed 命令, onSeedCommand(seedName, command);
+      /// 然後透過 seedCommandResult() 告知結果.
       var onSeedCommand;
 
       function clearAll() {
          currPath = '';
          currTabIdx = 0;
+         submitId = undefined;
          tabsArea.innerHTML = '';
          document.getElementById('btnDeleteRow').removeAttribute('title');
          document.getElementById('btnReload').removeAttribute('title');
+         hideApplyControls();
          gview.clearAll();
       }
       function renderLayout(path, strLayout, errmsg) {
          if (currPath == path || errmsg)
             return;
          gview.clearAll();
+         keySelected = undefined;
+         let ktSelected;
+         // 回到前一層, 則切到上次選到的 key^tab
+         if (path.length < currPath.length && path == currPath.substring(0, path.length)) {
+            let keytabs = parsePath(currPath.substring(path.length));
+            if (keytabs.length > 0) {
+               ktSelected = keytabs[0];
+               if (ktSelected.tab) {
+                  let ispl = ktSelected.tab.indexOf(':');
+                  if (ispl >= 0)
+                     ktSelected.tab = ktSelected.tab.substring(ispl + 1);
+               }
+               if (!ktSelected.tab)
+                  keySelected = ktSelected.seed;
+            }
+         }
          currPath = path;
          // 解析送來的 layout 訊息.
          let strs = strLayout.split('\n'); // [0]=accessRights, [1]=layout;
@@ -146,23 +183,30 @@
               fld.flags = parseHexFlags(fld.flags);
          }
          layout.flags = parseHexFlags(layout.flags);
-         // 根據 flags 設定 UI 元件.
-         document.getElementById('btnAddNewRow').disabled = !(layout.flags & 0x01) || !hasWriteAccess();
-         document.getElementById('btnDeleteRow').disabled = !(layout.flags & 0x02) || !hasWriteAccess();
          // 建立 path/tab 區的 UI 元件.
          currTabIdx = -1;
-         addPathSeedElements(path);
+         let tabSel = 0;
+         addPathSeedElements(currPath);
          if (layout.tabs.length > 1) {
             let btn = document.createElement('button');
             btn.textContent = '^';
             btn.className = 'seed';
             btn.disabled = true;
             tabsArea.appendChild(btn);
-            for (let tab of layout.tabs)
-              addTabElements(++currTabIdx, tab);
+            for (let tab of layout.tabs) {
+               addTabElements(++currTabIdx, tab);
+               if (ktSelected && ktSelected.tab == tab.name) {
+                  tabSel = currTabIdx;
+                  keySelected = ktSelected.seed;
+               }
+            }
+            currTabIdx = -1;
          }
          // 使用首個 tab, 並載入 gridview.
-         setCurrTabIdx(0);
+         setCurrTabIdx(tabSel);
+         // 根據 flags 設定 UI 元件.
+         showElement(document.getElementById('btnAddNewRow'), (layout.flags & 0x01) && hasWriteAccess());
+         showElement(document.getElementById('btnDeleteRow'), (layout.flags & 0x02) && hasWriteAccess());
       }
       function renderGridView(args, path, res, errmsg) {
          if (path != currPath || errmsg)
@@ -170,18 +214,61 @@
          if (parseTabIdx(args) != currTabIdx)
             return;
          gview.clearBody();
+         submitId = undefined;
+         document.getElementById("btnSubmit").disabled = true;
          let lines = res.split('\n');
          // first line(lines[0]) = rowCount,distanceBegin,distanceEnd
          if (lines.length > 1) {
             // 所以從 lines[1] 開始才是每行的內容:
-            for (let i = 1; i < lines.length; ++i) {
-               let flds = lines[i].split('\x01');
-               let rowe = gview.addBodyRow(flds[0]);
-               for (let i = 1; i < flds.length; ++i)
-                  gview.addBodyCell(rowe, flds[i]);
+            let lno = 1;
+            for (; lno < lines.length; ++lno) {
+               let flds = lines[lno];
+               if (flds.length > 10 && flds[0]=='\f') {
+                  if (flds.substring(1, 10) == "SubmitId=") {
+                     submitId = flds.substring(10);
+                     break;
+                  }
+               }
+               addRowElement(flds.split('\x01'));
+            }
+            if (submitId) { // 接下來的 lines 為「源資料表」, 比對並顯示差異.
+               for (let row of gview.gvTable.tBodies[0].rows)
+                  row.classList.add("gvRowNew");
+               while (++lno < lines.length) {
+                  let flds = lines[lno].split('\x01');
+                  let rowe = gview.searchRow(flds[0]);
+                  if (!rowe)
+                     addRowElement(flds).classList.add("gvRowDel");
+                  else {
+                     rowe.classList.remove("gvRowNew");
+                     let i = 1;
+                     for (; i < rowe.cells.length; ++i) {
+                        let cell = rowe.cells[i];
+                        if (i < flds.length) {
+                           if (flds[i] == cell.textContent)
+                              continue;
+                           if (flds[i].length > 0)
+                              cell.innerHTML = "<div class='gvTextDel'>" + flds[i] + "</div>" + cell.textContent;
+                        }
+                        cell.classList.add("gvCellChanged")
+                     }
+                     while (i < flds.length)
+                        gview.addBodyCell(rowe, flds[i++]).classList.add("gvTextDel");
+                  }
+               }
+               if (accessRights & 0x80) // AccessRight::Apply(0x80).
+                  document.getElementById("btnSubmit").disabled = false;
             }
          }
          // 載入表格資料之後, 把第一格設為 focus.
+         if (keySelected) {
+            let row = gview.searchRow(keySelected);
+            keySelected = undefined;
+            if (row) {
+               row.cells[0].focus();
+               return;
+            }
+         }
          gview.setFirstCellFocus();
       }
       function updateRow(args, path, res, errmsg) {
@@ -191,7 +278,7 @@
          if (!row)
             return;
          let cells = row.cells;
-         cells[0].classList.remove('gvUpdatingCell'); // 移除 addNewRow() 時設定的 class.
+         cells[0].classList.remove('gvUpdatingCell'); // 移除 addNewRow() 時設定的 style class.
          let lines = res.split('\n');
          let flds = lines[0].split('\x01');
          let i = 1;
@@ -223,6 +310,13 @@
          // res = cmd + '\x01' + seedName + '\n' + result;
          let pln = res.indexOf('\n');
          if (pln >= 0) {
+            let pspl = res.indexOf('\x01');
+            if (pspl >= 0 && errmsg.length <= 0) {
+               // Apply Controls 的命令(e.g. "restore", "submit")不要 alert().
+               let keytab = parsePath(res.slice(pspl + 1, pln));
+               if (keytab.length > 0 && keytab[keytab.length - 1].tab.indexOf(':') > 0)
+                  return;
+            }
             errmsg += res.substring(pln);
             res = res.substring(0, pln);
             if (errmsg.trim() === '')
@@ -232,26 +326,67 @@
          alert(res + '\n' + errmsg);
       }
    </script>
-   <!-- private --> <script>
-      // 觸發 onLoadGridView() 事件.
-      let emitLoadGridView = function (startkey) {
-         if (onLoadGridView)
-            onLoadGridView(currPath, startkey, getCurrTabName());
-      }
-      // 觸發 onPathChanged() 事件.
-      let emitPathChange = function (newPath) {
-         if (onPathChanged && newPath != currPath)
-            onPathChanged(newPath);
-      }
 
+   <!-- UI element event handler -->
+   <script>
+      // 當 edPath 輸入 [Esc]=取消輸入, [Enter]=確認移動到指定路徑.
+      let edPathKeyDown = function (ev) {
+         if (window.event)
+            ev = window.event;
+         if (ev.keyCode == 27)
+            ev.target.blur();
+         else if (ev.keyCode == 13) {
+            ev.target.blur();
+            emitPathChange(ev.target.value);
+         }
+         return true;
+      }
+      // 增加一筆 row.
+      let addNewRow = function (fieldValues) {
+         if (isElementHidden(document.getElementById('btnAddNewRow')))
+            return;
+         if (!fieldValues)
+            fieldValues = '';
+         let currKey = gview.getKeyText(gview.selectedCell);
+         let key = prompt("在 " + getTitleOrName(layout.tabs[currTabIdx])
+                          + " 新增一筆資料\n" /*+ fieldValues 需要顯示加入的欄位嗎? */ + "\n請輸入要新增的「"
+                          + getTitleOrName(layout.key) + "」"
+                         , currKey);
+         if (!key || key == currKey)
+            return;
+         let row = gview.searchRow(key);
+         if (!row) {
+            row = gview.addBodyRow(key);
+            row.cells[0].classList.add('gvUpdatingCell');
+            emitFieldChanged(key, fieldValues);
+         }
+         gview.setCellFocus(row.rowIndex, 0);
+      }
+      // 移除 row, 若 !cell (btnDeleteRow.onclick 事件) 則使用 gview.selectedCell
+      let deleteRow = function (cell) {
+         if (onDeleteRow && !isElementHidden(document.getElementById('btnDeleteRow')))
+            onDeleteRow(currPath, gview.getKeyText(cell ? cell : gview.selectedCell));
+      }
+   </script>
+
+   <!-- private members -->
+   <script>
       let tabsArea = document.getElementById('tabsArea');
-      let clipboard = document.getElementById('clipboard');
       let gview;
       let layout;
       let currTabIdx;
       let currPath;
       let prevPath;     // for [Backspace]
       let accessRights; // 在 renderLayout() 取得 path layout 時, 會設定 currPath 的可用權限.
+      let keySelected;  // 切回前一層: 在載入前一層的 layout 時, 保留先前選到的 key.
+      let submitId;
+
+      let showElement = function(e, isShow) {
+         e.style.display = isShow ? 'block' : 'none';
+      }
+      let isElementHidden = function (e) {
+         return e.style.display == 'none';
+      }
 
       // 若 currTabIdx 為 0(這是最常發生的情況) 則傳回 ''; 否則傳回 tabName.
       let getCurrTabName = function () {
@@ -292,8 +427,16 @@
          let tabEle = document.getElementById(tab.name);
          if (tabEle)
             tabEle.checked = true;
+         document.getElementById('btnDeleteRow').removeAttribute('title');
          document.getElementById('btnReload').title = 'reload:\n'
              + mergePathKeyTab(currPath, undefined, idx == 0 ? '' : tab.name);
+         showElement(document.getElementById('btnLoadEditForApply'), (tab.flags & 0x80) // TabFlag::NeedsApply
+                     // 擁有 AccessRight::Write 不一定擁有 AccessRight::Apply(0x80).
+                     // e.g. 操作員擁有AccessRight::Write, 但需要主管確定AccessRight::Apply;
+                     // 所以 2個權限都需要判斷.
+                     && ((accessRights & 0x80) || hasWriteAccess()));
+         if (!keySelected && gview.selectedCell)
+            keySelected = gview.getKeyText(gview.selectedCell);
          emitLoadGridView(gview.getFirstCellText());
          gview.clearAll();
          let strHeader = '<th>' + getTitleOrName(layout.key) + '</th>';
@@ -306,6 +449,8 @@
          let nodes = parsePath(path);
          tabsArea.innerHTML = '';
          path = '/';
+         hideApplyControls();
+         let node;
          for (let i = 0; ;) {
             let btn = document.createElement('button');
             btn.textContent = '/';
@@ -317,20 +462,37 @@
             tabsArea.appendChild(btn);
             if (i >= nodes.length)
                break;
-            let n = nodes[i++];
+            node = nodes[i++];
             let isLast = (i >= nodes.length);
             btn = document.createElement('button');
             btn.className = 'seed';
             btn.disabled = true;
-            let str = n.seed;
-            if (n.tab != '')
-               str += '^' + n.tab;
+            let str = node.seed;
+            if (node.tab != '')
+               str += '^' + node.tab;
             path += str + '/';
             btn.textContent = str;
             tabsArea.appendChild(btn);
             if (isLast)
                break;
          }
+         if (node && node.tab) {
+            let ispl = node.tab.indexOf(':');
+            if (ispl > 0) {
+               let key = node.tab.substring(0, ispl);
+               if (key == 'edit')
+                  showApplyControls();
+               else if (key == 'apply')
+                  showSubmitControls();
+            }
+         }
+      }
+      // flds=string[], return: row element.
+      let addRowElement = function (flds) {
+         let rowe = gview.addBodyRow(flds[0]);
+         for (let i = 1; i < flds.length; ++i)
+            gview.addBodyCell(rowe, flds[i]);
+         return rowe;
       }
       // 當收到 updateRow() 時, 解析 args, 找出要更新的是哪個 tab.
       let parseTabIdx = function (args) {
@@ -354,7 +516,7 @@
          return (accessRights & 0x02); // AccessRight::Write;
       }
 
-      // 若 path 為 currPath, 則解析 path 最後的 key^tab;
+      // 若 path 為 currPath + "key^tab", 則解析 path 最後的 key^tab;
       // 且 tab 為 currTabIdx, 則傳回: { seed:key, tab:tabName }; 否則傳回 undefined;
       let parseLastKeyTab = function (path) {
          if (path.substring(0, currPath.length) != currPath)
@@ -378,53 +540,6 @@
             return gview.searchRow(keytab.seed);
          return undefined;
       }
-
-      // 當 edPath 輸入 [Esc]=取消輸入, [Enter]=確認移動到指定路徑.
-      let edPathKeyDown = function (ev) {
-         if (window.event)
-            ev = window.event;
-         if (ev.keyCode == 27)
-            ev.target.blur();
-         else if (ev.keyCode == 13) {
-            ev.target.blur();
-            emitPathChange(ev.target.value);
-         }
-         return true;
-      }
-      // 處理 btnReload 按下.
-      let reload = function () {
-         emitLoadGridView(undefined);
-         return false;
-      }
-
-      // 增加一筆 row.
-      let addNewRow = function (fieldValues) {
-         if (document.getElementById('btnAddNewRow').disabled)
-            return;
-         // if (!fieldValues) 需要顯示加入的欄位嗎?
-         fieldValues = '';
-         let currKey = gview.getKeyText(gview.selectedCell);
-         let key = prompt("在 " + getTitleOrName(layout.tabs[currTabIdx])
-                          + " 新增一筆資料\n" + fieldValues + "\n請輸入要新增的「"
-                          + getTitleOrName(layout.key) + "」"
-                         , currKey);
-         if (!key || key == currKey)
-            return;
-         let row = gview.searchRow(key);
-         if (!row) {
-            row = gview.addBodyRow(key);
-            row.cells[0].classList.add('gvUpdatingCell');
-            if (onFieldChanged)
-               onFieldChanged(currPath, key, getCurrTabName(), fieldValues);
-         }
-         gview.setCellFocus(row.rowIndex, 0);
-      }
-      // 移除 row, 若 !cell (btnDeleteRow.onclick 事件) 則使用 gview.selectedCell
-      let deleteRow = function (cell) {
-         if (onDeleteRow && !document.getElementById('btnDeleteRow').disabled)
-            onDeleteRow(currPath, gview.getKeyText(cell ? cell : gview.selectedCell));
-      }
-
       // 將 row 的內容複製到 clipboard, lines[0]=curPath, lines[1]="fld=`value`,...";
       let rowToClipboard = function (cell) {
          let info = getSeedName(cell) + '\n';
@@ -433,45 +548,44 @@
          for (let i = 1; i < cells.length; ++i) {
             if (i != 1)
                info += ',';
-            info += fields[i - 1].name + '=`' + cells[i].textContent + '`';
+            info += fields[i - 1].name + '=' + normalizeValue(cells[i].textContent);
          }
-         clipboard.textContent = info;
+         document.getElementById('clipboard').textContent = info;
       }
       // 從 clipboard 取出先前儲存的欄位列表字串: "fld=`value`,...", 不包含 key.
       let clipboardToFieldValues = function () {
-         let lines = clipboard.textContent.split('\n');
+         let lines = document.getElementById('clipboard').textContent.split('\n');
          let keytab = parseLastKeyTab(lines[0]);
          if (keytab)
             return lines[1];
          return undefined;
       }
    </script>
-   <!-- create GridView UI element --> <script type="module">
+ 
+   <!-- create GridView UI element -->
+   <script type="module">
       import {GridView} from "./gvTable.js"
       gview = new GridView(document.body);
+      gview.gvArea.style.top = document.getElementById("topContainer").offsetHeight + "px";
 
       // 在 key cell click 時, 切換到 sapling.
       gview.onKeyCellClick = function(cell) {
-         if (layout.tabs[currTabIdx].flags & 0x04) // TabFlag::NoSapling;
-            return;
-         if (onLoadLayout)
-            onLoadLayout(currPath, cell.textContent, getCurrTabName());
+         if (!(layout.tabs[currTabIdx].flags & 0x04)) // not (TabFlag::NoSapling);
+            emitPathChange(mergePathKeyTab(currPath, cell.textContent, getCurrTabName()));
       }
 
       // 在 selected cell 變動時, 變更相關 UI 元素的 title(hint) 訊息.
       gview.onSelectedCellChanged = function(cell) {
-         document.getElementById('btnDeleteRow').title = 'delete: \"' + gview.getKeyText(cell) + '"';
+         document.getElementById('btnDeleteRow').title = 'delete: ' + addQuotes(gview.getKeyText(cell));
       }
 
-      // 在 gview.onEditConfirm() 觸發 onFieldChanged() 異動訊息,
+      // 在 gview.onEditConfirm() 觸發 emitFieldChanged() 異動訊息,
       // 等 updateRow() 收到結果後再更新 cell.textContent.
       gview.onEditConfirm = function(cell, beforeText) {
          cell.classList.add('gvUpdatingCell');
-         if (onFieldChanged) {
-            let fieldValues = layout.tabs[currTabIdx].fields[cell.cellIndex - 1].name
-                            + '=`' + cell.textContent.replace(/(?:\r\n|\r|\n)/g, ' ') + '`';
-            onFieldChanged(currPath, gview.getKeyText(cell), getCurrTabName(), fieldValues);
-         }
+         let fieldValues = layout.tabs[currTabIdx].fields[cell.cellIndex - 1].name
+                         + '=' + normalizeValue(cell.textContent.replace(/(?:\r\n|\r|\n)/g, ' '));
+         emitFieldChanged(gview.getKeyText(cell), fieldValues);
          cell.textContent = beforeText;
       }
 
@@ -493,7 +607,7 @@
          return true;
       }
 
-      // 處理鍵盤事件: [Insert]=addNewRow(); [Delete]=deleteRot(); [Backspace]=上一層.
+      // 處理鍵盤事件: [Insert]=addNewRow(); [Delete]=deleteRow(); [Backspace]=上一層.
       gview.onkeydown = function(ev) {
          let cell = document.activeElement;
          if (cell.isContentEditable)
@@ -531,15 +645,16 @@
       // 使用「oncontextmenu 事件」處理 SeedCommand.
       gview.gvTable.oncontextmenu = gvTable_oncontextmenu;
    </script>
+
    <!-- ContextMenu for SeedCommand -->
-   <div id="formSeedMenu" class="fon9-fullWindowBack" oncontextmenu="return false;">
+   <div id="formSeedMenu" class="fon9-fullWindowMask" oncontextmenu="return false;">
       <div id="divSeedMenu" class="fon9-contextMenu" tabindex="0" onblur="closeSeedContextMenu();">
          <div id="divSeedMenuTitle" class="fon9-contextMenuTitle"></div>
          <div id="divSeedMenuItems"></div>
       </div>
    </div>
    <script>
-      let prevPathCommandsSet;
+      let seedPathOfMenuItems;
       function gvTable_oncontextmenu(ev) {
          let cell = ev.target;
          if (cell != gview.selectedCell)
@@ -549,14 +664,14 @@
          && !(layout.tabs[currTabIdx].flags & 0x20) // TabFlag::NoSeedCommand
          && (accessRights & 0x04) // AccessRight::Exec;
          && onSeedCommand) {
-            let curSeedPath = mergePathKeyTab(currPath, '', getCurrTabName());
+            let currSeedPath = mergePathKeyTab(currPath, '', getCurrTabName());
             if ((layout.tabs[currTabIdx].flags & 0x10) // TabFlag::HasSameCommandsSet = 0x10;
-             && curSeedPath == prevPathCommandsSet
+             && currSeedPath == seedPathOfMenuItems
              && divSeedMenuItems.innerHTML) {
                // 只需查一次可用指令: 使用上次查到的 divSeedMenuItems;
             }
             else {
-               prevPathCommandsSet = curSeedPath;
+               seedPathOfMenuItems = currSeedPath;
                divSeedMenuItems.innerHTML = '';
                onSeedCommand(getSeedName(cell), "?");
             }
@@ -585,7 +700,6 @@
       }
       function closeSeedContextMenu() {
          if (formSeedMenu.style.display != 'none') {
-            gview.gvArea.disabled = false;
             formSeedMenu.style.display = 'none';
             if (gview.selectedCell)
                gview.selectedCell.focus();
@@ -639,6 +753,58 @@
             }
          }
          adjustSeedContextMenu();
+      }
+   </script>
+
+   <!-- Apply/Submit Controls -->
+   <div id="applyControls" style="position:fixed; right:0; bottom:0; display:none;">
+      <button id="btnRestore" type="button" class="fon9-btn" onclick="restoreEditTable();">❌ Restore</button>
+      <button id="btnApply" type="button" class="fon9-btn" onclick="loadApplyForSubmit();">✔️ Apply…</button>
+   </div>
+   <div id="submitControls" style="position:fixed; left:0; bottom:0; display:none;">
+      <button id="btnSubmit" type="button" class="fon9-btn" onclick="submitEdit();">✔️ Submit</button>
+      <button id="btnBackToEdit" type="button" class="fon9-btn" onclick="backToEdit();">&#128221; Back to edit</button>
+   </div>
+   <script>
+      // 這裡載入「需要 NeedsApply 的表格」.
+      let loadEditForApply = function () {
+         emitPathChange(currPath + "/^edit:" + layout.tabs[currTabIdx].name);
+      }
+      let showApplyControls = function () {
+         let applyControls = document.getElementById("applyControls");
+         applyControls.style.display = "block";
+         gview.gvArea.style.bottom = applyControls.offsetHeight + "px";
+         document.getElementById("btnRestore").disabled = !hasWriteAccess();
+      }
+      let hideApplyControls = function () {
+         gview.gvArea.style.bottom = 0;
+         document.getElementById("applyControls").style.display = "none";
+         document.getElementById("submitControls").style.display = "none";
+      }
+      let restoreEditTable = function () {
+         if (onSeedCommand)
+            onSeedCommand(currPath, "restore");
+         emitLoadGridView();
+      }
+
+      let loadApplyForSubmit = function () {
+         emitPathChange(prevPath + "/^apply:" + layout.tabs[currTabIdx].name);
+      }
+      let backToEdit = function () {
+         emitPathChange(prevPath + "/^edit:" + layout.tabs[currTabIdx].name);
+      }
+      let showSubmitControls = function () {
+         let submitControls = document.getElementById("submitControls");
+         submitControls.style.display = "block";
+         gview.gvArea.style.bottom = submitControls.offsetHeight + "px";
+         document.getElementById("btnSubmit").disabled = true;// 等收到 gv 確定有異動才需啟用; !(accessRights & 0x80); // AccessRight::Apply(0x80).
+         accessRights = (accessRights & ~0x02); // 移除 AccessRight::Write; 因為 "/^apply:" 僅提供檢視, 確認後 Submit, 不可改變內容.
+      }
+      let submitEdit = function () {
+         // 提交確認, 成功後才回到 prevPath; 可能的失敗原因: 提交前資料又被異動了.
+         if (onSeedCommand)
+            onSeedCommand(currPath, "submit " + submitId);
+         emitLoadGridView();
       }
    </script>
 </body>

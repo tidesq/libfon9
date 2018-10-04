@@ -48,10 +48,10 @@ public:
    }
 
    /// 使用 [ibegin..iend) 方式建構.
-   /// \param ibegin 字串開頭, 不可使用 nullptr!
-   /// \param iend   字串結尾, 不可使用 nullptr!
+   /// \param ibegin 字串開頭.
+   /// \param iend   字串結尾.
    StrView(const char* ibegin, const char* iend) : Begin_{ibegin}, End_{iend} {
-      assert(iend != nullptr);
+      assert((ibegin == nullptr && iend == nullptr) || (ibegin != nullptr));
       assert(ibegin <= iend);
    }
 
