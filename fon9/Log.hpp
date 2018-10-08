@@ -54,9 +54,9 @@ fon9_WARN_DISABLE_PADDING;
 /// \ingroup Misc
 /// 傳遞給 Log Writer 用的參數.
 struct LogArgs {
-   TimeStamp   Time_;
+   TimeStamp   UtcTime_;
    LogLevel    Level_;
-   LogArgs(LogLevel lv, TimeStamp tm = UtcNow()) : Time_{tm}, Level_{lv} {
+   LogArgs(LogLevel lv, TimeStamp tm = UtcNow()) : UtcTime_{tm}, Level_{lv} {
    }
 };
 fon9_WARN_POP;
@@ -132,7 +132,11 @@ enum {
 
 // fon9 內部使用: GetDefaultTimerThread(); GetDefaultThreadPool(); 的 ThrRun() 等候 Log system 備妥.
 extern void (*gWaitLogSystemReady)();
-fon9_API void AddLogHeader(RevBufferList& rbuf, TimeStamp tm, LogLevel level);
+
+/// 在 rbuf 前端增加:
+/// RevPut_Date_Time_us(rbuf, utctm + tzadj) + ThisThread_.GetThreadIdStr() + GetLevelStr(level)
+/// - tzadj 在 SetLogWriter() 設定.
+fon9_API void AddLogHeader(RevBufferList& rbuf, TimeStamp utctm, LogLevel level);
 
 }// namespace
 #endif//__fon9_Log_hpp__

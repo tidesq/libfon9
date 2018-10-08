@@ -63,12 +63,12 @@ class LogFileImpl : public LogFileAppender {
    }
 
    static void LogWriteToFile(const LogArgs& logArgs, BufferList&& buf) {
-      LogFileImpl::gLogFile->CheckRotateTime(logArgs.Time_);
+      LogFileImpl::gLogFile->CheckRotateTime(logArgs.UtcTime_);
       LogFileImpl::gLogFile->Append(std::move(buf));
    }
 
-   static void AddLogInfo(File& fd, RevBufferList& rbuf, TimeStamp now, char chHeadNL) {
-      AddLogHeader(rbuf, now, LogLevel::Important);
+   static void AddLogInfo(File& fd, RevBufferList& rbuf, TimeStamp utctm, char chHeadNL) {
+      AddLogHeader(rbuf, utctm, LogLevel::Important);
       if (chHeadNL)
          RevPutChar(rbuf, chHeadNL);
       DcQueueList dcQueue{rbuf.MoveOut()};
@@ -88,10 +88,10 @@ class LogFileImpl : public LogFileAppender {
       // 所以這裡開檔成功後, 在設定一次 SetLogWriter(); 讓第2次的 InitLogWriteToFile(); 能順利重設 LogWriter.
       SetLogWriter(&LogFileImpl::LogWriteToFile, tzadj);
 
-      TimeStamp      now = UtcNow() + tzadj;
+      TimeStamp      utcnow = UtcNow();
       RevBufferList  rbuf{kLogBlockNodeSize};
       if (isFirstStart) {
-         RevPrint(rbuf, "|orig=", fd.GetOpenName(), "|time", this->GetRotateTimeChecker().GetTimeZoneOffset(), "=", now, '\n');
+         RevPrint(rbuf, "|orig=", fd.GetOpenName(), "|time", this->GetRotateTimeChecker().GetTimeZoneOffset(), "=", utcnow + tzadj, '\n');
          this->OrigStartInfo_ = BufferTo<std::string>(rbuf.MoveOut());
       }
       File* curfd = base::OnFileRotate(fd, openResult);
@@ -99,7 +99,7 @@ class LogFileImpl : public LogFileAppender {
          if (fd.IsOpened()) { // fd = 舊的 log file.
             RevPrint(rbuf, "LogFile.OnFileRotate|next=", curfd->GetOpenName(),
                      "|curr=", fd.GetOpenName(), this->OrigStartInfo_);
-            this->AddLogInfo(fd, rbuf, now, '\0');
+            this->AddLogInfo(fd, rbuf, utcnow, '\0');
          }
          if (isFirstStart)
             RevPrint(rbuf, "LogFile.OnStart", this->OrigStartInfo_);
@@ -108,7 +108,7 @@ class LogFileImpl : public LogFileAppender {
                      "|curr=", curfd->GetOpenName(), this->OrigStartInfo_);
          auto fsz = curfd->GetFileSize();
          char chHeadNL = (fsz.HasResult() && fsz.GetResult() != 0) ? '\n' : '\0';
-         this->AddLogInfo(*curfd, rbuf, now, chHeadNL);
+         this->AddLogInfo(*curfd, rbuf, utcnow, chHeadNL);
       }
       return curfd;
    }
@@ -121,7 +121,7 @@ public:
       if (!this->OrigStartInfo_.empty()) {
          RevBufferList  rbuf{kLogBlockNodeSize};
          RevPrint(rbuf, "LogFile.OnDestroy", this->OrigStartInfo_);
-         AddLogHeader(rbuf, UtcNow() + this->GetRotateTimeChecker().GetTimeZoneOffset(), LogLevel::Important);
+         AddLogHeader(rbuf, UtcNow(), LogLevel::Important);
          this->Append(rbuf.MoveOut());
       }
       this->Worker_.TakeCall();

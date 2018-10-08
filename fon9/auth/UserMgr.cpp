@@ -149,7 +149,7 @@ AuthR UserTree::AuthUpdate(fon9_Auth_R rcode, const AuthRequest& req, AuthResult
                   "|table=", this->Owner_.Name_,
                   "|from=", this->Req_.UserFrom_,
                   "|authcId=", this->Authz_.AuthcId_);
-         AddLogHeader(this->RBuf_, this->LogArgs_.Time_, this->LogArgs_.Level_);
+         AddLogHeader(this->RBuf_, this->LogArgs_.UtcTime_, this->LogArgs_.Level_);
          LogWrite(this->LogArgs_, this->RBuf_.MoveOut());
       }
    };
@@ -157,7 +157,7 @@ AuthR UserTree::AuthUpdate(fon9_Auth_R rcode, const AuthRequest& req, AuthResult
    #define ERR_RETURN(rc, err) do { rcode = rc; errstr = err; goto __ERR_RETURN; } while(0)
    StrView          errstr;
    LogAux           aux{req, authz, owner};
-   const TimeStamp  now = aux.LogArgs_.Time_;
+   const TimeStamp  now = aux.LogArgs_.UtcTime_;
    auto             lockedUser = this->GetLockedUser(authz);
    if (UserRec* user = lockedUser.second) {
       fon9_WARN_DISABLE_SWITCH;

@@ -56,13 +56,13 @@ fon9_API void LogWrite(const LogArgs& logArgs, BufferList&& buf) {
    FnLogWriter_(logArgs, std::move(buf));
 }
 
-fon9_API void AddLogHeader(RevBufferList& rbuf, TimeStamp tm, LogLevel level) {
+fon9_API void AddLogHeader(RevBufferList& rbuf, TimeStamp utctm, LogLevel level) {
    RevPrint(rbuf, ThisThread_.GetThreadIdStr(), GetLevelStr(level));
-   RevPut_Date_Time_us(rbuf, tm);
+   RevPut_Date_Time_us(rbuf, utctm + LogTimeZoneAdjust_);
 }
 fon9_API void LogWrite(LogLevel level, RevBufferList&& rbuf) {
    LogArgs logArgs{level};
-   AddLogHeader(rbuf, logArgs.Time_ + LogTimeZoneAdjust_, level);
+   AddLogHeader(rbuf, logArgs.UtcTime_, level);
    FnLogWriter_(logArgs, rbuf.MoveOut());
 }
 
