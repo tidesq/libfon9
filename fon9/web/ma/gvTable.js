@@ -142,6 +142,8 @@ function emitEditConfirm(gv, cell) {
 function onclickSelectCell(gv, ev) {
    if (gv.selectedCell)
       gv.selectedCell.focus();
+   else
+      gv.setFirstCellFocus();
 }
 
 /** 建立 gv table.
@@ -187,6 +189,7 @@ class GridView {
 
    /** 清除包含 head, body 的表格內容. */
    clearAll() {
+      this.selectedCell = undefined;
       this.gvTable.tHead.innerHTML = "";
       this.gvTable.tBodies[0].innerHTML = "";
    }
@@ -244,6 +247,8 @@ class GridView {
                            this.selectedCell.cellIndex);
       }
       rowParent.removeChild(row);
+      if (this.gvTable.tBodies[0].rows.length <= 0)
+         this.setFirstCellFocus();
    }
    /** 用 key 尋找 row. */
    searchRow(key) {
@@ -251,6 +256,8 @@ class GridView {
    }
    /** 取得 cell 所在行的 key text. */
    getKeyText(cell) {
+      if (!cell)
+         return "";
       let ridx = cell.parentNode.rowIndex;
       return ridx <= 0 ? "" : this.gvTable.rows[ridx].cells[0].textContent;
    }
@@ -271,6 +278,7 @@ class GridView {
          this.gvTable.removeAttribute("tabIndex");
       }
       else {
+         this.selectedCell = undefined;
          this.gvTable.tabIndex = 0;
          this.gvTable.focus();
       }

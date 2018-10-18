@@ -3,6 +3,9 @@
 #ifndef __fon9_framework_IoManager_hpp__
 #define __fon9_framework_IoManager_hpp__
 #include "fon9/framework/IoFactory.hpp"
+#include "fon9/ConfigFileBinder.hpp"
+#include "fon9/SchTask.hpp"
+
 #ifdef fon9_WINDOWS
 #include "fon9/io/win/IocpService.hpp"
 #else
@@ -11,8 +14,12 @@
 
 namespace fon9 {
 
+fon9_WARN_DISABLE_PADDING;
 struct IoManagerArgs {
    std::string Name_;
+   
+   /// 設定檔, 如果為空, 表示不使用設定檔.
+   std::string CfgFileName_;
 
    /// 若 IoServiceSrc_ != nullptr 則不理會 IoServiceCfgstr_;
    /// 直接與 IoServiceSrc_ 共用 io service.
@@ -23,6 +30,9 @@ struct IoManagerArgs {
    SessionFactoryParkSP SessionFactoryPark_;
    /// 如果 DeviceFactoryPark_ == nullptr, 則 IoManager 會自己建立一個.
    DeviceFactoryParkSP  DeviceFactoryPark_;
+
+   /// 提供 IoManager 建構結果, 例如: 提供 ConfigFileBinder_.OpenRead(...args.CfgFileName_); 的錯誤訊息.
+   std::string Result_;
 };
 
 class fon9_API IoManager : public io::Manager {
@@ -53,6 +63,8 @@ public:
 
    /// 若 id 重複, 則返回 false, 表示失敗.
    /// 若 cfg.Enabled_ == EnabledYN::Yes 則會啟用該設定.
+   /// - 若有 bind config file, 透過這裡加入設定, 不會觸發更新設定檔.
+   ///   在透過 TreeOp 增刪改, 才會觸發寫入設定檔.
    bool AddConfig(StrView id, const IoConfigItem& cfg);
 
    class Tree : public seed::Tree {
@@ -61,10 +73,23 @@ public:
       struct TreeOp;
       struct PodOp;
       static seed::LayoutSP MakeLayout();
-      seed::TreeSP TabTreeOp_; // for NeedsApply.
+      seed::TreeSP      TabTreeOp_; // for NeedsApply.
+      ConfigFileBinder  ConfigFileBinder_;
+
+      static void EmitOnTimer(TimerEntry* timer, TimeStamp now);
+      using Timer = DataMemberEmitOnTimer<&Tree::EmitOnTimer>;
+      Timer Timer_{GetDefaultTimerThread()};
+      enum class TimerFor {
+         Open,
+         CheckSch,
+      };
+      TimerFor TimerFor_;
+      // 啟動Timer: n秒後檢查: Open or Close devices.
+      void StartTimerForOpen();
    public:
       const IoManagerSP  IoManager_;
-      Tree(const IoManagerArgs& args);
+      Tree(IoManagerArgs& args);
+      ~Tree();
       void OnTreeOp(seed::FnTreeOp fnCallback) override;
       void OnTabTreeOp(seed::FnTreeOp fnCallback) override;
       void OnParentSeedClear() override;
@@ -88,13 +113,22 @@ private:
       ///   - this->Device_ 是 Accepted Client.
       ///   - this->Sapling_ 為顯示此 AcceptedClients 的 tree.
       io::DeviceAcceptedClientSeq   AcceptedClientSeq_{0};
+
+      void DisposeDevice(TimeStamp now, StrView cause);
    };
    static DeviceRun* FromManagerBookmark(io::Device& dev);
 
    using DeviceItemId = CharVector;
    struct DeviceItem : public DeviceRun, public intrusive_ref_counter<DeviceItem> {
+      bool           IsInSch_{false};
+      SchConfig      Sch_;
       DeviceItemId   Id_;
       IoConfigItem   Config_;
+
+      DeviceItem(StrView id) : Id_{id} {
+      }
+      DeviceItem(StrView id, const IoConfigItem& cfg) : Id_{id}, Config_(cfg) {
+      }
    };
    using DeviceItemSP = intrusive_ptr<DeviceItem>;
    fon9_WARN_POP;
@@ -125,26 +159,16 @@ private:
    void UpdateDeviceState(io::Device& dev, const io::StateUpdatedArgs& e);
    void UpdateDeviceStateLocked(io::Device& dev, const io::StateUpdatedArgs& e);
    void UpdateSessionStateLocked(io::Device& dev, StrView stmsg);
+
+   bool CheckOpenDevice(DeviceItem& item);
    bool CreateDevice(DeviceItem& item);
    static seed::LayoutSP MakeAcceptedClientLayout();
    static void MakeAcceptedClientTree(DeviceRun& serItem, io::DeviceListenerSP listener);
    struct AcceptedTree;
+
+   static void Apply(const seed::Fields& flds, StrView src, DeviceMapImpl& curmap, DeviceMapImpl& oldmap);
 };
-
-//--------------------------------------------------------------------------//
-
-class fon9_API NamedIoManager : public seed::NamedSapling {
-   fon9_NON_COPY_NON_MOVE(NamedIoManager);
-   using base = seed::NamedSapling;
-public:
-   NamedIoManager(const IoManagerArgs& args)
-      : base(new IoManager::Tree{args}, args.Name_) {
-   }
-
-   IoManager& GetIoManager() const {
-      return *static_cast<IoManager::Tree*>(this->Sapling_.get())->IoManager_;
-   }
-};
+fon9_WARN_POP;
 
 } // namespaces
 #endif//__fon9_framework_IoManager_hpp__

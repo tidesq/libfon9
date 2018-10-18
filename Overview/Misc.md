@@ -53,3 +53,15 @@
 
 ## 設定檔載入工具
 * [`fon9/ConfigLoader.hpp`](../fon9/ConfigLoader.hpp)
+
+## 載入模組
+### 定義執行入口
+* [`fon9/seed/Plugins.hpp`](../fon9/seed/Plugins.hpp)
+* `fon9::seed::PluginsDesc`
+* `fon9::seed::PluginsPark`
+* 範例:
+  * [TcpClient factory](../fon9/framework/IoFactoryTcpClient.cpp)
+  * [TcpServer factory](../fon9/framework/IoFactoryTcpServer.cpp)
+  * [Http session](../fon9/web/HttpPlugins.cpp)
+### 載入管理員
+* [`fon9/seed/PluginsMgr.hpp`](../fon9/seed/PluginsMgr.hpp)

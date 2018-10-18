@@ -10,6 +10,7 @@
 #include "fon9/seed/FieldTimeStamp.hpp"
 #include "fon9/seed/Tab.hpp"
 #include "fon9/Outcome.hpp"
+#include "fon9/SimpleFactory.hpp"
 
 namespace fon9 { namespace seed {
 
@@ -57,6 +58,22 @@ namespace fon9 { namespace seed {
                         fon9_OffsetOfRawPointer(DerivedRaw, Member_), \
                         reinterpret_cast<const DerivedRaw*>(0x1000)->Member_)
 
+/// 透過註冊擴充自訂型別的 Field.
+typedef FieldSP (*FnFieldMaker) (StrView& fldcfg, char chSpl, char chTail);
+class fon9_API FieldMakerRegister : public SimpleFactoryPark<FieldMakerRegister> {
+   using base = SimpleFactoryPark<FieldMakerRegister>;
+public:
+   using base::base;
+   FieldMakerRegister() = delete;
+
+   #define fon9_kCSTR_UDFieldMaker_Head   "x"
+   /// fldTypeId 不包含前置的 fon9_kCSTR_UDFieldMaker_Head 字元,
+   /// 例如: 您自訂的欄位 GetTypeId() 傳回 fon9_kCSTR_UDFieldMaker_Head "ABC", 則此處應使用 "ABC";
+   /// - 若 fldTypeId 重複, 則註冊失敗, 傳回先註冊的 fnFieldMaker.
+   /// - 若 fnFieldMaker==nullptr, 則傳回已註冊的 fnFieldMaker;
+   static FnFieldMaker Register(StrView fldTypeId, FnFieldMaker fnFieldMaker);
+};
+
 /// \ingroup seed
 /// 建立一個動態欄位.
 /// - 格式: `Type FieldName|Title|Description\n`
@@ -73,6 +90,7 @@ namespace fon9 { namespace seed {
 ///    - Snx = Signed, n=bytes(1,2,4,8), CellRevPrint()使用Hex輸出
 ///    - Ti = TimeInterval
 ///    - Ts = TimeStamp
+///    - fon9_kCSTR_UDFieldMaker_Head + "??" = 使用註冊機制的動態欄位. 參考 FieldMakerRegister; FieldSchCfgStr.cpp
 /// - 例:
 ///    - C4    BrkNo |券商代號
 ///    - U4    IvacNo|投資人帳號|投資人帳號含檢查碼

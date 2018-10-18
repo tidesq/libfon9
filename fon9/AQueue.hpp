@@ -64,7 +64,8 @@ fon9_WARN_DISABLE_PADDING;
 /// struct TaskInvoker {
 ///   /// - 把 this->TakeCall 加入 work thread.
 ///   /// - 須確保在 this->TakeCall() 執行前 AQueue 不能被解構.
-///   void MakeCallForWork();
+///   template <class WorkLocker>
+///   void MakeCallForWork(WorkLocker& worker);
 ///   /// - 執行 task.
 ///   void Invoke(Task& task);
 /// };
@@ -283,6 +284,11 @@ public:
          worker->SetWorkerState(WorkerState::Ringing);
          this->TaskInvoker_.MakeCallForWork(worker);
       }
+   }
+
+   bool InTakingCallThread() {
+      WorkLocker worker{this->WorkController_};
+      return worker->InTakingCallThread();
    }
 
 private:

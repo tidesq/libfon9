@@ -129,6 +129,15 @@ public:
          return std::make_pair(i, false);
       return std::make_pair(ConvToPublic(this->Container_.insert(ConvToInternal(i), std::forward<vtype>(v))), true);
    }
+   template <class ptype>
+   auto insert(ptype* p) -> decltype(value_type{p}, std::pair<iterator, bool>{}) {
+      // 避免 value_type 為 intrusive_ptr<ptype>,
+      // 如果直接使用 ptype*&& 則可能在 compare(const intrusive_ptr<ptype>& lhs, const intrusive_ptr<ptype>& rhs);
+      // 把 p 傳入 intrusive_ptr<ptype>{p} 造成 compare() 之後, p 被刪除的問題!
+      // 所以這裡先把 p 保護起來!
+      return this->insert(value_type{p});
+   }
+
    /// 依照排序加入一個元素.
    /// vtype 可為 const value_type& 或 value_type&&
    template <class vtype>
@@ -156,6 +165,10 @@ public:
       if (find_i(ifind, ibeg, iend, v, this->Cmp_))
          return ifind;
       return ConvToPublic(this->Container_.insert(ConvToInternal(ifind), std::forward<vtype>(v)));
+   }
+   template <class ptype>
+   auto insert(iterator ihint, ptype* p) -> decltype(value_type{p}, iterator{}) {
+      return this->insert(ihint, value_type{p});
    }
 
    template <class KeyT>

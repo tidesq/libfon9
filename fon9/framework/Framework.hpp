@@ -2,18 +2,19 @@
 /// \author fonwinz@gmail.com
 #ifndef __fon9_framework_Framework_hpp__
 #define __fon9_framework_Framework_hpp__
-#include "fon9/seed/MaTree.hpp"
+#include "fon9/seed/PluginsMgr.hpp"
 #include "fon9/auth/AuthMgr.hpp"
 
 namespace fon9 {
 
 /// \ingroup Misc
 struct fon9_API Framework {
-   std::string       ConfigPath_;
-   std::string       SyncerPath_;
-   seed::MaTreeSP    Root_;
-   InnSyncerSP       Syncer_;
-   auth::AuthMgrSP   MaAuth_;
+   std::string          ConfigPath_;
+   std::string          SyncerPath_;
+   seed::MaTreeSP       Root_;
+   InnSyncerSP          Syncer_;
+   auth::AuthMgrSP      MaAuth_;
+   seed::PluginsMgrSP   MaPlugins_;
 
    ~Framework();
 
@@ -26,8 +27,9 @@ struct fon9_API Framework {
    ///     - $LogFileSizeMB=n                                 # 超過 n MB 就換檔.
    ///   - $HostId     沒有預設值, 如果沒設定, 就不會設定 LocalHostId_
    ///   - $SyncerPath 指定 InnSyncerFile 的路徑, 預設 = "fon9syn"
-   ///   - $MaAuthName 預設 "MaAuth"
+   ///   - $MaAuthName 預設 "MaAuth": 並建立(開啟) this->ConfigPath_ + $MaAuthName + ".f9dbf" 儲存 this->MaAuth_ 之下的資料表.
    ///   - $MemLock    預設 "N"
+   ///   - $MaPlugins  預設 "MaPlugins.f9gv": 儲存 「plugins設定」的檔案, 實際儲存位置為: this->ConfigPath_ + $MaPlugins
    void Initialize(int argc, char** argv);
 
    /// dbf.LoadAll(), syncer.StartSync(), ...

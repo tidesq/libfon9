@@ -7,8 +7,8 @@
 
 namespace fon9 {
 
-fon9_API void BufferAppendTo(const BufferList& buf, std::string& str) {
-   BufferAppendTo<std::string>(buf, str);
+fon9_API void BufferAppendTo(const BufferNode* front, std::string& str) {
+   BufferAppendTo<std::string>(front, str);
 }
 
 fon9_API void AppendToBuffer(BufferList& dst, const void* src, size_t size) {

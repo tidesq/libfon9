@@ -89,4 +89,14 @@ int FieldChar1::Compare(const RawRd& lhs, const RawRd& rhs) const {
    return (L < R) ? -1 : (L == R) ? 0 : 1;
 }
 
+//--------------------------------------------------------------------------//
+
+OpResult FieldEnabledYN::StrToCell(const RawWr& wr, StrView value) const {
+   char ch = (toupper(value.Get1st()) == 'Y') ? 'Y' : '\0';
+   return base::StrToCell(wr, StrView{&ch,1});
+}
+StrView FieldEnabledYN::GetTypeId(NumOutBuf&) const {
+   return StrView{"C1Y"};
+}
+
 } } // namespaces

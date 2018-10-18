@@ -32,6 +32,7 @@ set(fon9src
  CmdArgs.cpp
  ConfigLoader.cpp
  ConfigParser.cpp
+ DllHandle.cpp
 
  File.cpp
  FilePath.cpp
@@ -40,6 +41,7 @@ set(fon9src
  FileAppender.cpp
  LogFile.cpp
  FdrNotify.cpp
+ ConfigFileBinder.cpp
 
  InnFile.cpp
  InnSyncer.cpp
@@ -102,6 +104,7 @@ set(fon9src
  seed/FieldBytes.cpp
  seed/FieldChars.cpp
  seed/FieldDyBlob.cpp
+ seed/FieldSchCfgStr.cpp
  seed/SeedSearcher.cpp
  seed/SeedAcl.cpp
  seed/SeedFairy.cpp
@@ -109,6 +112,9 @@ set(fon9src
  seed/SysEnv.cpp
  seed/CloneTree.cpp
  seed/TabTreeOp.cpp
+ seed/Plugins.cpp
+ seed/PluginsMgr.cpp
+ seed/ConfigGridView.cpp
 
  crypto/Sha1.cpp
  crypto/Sha256.cpp
@@ -128,11 +134,13 @@ set(fon9src
  framework/Framework.cpp
  framework/SeedSession.cpp
  framework/IoManager.cpp
+ framework/NamedIoManager.cpp
+ framework/IoFactory.cpp
  framework/IoFactoryTcpClient.cpp
  framework/IoFactoryTcpServer.cpp
 )
 add_library(fon9_s STATIC ${fon9src})
-target_link_libraries(fon9_s pthread rt)
+target_link_libraries(fon9_s pthread rt dl)
 
 add_library(fon9 SHARED ${fon9src})
 target_link_libraries(fon9 pthread rt dl)

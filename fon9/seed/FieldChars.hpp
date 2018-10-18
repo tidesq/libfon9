@@ -5,6 +5,7 @@
 #include "fon9/seed/Field.hpp"
 #include "fon9/seed/RawWr.hpp"
 #include "fon9/CharAry.hpp"
+#include "fon9/ConfigUtils.hpp"
 
 namespace fon9 { namespace seed {
 
@@ -113,6 +114,25 @@ inline FieldSPT<FieldChar1> MakeField(Named&& named, int32_t ofs, char&) {
 }
 inline FieldSPT<FieldChar1> MakeField(Named&& named, int32_t ofs, const char&) {
    return FieldSPT<FieldChar1>{new FieldConst<FieldChar1>{std::move(named), ofs}};
+}
+
+//--------------------------------------------------------------------------//
+
+class fon9_API FieldEnabledYN : public FieldChar1 {
+   fon9_NON_COPY_NON_MOVE(FieldEnabledYN);
+   using base = FieldChar1;
+public:
+   using base::base;
+   OpResult StrToCell(const RawWr& wr, StrView value) const override;
+   /// return "C1Y";
+   StrView GetTypeId(NumOutBuf&) const;
+};
+
+inline FieldSPT<FieldEnabledYN> MakeField(Named&& named, int32_t ofs, EnabledYN&) {
+   return FieldSPT<FieldEnabledYN>{new FieldEnabledYN{std::move(named), ofs}};
+}
+inline FieldSPT<FieldEnabledYN> MakeField(Named&& named, int32_t ofs, const EnabledYN&) {
+   return FieldSPT<FieldEnabledYN>{new FieldConst<FieldEnabledYN>{std::move(named), ofs}};
 }
 
 } } // namespaces

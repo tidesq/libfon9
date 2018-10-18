@@ -722,6 +722,33 @@
     <ClInclude Include="..\..\..\fon9\StrVref.hpp">
       <Filter>Header Files\_base\_AlNum / StrTools</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\DllHandle.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\Plugins.hpp">
+      <Filter>Header Files\seed\_tools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\PluginsMgr.hpp">
+      <Filter>Header Files\seed\_tools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\ConfigUtils.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\ConfigFileBinder.hpp">
+      <Filter>Header Files\_base\_File</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\framework\NamedIoManager.hpp">
+      <Filter>Header Files\framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\ConfigGridView.hpp">
+      <Filter>Header Files\seed\_tools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\FieldSchCfgStr.hpp">
+      <Filter>Header Files\seed\_fields</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\SimpleFactory.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1113,6 +1140,33 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\seed\TabTreeOp.cpp">
       <Filter>Source Files\seed\_tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\DllHandle.cpp">
+      <Filter>Source Files\_base\_Tools / Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\seed\Plugins.cpp">
+      <Filter>Source Files\seed\_tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\seed\PluginsMgr.cpp">
+      <Filter>Source Files\seed\_tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\ConfigFileBinder.cpp">
+      <Filter>Source Files\_base\_File</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\framework\NamedIoManager.cpp">
+      <Filter>Source Files\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\framework\IoFactory.cpp">
+      <Filter>Source Files\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\web\HttpPlugins.cpp">
+      <Filter>Source Files\web</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\seed\ConfigGridView.cpp">
+      <Filter>Source Files\seed\_tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\seed\FieldSchCfgStr.cpp">
+      <Filter>Source Files\seed\_fields</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

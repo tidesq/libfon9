@@ -8,7 +8,10 @@
 namespace fon9 { namespace web {
 
 /// \ingroup web
-/// 從檔案系統載入靜態檔案當作回應.
+/// 根據底下順序, 處理 http 要求.
+/// - 從 HttpDispatcher::Get() 取得的 HttpHandlerSP 處理要求.
+/// - 從檔案系統載入靜態檔案當作回應.
+/// - 若以上都沒有找到, 則回覆 404 Not found.
 class fon9_API HttpHandlerStatic : public HttpDispatcher {
    fon9_NON_COPY_NON_MOVE(HttpHandlerStatic);
    using base = HttpDispatcher;

@@ -52,9 +52,9 @@ class fon9_API NamedSapling : public NamedSeed {
 public:
    const TreeSP Sapling_;
 
-   template <class... ArgsT>
-   NamedSapling(TreeSP sapling, ArgsT&&... args)
-      : base{std::forward<ArgsT>(args)...}
+   template <class... NamedArgsT>
+   NamedSapling(TreeSP sapling, NamedArgsT&&... namedargs)
+      : base(std::forward<NamedArgsT>(namedargs)...)
       , Sapling_{std::move(sapling)} {
    }
 

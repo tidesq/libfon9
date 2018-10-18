@@ -51,15 +51,16 @@ void Framework::Initialize(int argc, char** argv) {
    this->Root_.reset(new seed::MaTree{"Services"});
 
    auto sysEnv = seed::SysEnv::Plant(this->Root_);
-   auto cfgPath = sysEnv->Add(argc, argv, CmdArgDef{
+   static const CmdArgDef  argConfigPath{
       StrView{fon9_kCSTR_SysEnvItem_ConfigPath}, //Name
       StrView{"fon9cfg"}, //DefaultValue
       StrView{"c"},       //ArgShort_
       StrView{"cfg"},     //ArgLong_
       "fon9cfg",          //EnvName_
       StrView{},          //Title_
-      StrView{}});        //Description_
-   this->ConfigPath_ = FilePath::AppendPathTail(&cfgPath->Value_);
+      StrView{}};         //Description_
+   this->ConfigPath_ = FilePath::AppendPathTail(GetCmdArg(argc, argv, argConfigPath));
+   sysEnv->Add(new seed::SysEnvItem(argConfigPath, this->ConfigPath_));
    sysEnv->Initialize(argc, argv);
 
    #define fon9_kCSTR_SyncerPath    "SyncerPath"
@@ -72,6 +73,7 @@ void Framework::Initialize(int argc, char** argv) {
 
    StrView        cfgstr;
    RevBufferList  rbuf{128};
+   std::string    fname, desc;
 
    // 如果沒設定, log 就輸出在 console.
    if (auto logFileFmt = cfgld.GetVariable("LogFileFmt")) {
@@ -80,8 +82,8 @@ void Framework::Initialize(int argc, char** argv) {
          File::SizeType maxFileSizeMB = 0;
          if (auto logFileSize = cfgld.GetVariable("LogFileSizeMB"))
             maxFileSizeMB = StrTo(&logFileSize->Value_.Str_, 0u);
-         std::string fname = StrView_ToNormalizeStr(cfgstr);
-         auto        res = InitLogWriteToFile(fname, FileRotate::TimeScale::Day, maxFileSizeMB * 1024 * 1024, 0);
+         fname = StrView_ToNormalizeStr(cfgstr);
+         auto res = InitLogWriteToFile(fname, FileRotate::TimeScale::Day, maxFileSizeMB * 1024 * 1024, 0);
          if (res.IsError())
             RevPrint(rbuf, "err=", res.GetError());
          else if (maxFileSizeMB > 0)
@@ -128,7 +130,6 @@ void Framework::Initialize(int argc, char** argv) {
          #define MLOCK()       mlockall(MCL_CURRENT|MCL_FUTURE)
          #define MLOCK_cstr   "mlockall(MCL_CURRENT|MCL_FUTURE)"
          #define MLOCK_log    "$" fon9_kCSTR_MemLock ":" MLOCK_cstr "|"
-         std::string desc;
          #if !defined(fon9_WINDOWS)
             if (MLOCK() == 0) {
                desc = "OK";
@@ -142,9 +143,21 @@ void Framework::Initialize(int argc, char** argv) {
             desc = "err=Not support on Windows";
             fon9_LOG_WARN(MLOCK_log, desc);
          #endif
-         sysEnv->Add(new seed::SysEnvItem(fon9_kCSTR_MemLock, "Y", MLOCK_cstr, std::move(desc)));
+            sysEnv->Add(new seed::SysEnvItem(fon9_kCSTR_MemLock, MLOCK_cstr "=Y", std::string{}, std::move(desc)));
       }
    }
+
+   #define fon9_kCSTR_MaPlugins   "MaPlugins"
+   this->MaPlugins_.reset(new seed::PluginsMgr(this->Root_, fon9_kCSTR_MaPlugins));
+   this->Root_->Add(this->MaPlugins_, "Plant." fon9_kCSTR_MaPlugins);
+   cfgstr.Reset(nullptr);
+   if (auto plugins = cfgld.GetVariable(fon9_kCSTR_MaPlugins))
+      cfgstr = &plugins->Value_.Str_;
+   if (cfgstr.empty())
+      cfgstr = fon9_kCSTR_MaPlugins ".f9gv";
+   fname = StrView_ToNormalizeStr(ToStrView(FilePath::MergePath(&this->ConfigPath_, cfgstr)));
+   desc = this->MaPlugins_->BindConfigFile(&fname);
+   sysEnv->Add(new seed::SysEnvItem(fon9_kCSTR_MaPlugins, std::move(fname), std::string{}, std::move(desc)));
 
    // 透過 log 紀錄基本的執行環境.
    LogSysEnv(sysEnv->Get(fon9_kCSTR_SysEnvItem_ProcessId));

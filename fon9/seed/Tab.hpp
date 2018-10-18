@@ -76,6 +76,9 @@ public:
    const Field* Get(StrView name) const {
       return this->Fields_.Get(name);
    }
+   size_t GetAll(std::vector<const Field*>& flds) const {
+      return this->Fields_.GetAll(*reinterpret_cast<std::vector<Field*>*>(&flds));
+   }
 };
 
 /// \ingroup seed

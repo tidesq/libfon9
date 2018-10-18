@@ -65,6 +65,9 @@ void WebSocketAuther::OnAuthVerify(auth::AuthR authr, auth::AuthSessionSP authSe
          HttpSession* httpSession = static_cast<HttpSession*>(dev.Session_.get());
          if (auto pthis = dynamic_cast<WebSocketAuther*>(httpSession->GetRecvHandler())) {
             pthis->Send(WebSocketOpCode::TextFrame, &authr.Info_);
+            // 如果在此 Send() 已完成, 可能觸發 DeviceContinueSend(),
+            // 因為此時還在 device op thread, 所以在 DeviceContinueSend() 會進入 [無法立即送出] 的狀態,
+            // 因此, 會回到 device op thread, 處理後續的傳送, 因此 log 可能會有 "Async.DeviceContinueSend" 的訊息.
             if (WebSocketSP ws = pthis->Owner_->CreateWebSocketService(dev, authSession->GetAuthResult()))
                httpSession->UpgradeTo(std::move(ws));
             else

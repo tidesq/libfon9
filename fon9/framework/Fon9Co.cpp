@@ -11,7 +11,7 @@
 #include "fon9/CmdArgs.hpp"
 #include "fon9/Log.hpp"
 
-#include "fon9/framework/IoManager.hpp"
+#include "fon9/framework/NamedIoManager.hpp"
 #include "fon9/web/HttpSession.hpp"
 #include "fon9/web/HttpHandlerStatic.hpp"
 #include "fon9/web/HttpDate.hpp"
@@ -196,8 +196,7 @@ class HttpHome : public fon9::web::HttpHandlerStatic {
 public:
    using base::base;
    fon9::io::RecvBufferSize OnHttpRequest(fon9::io::Device& dev, fon9::web::HttpRequest& req) override {
-      if (0);// below is for debug.
-      /*
+      // 底下用來觀察 http request.
       if (req.MessageSt_ == fon9::web::HttpMessageSt::ChunkAppended) {
          printf("\n" "ChunkAppended:\n" "chunk-ext=[%s]\n" "chunk-data=[%s]\n",
                 req.Message_.ChunkExt().ToString().c_str(),
@@ -213,10 +212,10 @@ public:
                    req.Message_.ChunkExt().ToString().c_str(),
                    req.Message_.ChunkTrailer().ToString().c_str());
       }
-      */
       return base::OnHttpRequest(dev, req);
    }
 };
+
 
 int main(int argc, char** argv) {
    #if defined(_MSC_VER) && defined(_DEBUG)
@@ -232,39 +231,33 @@ int main(int argc, char** argv) {
 
    fon9::Framework   fon9sys;
    fon9sys.Initialize(argc, argv);
+
+   // PlantScramSha256(), PolicyAclAgent::Plant() 要用 plugins 機制嗎?
    fon9::auth::PlantScramSha256(*fon9sys.MaAuth_);
    fon9::auth::PolicyAclAgent::Plant(*fon9sys.MaAuth_);
-   //------vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-   fon9::IoManagerArgs iomArgs;
-   iomArgs.Name_ = "MaIo";
-   iomArgs.IoServiceCfgstr_ = "ThreadCount=2|Capacity=100";
-   iomArgs.DeviceFactoryPark_ = fon9::seed::FetchNamedPark<fon9::DeviceFactoryPark>(*fon9sys.Root_, "DeviceFactoryPark");
-   iomArgs.DeviceFactoryPark_->Add(fon9::GetIoFactoryTcpClient());
-   iomArgs.DeviceFactoryPark_->Add(fon9::GetIoFactoryTcpServer());
-   fon9::NamedIoManager* iomgr;
-   fon9sys.Root_->Add(iomgr = new fon9::NamedIoManager{iomArgs});
 
-   #define fon9_kCSTR_HttpManSession   "HttpMan"
-   fon9::web::HttpHandlerStaticSP wwwRootHandler{new HttpHome{"wwwroot/HttpStatic.cfg", "HttpRoot"}};
-   iomgr->GetIoManager().SessionFactoryPark_->Add(fon9::web::HttpSession::MakeFactory(fon9_kCSTR_HttpManSession, wwwRootHandler));
-   fon9sys.Root_->Add(wwwRootHandler);
-   wwwRootHandler->Add(new fon9::web::WsSeedVisitorCreator(fon9sys.Root_, fon9sys.MaAuth_, "WsSeedVisitor"));
+// ---------------------------------------------------------------
+// 若要提供 http 管理介面, 載入必要的 plugins, 底下的設定都是立即生效:
+// 建立 TcpServer factory, 放在 DeviceFactoryPark=FpDevice
+//    >ss,Enabled=Y,EntryName=TcpServer,Args='Name=TcpServer|AddTo=FpDevice' /MaPlugins/DevTcps
+// 建立 Http request 靜態分配器, wwwroot/HttpStatic.cfg 可參考 fon9/web/HttpStatic.cfg:
+//    >ss,Enabled=Y,EntryName=HttpStaticDispatcher,Args='Name=HttpRoot|Cfg=wwwroot/HttpStatic.cfg' /MaPlugins/Http-R
+// 建立 Http session factory, 使用剛剛建立的 http 分配器(HttpRoot), 放在 SessionFactoryPark=FpSession
+//    >ss,Enabled=Y,EntryName=HttpSession,Args='Name=HttpMa|HttpDispatcher=HttpRoot|AddTo=FpSession' /MaPlugins/HttpSes
+// 建立 WsSeedVisitor(透過 web service 管理 fon9::seed), 使用 AuthMgr=MaAuth 檢核帳密權限, 放在剛剛建立的 http 分配器(HttpRoot)
+//    >ss,Enabled=Y,EntryName=WsSeedVisitor,Args='Name=WsSeedVisitor|AuthMgr=MaAuth|AddTo=HttpRoot' /MaPlugins/HttpWsMa
+// 建立 io 管理員, DeviceFactoryPark=FpDevice; SessionFactoryPark=FpSession; 設定儲存在 fon9cfg/MaIo.f9gv
+//    >ss,Enabled=Y,EntryName=NamedIoManager,Args='Name=MaIo|DevFp=FpDevice|SesFp=FpSession|Cfg=MaIo.f9gv|SvcCfg="ThreadCount=2|Capacity=100"' /MaPlugins/MaIo
+//
+// 在 io 管理員(MaIo) 設定 HttpSession:
+// 建立設定, 此時尚未套用(也尚未存檔):
+//    >ss,Enabled=Y,Session=HttpMa,Device=TcpServer,DeviceArgs=6080 /MaIo/^edit:Config/MaHttp
+// 查看設定及套用時的 SubmitId:
+//    >gv /MaIo/^apply:Config
+// 套用設定, 假設上一行指令的結果提示 SubmitId=123:
+//    >/MaIo/^apply:Config submit 123
+// ---------------------------------------------------------------
 
-   fon9::IoConfigItem iocfg;
-   iocfg.Enabled_ = fon9::EnabledYN::Yes;
-   //iocfg.Sch_;
-   iocfg.SessionName_.assign(fon9_kCSTR_HttpManSession);
-   iocfg.SessionArgs_.assign("$HtmlDir={/} $Seed={/seed}");
-
-   iocfg.DeviceName_.assign("TcpServer");
-   iocfg.DeviceArgs_.assign("6080");
-   iomgr->GetIoManager().AddConfig("MaHttp", iocfg);
-
-   iocfg.DeviceName_.assign("TcpClient");
-   iocfg.DeviceArgs_.assign("dn=NoHost:6080");
-   iomgr->GetIoManager().AddConfig("test-1", iocfg);
-   iomgr->GetIoManager().AddConfig("test^2", iocfg);
-   //------^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    fon9sys.Start();
 
    // 使用 "--admin" 啟動 AdminMode.

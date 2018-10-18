@@ -14,13 +14,22 @@ static size_t StrToCountNum(StrView& fldcfg) {
 
 static FieldSP MakeFieldChars(StrView& fldcfg, char chSpl, char chTail) {
    size_t   byteCount = StrToCountNum(fldcfg);
-   Named    named{DeserializeNamed(fldcfg, chSpl, chTail)};
+   int      exType = fldcfg.Get1st();
+   if (!isspace(exType))
+      fldcfg.SetBegin(fldcfg.begin() + 1);
+
+   Named named{DeserializeNamed(fldcfg, chSpl, chTail)};
    if (named.Name_.empty())
       return FieldSP{};
    switch (byteCount) {
-   case 0:  return FieldSP{new FieldDyBlob{std::move(named), FieldType::Chars}};
-   case 1:  return FieldSP{new FieldChar1{std::move(named)}};
    default: return FieldSP{new FieldChars{std::move(named), byteCount}};
+   case 0:  return FieldSP{new FieldDyBlob{std::move(named), FieldType::Chars}};
+   case 1:
+      switch (exType) {
+      case 'Y': // "C1Y"
+         return FieldSP{new FieldEnabledYN{std::move(named)}};
+      }
+      return FieldSP{new FieldChar1{std::move(named)}};
    }
 }
 static FieldSP MakeFieldBytes(StrView& fldcfg, char chSpl, char chTail) {
@@ -103,6 +112,21 @@ static FieldSP MakeFieldDecimal(Named&& named, size_t byteCount, DecScaleT scale
 
 //--------------------------------------------------------------------------//
 
+fon9_API FnFieldMaker FieldMakerRegister::Register(StrView fldTypeId, FnFieldMaker fnFieldMaker) {
+   return SimpleFactoryRegister(fldTypeId, fnFieldMaker);
+}
+static bool FldTypeIdSpl(int ch) {
+   return isspace(static_cast<unsigned char>(ch)) || ch == '.';
+}
+static FieldSP MakeFieldXreg(StrView& fldcfg, char chSpl, char chTail) {
+   StrView  fldTypeId = StrFetchTrim(fldcfg, &FldTypeIdSpl);
+   if (auto fnMaker = FieldMakerRegister::Register(fldTypeId, nullptr))
+      return fnMaker(fldcfg, chSpl, chTail);
+   return FieldSP{};
+}
+
+//--------------------------------------------------------------------------//
+
 static FieldSP MakeFieldImpl(StrView& fldcfg, char chSpl, char chTail) {
    StrTrimHead(&fldcfg);
    int chType = fldcfg.Get1st();
@@ -113,6 +137,8 @@ static FieldSP MakeFieldImpl(StrView& fldcfg, char chSpl, char chTail) {
    default:
       fldcfg.SetBegin(fldcfg.begin() - 1);
       break;
+   case *fon9_kCSTR_UDFieldMaker_Head:
+               return MakeFieldXreg(fldcfg, chSpl, chTail);
    case 'C':   return MakeFieldChars(fldcfg, chSpl, chTail);
    case 'B':   return MakeFieldBytes(fldcfg, chSpl, chTail);
    case 'T':   return MakeFieldTime(fldcfg, chSpl, chTail);
