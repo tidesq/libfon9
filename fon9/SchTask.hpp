@@ -9,6 +9,12 @@
 namespace fon9 {
 
 fon9_MSC_WARN_DISABLE(4820);
+enum class SchSt {
+   Out = 0,
+   In = 1,
+   Unknown = -1,
+};
+
 /// \ingroup Thrs
 /// 排程設定.
 struct fon9_API SchConfig {
@@ -36,7 +42,7 @@ struct fon9_API SchConfig {
 
    struct CheckResult {
       TimeStamp NextCheckTime_;
-      bool      IsInSch_;
+      SchSt     SchSt_;
    };
 
    SchConfig() {

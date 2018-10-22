@@ -38,7 +38,9 @@ public:
    using base::end;
    using base::erase;
    using base::size;
+   using base::empty;
    using base::sindex;
+   using base::clear;
    /// 使用 SortedVector::find(SubConn id) 進行二元搜尋.
    iterator find(SubConn id) {
       return base::find(id);
@@ -92,6 +94,7 @@ class Subject {
    using ContainerImpl = ContainerT<SubscriberT>;
    using Container = MustLock<ContainerImpl, MutexT>;
    using Locker = typename Container::Locker;
+   using ConstLocker = typename Container::ConstLocker;
    using iterator = typename ContainerImpl::iterator;
    using size_type = typename ContainerImpl::size_type;
    using difference_type = typename ContainerImpl::difference_type;
@@ -197,13 +200,17 @@ public:
    /// 是否沒有訂閱者?
    /// 若 MutexT = std::mutex 則: 在收到訊息的時候, 在同一個 thread 之中呼叫: 會死結!
    bool IsEmpty() const {
-      Locker subrs(this->Subrs_);
+      ConstLocker subrs(this->Subrs_);
       return subrs->empty();
    }
    /// 訂閱者數量.
    size_type GetSubscriberCount() const {
-      auto   subrs(this->Subrs_.Lock());
+      ConstLocker  subrs(this->Subrs_);
       return subrs->size();
+   }
+   void Clear() {
+      Locker  subrs(this->Subrs_);
+      return subrs->clear();
    }
 };
 

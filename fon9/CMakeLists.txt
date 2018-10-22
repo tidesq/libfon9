@@ -115,6 +115,7 @@ set(fon9src
  seed/Plugins.cpp
  seed/PluginsMgr.cpp
  seed/ConfigGridView.cpp
+ seed/SeedSubr.cpp
 
  crypto/Sha1.cpp
  crypto/Sha256.cpp

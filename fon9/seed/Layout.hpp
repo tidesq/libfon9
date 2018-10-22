@@ -47,6 +47,12 @@ public:
    virtual Tab* GetTab(StrView name) const = 0;
    virtual Tab* GetTab(size_t index) const = 0;
    virtual size_t GetTabCount() const = 0;
+
+   /// 若 tabName.empty(): return this->GetTab(0);
+   /// 否則使用 tabName 尋找: return this->GetTab(tabName);
+   Tab* GetTabByNameOrFirst(StrView tabName) {
+      return tabName.empty() ? this->GetTab(0) : this->GetTab(tabName);
+   }
 };
 
 /// \ingroup seed

@@ -19,8 +19,10 @@ libfon9 TODO list
 ## 系統管理工具
 
 
-* seed: 資料異動 的 訂閱機制(MaPlugins, MaIo)
 * 記錄最後異動(及Submit)的人: User+From;
+* 設定檔備份機制:
+  * 載入成功後備份?
+  * 異動寫入前備份?
 
 
 * WebUI
@@ -65,7 +67,6 @@ libfon9 TODO list
 ## 通訊基礎建設
 * IoManager/SessionFactory/DeviceFactory
   * 提供 IoManager 的使用說明.
-  * 註冊 Factory 異動事件, 讓稍晚註冊的 Factory 可以建立 Device.
   * ip白名單、黑名單?
 * Http
   * 限制訊息最大長度.

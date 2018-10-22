@@ -37,6 +37,10 @@ struct IoManagerArgs {
 
 class fon9_API IoManager : public io::Manager {
    fon9_NON_COPY_NON_MOVE(IoManager);
+
+   struct DeviceRun;
+   struct DeviceItem;
+
    /// 在首次有需要時(GetIocpService() or GetFdrService()), 才會將該 io service 建立起來.
 #ifdef __fon9_io_win_IocpService_hpp__
    private:
@@ -59,14 +63,6 @@ public:
    const SessionFactoryParkSP SessionFactoryPark_;
    const DeviceFactoryParkSP  DeviceFactoryPark_;
 
-   IoManager(const IoManagerArgs& args);
-
-   /// 若 id 重複, 則返回 false, 表示失敗.
-   /// 若 cfg.Enabled_ == EnabledYN::Yes 則會啟用該設定.
-   /// - 若有 bind config file, 透過這裡加入設定, 不會觸發更新設定檔.
-   ///   在透過 TreeOp 增刪改, 才會觸發寫入設定檔.
-   bool AddConfig(StrView id, const IoConfigItem& cfg);
-
    class Tree : public seed::Tree {
       fon9_NON_COPY_NON_MOVE(Tree);
       using base = seed::Tree;
@@ -74,7 +70,13 @@ public:
       struct PodOp;
       static seed::LayoutSP MakeLayout();
       seed::TreeSP      TabTreeOp_; // for NeedsApply.
+      seed::SeedSubj    StatusSubj_;
       ConfigFileBinder  ConfigFileBinder_;
+      SubConn           SubConnDev_;
+      SubConn           SubConnSes_;
+      friend class IoManager;
+      void NotifyChanged(DeviceItem&);
+      void NotifyChanged(DeviceRun&);
 
       static void EmitOnTimer(TimerEntry* timer, TimeStamp now);
       using Timer = DataMemberEmitOnTimer<&Tree::EmitOnTimer>;
@@ -86,6 +88,7 @@ public:
       TimerFor TimerFor_;
       // 啟動Timer: n秒後檢查: Open or Close devices.
       void StartTimerForOpen();
+      void OnFactoryParkChanged();
    public:
       const IoManagerSP  IoManager_;
       Tree(IoManagerArgs& args);
@@ -95,10 +98,18 @@ public:
       void OnParentSeedClear() override;
    };
 
+   IoManager(Tree& ownerTree, const IoManagerArgs& args);
+
+   /// 若 id 重複, 則返回 false, 表示失敗.
+   /// 若 cfg.Enabled_ == EnabledYN::Yes 則會啟用該設定.
+   /// - 若有 bind config file, 透過這裡加入設定, 不會觸發更新設定檔.
+   ///   在透過 TreeOp 增刪改, 才會觸發寫入設定檔.
+   bool AddConfig(StrView id, const IoConfigItem& cfg);
+
 private:
+   Tree&       OwnerTree_;
    std::string IoServiceCfgstr_;
 
-   fon9_WARN_DISABLE_PADDING;
    struct DeviceRun {
       io::DeviceSP   Device_;
       CharVector     SessionSt_;
@@ -113,14 +124,17 @@ private:
       ///   - this->Device_ 是 Accepted Client.
       ///   - this->Sapling_ 為顯示此 AcceptedClients 的 tree.
       io::DeviceAcceptedClientSeq   AcceptedClientSeq_{0};
-
-      void DisposeDevice(TimeStamp now, StrView cause);
+      bool IsDeviceItem() const {
+         return this->AcceptedClientSeq_ == 0;
+      }
+      /// return DeviceSt_ changed?
+      bool DisposeDevice(TimeStamp now, StrView cause);
    };
    static DeviceRun* FromManagerBookmark(io::Device& dev);
 
    using DeviceItemId = CharVector;
    struct DeviceItem : public DeviceRun, public intrusive_ref_counter<DeviceItem> {
-      bool           IsInSch_{false};
+      SchSt          SchSt_{SchSt::Unknown};
       SchConfig      Sch_;
       DeviceItemId   Id_;
       IoConfigItem   Config_;
@@ -131,7 +145,6 @@ private:
       }
    };
    using DeviceItemSP = intrusive_ptr<DeviceItem>;
-   fon9_WARN_POP;
 
    struct CmpDeviceItemSP {
       bool operator()(const DeviceItemSP& lhs, const DeviceItemSP& rhs) const { return lhs->Id_ < rhs->Id_; }
@@ -160,8 +173,16 @@ private:
    void UpdateDeviceStateLocked(io::Device& dev, const io::StateUpdatedArgs& e);
    void UpdateSessionStateLocked(io::Device& dev, StrView stmsg);
 
-   bool CheckOpenDevice(DeviceItem& item);
-   bool CreateDevice(DeviceItem& item);
+   enum DeviceOpenResult {
+      NewDeviceCreated = 0,
+      AlreadyExists,
+      Disabled,
+      SessionFactoryNotFound,
+      DeviceFactoryNotFound,
+      DeviceCreateError,
+   };
+   DeviceOpenResult CheckOpenDevice(DeviceItem& item);
+   DeviceOpenResult CreateDevice(DeviceItem& item);
    static seed::LayoutSP MakeAcceptedClientLayout();
    static void MakeAcceptedClientTree(DeviceRun& serItem, io::DeviceListenerSP listener);
    struct AcceptedTree;

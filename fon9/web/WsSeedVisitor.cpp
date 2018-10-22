@@ -69,6 +69,51 @@ struct WsSeedVisitor::SeedVisitor : public seed::SeedVisitor {
       (void)res; assert(runner.OpResult_ == res.OpResult_);
       this->OnTicketRunnerDone(runner, DcQueueFixedMem{});
    }
+   void OnTicketRunnerBeforeGridView(seed::TicketRunnerGridView& runner, seed::TreeOp& opTree, seed::GridViewRequest& req) override {
+      if (!seed::IsTextBegin(req.OrigKey_))
+         return;
+      auto subr = this->NewSubscribe();
+      if (subr->Subscribe(ToStrView(runner.OrigPath_), *req.Tab_, opTree) != seed::OpResult::no_error)
+         this->Unsubscribe();
+   }
+   void OnTicketRunnerSubscribe(seed::TicketRunnerSubscribe&, bool isSubOrUnsub) override {
+      (void)isSubOrUnsub;
+      // 不支援使用 TicketRunnerSubscribe 訂閱.
+      // 在 OnTicketRunnerBeforeGridView() 處理訂閱.
+      // 並在 OnTicketRunnerGridView() 告知訂閱結果.
+   }
+   void OnSeedNotify(seed::VisitorSubr& subr, const seed::SeedNotifyArgs& args) override {
+      if (auto ws = this->GetWsSeedVisitor()) {
+         RevBufferList rbuf{128};
+         const char*   cmdEcho;
+         switch (args.NotifyType_) {
+         case fon9::seed::SeedNotifyArgs::NotifyType::ParentSeedClear:
+            return;
+         case fon9::seed::SeedNotifyArgs::NotifyType::PodRemoved:
+            RevPrint(rbuf, '\n');
+            cmdEcho = ">rs ";
+            goto __REVPRINT_PATH_WITH_KEY_TEXT;
+         case fon9::seed::SeedNotifyArgs::NotifyType::SeedChanged:
+            RevPrint(rbuf, args.GetGridView());
+            // 不用 break; 繼續填入 ">ss path\n"
+         case fon9::seed::SeedNotifyArgs::NotifyType::SeedRemoved:
+            cmdEcho = ">ss ";
+            RevPrint(rbuf, '\n');
+            if (args.Tab_->GetIndex() != 0)
+               RevPrint(rbuf, '^', args.Tab_->Name_);
+__REVPRINT_PATH_WITH_KEY_TEXT:
+            RevPrint(rbuf, cmdEcho, subr.GetPath(), '/', args.KeyText_);
+            break;
+         case fon9::seed::SeedNotifyArgs::NotifyType::TableChanged:
+            RevPrint(rbuf, ' ', subr.GetPath(), "\n" ",0,1,SubrOK" "\n", args.GetGridView());
+            if (args.Tab_->GetIndex() != 0)
+               RevPrint(rbuf, ",,^", args.Tab_->Name_);
+            RevPrint(rbuf, ">gv");
+            break;
+         }
+         ws->Send(WebSocketOpCode::TextFrame, std::move(rbuf));
+      }
+   }
    void OnTicketRunnerGridView(seed::TicketRunnerGridView& runner, seed::GridViewResult& res) override {
       struct Output {
          static inline void gvSize(RevBufferList& rbuf, size_t n, char chSpl) {
@@ -78,10 +123,12 @@ struct WsSeedVisitor::SeedVisitor : public seed::SeedVisitor {
          }
       };
       RevBufferList rbuf{128};
-      if (!res.GridView_.empty()) {
-         RevPrint(rbuf, res.GridView_);
-         Output::gvSize(rbuf, res.DistanceEnd_, res.kRowSplitter);
-      }
+      if (!res.GridView_.empty())
+         RevPrint(rbuf, res.kRowSplitter, res.GridView_);
+      auto subr = this->GetSubr();
+      if (subr && subr->GetTab() == res.Tab_ && subr->GetTree() == res.Sender_)
+         RevPrint(rbuf, "SubrOK");
+      Output::gvSize(rbuf, res.DistanceEnd_, ',');
       Output::gvSize(rbuf, res.DistanceBegin_, ',');
       Output::gvSize(rbuf, res.ContainerSize_, ',');
       this->OnTicketRunnerDone(runner, DcQueueList{rbuf.MoveOut()});
@@ -185,6 +232,7 @@ WsSeedVisitor::WsSeedVisitor(io::DeviceSP dev, seed::MaTreeSP root, const auth::
    this->HbTimer_.RunAfter(TimeInterval_Second(kWsSeedVisitor_HbIntervalSecs));
 }
 WsSeedVisitor::~WsSeedVisitor() {
+   this->Visitor_->Unsubscribe();
    this->HbTimer_.StopAndWait();
 }
 void WsSeedVisitor::EmitOnTimer(TimerEntry* timer, TimeStamp now) {

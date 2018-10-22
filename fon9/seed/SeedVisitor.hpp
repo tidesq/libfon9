@@ -13,15 +13,31 @@ class fon9_API TicketRunnerWrite;
 class fon9_API TicketRunnerRemove;
 class fon9_API TicketRunnerGridView;
 class fon9_API TicketRunnerCommand;
+class fon9_API TicketRunnerSubscribe;
 
 fon9_WARN_DISABLE_PADDING;
+class fon9_API VisitorSubr;
+using VisitorSubrSP = intrusive_ptr<VisitorSubr>;
+
 /// \ingroup seed
 /// 歡迎來到 fon9 forest(seed 機制), 從外界來的 visitor 透過這裡來拜訪 forest.
 class fon9_API SeedVisitor : public intrusive_ref_counter<SeedVisitor> {
    fon9_NON_COPY_NON_MOVE(SeedVisitor);
+
+   /// SeedVisitor 提供訂閱「一個」TreeOp::Subscribe();
+   /// 因為 SeedVisitor 通常用在管理, 並不需要多個訂閱.
+   /// 實際上 TreeOp::Subscribe() 機制, 沒限制訂閱數量.
+   using Subr = MustLock<VisitorSubrSP>;
+   Subr  Subr_;
+   friend class TicketRunnerSubscribe;
+
 protected:
    friend class TicketRunner;
    const SeedFairySP Fairy_;
+   VisitorSubrSP NewSubscribe();
+   VisitorSubrSP GetSubr() {
+      return *this->Subr_.Lock();
+   }
 
 public:
    SeedVisitor(MaTreeSP root) : Fairy_{new SeedFairy{std::move(root)}} {
@@ -36,12 +52,53 @@ public:
    virtual void OnTicketRunnerWrite(TicketRunnerWrite&, const SeedOpResult& res, const RawWr& wr) = 0;
    virtual void OnTicketRunnerRead(TicketRunnerRead&, const SeedOpResult& res, const RawRd& rd) = 0;
    virtual void OnTicketRunnerRemoved(TicketRunnerRemove&, const PodRemoveResult& res) = 0;
+   
    /// 只有在 res.OpResult_ == OpResult::no_error 時, 才會觸發此事件.
    virtual void OnTicketRunnerGridView(TicketRunnerGridView&, GridViewResult& res) = 0;
+   /// 在執行 opTree.GridView() 之前的通知, 預設 do nothing.
+   /// - 您可以在此直接呼叫 opTree.Subscribe() 先訂閱異動.
+   /// - 也可以調整 req 的內容.
+   virtual void OnTicketRunnerBeforeGridView(TicketRunnerGridView&, TreeOp& opTree, GridViewRequest& req);
+
    virtual void OnTicketRunnerCommand(TicketRunnerCommand&, const SeedOpResult& res, StrView msg) = 0;
    virtual void OnTicketRunnerSetCurrPath(TicketRunnerCommand&) = 0;
+
+   /// 訂閱後的事件通知.
+   virtual void OnSeedNotify(VisitorSubr& subr, const SeedNotifyArgs& args) = 0;
+   /// isSubOrUnsub == true  訂閱成功.
+   /// isSubOrUnsub == false 取消訂閱成功.
+   virtual void OnTicketRunnerSubscribe(TicketRunnerSubscribe&, bool isSubOrUnsub) = 0;
+
+   void Unsubscribe();
 };
 using SeedVisitorSP = intrusive_ptr<SeedVisitor>;
+
+class fon9_API VisitorSubr : public intrusive_ref_counter<VisitorSubr> {
+   fon9_NON_COPY_NON_MOVE(VisitorSubr);
+   CharVector  Path_;
+   TreeSP      Tree_;
+   Tab*        Tab_{};
+   SubConn     SubConn_{};
+public:
+   const SeedVisitorSP  Visitor_;
+   VisitorSubr(SeedVisitor& visitor)
+      : Visitor_{&visitor} {
+   }
+   void Unsubscribe();
+   void OnSeedNotify(const SeedNotifyArgs& args);
+   const CharVector& GetPath() const {
+      return this->Path_;
+   }
+   Tab* GetTab() const {
+      return this->Tab_;
+   }
+   Tree* GetTree() const {
+      return this->Tree_.get();
+   }
+
+   /// 執行 opTree.Subscribe(): 只能呼叫一次.
+   OpResult Subscribe(StrView path, Tab& tab, TreeOp& opTree);
+};
 fon9_WARN_POP;
 
 //--------------------------------------------------------------------------//
@@ -135,9 +192,9 @@ class fon9_API TicketRunnerGridView : public TicketRunnerTree {
    CharVector  LastKey_; // for Continue();
    void OnGridViewOp(GridViewResult& res);
 public:
-   uint16_t    RowCount_;
+   uint16_t    ReqMaxRowCount_;
 
-   TicketRunnerGridView(SeedVisitor& visitor, StrView seed, uint16_t rowCount, StrView startKey, StrView tabName);
+   TicketRunnerGridView(SeedVisitor& visitor, StrView seed, uint16_t reqMaxRowCount, StrView startKey, StrView tabName);
    void OnFoundTree(TreeOp& opTree) override;
    /// 接續上次最後的 key 繼續查詢.
    void Continue();
@@ -161,6 +218,23 @@ public:
    }
    void OnFoundTree(TreeOp&) override;
    void OnLastSeedOp(const PodOpResult& resPod, PodOp* pod, Tab& tab) override;
+};
+
+class fon9_API TicketRunnerSubscribe : public TicketRunnerTree {
+   fon9_NON_COPY_NON_MOVE(TicketRunnerSubscribe);
+   using base = TicketRunnerTree;
+   TicketRunnerSubscribe(SeedVisitor& visitor, StrView seed, VisitorSubr* subr);
+public:
+   const CharVector     TabName_;
+   const VisitorSubrSP  Subr_;
+   /// 新增註冊.
+   TicketRunnerSubscribe(SeedVisitor& visitor, StrView seed, StrView tabName);
+   /// 取消註冊.
+   TicketRunnerSubscribe(SeedVisitor& visitor, StrView seed)
+      : TicketRunnerSubscribe{visitor, seed, visitor.Subr_.Lock()->get()} {
+   }
+
+   void OnFoundTree(TreeOp& opTree) override;
 };
 
 } } // namespaces

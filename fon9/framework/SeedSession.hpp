@@ -100,6 +100,7 @@ private:
    void OnTicketRunnerGridView(seed::TicketRunnerGridView&, seed::GridViewResult& res) override;
    void OnTicketRunnerCommand(seed::TicketRunnerCommand&, const seed::SeedOpResult& res, StrView msg) override;
    void OnTicketRunnerSetCurrPath(seed::TicketRunnerCommand&) override;
+   void OnTicketRunnerSubscribe(seed::TicketRunnerSubscribe&, bool isSubOrUnsub) override;
 
    void EmitAuthEvent(State st, DcQueue&& msg);
    void OnAuthDone(auth::AuthR&& authr);

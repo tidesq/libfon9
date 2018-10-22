@@ -40,6 +40,7 @@ void SeedSession::SetCurrPath(StrView currPath) {
 //--------------------------------------------------------------------------//
 
 void SeedSession::ClearLogout(St::Locker& st) {
+   this->Unsubscribe();
    this->Authr_.Clear();
    this->Fairy_->Clear();
    this->LastGV_.reset();
@@ -293,13 +294,16 @@ void SeedSession::OnTicketRunnerCommand(seed::TicketRunnerCommand& runner, const
    if (msg.empty()) {
       msg = (runner.OpResult_ == seed::OpResult::no_error
              ? StrView{"Seed command done."}
-      : StrView{"Seed command error."});
+             : StrView{"Seed command error."});
    }
    this->OnTicketRunnerDone(runner, DcQueueFixedMem{msg});
 }
 void SeedSession::OnTicketRunnerSetCurrPath(seed::TicketRunnerCommand& runner) {
    this->SetCurrPath(ToStrView(runner.Path_));
    this->OnTicketRunnerDone(runner, DcQueueFixedMem{});
+}
+void SeedSession::OnTicketRunnerSubscribe(seed::TicketRunnerSubscribe& runner, bool isSubOrUnsub) {
+   this->OnTicketRunnerDone(runner, isSubOrUnsub ? DcQueueFixedMem{"Subscribe OK"} : DcQueueFixedMem{"Unsubscribe OK"});
 }
 
 //--------------------------------------------------------------------------//
@@ -335,8 +339,8 @@ SeedSession::RequestSP SeedSession::MakeRequest(StrView cmdln) {
    seed::SeedFairy::Request req{*this, cmdln};
    if (req.Runner_) {
       if (seed::TicketRunnerGridView* gv = dynamic_cast<seed::TicketRunnerGridView*>(req.Runner_.get())) {
-         if (gv->RowCount_ <= 0)
-            gv->RowCount_ = AdjustGridViewRowCount(this->GetDefaultGridViewRowCount());
+         if (gv->ReqMaxRowCount_ <= 0)
+            gv->ReqMaxRowCount_ = AdjustGridViewRowCount(this->GetDefaultGridViewRowCount());
          this->LastGV_.reset(gv);
       }
       return req.Runner_;

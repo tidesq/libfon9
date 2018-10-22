@@ -78,6 +78,9 @@ enum class OpResult {
    /// 如果在 (2)=>(3) 之間, 有其他人又變動了「編輯中資料」, 則在執行(3)時會產生此錯誤!
    bad_apply_submit = -134,
 
+   /// 不支援異動訂閱: TreeOp::Subscribe();
+   not_supported_subscribe  = -140,
+
    not_found_key      = -200,
    /// 指定的 tabName 找不到, 或 tabIndex 有誤.
    not_found_tab      = -201,

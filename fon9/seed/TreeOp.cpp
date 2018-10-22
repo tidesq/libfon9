@@ -25,4 +25,11 @@ void TreeOp::GridApplySubmit(const GridApplySubmitRequest& req, FnCommandResultH
    fnCallback(res, StrView{});
 }
 
+OpResult TreeOp::Subscribe(SubConn* pSubConn, Tab&, SeedSubr) {
+   return this->SubscribeUnsupported(pSubConn);
+}
+OpResult TreeOp::Unsubscribe(SubConn) {
+   return OpResult::not_supported_subscribe;
+}
+
 } } // namespaces

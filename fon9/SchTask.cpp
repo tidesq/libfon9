@@ -68,10 +68,9 @@ SchConfig::CheckResult SchConfig::Check(TimeStamp now) const {
    DayTimeSec        next = kNoEndTime;
    size_t            wday = static_cast<size_t>(tm.tm_wday);
    if (this->StartTime_ < this->EndTime_) { // 開始-結束: 在同一天.
-      res.IsInSch_ = this->Weekdays_.test(wday);
-      if (res.IsInSch_)
-         res.IsInSch_ = (this->StartTime_ <= dnow && dnow <= this->EndTime_);
-      if (res.IsInSch_) // 排程時間內, 下次計時器=結束時間.
+      res.SchSt_ = (this->Weekdays_.test(wday) && (this->StartTime_ <= dnow && dnow <= this->EndTime_))
+                  ? SchSt::In : SchSt::Out;
+      if (res.SchSt_ == SchSt::In) // 排程時間內, 下次計時器=結束時間.
          next.Seconds_ = this->EndTime_.Seconds_ + 1;
       else if (this->Weekdays_.any()) { // 排程時間外, 今日尚未啟動: 下次計時器=(今日or次日)的開始時間.
          if (this->EndTime_ < dnow) // 排程時間外, 今日已結束: 下次計時器=次日開始時間.
@@ -86,21 +85,22 @@ __CHECK_TOMORROW:
       }
    } else { // 結束日 = 隔日.
       if (this->StartTime_ <= dnow) { // 起始時間已到, 尚未到達隔日.
-         res.IsInSch_ = this->Weekdays_.test(wday);
-         if (res.IsInSch_) {
+         res.SchSt_ = this->Weekdays_.test(wday) ? SchSt::In : SchSt::Out;
+         if (res.SchSt_ == SchSt::In) {
             now += TimeInterval_Day(1);
             next.Seconds_ = this->EndTime_.Seconds_ + 1;
          } else if (this->Weekdays_.any())
             goto __CHECK_TOMORROW;
       }
       else { // 起始時間已到, 且已到達隔日.
-         res.IsInSch_ = (dnow <= this->EndTime_);
-         if (res.IsInSch_) { // 尚未超過隔日結束時間.
-            res.IsInSch_ = this->Weekdays_.test(wday ? (wday - 1) : 6); // 看看昨日是否需要啟動.
-            if (res.IsInSch_)
+         res.SchSt_ = (dnow <= this->EndTime_) ? SchSt::In : SchSt::Out;
+         if (res.SchSt_ == SchSt::In) { // 尚未超過隔日結束時間.
+            res.SchSt_ = this->Weekdays_.test(wday ? (wday - 1) : 6) // 看看昨日是否需要啟動.
+                         ? SchSt::In : SchSt::Out;
+            if (res.SchSt_ == SchSt::In)
                next.Seconds_ = this->EndTime_.Seconds_ + 1;
          }
-         if (!res.IsInSch_ && this->Weekdays_.any())
+         if (res.SchSt_ != SchSt::In && this->Weekdays_.any())
             goto __CHECK_TODAY;
       }
    }
@@ -128,10 +128,10 @@ void SchTask::Timer::EmitOnTimer(TimeStamp now) {
    auto res = impl->Config_.Check(now);
    if (res.NextCheckTime_.GetOrigValue() != 0)
       sch.Timer_.RunAt(res.NextCheckTime_);
-   if (isCurInSch != res.IsInSch_ || impl->SchState_ == SchState_Restart) {
-      impl->SchState_ = res.IsInSch_ ? SchState_InSch : SchState_OutSch;
+   if (isCurInSch != (res.SchSt_ == SchSt::In) || impl->SchState_ == SchState_Restart) {
+      impl->SchState_ = (res.SchSt_ == SchSt::In) ? SchState_InSch : SchState_OutSch;
       impl.unlock();
-      sch.OnSchTask_StateChanged(res.IsInSch_);
+      sch.OnSchTask_StateChanged(res.SchSt_ == SchSt::In);
    }
 }
 
@@ -175,7 +175,7 @@ bool SchTask::Start(const StrView& cfgstr) {
    case SchState_Restart:   return true;
    }
    auto  res = impl->Config_.Check(now);
-   if (isCurInSch != res.IsInSch_)
+   if (isCurInSch != (res.SchSt_ == SchSt::In))
       res.NextCheckTime_ = now + TimeInterval_Second(1);
    else if (res.NextCheckTime_.GetOrigValue() == 0) {//sch狀態正確 && 沒有結束時間: 不用啟動計時器.
       this->Timer_.StopNoWait();

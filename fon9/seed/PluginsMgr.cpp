@@ -88,6 +88,11 @@ struct PluginsMgr::PluginsTree : public Tree {
    const MaTreeSP    Root_;
    ConfigFileBinder  ConfigFileBinder_;
 
+   SeedSubj SeedSubj_;
+   void SeedNotify(const PluginsRec& rec) {
+      SeedSubj_Notify(this->SeedSubj_, *this, *this->LayoutSP_->GetTab(0), ToStrView(rec.Id_), rec);
+   }
+
    fon9_MSC_WARN_DISABLE(4265 /* class has virtual functions, but destructor is not virtual. */);
    struct PodOp : public PodOpDefault {
       fon9_NON_COPY_NON_MOVE(PodOp);
@@ -142,6 +147,8 @@ struct PluginsMgr::PluginsTree : public Tree {
             static_cast<PluginsTree*>(&this->Tree_)->InThr_OnConfigChanged();
          }
          fnCallback(res);
+         if (res.OpResult_ == OpResult::removed_pod)
+            SeedSubj_NotifyPodRemoved(static_cast<PluginsTree*>(&this->Tree_)->SeedSubj_, this->Tree_, strKeyText);
       }
       void OnPodOp(PluginsRec& rec, FnPodOp&& fnCallback, bool isForceWrite = false) {
          PodOp op{rec, this->Tree_};
@@ -171,6 +178,15 @@ struct PluginsMgr::PluginsTree : public Tree {
          }
          this->OnPodOp(**ifind, std::move(fnCallback), isForceWrite);
       }
+      OpResult Subscribe(SubConn* pSubConn, Tab& tab, SeedSubr subr) override {
+         (void)tab; assert(&tab == this->Tree_.LayoutSP_->GetTab(0));
+         *pSubConn = static_cast<PluginsTree*>(&this->Tree_)->SeedSubj_.Subscribe(subr);
+         return OpResult::no_error;
+      }
+      OpResult Unsubscribe(SubConn pSubConn) override {
+         static_cast<PluginsTree*>(&this->Tree_)->SeedSubj_.Unsubscribe(pSubConn);
+         return OpResult::no_error;
+      }
    };
    fon9_MSC_WARN_POP;
 
@@ -190,6 +206,7 @@ struct PluginsMgr::PluginsTree : public Tree {
          for (auto& irec : this->PluginsRecs_)
             irec->InThr_StopPlugins();
          this->PluginsRecs_.clear();
+         SeedSubj_ParentSeedClear(this->SeedSubj_, *this);
       });
    }
 
@@ -261,6 +278,7 @@ void PluginsMgr::PluginsRec::SetPluginStImpl(std::string stmsg) {
    PluginsRecSP pthis{this};
    this->Owner_->TaskQu_.AddTask([pthis, stmsg]() {
       pthis->Status_.assign(&stmsg);
+      pthis->Owner_->SeedNotify(*pthis);
    });
 }
 void PluginsMgr::PluginsRec::InThr_StopPlugins() {
@@ -286,6 +304,7 @@ void PluginsMgr::PluginsRec::InThr_OnChanged() {
       this->InThr_StartPlugins();
    else
       this->InThr_StopPlugins();
+   this->Owner_->SeedNotify(*this);
 }
 //--------------------------------------------------------------------------//
 TreeSP PluginsMgr::MakePluginsSapling(PluginsMgr& pluginsMgr, MaTreeSP&& root) {

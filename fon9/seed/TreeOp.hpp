@@ -2,7 +2,7 @@
 /// \author fonwinz@gmail.com
 #ifndef __fon9_seed_TreeOp_hpp__
 #define __fon9_seed_TreeOp_hpp__
-#include "fon9/seed/RawRd.hpp"
+#include "fon9/seed/SeedSubr.hpp"
 #include "fon9/buffer/RevBufferList.hpp"
 #include "fon9/StrVref.hpp"
 
@@ -282,6 +282,16 @@ public:
    ///   - 或不支援.
    ///   - 由實作者決定.
    virtual void Remove(StrView strKeyText, Tab* tab, FnPodRemoved fnCallback);
+
+   /// 訂閱異動通知.
+   virtual OpResult Subscribe(SubConn* pSubConn, Tab& tab, SeedSubr subr);
+   static OpResult SubscribeUnsupported(SubConn* pSubConn) {
+      *pSubConn = nullptr;
+      return OpResult::not_supported_subscribe;
+   }
+
+   /// 取消異動通知.
+   virtual OpResult Unsubscribe(SubConn pSubConn);
 };
 fon9_WARN_POP;
 

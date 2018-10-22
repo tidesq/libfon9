@@ -749,6 +749,9 @@
     <ClInclude Include="..\..\..\fon9\SimpleFactory.hpp">
       <Filter>Header Files\_base\_Tools / Utility</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\SeedSubr.hpp">
+      <Filter>Header Files\seed\_tools</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1167,6 +1170,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\seed\FieldSchCfgStr.cpp">
       <Filter>Source Files\seed\_fields</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\seed\SeedSubr.cpp">
+      <Filter>Source Files\seed\_tools</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

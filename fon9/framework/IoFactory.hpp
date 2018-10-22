@@ -23,6 +23,15 @@ struct IoConfigItem {
 
    CharVector        DeviceName_;
    CharVector        DeviceArgs_;
+
+   bool operator==(const IoConfigItem& rhs) const {
+      return this->Enabled_ == rhs.Enabled_
+         && this->SchArgs_ == rhs.SchArgs_
+         && this->SessionName_ == rhs.SessionName_
+         && this->SessionArgs_ == rhs.SessionArgs_
+         && this->DeviceName_ == rhs.DeviceName_
+         && this->DeviceArgs_ == rhs.DeviceArgs_;
+   }
 };
 fon9_WARN_POP;
 

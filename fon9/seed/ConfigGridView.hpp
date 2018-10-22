@@ -7,8 +7,8 @@
 
 namespace fon9 { namespace seed {
 
-fon9_API void RevPrintConfigFieldNames(RevBuffer& rbuf, const Fields& flds, StrView keyFieldName);
-fon9_API void RevPrintConfigFieldValues(RevBuffer& rbuf, const Fields& flds, const RawRd& rd);
+fon9_API void RevPrintConfigFieldNames(RevBuffer& rbuf, const Fields& flds, StrView keyFieldName, FieldFlag excludes = FieldFlag::Readonly);
+fon9_API void RevPrintConfigFieldValues(RevBuffer& rbuf, const Fields& flds, const RawRd& rd, FieldFlag excludes = FieldFlag::Readonly);
 
 /// 一個建立 Config GridView 的範例.
 template <class Iterator>

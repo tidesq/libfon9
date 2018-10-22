@@ -5,20 +5,20 @@
 
 namespace fon9 { namespace seed {
 
-fon9_API void RevPrintConfigFieldNames(RevBuffer& rbuf, const Fields& flds, StrView keyFieldName) {
+fon9_API void RevPrintConfigFieldNames(RevBuffer& rbuf, const Fields& flds, StrView keyFieldName, FieldFlag excludes) {
    size_t fldno = flds.size();
    while (fldno > 0) {
       const Field* fld = flds.Get(--fldno);
-      if (!IsEnumContains(fld->Flags_, FieldFlag::Readonly))
+      if (excludes == FieldFlag{} || !IsEnumContainsAny(fld->Flags_, excludes))
          RevPrint(rbuf, *fon9_kCSTR_CELLSPL, fld->Name_);
    }
    RevPrint(rbuf, keyFieldName);
 }
-fon9_API void RevPrintConfigFieldValues(RevBuffer& rbuf, const Fields& flds, const RawRd& rd) {
+fon9_API void RevPrintConfigFieldValues(RevBuffer& rbuf, const Fields& flds, const RawRd& rd, FieldFlag excludes) {
    size_t fldno = flds.size();
    while (fldno > 0) {
       const Field* fld = flds.Get(--fldno);
-      if (!IsEnumContains(fld->Flags_, FieldFlag::Readonly)) {
+      if (excludes == FieldFlag{} || !IsEnumContainsAny(fld->Flags_, excludes)) {
          fld->CellRevPrint(rd, nullptr, rbuf);
          RevPutChar(rbuf, *fon9_kCSTR_CELLSPL);
       }

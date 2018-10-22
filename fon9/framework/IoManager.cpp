@@ -18,10 +18,11 @@ static void AssignStStr(CharVector& dst, TimeStamp now, StrView stmsg) {
 
 //--------------------------------------------------------------------------//
 
-IoManager::IoManager(const IoManagerArgs& args)
+IoManager::IoManager(Tree& ownerTree, const IoManagerArgs& args)
    : Name_{args.Name_}
    , SessionFactoryPark_{args.SessionFactoryPark_ ? args.SessionFactoryPark_ : new SessionFactoryPark{"SessionFactoryPark"}}
    , DeviceFactoryPark_{args.DeviceFactoryPark_ ? args.DeviceFactoryPark_ : new DeviceFactoryPark{"DeviceFactoryPark"}}
+   , OwnerTree_(ownerTree)
    , IoServiceCfgstr_{args.IoServiceCfgstr_} {
    if (args.IoServiceSrc_) {
    #ifdef __fon9_io_win_IocpService_hpp__
@@ -83,44 +84,51 @@ io::FdrServiceSP IoManager::GetFdrService() {
 }
 #endif
 
-bool IoManager::CreateDevice(DeviceItem& item) {
+bool IoManager::AddConfig(StrView id, const IoConfigItem& cfg) {
+   DeviceItemSP      item{new DeviceItem{id, cfg}};
+   DeviceMap::Locker curmap{this->DeviceMap_};
+   if (curmap->insert(item).second)
+      return this->CheckOpenDevice(*item) == DeviceOpenResult::NewDeviceCreated;
+   return false;
+}
+IoManager::DeviceOpenResult IoManager::CreateDevice(DeviceItem& item) {
    if (item.Device_)
-      return true;
+      return DeviceOpenResult::AlreadyExists;
    item.SessionSt_.clear();
    item.DeviceSt_.clear();
    auto sesFactory = this->SessionFactoryPark_->Get(ToStrView(item.Config_.SessionName_));
    if (!sesFactory) {
       AssignStStr(item.SessionSt_, UtcNow(), "Session factory not found.");
-      return false;
+      return DeviceOpenResult::SessionFactoryNotFound;
    }
    if (auto devFactory = this->DeviceFactoryPark_->Get(ToStrView(item.Config_.DeviceName_))) {
       std::string errReason;
       if (!(item.Device_ = devFactory->CreateDevice(this, *sesFactory, item.Config_, errReason))) {
          errReason = "IoManager.CreateDevice|err=" + errReason;
          AssignStStr(item.DeviceSt_, UtcNow(), &errReason);
-         return false;
+         return DeviceOpenResult::DeviceCreateError;
       }
       item.Device_->SetManagerBookmark(reinterpret_cast<io::Bookmark>(&item));
       item.Device_->Initialize();
-      return true;
+      return DeviceOpenResult::NewDeviceCreated;
    }
    AssignStStr(item.DeviceSt_, UtcNow(), "Device factory not found");
-   return false;
+   return DeviceOpenResult::DeviceFactoryNotFound;
 }
-bool IoManager::AddConfig(StrView id, const IoConfigItem& cfg) {
-   DeviceItemSP      item{new DeviceItem{id, cfg}};
-   DeviceMap::Locker curmap{this->DeviceMap_};
-   if (curmap->insert(item).second)
-      return this->CheckOpenDevice(*item);
-   return false;
-}
-bool IoManager::CheckOpenDevice(DeviceItem& item) {
+IoManager::DeviceOpenResult IoManager::CheckOpenDevice(DeviceItem& item) {
    if (item.Config_.Enabled_ != EnabledYN::Yes)
-      return false;
-   if (item.Device_ && item.OpenArgs_ == item.Config_.DeviceArgs_)
-      return false;
-   if (!this->CreateDevice(item))
-      return false;
+      return DeviceOpenResult::Disabled;
+   DeviceOpenResult res;
+   if (item.Device_) {
+      if (item.OpenArgs_ == item.Config_.DeviceArgs_)
+         return DeviceOpenResult::AlreadyExists;
+      res = DeviceOpenResult::AlreadyExists;
+   }
+   else {
+      res = this->CreateDevice(item);
+      if (!item.Device_)
+         return res;
+   }
    if (item.Config_.DeviceArgs_.empty())
       // 沒提供 DeviceArgs_, 則由使用者 or Session 手動開啟.
       AssignStStr(item.DeviceSt_, UtcNow(), "Waiting for manual open");
@@ -128,22 +136,32 @@ bool IoManager::CheckOpenDevice(DeviceItem& item) {
       AssignStStr(item.DeviceSt_, UtcNow(), "Async opening");
       item.Device_->AsyncOpen(item.Config_.DeviceArgs_.ToString());
    }
-   return true;
+   return res;
 }
 void IoManager::Apply(const seed::Fields& flds, StrView src, DeviceMapImpl& curmap, DeviceMapImpl& oldmap) {
    struct ToContainer : public seed::GridViewToContainer {
       DeviceMapImpl* CurContainer_;
       DeviceMapImpl* OldContainer_;
+      IoConfigItem   OldCfg_;
+      TimeStamp      Now_{UtcNow()};
       void OnNewRow(StrView keyText, StrView ln) override {
          auto        ifind = this->OldContainer_->find(keyText);
          DeviceItem* item;
-         if (ifind == this->OldContainer_->end())
+         bool        isNewItem = (ifind == this->OldContainer_->end());
+         if (isNewItem)
             item = this->CurContainer_->insert(new DeviceItem{keyText}).first->get();
          else {
             item = this->CurContainer_->insert(std::move(*ifind)).first->get();
             this->OldContainer_->erase(ifind);
+            this->OldCfg_ = item->Config_;
          }
          this->FillRaw(seed::SimpleRawWr{*item}, ln);
+         if (!isNewItem) {
+            if (item->Config_ == this->OldCfg_)
+               return;
+            item->DisposeDevice(this->Now_, "Config changed");
+            item->SchSt_ = SchSt::Unknown;
+         }
          item->Sch_.Parse(ToStrView(item->Config_.SchArgs_));
       }
    };
@@ -233,6 +251,7 @@ void IoManager::UpdateDeviceStateLocked(io::Device& dev, const io::StateUpdatedA
          // item->AcceptedClientSeq_ != 0, accepted client:
          // 保留 Bookmark, 等 OnDevice_Destructing() 事件時, 將 item 刪除.
       }
+      this->OwnerTree_.NotifyChanged(*item);
    }
    // fon9_LOG_TRACE:
    if (fon9_UNLIKELY(LogLevel::Trace >= LogLevel_)) {
@@ -251,8 +270,10 @@ void IoManager::OnSession_StateUpdated(io::Device& dev, StrView stmsg) {
    }
 }
 void IoManager::UpdateSessionStateLocked(io::Device& dev, StrView stmsg) {
-   if (auto item = this->FromManagerBookmark(dev))
+   if (auto item = this->FromManagerBookmark(dev)) {
       AssignStStr(item->SessionSt_, UtcNow(), stmsg);
+      this->OwnerTree_.NotifyChanged(*item);
+   }
    fon9_LOG_INFO("IoManager.SessionState|dev=", ToPtr(&dev), "|st=", stmsg);
 }
 
@@ -293,6 +314,7 @@ seed::LayoutSP IoManager::Tree::MakeLayout() {
          fields.Add(fon9_MakeField(Named{"DeviceArgs"},  DeviceItem, Config_.DeviceArgs_));
          seed::TabSP tabConfig{new seed::Tab(Named{"Config"}, std::move(fields), saplingLayout, seed::TabFlag::NeedsApply)};
 
+         #define kTabStatusIndex  0
          #define kTabConfigIndex  1
          return new seed::LayoutN(fon9_MakeField(Named{"Id"}, DeviceItem, Id_),
                                   std::move(tabSt),
@@ -303,12 +325,14 @@ seed::LayoutSP IoManager::Tree::MakeLayout() {
    return Layout_;
 }
 void IoManager::Tree::OnParentSeedClear() {
-   // dispose all devices.
-   DeviceMap::Locker map{this->IoManager_->DeviceMap_};
-   for (auto& i : *map) {
-      if (io::Device* dev = i->Device_.get())
-         dev->AsyncDispose("Parent clear");
-   }
+   {  // dispose all devices.
+      DeviceMap::Locker map{this->IoManager_->DeviceMap_};
+      for (auto& i : *map) {
+         if (io::Device* dev = i->Device_.get())
+            dev->AsyncDispose("Parent clear");
+      }
+   }  // unlock map;
+   SeedSubj_ParentSeedClear(this->StatusSubj_, *this);
 }
 
 //--------------------------------------------------------------------------//
@@ -319,7 +343,13 @@ fon9_MSC_WARN_DISABLE_NO_PUSH(4265 /* class has virtual functions, but destructo
 IoManager::Tree::Tree(IoManagerArgs& args)
    : base{MakeLayout()}
    , TabTreeOp_{new seed::TabTreeOp(*this->LayoutSP_->GetTab(kTabConfigIndex))}
-   , IoManager_{new IoManager{args}} {
+   , IoManager_{new IoManager{*this, args}} {
+   this->SubConnDev_ = IoManager_->DeviceFactoryPark_->Subscribe([this](DeviceFactory*, seed::ParkTree::EventType) {
+      this->OnFactoryParkChanged();
+   });
+   this->SubConnSes_ = IoManager_->SessionFactoryPark_->Subscribe([this](SessionFactory*, seed::ParkTree::EventType) {
+      this->OnFactoryParkChanged();
+   });
    args.Result_.clear();
    if (args.CfgFileName_.empty())
       return;
@@ -343,7 +373,12 @@ IoManager::Tree::Tree(IoManagerArgs& args)
    this->StartTimerForOpen();
 }
 IoManager::Tree::~Tree() {
+   this->IoManager_->DeviceFactoryPark_->Unsubscribe(this->SubConnDev_);
+   this->IoManager_->SessionFactoryPark_->Unsubscribe(this->SubConnSes_);
    this->Timer_.StopAndWait();
+}
+void IoManager::Tree::OnFactoryParkChanged() {
+   this->Timer_.RunAfter(TimeInterval_Second(1));
 }
 void IoManager::Tree::StartTimerForOpen() {
    this->Timer_.RunAfter(TimeInterval_Second(1));
@@ -354,10 +389,11 @@ void IoManager::Tree::EmitOnTimer(TimerEntry* timer, TimeStamp now) {
    TimeStamp         nextCheckTime;
    DeviceMap::Locker curmap{rthis.IoManager_->DeviceMap_};
    for (auto& item : *curmap) {
+      bool isChanged = false;
       switch (rthis.TimerFor_) {
       case TimerFor::Open:
          if (item->Config_.Enabled_ != EnabledYN::Yes) {
-            item->DisposeDevice(now, "Disabled");
+            isChanged = item->DisposeDevice(now, "Disabled");
             break;
          }
          // 不用 break; 檢查 item 是否在時間排程內.
@@ -369,26 +405,42 @@ void IoManager::Tree::EmitOnTimer(TimerEntry* timer, TimeStamp now) {
          auto res = item->Sch_.Check(now);
          if (nextCheckTime == TimeStamp{} || nextCheckTime > res.NextCheckTime_)
             nextCheckTime = res.NextCheckTime_;
-         if (item->IsInSch_ == res.IsInSch_) {
-            if (!res.IsInSch_ && rthis.TimerFor_ == TimerFor::Open)
+         if (item->SchSt_ == res.SchSt_) {
+            if (res.SchSt_ != SchSt::In && rthis.TimerFor_ == TimerFor::Open)
                goto __SET_ST_OUT_SCH;
             break;
          }
-         item->IsInSch_ = res.IsInSch_;
-         if (res.IsInSch_)
+         item->SchSt_ = res.SchSt_;
+         if (res.SchSt_ == SchSt::In) {
             rthis.IoManager_->CheckOpenDevice(*item);
+            if (!item->Device_) {
+               // 開啟失敗: Factory 不正確? Factory.CreateDevice() 失敗?
+               // 設為 SchSt::Unknown, 讓下次檢查 sch 時, 再 CheckOpenDevice() 一次.
+               item->SchSt_ = SchSt::Unknown;
+            }
+            isChanged = true;
+         }
          else {
       __SET_ST_OUT_SCH:
-            item->DisposeDevice(now, "Out of schedule");
+            isChanged = item->DisposeDevice(now, "Out of schedule");
          }
          break;
       }
+      if (isChanged)
+         rthis.NotifyChanged(*item);
    }
    // 必須在 locked 狀態下啟動 timer,
    // 因為如果此時其他 thread 設定 TimerFor::Open; timer->RunAfter();
    // 然後才執行下面這行, 那時間就錯了!
    if (nextCheckTime != TimeStamp{})
       timer->RunAt(nextCheckTime);
+}
+void IoManager::Tree::NotifyChanged(DeviceItem& item) {
+   seed::SeedSubj_Notify(this->StatusSubj_, *this, *this->LayoutSP_->GetTab(kTabStatusIndex), ToStrView(item.Id_), item);
+}
+void IoManager::Tree::NotifyChanged(DeviceRun& item) {
+   if (item.IsDeviceItem())
+      this->NotifyChanged(*static_cast<DeviceItem*>(&item));
 }
 
 struct IoManager::Tree::PodOp : public seed::PodOpLockerNoWrite<PodOp, DeviceMap::Locker> {
@@ -493,8 +545,12 @@ struct IoManager::Tree::TreeOp : public seed::TreeOp {
       // After grid view apply. oldmap = removed items.
       if (!oldmap.empty()) {
          TimeStamp now = UtcNow();
-         for (auto& i : oldmap)
+         for (auto& i : oldmap) {
             i->DisposeDevice(now, "Removed from ApplySubmit");
+            // StatusSubj_ 使用 [整表] 通知: seed::SeedSubj_TableChanged();
+            // 所以這裡就不用樹發 PodRemoved() 事件了.
+            // seed::SeedSubj_NotifyPodRemoved(static_cast<Tree*>(&this->Tree_)->StatusSubj_, this->Tree_, ToStrView(i->Id_));
+         }
       }
       if (static_cast<Tree*>(&this->Tree_)->ConfigFileBinder_.HasBinding()) {
          RevBufferList rbuf{128};
@@ -508,6 +564,19 @@ struct IoManager::Tree::TreeOp : public seed::TreeOp {
 
    __UNLOCK_AND_CALLBACK:
       fnCallback(res, resmsg);
+      if (res.OpResult_ == seed::OpResult::no_error)
+         seed::SeedSubj_TableChanged(static_cast<Tree*>(&this->Tree_)->StatusSubj_,
+                                     this->Tree_, *this->Tree_.LayoutSP_->GetTab(kTabStatusIndex));
+   }
+   seed::OpResult Subscribe(SubConn* pSubConn, seed::Tab& tab, seed::SeedSubr subr) override {
+      if (&tab != this->Tree_.LayoutSP_->GetTab(kTabStatusIndex))
+         return this->SubscribeUnsupported(pSubConn);
+      *pSubConn = static_cast<Tree*>(&this->Tree_)->StatusSubj_.Subscribe(subr);
+      return seed::OpResult::no_error;
+   }
+   seed::OpResult Unsubscribe(SubConn pSubConn) override {
+      return static_cast<Tree*>(&this->Tree_)->StatusSubj_.Unsubscribe(pSubConn)
+         ? seed::OpResult::no_error : seed::OpResult::not_supported_subscribe;
    }
 };
 void IoManager::Tree::OnTreeOp(seed::FnTreeOp fnCallback) {
@@ -608,13 +677,14 @@ void IoManager::MakeAcceptedClientTree(DeviceRun& serItem, io::DeviceListenerSP 
 fon9_WARN_POP;
 
 //--------------------------------------------------------------------------//
-void IoManager::DeviceRun::DisposeDevice(TimeStamp now, StrView cause) {
+bool IoManager::DeviceRun::DisposeDevice(TimeStamp now, StrView cause) {
    if (this->Device_) {
       this->Device_->SetManagerBookmark(0);
       this->Device_->AsyncDispose(cause.ToString());
+      return false;
    }
-   else {
-      AssignStStr(this->DeviceSt_, now, cause);
-   }
+   this->SessionSt_.clear();
+   AssignStStr(this->DeviceSt_, now, cause);
+   return true;
 }
 } // namespaces

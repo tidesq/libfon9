@@ -155,6 +155,21 @@ __ARGS_MUST_EMPTY:
       this->Runner_ = new TicketRunnerGridView(visitor, this->SeedName_, rowCount, startKey, args);
       return;
    }
+   if (this->Command_ == "s") { // subscribe: s,TabName TreePath
+      this->Runner_ = new TicketRunnerSubscribe(visitor, this->SeedName_, this->CommandArgs_);
+      return;
+   }
+   if (this->Command_ == "u") { // unsubscribe
+      TicketRunnerSubscribe* unsub;
+      this->Runner_ = unsub = new TicketRunnerSubscribe{visitor, this->SeedName_};
+      if (auto subr = unsub->Subr_.get()) {
+         if (subr->GetPath() != unsub->OrigPath_)
+            this->Runner_ = new TicketRunnerError(visitor, OpResult::bad_command_argument, "Path no subscribe.");
+      }
+      else
+         this->Runner_ = new TicketRunnerError(visitor, OpResult::not_supported_cmd, "No subscribe.");
+      return;
+   }
 }
 
 //--------------------------------------------------------------------------//

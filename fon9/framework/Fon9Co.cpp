@@ -104,6 +104,30 @@ class ConsoleSeedSession : public fon9::SeedSession {
          this->WriteToConsole(std::move(extmsg));
       this->Wakeup();
    }
+   void OnSeedNotify(fon9::seed::VisitorSubr& subr, const fon9::seed::SeedNotifyArgs& args) override {
+      fon9::RevBufferList rbuf{256};
+      RevPutChar(rbuf, '\n');
+      switch (args.NotifyType_) {
+      case fon9::seed::SeedNotifyArgs::NotifyType::PodRemoved:
+         RevPrint(rbuf, "|PodRemoved");
+         break;
+      case fon9::seed::SeedNotifyArgs::NotifyType::SeedChanged:
+         RevPrint(rbuf, args.GetGridView());
+         RevPrint(rbuf, '/', args.KeyText_, '^', args.Tab_->Name_, '|');
+         break;
+      case fon9::seed::SeedNotifyArgs::NotifyType::SeedRemoved:
+         RevPrint(rbuf, '/', args.KeyText_, '^', args.Tab_->Name_, "|SeedRemoved");
+         break;
+      case fon9::seed::SeedNotifyArgs::NotifyType::ParentSeedClear:
+         RevPrint(rbuf, "|OnParentSeedClear");
+         break;
+      case fon9::seed::SeedNotifyArgs::NotifyType::TableChanged:
+         RevPrint(rbuf, "/^", args.Tab_->Name_, "|TableChanged");
+         break;
+      }
+      RevPrint(rbuf, "\n" "SeedNotify|path=", subr.GetPath());
+      this->WriteToConsole(fon9::DcQueueList{rbuf.MoveOut()});
+   }
 
    void PutNewLineConsole() {
       fputs("\n", stdout);
@@ -189,33 +213,6 @@ public:
 };
 
 //--------------------------------------------------------------------------//
-
-class HttpHome : public fon9::web::HttpHandlerStatic {
-   fon9_NON_COPY_NON_MOVE(HttpHome);
-   using base = fon9::web::HttpHandlerStatic;
-public:
-   using base::base;
-   fon9::io::RecvBufferSize OnHttpRequest(fon9::io::Device& dev, fon9::web::HttpRequest& req) override {
-      // 底下用來觀察 http request.
-      if (req.MessageSt_ == fon9::web::HttpMessageSt::ChunkAppended) {
-         printf("\n" "ChunkAppended:\n" "chunk-ext=[%s]\n" "chunk-data=[%s]\n",
-                req.Message_.ChunkExt().ToString().c_str(),
-                req.Message_.ChunkData().ToString().c_str());
-      }
-      else {
-         // FullMessage, HeaderReady.
-         printf("\n" "FullMessage:[%s]\n",
-                req.Message_.FullMessage().ToString().c_str());
-
-         if (req.Message_.IsChunked())
-            printf("chunk-ext=[%s]\n" "trailer=[%s]\n",
-                   req.Message_.ChunkExt().ToString().c_str(),
-                   req.Message_.ChunkTrailer().ToString().c_str());
-      }
-      return base::OnHttpRequest(dev, req);
-   }
-};
-
 
 int main(int argc, char** argv) {
    #if defined(_MSC_VER) && defined(_DEBUG)

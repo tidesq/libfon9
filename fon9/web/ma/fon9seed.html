@@ -85,6 +85,9 @@
       .seed:disabled {
         background: #ddd;
       }
+      .subrOK {
+        background: #fff;
+      }
    </style>
 </head>
 
@@ -217,7 +220,16 @@
          submitId = undefined;
          document.getElementById("btnSubmit").disabled = true;
          let lines = res.split('\n');
-         // first line(lines[0]) = rowCount,distanceBegin,distanceEnd
+         // first line(lines[0]) = rowCount,distanceBegin,distanceEnd,SubrOK
+         let lns = lines[0].split(',');
+         let btnReload = document.getElementById('btnReload');
+         if (lns.length >= 4 && lns[3] === 'SubrOK') {
+            btnReload.classList.add('subrOK');
+            if (btnReload.title.indexOf('\n** Subscribed **') < 0)
+               btnReload.title += '\n** Subscribed **';
+         }
+         else
+            btnReload.classList.remove('subrOK');
          if (lines.length > 1) {
             // 所以從 lines[1] 開始才是每行的內容:
             let lno = 1;
@@ -274,9 +286,12 @@
       function updateRow(args, path, res, errmsg) {
          if (errmsg)
             return;
-         let row = searchRowByFullPathName(path);
-         if (!row)
+         let keytab = parseLastKeyTab(path);
+         if (!keytab)
             return;
+         let row = gview.searchRow(keytab.seed);
+         if (!row) // Subscribe 主動回報的新增行?
+            row = gview.addBodyRow(keytab.seed);
          let cells = row.cells;
          cells[0].classList.remove('gvUpdatingCell'); // 移除 addNewRow() 時設定的 style class.
          let lines = res.split('\n');
