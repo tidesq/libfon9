@@ -30,6 +30,7 @@ class fon9_API SeedVisitor : public intrusive_ref_counter<SeedVisitor> {
    using Subr = MustLock<VisitorSubrSP>;
    Subr  Subr_;
    friend class TicketRunnerSubscribe;
+   std::string UFrom_;
 
 protected:
    friend class TicketRunner;
@@ -39,10 +40,21 @@ protected:
       return *this->Subr_.Lock();
    }
 
-public:
-   SeedVisitor(MaTreeSP root) : Fairy_{new SeedFairy{std::move(root)}} {
+   /// 如果有正在執行的 TicketRunner, 則變動 UFrom_ 是危險的!!
+   /// 您必須確定沒有 正在執行的 TicketRunner 才能變動此值.
+   void SetUFrom(std::string ufrom) {
+      this->UFrom_ = std::move(ufrom);
    }
+
+public:
+   SeedVisitor(MaTreeSP root, std::string ufrom);
    virtual ~SeedVisitor();
+
+   /// User + From(DeviceId);
+   /// e.g. "U=fonwin|R=127.0.0.1:12345|L=127.0.0.1:6080
+   const std::string& GetUFrom() const {
+      return this->UFrom_;
+   }
 
    virtual void SetCurrPath(StrView currPath);
 
@@ -173,6 +185,8 @@ class fon9_API TicketRunnerRemove : public TicketRunner {
    using base = TicketRunner;
    FnPodRemoved RemovedHandler_;
    virtual void OnRemoved(const PodRemoveResult& res);
+   void OnBeforeRemove(TreeOp& opTree, StrView keyText, Tab* tab) override;
+   void OnAfterRemove(const PodRemoveResult& res) override;
 public:
    TicketRunnerRemove(SeedVisitor& visitor, StrView seed);
    void OnFoundTree(TreeOp&) override;

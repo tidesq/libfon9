@@ -158,13 +158,13 @@ StrView MakeTcpConnectionUID(char* const uid, size_t uidSize, const SocketAddres
    char* puid = uid;
    char* pend = puid + uidSize;
    if (addrRemote) {
-      *puid++ = '|';
       *puid++ = 'R';
       *puid++ = '=';
       puid += addrRemote->ToAddrPortStr(puid, static_cast<size_t>(pend - puid));
    }
    if (addrLocal && pend - puid > 3) {
-      *puid++ = '|';
+      if (addrRemote)
+         *puid++ = '|';
       *puid++ = 'L';
       *puid++ = '=';
       puid += addrLocal->ToAddrPortStr(puid, static_cast<size_t>(pend - puid));

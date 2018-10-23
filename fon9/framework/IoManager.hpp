@@ -173,7 +173,7 @@ private:
    void UpdateDeviceStateLocked(io::Device& dev, const io::StateUpdatedArgs& e);
    void UpdateSessionStateLocked(io::Device& dev, StrView stmsg);
 
-   enum DeviceOpenResult {
+   enum class DeviceOpenResult {
       NewDeviceCreated = 0,
       AlreadyExists,
       Disabled,

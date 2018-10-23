@@ -29,8 +29,8 @@ struct WsSeedVisitor::SeedVisitor : public seed::SeedVisitor {
    fon9_NON_COPY_NON_MOVE(SeedVisitor);
    using base = seed::SeedVisitor;
    const io::DeviceSP   Device_;
-   SeedVisitor(io::DeviceSP dev, seed::MaTreeSP root, seed::AclConfig&& aclcfg)
-      : base{std::move(root)}
+   SeedVisitor(const auth::AuthResult& authResult, io::DeviceSP dev, seed::MaTreeSP root, seed::AclConfig&& aclcfg)
+      : base(std::move(root), authResult.MakeUFrom(ToStrView(dev->WaitGetDeviceId())))
       , Device_{std::move(dev)} {
       this->Fairy_->ResetAclConfig(std::move(aclcfg));
    }
@@ -224,10 +224,9 @@ struct WsSeedVisitor::PrintLayout : public seed::TicketRunnerTree {
 };
 
 //--------------------------------------------------------------------------//
-
 WsSeedVisitor::WsSeedVisitor(io::DeviceSP dev, seed::MaTreeSP root, const auth::AuthResult& authResult, seed::AclConfig&& aclcfg)
    : base{dev}
-   , Visitor_{new SeedVisitor(std::move(dev), std::move(root), std::move(aclcfg))}
+   , Visitor_{new SeedVisitor(authResult, std::move(dev), std::move(root), std::move(aclcfg))}
    , Authr_{authResult} {
    this->HbTimer_.RunAfter(TimeInterval_Second(kWsSeedVisitor_HbIntervalSecs));
 }

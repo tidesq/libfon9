@@ -174,8 +174,11 @@ class ConsoleSeedSession : public fon9::SeedSession {
    }
 
 public:
-   ConsoleSeedSession(fon9::Framework& fon9sys, bool isAdminMode)
-      : base(fon9sys.Root_, fon9sys.MaAuth_, isAdminMode) {
+   std::string ConsoleId_;
+   ConsoleSeedSession(fon9::Framework& fon9sys)
+      : base(fon9sys.Root_, fon9sys.MaAuth_,
+             fon9::RevPrintTo<std::string>("console:", fon9::LocalHostId_))
+      , ConsoleId_{GetUFrom()} {
    }
 
    void Wakeup() {
@@ -199,9 +202,7 @@ public:
       size_t   passlen = fon9::getpass("Password: ", passbuf, sizeof(passbuf));
       this->PutNewLineConsole();
       fon9::StrView  authz{};
-      fon9::RevBufferFixedSize<1024> rbuf;
-      fon9::RevPrint(rbuf, "console:", fon9::LocalHostId_);
-      return this->AuthUser(fon9::StrTrim(&authz), authc, fon9::StrView{passbuf, passlen}, ToStrView(rbuf));
+      return this->AuthUser(fon9::StrTrim(&authz), authc, fon9::StrView{passbuf, passlen}, fon9::ToStrView(this->ConsoleId_));
    }
 
    State RunLoop() {
@@ -257,12 +258,13 @@ int main(int argc, char** argv) {
 
    fon9sys.Start();
 
-   // 使用 "--admin" 啟動 AdminMode.
-   bool isAdminMode = (fon9::GetCmdArg(argc, argv, fon9::StrView{}, "admin").begin() != nullptr);
    using SeedSessionSP = fon9::intrusive_ptr<ConsoleSeedSession>;
-   SeedSessionSP             coSession{new ConsoleSeedSession{fon9sys, isAdminMode}};
+   SeedSessionSP             coSession{new ConsoleSeedSession{fon9sys}};
    fon9::SeedSession::State  res = ConsoleSeedSession::State::UserExit;
-   if (isAdminMode) {
+
+   // 使用 "--admin" 啟動 AdminMode.
+   if (fon9::GetCmdArg(argc, argv, fon9::StrView{}, "admin").begin() != nullptr) {
+      coSession->SetAdminMode();
       puts("Fon9Co admin mode.");
       res = coSession->RunLoop();
    }

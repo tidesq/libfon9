@@ -229,7 +229,7 @@ protected:
    static void OpThr_DisposeNoClose(Device& dev, std::string cause);
 
    /// 每個 Device 在 LinkReady 時(有些在建構時,有些在Open成功時), 都有一個識別用的Id,
-   /// - 例: TcpClient: "|R=RemoteIp:Port|L=LocalIp:Port"
+   /// - 例: TcpClient: "R=RemoteIp:Port|L=LocalIp:Port"
    /// - 由於 WaitGetDeviceInfo() 會填入: "|id={DeivceId_}"; 所以 deviceId 不可有沒配對的大括號.
    static void OpThr_SetDeviceId(Device& dev, std::string deviceId) {
       dev.DeviceId_ = std::move(deviceId);

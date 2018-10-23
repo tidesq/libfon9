@@ -149,10 +149,8 @@ struct fon9_API SeedTicket {
 /// 針對不同的操作, 要建立對應的 runner 處理, 跑完後通知 visitor.OnTicketRunnerDone();
 class fon9_API TicketRunner : public SeedTicket, public SeedSearcher {
    fon9_NON_COPY_NON_MOVE(TicketRunner);
-protected:
-   SeedVisitorSP  Visitor_;
-
 public:
+   const SeedVisitorSP  Visitor_;
    /// 由使用者自訂的額外資訊.
    CharVector  Bookmark_;
 

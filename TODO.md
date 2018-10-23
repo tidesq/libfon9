@@ -19,10 +19,10 @@ libfon9 TODO list
 ## 系統管理工具
 
 
-* 記錄最後異動(及Submit)的人: User+From;
 * 設定檔備份機制:
   * 載入成功後備份?
   * 異動寫入前備份?
+* AclPolicy: NeedsApply
 
 
 * WebUI
@@ -79,6 +79,5 @@ libfon9 TODO list
 * UDP/Multicast
 * FileDevice
 * Device.DeviceCommand() 傳回值: success+message or fail+message.
-* DeviceId 拿掉開頭的 '|' 字元.
 ---------------------------------------
 ## Simple FIX engine

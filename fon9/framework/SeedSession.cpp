@@ -9,17 +9,18 @@
 
 namespace fon9 {
 
-SeedSession::SeedSession(seed::MaTreeSP root, auth::AuthMgrSP authMgr, bool isAdminMode)
-   : base{std::move(root)}
+SeedSession::SeedSession(seed::MaTreeSP root, auth::AuthMgrSP authMgr, std::string ufrom)
+   : base(std::move(root), std::move(ufrom))
    , Authr_{std::move(authMgr)} {
-   if (isAdminMode)
-      this->SetAdminMode();
 }
 SeedSession::~SeedSession() {
 }
 void SeedSession::SetAdminMode() {
    St::Locker st{this->St_};
    assert(st->State_ == State::None);
+   if (st->State_ != State::None)
+      return;
+   this->SetUFrom("U=[AdminMode]|" + this->GetUFrom());
    st->State_ = State::UserReady;
    this->Authr_.AuthcId_.assign("[AdminMode]");
    seed::AclConfig aclcfg;
@@ -69,7 +70,7 @@ void SeedSession::EmitAuthEvent(State newst, DcQueue&& msg) {
    if (st->State_ != State::UserReady)
       this->ClearLogout(st);
 }
-void SeedSession::OnAuthDone(auth::AuthR&& authr) {
+void SeedSession::OnAuthDone(auth::AuthR&& authr, const auth::AuthRequest& req) {
    State   st = State::UserReady;
    StrView msg{&authr.Info_};
    if (authr.RCode_ != fon9_Auth_Success)
@@ -85,6 +86,7 @@ void SeedSession::OnAuthDone(auth::AuthR&& authr) {
          msg = StrView{"SeedSession.Run|err=Acl is empty."};
       }
       else {
+         this->SetUFrom(this->Authr_.MakeUFrom(ToStrView(req.UserFrom_)));
          this->Fairy_->ResetAclConfig(std::move(aclcfg));
       }
    }
@@ -132,7 +134,7 @@ SeedSession::State SeedSession::AuthUser(StrView authz, StrView authc, StrView p
             }
          }
          req->Visitor_->Authr_ = auths->GetAuthResult();
-         req->Visitor_->OnAuthDone(std::move(authr));
+         req->Visitor_->OnAuthDone(std::move(authr), req->Request_);
          req->AuthServer_.reset();
       }
    };

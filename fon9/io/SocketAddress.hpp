@@ -110,7 +110,7 @@ struct fon9_API SocketAddress {
 enum {
    /// \ingroup io
    /// 一個 tcp connection address 字串輸出的最大可能長度.
-   /// "|R=kMaxAddrPortStrSize|L=kMaxAddrPortStrSize"
+   /// "R=kMaxAddrPortStrSize|L=kMaxAddrPortStrSize"
    /// "123                  456                  7"
    /// 額外 +8: 預留保險.
    kMaxTcpConnectionUID = (SocketAddress::kMaxAddrPortStrSize * 2) + 7 + 8
@@ -118,10 +118,10 @@ enum {
 
 /// \ingroup io
 /// 設定連線雙方的UniqueID字串, 格式如下:
-///   - IPv4:  "|R=a.b.c.d:port|L=a.b.c.d:port"
-///   - IPv6:  "|R=[...]:port|L=[...]:port"
-/// 若 addrRemote==nullptr 則沒有 "|R=..." 這段.
-/// 若 addrLocal==nullptr 則沒有 "|L=..." 這段.
+///   - IPv4:  "R=a.b.c.d:port|L=a.b.c.d:port"
+///   - IPv6:  "R=[...]:port|L=[...]:port"
+/// 若 addrRemote==nullptr 則沒有 "R=..." 這段.
+/// 若 addrLocal==nullptr 則沒有 "L=..." 這段.
 extern fon9_API StrView MakeTcpConnectionUID(char* uid, size_t uidSize, const SocketAddress* addrRemote, const SocketAddress* addrLocal);
 
 template <size_t uidSize>

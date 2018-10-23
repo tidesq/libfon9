@@ -208,12 +208,12 @@ void IocpTcpListener::OnIocp_Done(OVERLAPPED* lpOverlapped, DWORD bytesTransfere
       fon9_LOG_ERROR("TcpServer.Accepted"
                      "|dev=", ToHex{devAccepted},
                      "|soAccepted=", soAccepted,
-                     "|err=", soRes, strConnUID);
+                     "|err=", soRes, '|', strConnUID);
    else
       fon9_LOG_INFO("TcpServer.Accepted"
                     "|dev=", ToHex{devAccepted},
                     "|seq=", devAccepted->GetAcceptedClientSeq(),
-                    "|soAccepted=", soAccepted, strConnUID);
+                    "|soAccepted=", soAccepted, '|', strConnUID);
 
    this->ClientSocket_.Close();
    this->ResetupAccepter();

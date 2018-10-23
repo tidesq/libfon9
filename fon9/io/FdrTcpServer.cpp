@@ -162,13 +162,13 @@ void FdrTcpListener::OnFdrEvent_Handling(FdrEventFlag evs) {
       if (soRes.IsError() || devAccepted == nullptr) {
          fon9_LOG_ERROR("TcpServer.Accepted"
                         "|dev=", ToHex{devAccepted},
-                        "|err=", soRes, strConnUID);
+                        "|err=", soRes, '|', strConnUID);
          break;
       }
       fon9_LOG_INFO("TcpServer.Accepted"
                     "|dev=", ToHex{devAccepted},
                     "|seq=", devAccepted->GetAcceptedClientSeq(),
-                    strConnUID);
+                    '|', strConnUID);
    } while (!this->IsDisposing());
 }
 

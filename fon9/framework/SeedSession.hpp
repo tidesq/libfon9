@@ -20,8 +20,11 @@ class fon9_API SeedSession : public seed::SeedVisitor {
    using base = seed::SeedVisitor;
 
 public:
-   SeedSession(seed::MaTreeSP root, auth::AuthMgrSP authMgr, bool isAdminMode);
+   SeedSession(seed::MaTreeSP root, auth::AuthMgrSP authMgr, std::string ufrom);
    virtual ~SeedSession();
+
+   /// 設為 Admin 模式, 僅能在建構後立即設定.
+   void SetAdminMode();
 
    enum class State {
       None = 0,
@@ -92,7 +95,6 @@ private:
    struct PrintLayout;
    seed::TicketRunnerGridViewSP  LastGV_;
 
-   void SetAdminMode();
    void OnTicketRunnerDone(seed::TicketRunner&, DcQueue&& extmsg) override;
    void OnTicketRunnerWrite(seed::TicketRunnerWrite&, const seed::SeedOpResult& res, const seed::RawWr& wr) override;
    void OnTicketRunnerRead(seed::TicketRunnerRead&, const seed::SeedOpResult& res, const seed::RawRd& rd) override;
@@ -103,7 +105,7 @@ private:
    void OnTicketRunnerSubscribe(seed::TicketRunnerSubscribe&, bool isSubOrUnsub) override;
 
    void EmitAuthEvent(State st, DcQueue&& msg);
-   void OnAuthDone(auth::AuthR&& authr);
+   void OnAuthDone(auth::AuthR&& authr, const auth::AuthRequest& req);
    void ClearLogout(St::Locker&);
 
    void OutputSeedFields(seed::TicketRunner& runner, const seed::SeedOpResult& res, const seed::RawRd& rd, StrView exhead);

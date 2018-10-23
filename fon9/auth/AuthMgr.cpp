@@ -1,6 +1,7 @@
 ﻿/// \file fon9/auth/AuthMgr.cpp
 /// \author fonwinz@gmail.com
 #include "fon9/auth/AuthMgr.hpp"
+#include "fon9/RevPrint.hpp"
 #include <algorithm> // std::replace()
 
 namespace fon9 { namespace auth {
@@ -10,6 +11,21 @@ StrView AuthResult::GetPolicyId(StrView policyName) const {
    if (ifind == this->PolicyKeys_.end())
       return ToStrView(this->RoleId_);
    return ToStrView(ifind->second);
+}
+void AuthResult::RevPrintUser(RevBuffer& rbuf) const {
+   RevPrint(rbuf, this->AuthcId_);
+   if (!this->AuthzId_.empty())
+      RevPrint(rbuf, this->AuthzId_, '/');
+}
+void AuthResult::RevPrintUFrom(RevBuffer& rbuf, StrView devid) const {
+   RevPrint(rbuf, '|', devid);
+   this->RevPrintUser(rbuf);
+   RevPrint(rbuf, "U=");
+}
+std::string AuthResult::MakeUFrom(StrView devid) const {
+   RevBufferList rbuf{128};
+   RevPrintUFrom(rbuf, devid);
+   return BufferTo<std::string>(rbuf.MoveOut());
 }
 
 AuthSession::~AuthSession() {

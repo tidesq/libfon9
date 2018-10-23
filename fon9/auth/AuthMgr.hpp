@@ -37,9 +37,18 @@ struct fon9_API AuthResult : public RoleConfig {
       this->ExtInfo_.clear();
    }
 
+   /// 若 this->AuthzId_.empty()  返回: AuthcId_
+   /// 若 !this->AuthzId_.empty() 返回: AuthzId_
    StrView GetUserId() const {
       return this->AuthzId_.empty() ? ToStrView(this->AuthcId_) : ToStrView(this->AuthzId_);
    }
+   /// 若 this->AuthzId_.empty()  輸出: AuthcId_
+   /// 若 !this->AuthzId_.empty() 輸出: AuthzId_ + "/" + AuthcId_
+   void RevPrintUser(RevBuffer& rbuf) const;
+   /// 輸出: RevPrintUser() + "|" + deviceId;
+   void RevPrintUFrom(RevBuffer& rbuf, StrView deviceId) const;
+   /// 輸出: RevPrintUser() + "|" + deviceId;
+   std::string MakeUFrom(StrView deviceId) const;
 
    /// 若 policyName 在 this->PolicyKeys_ 找不到,
    /// 則應直接用 RoleId_ 當作該 policyName 的 PolicyId.
@@ -54,8 +63,8 @@ struct AuthRequest {
    /// - SASL SCRAM: 依協商階段提供不同的訊息.
    std::string Response_;
    /// 使用者來自哪裡?
-   /// - "|console"
-   /// - "|R=ip:port|L=ip:port"
+   /// - "console"
+   /// - "R=ip:port|L=ip:port"
    std::string UserFrom_;
 };
 

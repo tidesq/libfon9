@@ -468,7 +468,7 @@ struct IoManager::Tree::PodOp : public seed::PodOpLockerNoWrite<PodOp, DeviceMap
       }
       StrView cmd = StrFetchTrim(cmdln, &isspace);
       if (cmd == "open") {
-         if (static_cast<Tree*>(this->Sender_)->IoManager_->CreateDevice(*this->Seed_)) {
+         if (static_cast<Tree*>(this->Sender_)->IoManager_->CreateDevice(*this->Seed_) == DeviceOpenResult::NewDeviceCreated) {
             if (cmdln.empty())
                cmdln = ToStrView(this->Seed_->Config_.DeviceArgs_);
             AssignStStr(this->Seed_->DeviceSt_, UtcNow(), "Async opening by command.");

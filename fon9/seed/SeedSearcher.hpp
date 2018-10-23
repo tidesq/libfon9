@@ -52,8 +52,6 @@ struct fon9_API SeedSearcher : public intrusive_ref_counter<SeedSearcher> {
    /// 預設: 取得 tab 後, 呼叫 OnLastStep() 或 ContinueSeed() 或 OnError();
    virtual void ContinuePod(TreeOp& opTree, StrView keyText, StrView tabName);
 
-   void ContinuePodForRemove(TreeOp& opTree, StrView keyText, StrView tabName, FnPodRemoved& removedHandler);
-
    struct PodHandler {
       SeedSearcherSP Searcher_;
       const char*    KeyPos_;
@@ -67,6 +65,13 @@ struct fon9_API SeedSearcher : public intrusive_ref_counter<SeedSearcher> {
    /// 預設使用 opPod.GetSapling();
    /// 若有必要您可以 override 改成 opPod.MakeSapling();
    virtual TreeSP ContinueTree(PodOp& opPod, Tab& tab);
+
+protected:
+   void ContinuePodForRemove(TreeOp& opTree, StrView keyText, StrView tabName, FnPodRemoved& removedHandler);
+   /// 在 ContinuePodForRemove() 裡面:
+   /// 提供衍生者(例如 SeedVisitor) 在 opTree.Remove() 前後有 log 的機會, 預設 do nothing.
+   virtual void OnBeforeRemove(TreeOp& opTree, StrView keyText, Tab* tab);
+   virtual void OnAfterRemove(const PodRemoveResult& res);
 };
 
 fon9_API void StartSeedSearch(Tree& root, SeedSearcherSP searcher);

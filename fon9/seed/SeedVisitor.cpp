@@ -2,10 +2,46 @@
 // \author fonwinz@gmail.com
 #include "fon9/seed/SeedVisitor.hpp"
 #include "fon9/buffer/DcQueueList.hpp"
-#include "fon9/RevPrint.hpp"
+#include "fon9/Log.hpp"
 
 namespace fon9 { namespace seed {
 
+/// 可以考慮透過設定(或Op操作)改變此變數.
+fon9_API LogLevel VisitorLogLevel = LogLevel::Info;
+
+static void TicketLogRequest(StrView opName, TicketRunner& ticket, const Tab* tab, StrView cmd) {
+   if (fon9_UNLIKELY(VisitorLogLevel < LogLevel_))
+      return;
+   RevBufferList rbuf{kLogBlockNodeSize};
+   RevPutChar(rbuf, '\n');
+   if (cmd.begin() != nullptr)
+      RevPrint(rbuf, "|cmd=", cmd);
+   if (tab)
+      RevPrint(rbuf, "|tab=", tab->Name_);
+   RevPrint(rbuf, opName,
+            "|ticket=", ToPtr(&ticket),
+            '|', ticket.Visitor_->GetUFrom(),
+            "|path=", ticket.OrigPath_);
+   LogWrite(VisitorLogLevel, std::move(rbuf));
+}
+static void TicketLogResult(StrView opName, TicketRunner& ticket, OpResult opResult, StrView msg) {
+   if (fon9_UNLIKELY(VisitorLogLevel < LogLevel_))
+      return;
+   RevBufferList rbuf{kLogBlockNodeSize};
+   RevPutChar(rbuf, '\n');
+   if (msg.begin() != nullptr)
+      RevPrint(rbuf, "|msg=", msg);
+   RevPrint(rbuf, opName,
+            "|ticket=", ToPtr(&ticket),
+            "|res=", GetOpResultMessage(opResult));
+   LogWrite(VisitorLogLevel, std::move(rbuf));
+}
+
+//--------------------------------------------------------------------------//
+SeedVisitor::SeedVisitor(MaTreeSP root, std::string ufrom)
+   : UFrom_{std::move(ufrom)}
+   , Fairy_{new SeedFairy{std::move(root)}} {
+}
 SeedVisitor::~SeedVisitor() {
 }
 void SeedVisitor::SetCurrPath(StrView currPath) {
@@ -75,7 +111,8 @@ void TicketRunnerWrite::OnWriteOp(const SeedOpResult& res, const RawWr* wr) {
       this->OnError(res.OpResult_);
 }
 RevBufferList TicketRunnerWrite::ParseSetValues(const SeedOpResult& res, const RawWr& wr) {
-   StrView       fldvals{&this->FieldValues_};
+   StrView  fldvals{&this->FieldValues_};
+   TicketLogRequest("SeedOp.Write", *this, res.Tab_, fldvals);
    RevBufferList rbuf{128};
    while (!fldvals.empty()) {
       StrView val = SbrFetchNoTrim(fldvals, ',');
@@ -109,6 +146,13 @@ void TicketRunnerRemove::ContinuePod(TreeOp& opTree, StrView keyText, StrView ta
 void TicketRunnerRemove::OnRemoved(const PodRemoveResult& res) {
    this->OpResult_ = res.OpResult_;
    this->Visitor_->OnTicketRunnerRemoved(*this, res);
+}
+void TicketRunnerRemove::OnBeforeRemove(TreeOp& opTree, StrView keyText, Tab* tab) {
+   (void)opTree;  (void)keyText; (void)tab;
+   TicketLogRequest("SeedOp.Remove", *this, nullptr, nullptr);
+}
+void TicketRunnerRemove::OnAfterRemove(const PodRemoveResult& res) {
+   TicketLogResult("SeedOp.Remove", *this, res.OpResult_, nullptr);
 }
 //--------------------------------------------------------------------------//
 TicketRunnerGridView::TicketRunnerGridView(SeedVisitor& visitor, StrView seed, uint16_t reqMaxRowCount, StrView startKey, StrView tabName)
@@ -161,16 +205,21 @@ void TicketRunnerCommand::OnLastSeedOp(const PodOpResult& resPod, PodOp* pod, Ta
       this->OnError(resPod.OpResult_);
    else if (this->SeedCommandLine_.empty())
       this->SetNewCurrPath();
-   else
+   else {
+      if (this->SeedCommandLine_ != "?")
+         TicketLogRequest("SeedOp.Command", *this, &tab, ToStrView(this->SeedCommandLine_));
       pod->OnSeedCommand(&tab, &this->SeedCommandLine_,
                          std::bind(&TicketRunnerCommand::OnSeedCommandResult,
                                    intrusive_ptr<TicketRunnerCommand>(this),
                                    std::placeholders::_1,
                                    std::placeholders::_2));
+   }
 }
 void TicketRunnerCommand::OnSeedCommandResult(const SeedOpResult& res, StrView msg) {
    this->OpResult_ = res.OpResult_;
    this->Visitor_->OnTicketRunnerCommand(*this, res, msg);
+   if (this->SeedCommandLine_ != "?")
+      TicketLogResult("SeedOp.Command", *this, res.OpResult_, msg);
 }
 //--------------------------------------------------------------------------//
 TicketRunnerSubscribe::TicketRunnerSubscribe(SeedVisitor& visitor, StrView seed, StrView tabName)

@@ -157,13 +157,19 @@ void SeedSearcher::ContinuePodForRemove(TreeOp& opTree, StrView keyText, StrView
          return;
       }
       this->RemainPath_.SetBegin(keyText.begin());
+      this->OnBeforeRemove(opTree, keyText, tab);
       opTree.Remove(keyText, tab, [this, &removedHandler](const PodRemoveResult& res) {
          if (res.OpResult_ == OpResult::removed_pod || res.OpResult_ == OpResult::removed_seed)
             removedHandler(res);
          else
             this->OnError(res.OpResult_);
+         this->OnAfterRemove(res);
       });
    }
+}
+void SeedSearcher::OnBeforeRemove(TreeOp&, StrView, Tab*) {
+}
+void SeedSearcher::OnAfterRemove(const PodRemoveResult&) {
 }
 
 //--------------------------------------------------------------------------//
