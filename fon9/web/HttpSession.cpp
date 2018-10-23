@@ -44,6 +44,7 @@ HttpSession::HttpSession(HttpHandlerSP rootHandler)
 }
 void HttpSession::UpgradeTo(HttpRecvHandlerSP ws) {
    this->RecvHandler_ = std::move(ws);
+   this->RecvHandler_->OnUpgraded(*this);
    // 如果是 HttpSession client, 則應保留原始 RecvHandler, 斷線後應還原「原始 RecvHandler」!
 }
 io::RecvBufferSize HttpSession::OnDevice_Recv(io::Device& dev, DcQueueList& rxbuf) {
@@ -60,6 +61,8 @@ void HttpSession::OnDevice_StateChanged(io::Device& dev, const io::StateChangedA
 //--------------------------------------------------------------------------//
 
 HttpRecvHandler::~HttpRecvHandler() {
+}
+void HttpRecvHandler::OnUpgraded(HttpSession&) {
 }
 
 io::RecvBufferSize HttpMessageReceiver::OnRequestEvent(io::Device& dev) {

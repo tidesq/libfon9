@@ -22,7 +22,7 @@ IoManager::IoManager(Tree& ownerTree, const IoManagerArgs& args)
    : Name_{args.Name_}
    , SessionFactoryPark_{args.SessionFactoryPark_ ? args.SessionFactoryPark_ : new SessionFactoryPark{"SessionFactoryPark"}}
    , DeviceFactoryPark_{args.DeviceFactoryPark_ ? args.DeviceFactoryPark_ : new DeviceFactoryPark{"DeviceFactoryPark"}}
-   , OwnerTree_(ownerTree)
+   , OwnerTree_(&ownerTree)
    , IoServiceCfgstr_{args.IoServiceCfgstr_} {
    if (args.IoServiceSrc_) {
    #ifdef __fon9_io_win_IocpService_hpp__
@@ -251,7 +251,8 @@ void IoManager::UpdateDeviceStateLocked(io::Device& dev, const io::StateUpdatedA
          // item->AcceptedClientSeq_ != 0, accepted client:
          // 保留 Bookmark, 等 OnDevice_Destructing() 事件時, 將 item 刪除.
       }
-      this->OwnerTree_.NotifyChanged(*item);
+      if (this->OwnerTree_)
+         this->OwnerTree_->NotifyChanged(*item);
    }
    // fon9_LOG_TRACE:
    if (fon9_UNLIKELY(LogLevel::Trace >= LogLevel_)) {
@@ -272,7 +273,8 @@ void IoManager::OnSession_StateUpdated(io::Device& dev, StrView stmsg) {
 void IoManager::UpdateSessionStateLocked(io::Device& dev, StrView stmsg) {
    if (auto item = this->FromManagerBookmark(dev)) {
       AssignStStr(item->SessionSt_, UtcNow(), stmsg);
-      this->OwnerTree_.NotifyChanged(*item);
+      if (this->OwnerTree_)
+         this->OwnerTree_->NotifyChanged(*item);
    }
    fon9_LOG_INFO("IoManager.SessionState|dev=", ToPtr(&dev), "|st=", stmsg);
 }
@@ -327,6 +329,7 @@ seed::LayoutSP IoManager::Tree::MakeLayout() {
 void IoManager::Tree::OnParentSeedClear() {
    {  // dispose all devices.
       DeviceMap::Locker map{this->IoManager_->DeviceMap_};
+      this->IoManager_->OwnerTree_ = nullptr;
       for (auto& i : *map) {
          if (io::Device* dev = i->Device_.get())
             dev->AsyncDispose("Parent clear");

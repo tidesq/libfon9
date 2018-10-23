@@ -55,7 +55,8 @@ export default function SaslWebSocket() {
         return;
       }
       if (res.hasOwnProperty('signed')) {
-        connection.onmessage = pthis.onmessage;
+        if (connection) // 可能已經斷線?
+           connection.onmessage = pthis.onmessage;
         challenging = false; // 認證成功, 設定新的 onmessage 之後, 才能關閉 challenging 旗標.
         if (pthis.onsigned)
            pthis.onsigned(res.signed);
@@ -68,7 +69,8 @@ export default function SaslWebSocket() {
       }
       else if (res.hasOwnProperty('err')) {
         pthis.err = res.err;
-        connection.close();
+        if (connection)
+           connection.close();
         if (pthis.onerror)
            pthis.onerror(res.err);
       }
@@ -91,6 +93,7 @@ export default function SaslWebSocket() {
       connection.close();
   }
   this.send = function(msg) {
-    connection.send(msg);
+    if (connection)
+      connection.send(msg);
   }
 };

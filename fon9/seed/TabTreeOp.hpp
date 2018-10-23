@@ -32,7 +32,7 @@ protected:
    /// 根據 rr.KeyText_ 處理不同的指令:
    /// - "edit",  cmdln=="restore": 重新從 OrigTree 複製完整的資料.
    /// - "apply", cmdln=="submit":  將編輯用的 tree 套用至 OrigTree.
-   virtual void OnSeedCommand(seed::TreeOp& origTreeOp, SeedOpResult& rr, StrView cmdln, FnCommandResultHandler&& resHandler);
+   virtual void OnTabEditCommand(seed::TreeOp& origTreeOp, SeedOpResult& rr, StrView cmdln, FnCommandResultHandler&& resHandler);
 public:
    TabTreeOp(const Tab& ref);
    TabTreeOp(const Layout& ref);

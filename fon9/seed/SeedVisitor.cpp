@@ -1,6 +1,7 @@
 ﻿// \file fon9/seed/SeedVisitor.cpp
 // \author fonwinz@gmail.com
 #include "fon9/seed/SeedVisitor.hpp"
+#include "fon9/seed/TabTreeOp.hpp"
 #include "fon9/buffer/DcQueueList.hpp"
 #include "fon9/Log.hpp"
 
@@ -191,6 +192,29 @@ void TicketRunnerGridView::OnGridViewOp(GridViewResult& res) {
    }
 }
 //--------------------------------------------------------------------------//
+// /xxx/^edit:tabName  需要有 AccessRight::Write 權限
+// /xxx/^apply:tabName 需要有 AccessRight::Apply 權限
+static AccessRight CheckCommandRight(StrView seed) {
+   if (const char* pspl = StrRFindIf(seed, [](unsigned char ch) { return ch == '/'; })) {
+      seed.SetBegin(pspl + 1);
+      if (seed.Get1st() == '^') {
+         seed.SetBegin(pspl + 2);
+         if ((pspl = seed.Find(':')) != nullptr) {
+            seed.SetEnd(pspl);
+            if(seed == kTabTree_KeyEdit)
+               return AccessRight::Write;
+            if (seed == kTabTree_KeyApply)
+               return AccessRight::Apply;
+         }
+      }
+   }
+   return AccessRight::Exec;
+}
+// 如果 cmdln.empty() 則表示切換現在路徑: this->Visitor_->SetCurrPath(ToStrView(this->Path_));
+TicketRunnerCommand::TicketRunnerCommand(SeedVisitor& visitor, StrView seed, StrView cmdln)
+   : base(visitor, seed, cmdln.empty() ? AccessRight::None : CheckCommandRight(seed))
+   , SeedCommandLine_{cmdln.ToString()} {
+}
 void TicketRunnerCommand::SetNewCurrPath() {
    this->Visitor_->OnTicketRunnerSetCurrPath(*this);
 }

@@ -30,6 +30,7 @@ public:
    ~HttpWebSocketAuthHandler();
 
    /// 若傳回 nullptr, 則 authResult.ExtInfo_ 必須包含錯誤原因.
+   /// 剛建立好的 retval 不可傳送訊息, 若有需要主動送出第一筆訊息, 應在 retval->OnUpgraded(); 裡面送出.
    virtual WebSocketSP CreateWebSocketService(io::Device& dev, auth::AuthResult& authResult) = 0;
 };
 using HttpWebSocketAuthHandlerSP = intrusive_ptr<HttpWebSocketAuthHandler>;

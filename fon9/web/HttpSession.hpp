@@ -7,12 +7,18 @@
 
 namespace fon9 { namespace web {
 
+class fon9_API HttpSession;
+
 /// \ingroup web
 /// Http byte stream 接收基底.
 /// 實際的訊息解析由衍生者(HttpMessageReceiver, WebSocket)負責.
 class fon9_API HttpRecvHandler {
 public:
    virtual ~HttpRecvHandler();
+   /// HttpSession::UpgradeTo() 升級成功後的事件.
+   /// 若有需要主動送出第一筆訊息, 應在此處送出.
+   /// 預設 do nothing.
+   virtual void OnUpgraded(HttpSession&);
    virtual io::RecvBufferSize OnDevice_Recv(io::Device& dev, DcQueueList& rxbuf) = 0;
 };
 using HttpRecvHandlerSP = std::unique_ptr<HttpRecvHandler>;

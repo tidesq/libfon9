@@ -226,10 +226,7 @@ class fon9_API TicketRunnerCommand : public TicketRunner {
    void OnSeedCommandResult(const SeedOpResult& res, StrView msg);
 public:
    /// 如果 cmdln.empty() 則表示切換現在路徑: this->Visitor_->SetCurrPath(ToStrView(this->Path_));
-   TicketRunnerCommand(SeedVisitor& visitor, StrView seed, StrView cmdln)
-      : base(visitor, seed, cmdln.empty() ? AccessRight::None : AccessRight::Exec)
-      , SeedCommandLine_{cmdln.ToString()} {
-   }
+   TicketRunnerCommand(SeedVisitor& visitor, StrView seed, StrView cmdln);
    void OnFoundTree(TreeOp&) override;
    void OnLastSeedOp(const PodOpResult& resPod, PodOp* pod, Tab& tab) override;
 };

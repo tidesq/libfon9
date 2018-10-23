@@ -40,7 +40,7 @@ public:
    }
    void OnSeedCommand(Tab* tab, StrView cmdln, FnCommandResultHandler resHandler) override {
       this->Tab_ = tab;
-      static_cast<TabTreeOp*>(this->Sender_)->OnSeedCommand(this->OrigTreeOp_, *this, cmdln, std::move(resHandler));
+      static_cast<TabTreeOp*>(this->Sender_)->OnTabEditCommand(this->OrigTreeOp_, *this, cmdln, std::move(resHandler));
    }
 };
 struct TabTreeOp::TreeOp : public seed::TreeOp {
@@ -227,7 +227,7 @@ TreeSP TabTreeOp::GetSapling(seed::TreeOp& origTreeOp, SeedOpResult& req) {
       return TreeSP{new ApplyTree(&origTreeOp.Tree_, EditSaplingManager(*this, req.Tab_, &origTreeOp))};
    return TreeSP{};
 }
-void TabTreeOp::OnSeedCommand(seed::TreeOp& origTreeOp, SeedOpResult& rr, StrView cmdln, FnCommandResultHandler&& resHandler) {
+void TabTreeOp::OnTabEditCommand(seed::TreeOp& origTreeOp, SeedOpResult& rr, StrView cmdln, FnCommandResultHandler&& resHandler) {
    rr.OpResult_ = OpResult::not_supported_cmd;
    StrTrim(&cmdln);
    if (rr.KeyText_ == kTabTree_KeyEdit) {

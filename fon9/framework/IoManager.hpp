@@ -107,7 +107,7 @@ public:
    bool AddConfig(StrView id, const IoConfigItem& cfg);
 
 private:
-   Tree&       OwnerTree_;
+   Tree*       OwnerTree_;
    std::string IoServiceCfgstr_;
 
    struct DeviceRun {
