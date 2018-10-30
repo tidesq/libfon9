@@ -19,6 +19,10 @@ libfon9 TODO list
 ## 系統管理工具
 
 
+* web.seed: Search key.
+* Unordered: 需要時增加要顯示的 key?
+
+
 * 設定檔備份機制:
   * 載入成功後備份?
   * 異動寫入前備份?
@@ -26,12 +30,6 @@ libfon9 TODO list
 
 
 * WebUI
-  * TabFlag::NeedsApply:
-    * 主管確認機制。
-  * 資料量太大時的顯示方式:
-    * 分頁?
-    * 捲動時自動載入?
-    * 與 Unordered 使用相同方式?: 需要時增加要顯示的 key.
   * hide column(field)
   * 根據欄位 typeid 決定 cell text align.
   * Column:

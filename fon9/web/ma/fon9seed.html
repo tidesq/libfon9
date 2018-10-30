@@ -121,13 +121,15 @@
          if (onPathChanged && newPath != currPath)
             onPathChanged(newPath);
       }
-      /// 當 Tab click 或需要 reload 時觸發 onLoadGridView(currPath, startkey, tabName);
+      /// 當 Tab click 或需要 reload 時觸發 onLoadGridView(currPath, startkey, tabName, count);
       /// startkey 有可能是 undefined, 表示從第一筆開始;
       /// 然後透過 renderGridView() 告知結果.
       var onLoadGridView;
-      let emitLoadGridView = function (startkey) {
+      let emitLoadGridView = function (startkey, count) {
+         if (!keySelected && gview.selectedCell)
+            keySelected = gview.getKeyText(gview.selectedCell);
          if (onLoadGridView)
-            onLoadGridView(currPath, startkey, getCurrTabName());
+            onLoadGridView(currPath, startkey, getCurrTabName(), count);
       }
       /// 當欄位異動 或 add a row 時觸發 onFieldChanged(currPath, key, tabName, fieldValues);
       /// 然後透過 updateRow() 告知結果.
@@ -216,11 +218,10 @@
             return;
          if (parseTabIdx(args) != currTabIdx)
             return;
-         gview.clearBody();
          submitId = undefined;
          document.getElementById("btnSubmit").disabled = true;
          let lines = res.split('\n');
-         // first line(lines[0]) = rowCount,distanceBegin,distanceEnd,SubrOK
+         // first line(lines[0]) = containerTotalRowCount,distanceBegin,distanceEnd,SubrOK
          let lns = lines[0].split(',');
          let btnReload = document.getElementById('btnReload');
          if (lns.length >= 4 && lns[3] === 'SubrOK') {
@@ -230,8 +231,71 @@
          }
          else
             btnReload.classList.remove('subrOK');
+         // distance begin/end
+         // args = "N" or "N," or "N,^Tab" or "N,key^Tab"
+         let argKey, keyRow, argRowCount, distanceBegin, distanceEnd;
+         if (args) {
+            args = args.split(',');
+            if (args.length > 0 && args[0])
+               argRowCount = parseInt(args[0]);
+            if (args.length > 1) {
+               let kt = parsePath(args[1]);
+               if (kt && kt.length > 0 && kt[0].tab != args[1]) {
+                  argKey = kt[0].seed;
+                  keyRow = gview.searchRow(argKey);
+               }
+            }
+         }
+         //let isMoveToTop;
+         if (lns.length >= 2 && lns[1] !== '') {
+            distanceBegin = parseInt(lns[1], 10);
+            //isMoveToTop = (distanceBegin == 0 && argKey == undefined && !keySelected);
+         }
+         let isMoveToBottom;
+         if (lns.length >= 3 && lns[2] !== '') {
+            distanceEnd = parseInt(lns[2], 10);
+            // 是否要移到 end? 如果是因按下 [Ctrl-End] 而觸發的 reload.
+            // args = "-N" or "-N," or "-N,^Tab"
+            isMoveToBottom = (distanceEnd <= 1 && argRowCount < 0 && argKey == undefined && !keySelected);
+         }
+         let rowIndex = -1;
+         let isMerge = (keyRow && argRowCount);
+         // 有找到 keyRow, 表示此次載入要與現有 table 合併.
+         if (isMerge) {
+            if (argRowCount < 0) { // 接在現有 table 上方.
+               for (let lno = lines.length; lno > 1;) {
+                  let flds = lines[--lno].split('\x01');
+                  let rowe = gview.searchRow(flds[0]);
+                  if (rowe) {
+                     keyRow = rowe;
+                     break;
+                  }
+               }
+               gview.removeRowsTo(keyRow);
+               gview.distanceBegin = distanceBegin;
+               rowIndex = gview.getFirstBodyRowIndex();
+            }
+            else { // 接在現有 table 下方.
+               for (let lno = 1; lno < lines.length; ++lno) {
+                  let flds = lines[lno].split('\x01');
+                  let rowe = gview.searchRow(flds[0]);
+                  if (rowe) {
+                     keyRow = rowe;
+                     break;
+                  }
+               }
+               gview.removeRowsFrom(keyRow);
+               gview.distanceEnd = distanceEnd;
+               rowIndex = -1;
+            }
+         }
+         else {
+            gview.clearBody();
+            gview.distanceBegin = distanceBegin;
+            gview.distanceEnd = distanceEnd;
+         }
+         // 從 lines[1] 開始才是每行的內容:
          if (lines.length > 1) {
-            // 所以從 lines[1] 開始才是每行的內容:
             let lno = 1;
             for (; lno < lines.length; ++lno) {
                let flds = lines[lno];
@@ -241,16 +305,21 @@
                      break;
                   }
                }
-               addRowElement(flds.split('\x01'));
+               flds = flds.split('\x01');
+               let row = addRowElement(flds, rowIndex);
+               rowIndex = row.rowIndex + 1;
+               if (isMoveToBottom)
+                  keySelected = flds[0];
             }
             if (submitId) { // 接下來的 lines 為「源資料表」, 比對並顯示差異.
-               for (let row of gview.gvTable.tBodies[0].rows)
+               for (let row of gview.gvTable.tBodies[0].rows) {
                   row.classList.add("gvRowNew");
+               }
                while (++lno < lines.length) {
                   let flds = lines[lno].split('\x01');
                   let rowe = gview.searchRow(flds[0]);
                   if (!rowe)
-                     addRowElement(flds).classList.add("gvRowDel");
+                     addRowElement(flds, -1).classList.add("gvRowDel");
                   else {
                      rowe.classList.remove("gvRowNew");
                      let i = 1;
@@ -272,6 +341,8 @@
                   document.getElementById("btnSubmit").disabled = false;
             }
          }
+         if (isMerge)
+            return;
          // 載入表格資料之後, 把第一格設為 focus.
          if (keySelected) {
             let row = gview.searchRow(keySelected);
@@ -289,9 +360,7 @@
          let keytab = parseLastKeyTab(path);
          if (!keytab)
             return;
-         let row = gview.searchRow(keytab.seed);
-         if (!row) // Subscribe 主動回報的新增行?
-            row = gview.addBodyRow(keytab.seed);
+         let row = gview.addBodyRow(keytab.seed, -1);
          let cells = row.cells;
          cells[0].classList.remove('gvUpdatingCell'); // 移除 addNewRow() 時設定的 style class.
          let lines = res.split('\n');
@@ -371,7 +440,7 @@
             return;
          let row = gview.searchRow(key);
          if (!row) {
-            row = gview.addBodyRow(key);
+            row = gview.addBodyRow(key, -1);
             row.cells[0].classList.add('gvUpdatingCell');
             emitFieldChanged(key, fieldValues);
          }
@@ -450,8 +519,6 @@
                      // e.g. 操作員擁有AccessRight::Write, 但需要主管確定AccessRight::Apply;
                      // 所以 2個權限都需要判斷.
                      && ((accessRights & 0x80) || hasWriteAccess()));
-         if (!keySelected && gview.selectedCell)
-            keySelected = gview.getKeyText(gview.selectedCell);
          emitLoadGridView(gview.getFirstCellText());
          gview.clearAll();
          let strHeader = '<th>' + getTitleOrName(layout.key) + '</th>';
@@ -503,8 +570,8 @@
          }
       }
       // flds=string[], return: row element.
-      let addRowElement = function (flds) {
-         let rowe = gview.addBodyRow(flds[0]);
+      let addRowElement = function (flds, index) {
+         let rowe = gview.addBodyRow(flds[0], index);
          for (let i = 1; i < flds.length; ++i)
             gview.addBodyCell(rowe, flds[i]);
          return rowe;
@@ -659,6 +726,11 @@
 
       // 使用「oncontextmenu 事件」處理 SeedCommand.
       gview.gvTable.oncontextmenu = gvTable_oncontextmenu;
+
+      gview.onReload = function(key, count) {
+         if (onLoadGridView)
+            onLoadGridView(currPath, key, getCurrTabName(), count);
+      }
    </script>
 
    <!-- ContextMenu for SeedCommand -->

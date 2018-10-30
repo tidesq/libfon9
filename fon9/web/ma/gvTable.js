@@ -32,13 +32,27 @@ function gvTableKeyDown(gv, ev) {
       return !pageCellFocus(gv, 1, rowIndex, cell.cellIndex);
 
    if (ev.keyCode == 35) { // End
-      if (ev.ctrlKey)
-         return !gv.setCellFocus(gv.gvTable.rows.length, cell.cellIndex);
+      if (ev.ctrlKey) {
+         let count = pageLines(gv) * -3;
+         if (gv.distanceEnd <= 1 || !gv.onReload || !count)
+            return !gv.setCellFocus(gv.gvTable.rows.length, cell.cellIndex);
+         // reload gv from end.
+         // 載入成功後, 在 fon9seed.html 的 renderGridView() 移動到 bottom.
+         gv.onReload(undefined, count);
+         return false;
+      }
       return !gv.setCellFocus(rowIndex, Number.MAX_SAFE_INTEGER);
    }
    if (ev.keyCode == 36) { // Home
-      if (ev.ctrlKey)
-         return !gv.setCellFocus(0, cell.cellIndex);
+      if (ev.ctrlKey) {
+         let count = pageLines(gv) * 3;
+         if (gv.distanceBegin === 0 || !gv.onReload || !count)
+            return !gv.setCellFocus(0, cell.cellIndex);
+         // reload gv from begin.
+         // 載入成功後, 在 fon9seed.html 的 renderGridView() 移動到 top.
+         gv.onReload(undefined, count);
+         return false;
+      }
       return !gv.setCellFocus(rowIndex, 0);
    }
 
@@ -66,6 +80,14 @@ function gvTableKeyDown(gv, ev) {
       }
    }
    return true;
+}
+function rowHeight(gv) {
+   let rows = gv.gvTable.rows;
+   return rows.length > 0 ? rows[0].offsetHeight : 0;
+}
+function pageLines(gv) {
+   let rowheight = rowHeight(gv);
+   return rowheight ? Math.ceil(screen.height / rowheight) : 0;
 }
 // PageUp(direction = -1) or PageDown(direction = +1)
 function pageCellFocus(gv, direction, rowIndex, cellIndex) {
@@ -146,6 +168,22 @@ function onclickSelectCell(gv, ev) {
       gv.setFirstCellFocus();
 }
 
+function onScroll(gv, ev) {
+   if (!gv.onReload)
+      return;
+   let startKey;
+   if (gv.distanceBegin > 0 && gv.gvArea.scrollTop <= gv.gvArea.clientHeight) {
+      startKey = gv.getFirstCellText();
+      if (startKey != undefined)
+         gv.onReload(startKey, pageLines(gv) * -1);
+   }
+   if (gv.distanceEnd > 1 && gv.gvArea.scrollHeight - gv.gvArea.scrollTop - gv.gvArea.clientHeight <= gv.gvArea.clientHeight) {
+      startKey = gv.getLastRowKey();
+      if (startKey != undefined)
+         gv.onReload(startKey, pageLines(gv));
+   }
+}
+
 /** 建立 gv table.
  *
  * \code
@@ -170,12 +208,22 @@ function onclickSelectCell(gv, ev) {
  *  - isCellEditable(cell);
  *    - 檢查 cell 是否允許編輯.
  *
+ * 輔助方法(事件):
+ *  - onReload(key, count);
+ *    - if (distanceBegin > 0)
+ *      - Ctrl-Home: 則 onReload(undefined, n); 表示從頭載入 n 筆, 載入成功後, 在 fon9seed.html 的 renderGridView() 移動到 top.
+ *      - 如果 v-scroller.top <= 1 page 則在 table 上方, 再多載入 1 page.
+ *    - if (distanceEnd > 1)
+ *      - Ctrl-End: 則 onReload(undefined, -n); 表示從 end 載入 n 筆, 載入成功後, 在 fon9seed.html 的 renderGridView() 移動到 bottom.
+ *      - 如果 v-scroller.bottom <= 1 page 則在 table 下方, 再多載入 1 page.
+ *
  */
 class GridView {
    constructor(parent) {
       this.gvArea = document.createElement("div");
       this.gvArea.className = "gvArea";
       this.gvArea.onmouseup = (ev => onclickSelectCell(this, ev));
+      this.gvArea.onscroll = (ev => onScroll(this, ev));
 
       this.gvTable = document.createElement("table");
       this.gvTable.className = "gvTable";
@@ -196,6 +244,8 @@ class GridView {
    /** 清除 table body, 保留 table head. */
    clearBody() {
       this.gvTable.tBodies[0].innerHTML = "";
+      this.distanceBegin = undefined;
+      this.distanceEnd = undefined;
    }
    /** head 加上一行,  strHeadRow = <th></th>... */
    addHeadRow(strHeadRow) {
@@ -214,9 +264,14 @@ class GridView {
     *  - 您必須再呼叫 addBodyCell(row, fldstr) 加入 cell.
     *  - 設定 row.id = keyText;
     *  - 設定 key cell 的必要屬性及事件處理函式.
+    *  - 若 keyText 有找到則直接傳回現有的 row
+    *  - 若 keyText 沒找到則使用 insertRow(index) 增加 row.
     */
-   addBodyRow(keyText) {
-      let row = this.gvTable.tBodies[0].insertRow(-1);
+   addBodyRow(keyText, index) {
+      let row = this.searchRow(keyText);
+      if (row)
+         return row;
+      row = (index < 0 ? this.gvTable.tBodies[0].insertRow(index) : this.gvTable.insertRow(index));
       let cell = row.insertCell(-1);
       cell.outerHTML = "<th>" + keyText + "</th>";
       cell = row.cells[0]; // 因為使用 outerHTML, cell 已經不是 row 的 cell, 所以要重新取得.
@@ -250,6 +305,27 @@ class GridView {
       if (this.gvTable.tBodies[0].rows.length <= 0)
          this.setFirstCellFocus();
    }
+   /** 移除: 第0行..row(包含). */
+   removeRowsTo(row) {
+      let rows = this.gvTable.tBodies[0].rows;
+      for (;;) {
+         let r = rows[0];
+         this.removeRow(r);
+         if(r == row)
+            break;
+      }
+   }
+   /** 移除: row(包含)..最後一行 */
+   removeRowsFrom(row) {
+      let rows = this.gvTable.tBodies[0].rows;
+      let idx = rows.length;
+      for (;;) {
+         let r = rows[--idx];
+         this.removeRow(r);
+         if(r == row)
+            break;
+      }
+   }
    /** 用 key 尋找 row. */
    searchRow(key) {
       return this.gvTable.rows.namedItem(key);
@@ -267,6 +343,10 @@ class GridView {
    getFirstCellText() {
       let rowsBody = this.gvTable.tBodies[0].rows;
       return(rowsBody.length > 0 ? rowsBody[0].cells[0].textContent : undefined);
+   }
+   getLastRowKey() {
+      let rowsBody = this.gvTable.tBodies[0].rows;
+      return(rowsBody.length <= 0 ? undefined : rowsBody[rowsBody.length-1].cells[0].textContent);
    }
    /** 將第一個 cell 設定為 focus.
     *  如果沒有 body, 只有 head, 則會將 gvTable 設為 focus, 因為這樣才能收到 keydown 事件.

@@ -88,12 +88,18 @@ using underlying_type_t = typename std::underlying_type<EnumT>::type;
 /// 同 C++14 的 std::make_unsigned_t<>
 template<typename T>
 using make_unsigned_t = typename std::make_unsigned<T>::type;
+template<typename T>
+using make_signed_t = typename std::make_signed<T>::type;
 
 /// \ingroup Misc
 /// 強制轉型為無正負整數.
 template <typename T>
 constexpr make_unsigned_t<T> unsigned_cast(T value) {
    return static_cast<make_unsigned_t<T>>(value);
+}
+template <typename T>
+constexpr make_signed_t<T> signed_cast(T value) {
+   return static_cast<make_signed_t<T>>(value);
 }
 
 template <typename T>

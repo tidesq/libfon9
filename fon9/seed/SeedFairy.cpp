@@ -136,12 +136,12 @@ __ARGS_MUST_EMPTY:
       return;
    }
    if (this->Command_ == "gv") {
-      uint16_t rowCount = 0;
+      int16_t  rowCount = 0;
       StrView  args = this->CommandArgs_;
       StrView  startKey = TextBegin();
-      if (isdigit(args.Get1st())) {
+      if (isdigit(args.Get1st()) || args.Get1st()=='-' || args.Get1st() == '+') {
          const char* pend;
-         rowCount = StrTo(args, static_cast<uint16_t>(0), &pend);
+         rowCount = StrTo(args, rowCount, &pend);
          args.SetBegin(pend);
       }
       if (!args.empty()) {
@@ -152,6 +152,8 @@ __ARGS_MUST_EMPTY:
          args.SetBegin(args.begin() + 1);
          startKey = ParseKeyTextAndTabName(args);
       }
+      if (rowCount < 0 && IsTextBegin(startKey))
+         startKey = TextEnd();
       this->Runner_ = new TicketRunnerGridView(visitor, this->SeedName_, rowCount, startKey, args);
       return;
    }

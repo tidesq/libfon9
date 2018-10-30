@@ -59,7 +59,9 @@ fon9_MSC_WARN_POP;
 /// - ContainerLowerBound(PolicyKeys& policies, StrView strKeyText);
 /// - ContainerFind(PolicyKeys& policies, StrView strKeyText);
 /// - 且 PolicyKeys 不可使用 using PolicyKeys = std::map<>; 因為 TreeOp 找不到 namespace fon9::auth;
-struct PolicyKeys : public std::map<PolicyName, PolicyId> {};
+struct PolicyKeys : public SortedVector<PolicyName, PolicyId> {};
+//struct PolicyKeys : public std::map<PolicyName, PolicyId> {};
+// std::map<> 與 SortedVector<> 在這兒可以完全交換使用.
 
 inline PolicyKeys::iterator ContainerLowerBound(PolicyKeys& policies, StrView strKeyText) {
    return policies.lower_bound(PolicyKeys::key_type::MakeRef(strKeyText));

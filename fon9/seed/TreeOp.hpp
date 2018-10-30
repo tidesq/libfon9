@@ -126,7 +126,7 @@ struct GridViewRequest {
 
    /// GridViewResult::GridView_ 最多最大容量限制, 0則表示不限制.
    /// 實際取出的資料量可能 >= MaxBufferSize_;
-   uint32_t MaxBufferSize_{1024 * 1024};
+   uint32_t MaxBufferSize_{10 * 1024};
 
    GridViewRequest(const StrView& origKey) : OrigKey_{origKey} {
    }
@@ -339,6 +339,14 @@ void SimpleMakeRowView(Iterator ivalue, Tab* tab, RevBuffer& rbuf) {
    RevPrint(rbuf, ivalue->first);
 }
 
+template <class Iterator>
+inline auto IteratorForwardDistance(Iterator icur, Iterator ifrom) -> decltype(static_cast<size_t>(icur - ifrom)) {
+   return static_cast<size_t>(icur - ifrom);
+}
+inline size_t IteratorForwardDistance(...) {
+   return static_cast<size_t>(GridViewResult::kNotSupported);
+}
+
 /// \ingroup seed
 /// 協助 TreeOp::GridView().
 /// fnRowAppender 可參考 SimpleMakeRowView();
@@ -362,7 +370,7 @@ void MakeGridViewRange(Iterator istart, Iterator ibeg, Iterator iend,
             break;
       }
    }
-   res.DistanceBegin_ = (istart == ibeg) ? 0u : static_cast<size_t>(GridViewResult::kNotSupported);
+   res.DistanceBegin_ = (istart == ibeg) ? 0u : IteratorForwardDistance(istart, ibeg);
    if (istart == iend)
       res.DistanceEnd_ = 0;
    else {
@@ -383,7 +391,7 @@ void MakeGridViewRange(Iterator istart, Iterator ibeg, Iterator iend,
             break;
       }
       res.SetLastKey(lastLinePos);
-      res.DistanceEnd_ = (istart == iend) ? 1u : static_cast<size_t>(GridViewResult::kNotSupported);
+      res.DistanceEnd_ = (istart == iend) ? 1u : IteratorForwardDistance(iend, istart);
    }
 }
 

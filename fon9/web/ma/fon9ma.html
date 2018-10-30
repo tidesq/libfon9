@@ -85,19 +85,18 @@ seedWindow.onPathChanged = function(newPath) {
 seedWindow.onSeedCommand = function(seedName, command) {
   webSocket.send(seedName + ' ' + command);
 }
-seedWindow.onLoadGridView = function(path, startkey, tabName) {
-  let gvcmd = 'gv';
-  if (startkey == undefined) {
-    if (tabName != '')
-      gvcmd += ',,^' + tabName;
-  }
-  else {
-    gvcmd += ',,' + normalizeKeyText(startkey);
-    if (tabName != '')
-      gvcmd += '^' + tabName;
-  }
-  if (webSocket)
-    webSocket.send(gvcmd + ' ' + path);
+seedWindow.onLoadGridView = function(path, startkey, tabName, count) {
+  if (!webSocket)
+    return;
+  let gvcmd = (count ? (',' + count) : '');
+  if (startkey != undefined) {
+     gvcmd = (gvcmd ? gvcmd + ',' : ',,') + normalizeKeyText(startkey);
+     if (tabName)
+       gvcmd += '^' + tabName;
+   }
+   else if (tabName)
+     gvcmd = (gvcmd ? gvcmd + ',' : ',,^') + tabName;
+  webSocket.send('gv' + gvcmd + ' ' + path);
 }
 seedWindow.onFieldChanged = function(path, key, tabName, fieldValues) {
   let cmd = 'ss,';

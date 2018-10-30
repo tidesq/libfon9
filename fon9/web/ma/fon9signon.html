@@ -55,6 +55,7 @@ function showModal(url) {
   setInfo('', '');// setInfo('url: ', url);
   fon9maURL = url;
   setEnableSignon(true);
+  returnValue = undefined;
   signonDlg.returnValue = undefined;
   saslws = undefined;
   signonDlg.showModal();
@@ -140,7 +141,7 @@ function signonFormSubmit(ev) {
     signonDlg.close();
   });
   signonDlg.addEventListener('close', function() {
-    if (saslws != returnValue)
+    if (saslws && saslws != returnValue)
       saslws.close();
     if (close)
       close(signonDlg);

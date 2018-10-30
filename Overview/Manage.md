@@ -8,6 +8,13 @@
 ## User Auth 使用者管理機制
 * 使用 seed 機制管理資料表: user、role、policy... 
 * 提供 Acl(Access Control List) policy
+  * Rights 使用 bit OR 運算合併底下權限:
+    * 0x01 Read
+    * 0x02 Write
+    * 0x04 Exec
+    * 0x80 Apply
+    * 例: 僅可編輯,不可套用: 0x03
+    * 例: 不可編輯,僅能套用: 0x81
 * 使用 InnDbf 儲存資料表
 
 ### 使用 SASL 處理認證協商

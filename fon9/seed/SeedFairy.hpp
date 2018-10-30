@@ -101,7 +101,7 @@ public:
    ///     - 返回 TicketRunnerGridView
    ///     - 若成功, 則透過 SeedVisitor::OnTicketRunnerGridView(); 通知.
    ///     - 範例:
-   ///       - gv,rowCount    [seedName]   指定 rowCount, 從 begin 開始, 使用 Tab[0]
+   ///       - gv,rowCount    [seedName]   指定 rowCount, rowCount>=0:從 begin 開始; rowCount<0: 從 end 開始; 使用 Tab[0]
    ///       - gv,,startKey   [seedName]   rowCount=0(使用預設), 從指定的 startKey 開始, 使用 Tab[0]
    ///       - gv,,^tabName   [seedName]   指定 tabName, 從 begin 開始
    ///       - gv,,''^tabName [seedName]   指定 tabName, 從 key='' 開始

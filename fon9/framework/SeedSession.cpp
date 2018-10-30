@@ -341,8 +341,8 @@ SeedSession::RequestSP SeedSession::MakeRequest(StrView cmdln) {
    seed::SeedFairy::Request req{*this, cmdln};
    if (req.Runner_) {
       if (seed::TicketRunnerGridView* gv = dynamic_cast<seed::TicketRunnerGridView*>(req.Runner_.get())) {
-         if (gv->ReqMaxRowCount_ <= 0)
-            gv->ReqMaxRowCount_ = AdjustGridViewRowCount(this->GetDefaultGridViewRowCount());
+         if (gv->ReqMaxRowCount_ == 0)
+            gv->ReqMaxRowCount_ = signed_cast(AdjustGridViewRowCount(this->GetDefaultGridViewRowCount()));
          this->LastGV_.reset(gv);
       }
       return req.Runner_;
@@ -360,7 +360,7 @@ SeedSession::RequestSP SeedSession::MakeRequest(StrView cmdln) {
       else
          this->LastGV_.reset(new seed::TicketRunnerGridView(*this,
                                                             req.SeedName_,
-                                                            AdjustGridViewRowCount(this->GetDefaultGridViewRowCount()),
+                                                            signed_cast(AdjustGridViewRowCount(this->GetDefaultGridViewRowCount())),
                                                             seed::TextBegin(),
                                                             req.CommandArgs_ //tabName
                            ));
