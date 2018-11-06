@@ -113,7 +113,10 @@ Device::SendResult IocpSocket::SendAfterAddRef(DcQueueList& dcbuf) {
 
    DWORD  txBytes = 0, flags = 0;
    ZeroStruct(this->SendOverlapped_);
-   if (WSASend(this->Socket_.GetSocketHandle(), wbuf, wcount, &txBytes, flags, &this->SendOverlapped_, nullptr) == SOCKET_ERROR) {
+   const int sres = this->SendTo_
+      ? WSASendTo(this->Socket_.GetSocketHandle(), wbuf, wcount, &txBytes, flags, &this->SendTo_->Addr_, this->SendTo_->GetAddrLen(), &this->SendOverlapped_, nullptr)
+      : WSASend(this->Socket_.GetSocketHandle(), wbuf, wcount, &txBytes, flags, &this->SendOverlapped_, nullptr);
+   if (sres == SOCKET_ERROR) {
       switch (int eno = WSAGetLastError()) {
       case WSA_IO_PENDING: // ERROR_IO_PENDING: 正常傳送等候中.
          break;

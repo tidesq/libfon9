@@ -1,9 +1,8 @@
-﻿/// \file fon9/io/SocketClient.hpp
+﻿/// \file fon9/io/SocketClientConfig.hpp
 /// \author fonwinz@gmail.com
-#ifndef __fon9_io_SocketClient_hpp__
-#define __fon9_io_SocketClient_hpp__
+#ifndef __fon9_io_SocketClientConfig_hpp__
+#define __fon9_io_SocketClientConfig_hpp__
 #include "fon9/io/SocketConfig.hpp"
-#include <vector>
 
 #ifdef fon9_POSIX
 #include <netdb.h>
@@ -41,4 +40,4 @@ public:
 fon9_WARN_POP;
 
 } } // namespaces
-#endif//__fon9_io_SocketClient_hpp__
+#endif//__fon9_io_SocketClientConfig_hpp__

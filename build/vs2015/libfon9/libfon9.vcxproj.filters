@@ -389,9 +389,6 @@
     <ClInclude Include="..\..\..\fon9\io\Socket.hpp">
       <Filter>Header Files\io\_socket</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\io\SocketClient.hpp">
-      <Filter>Header Files\io\_socket</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\fon9\io\SocketAddress.hpp">
       <Filter>Header Files\io\_socket</Filter>
     </ClInclude>
@@ -752,6 +749,27 @@
     <ClInclude Include="..\..\..\fon9\seed\SeedSubr.hpp">
       <Filter>Header Files\seed\_tools</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\SocketClientDevice.hpp">
+      <Filter>Header Files\io\_socket</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\SocketClientConfig.hpp">
+      <Filter>Header Files\io\_socket</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\win\IocpSocketClient.hpp">
+      <Filter>Header Files\io\win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\win\IocpDgram.hpp">
+      <Filter>Header Files\io\win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\DgramBase.hpp">
+      <Filter>Header Files\io\_socket</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\FdrDgram.hpp">
+      <Filter>Header Files\io\_fdr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\FdrSocketClient.hpp">
+      <Filter>Header Files\io\_fdr</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -890,9 +908,6 @@
       <Filter>Source Files\io\_base</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\io\Socket.cpp">
-      <Filter>Source Files\io\_socket</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\fon9\io\SocketClient.cpp">
       <Filter>Source Files\io\_socket</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\io\SocketServer.cpp">
@@ -1173,6 +1188,30 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\seed\SeedSubr.cpp">
       <Filter>Source Files\seed\_tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\win\IocpDgram.cpp">
+      <Filter>Source Files\io\win</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\SocketClientDevice.cpp">
+      <Filter>Source Files\io\_socket</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\SocketClientConfig.cpp">
+      <Filter>Source Files\io\_socket</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\win\IocpSocketClient.cpp">
+      <Filter>Source Files\io\win</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\DgramBase.cpp">
+      <Filter>Source Files\io\_socket</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\FdrDgram.cpp">
+      <Filter>Source Files\io\_fdr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\FdrSocketClient.cpp">
+      <Filter>Source Files\io\_fdr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\framework\IoFactoryDgram.cpp">
+      <Filter>Source Files\framework</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

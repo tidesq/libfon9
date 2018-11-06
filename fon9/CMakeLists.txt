@@ -69,15 +69,19 @@ set(fon9src
  io/SocketConfig.cpp
  io/Socket.cpp
  io/SocketServer.cpp
- io/SocketClient.cpp
+ io/SocketClientConfig.cpp
+ io/SocketClientDevice.cpp
  io/TcpClientBase.cpp
  io/TcpServerBase.cpp
+ io/DgramBase.cpp
 
  io/FdrSocket.cpp
+ io/FdrSocketClient.cpp
  io/FdrService.cpp
  io/FdrServiceEpoll.cpp
  io/FdrTcpClient.cpp
  io/FdrTcpServer.cpp
+ io/FdrDgram.cpp
 
  web/HttpSession.cpp
  web/HttpParser.cpp
@@ -139,6 +143,7 @@ set(fon9src
  framework/IoFactory.cpp
  framework/IoFactoryTcpClient.cpp
  framework/IoFactoryTcpServer.cpp
+ framework/IoFactoryDgram.cpp
 )
 add_library(fon9_s STATIC ${fon9src})
 target_link_libraries(fon9_s pthread rt dl)

@@ -1,6 +1,6 @@
-﻿/// \file fon9/io/SocketClient.cpp
+﻿/// \file fon9/io/SocketClientConfig.cpp
 /// \author fonwinz@gmail.com
-#include "fon9/io/SocketClient.hpp"
+#include "fon9/io/SocketClientConfig.hpp"
 #include "fon9/StrTo.hpp"
 
 namespace fon9 { namespace io {

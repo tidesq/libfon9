@@ -10,6 +10,9 @@ using IoService = fon9::io::IocpService;
 using IoServiceSP = fon9::io::IocpServiceSP;
 using TcpClient = fon9::io::IocpTcpClient;
 using TcpServer = fon9::io::IocpTcpServer;
+
+#include "fon9/io/win/IocpDgram.hpp"
+using Dgram = fon9::io::IocpDgram;
 #else
 #include "fon9/io/FdrTcpClient.hpp"
 #include "fon9/io/FdrTcpServer.hpp"
@@ -18,6 +21,9 @@ using IoService = fon9::io::FdrServiceEpoll;
 using IoServiceSP = fon9::io::FdrServiceSP;
 using TcpClient = fon9::io::FdrTcpClient;
 using TcpServer = fon9::io::FdrTcpServer;
+
+#include "fon9/io/FdrDgram.hpp"
+using Dgram = fon9::io::FdrDgram;
 #endif
 
 using TimeUS = fon9::Decimal<uint64_t, 3>;
@@ -154,15 +160,16 @@ fon9_WARN_POP;
 int main(int argc, const char** argv) {
    if (argc < 3) {
 __USAGE:
-      std::cout << R"(
+      std::cout << R"**(
 Usage:
     c "TcpClientConfigs" "IoServiceConfigs"
     s "TcpServerConfigs"
+    u "DgramConfigs(UDP or Multicast)" "IoServiceConfigs"
 
 e.g.
     c "127.0.0.1:9000|Timeout=30" "ThreadCount=2|Wait=Block|Cpus="
     s "9000|ThreadCount=2|Wait=Block|Cpus="
-)"
+)**"
          << std::endl;
       return 3;
    }
@@ -175,7 +182,7 @@ e.g.
    switch (chMode = argv[1][0]) {
    default:
       goto __USAGE;
-   case 'c': case 's':
+   case 'c': case 's': case 'u':
       isUseDirectIO = (argv[1][1] == 'd');
       break;
    }
@@ -198,16 +205,23 @@ e.g.
          return 3;
       }
    }
-   else if (chMode == 'c')
+   else if (chMode == 'c' || chMode == 'u')
       goto __USAGE;
+
+#ifdef fon9_WINDOWS
+   SetConsoleCP(CP_UTF8);
+   SetConsoleOutputCP(CP_UTF8);
+#endif
 
    fon9::io::ManagerSP mgr{new fon9::io::SimpleManager{}};
    PingpongSP          ses{new PingpongSession{isUseDirectIO}};
    fon9::io::DeviceSP  dev;
-   if (chMode == 'c')
-      dev.reset(new TcpClient(iosv, ses, mgr));
-   else
-      dev.reset(new TcpServer(iosv, ses, mgr));
+   switch (chMode) {
+   case 'u':   dev.reset(new Dgram(iosv, ses, mgr)); break;
+   case 'c':   dev.reset(new TcpClient(iosv, ses, mgr)); break;
+   default:
+   case 's':   dev.reset(new TcpServer(iosv, ses, mgr)); break;
+   }
 
    dev->AsyncOpen(argv[2]);
    dev->WaitGetDeviceId();// 等候 dev->AsyncOpen() 執行完畢.

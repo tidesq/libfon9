@@ -19,7 +19,7 @@ protected:
 
    /// 建立錯誤訊息字串, 觸發事件:
    /// `this->OnFdrSocket_Error("fnName:" + GetSocketErrC(eno));`
-   void SocketError(StrView fnName, int eno);
+   virtual void SocketError(StrView fnName, int eno);
    virtual void OnFdrSocket_Error(std::string errmsg) = 0;
 
    virtual FdrEventFlag GetRequiredFdrEventFlag() const override;

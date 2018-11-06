@@ -98,6 +98,10 @@ struct fon9_API SocketAddress {
    /// 是否為 any addr && port==0
    bool IsEmpty() const;
 
+   bool IsUnspec() const {
+      return this->Addr_.sa_family == AF_UNSPEC;
+   }
+
    /// 檢查 ip, port 是否相同.
    bool operator==(const SocketAddress& rhs) const;
    bool operator!=(const SocketAddress& rhs) const {

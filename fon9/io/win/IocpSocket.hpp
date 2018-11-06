@@ -24,6 +24,7 @@ class fon9_API IocpSocket : public IocpHandler {
 protected:
    WSAOVERLAPPED  SendOverlapped_;
    SendBuffer     SendBuffer_;
+   const SocketAddress* SendTo_{nullptr}; // 若有效, 則使用 WSASendTo();
 
    WSAOVERLAPPED  RecvOverlapped_;
    RecvBuffer     RecvBuffer_;

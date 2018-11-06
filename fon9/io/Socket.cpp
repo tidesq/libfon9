@@ -83,7 +83,7 @@ bool Socket::CreateNonBlockSocket(AddressFamily family, SocketType type, SocketR
    #ifdef SOCK_CLOEXEC
       sockType |= SOCK_CLOEXEC;
    #endif
-   this->So_.SetFD(::socket(static_cast<int>(family), sockType, IPPROTO_TCP));
+   this->So_.SetFD(::socket(static_cast<int>(family), sockType, 0)); // IPPROTO_TCP
    if (!this->So_.IsReadyFD()) {
       soRes = SocketResult{"socket"};
       return false;

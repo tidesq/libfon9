@@ -3,7 +3,7 @@
 #include "fon9/io/Socket.hpp"
 #include "fon9/io/SocketAddressDN.hpp"
 #include "fon9/io/SocketServer.hpp"
-#include "fon9/io/SocketClient.hpp"
+#include "fon9/io/SocketClientConfig.hpp"
 #include "fon9/TestTools.hpp"
 #include <thread>
 

@@ -106,6 +106,9 @@ public:
    bool IsWaitingEventInvoke() const {
       return(this->State_ >= RecvBufferState::WaitingEventInvoke);
    }
+   bool IsReceiving() const {
+      return(this->State_ == RecvBufferState::Receiving);
+   }
 };
 fon9_WARN_POP;
 

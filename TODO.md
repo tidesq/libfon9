@@ -19,6 +19,9 @@ libfon9 TODO list
 ## 系統管理工具
 
 
+* FileDevice
+
+
 * web.seed: Search key.
 * Unordered: 需要時增加要顯示的 key?
 
@@ -73,9 +76,6 @@ libfon9 TODO list
   * HttpMessage 提供可將 chunk data 移除的功能, 避免 chunk data 一直長大.
 * TLS
   * https://github.com/facebookincubator/fizz
-  
-* UDP/Multicast
-* FileDevice
-* Device.DeviceCommand() 傳回值: success+message or fail+message.
+  * Device.DeviceCommand() 傳回值: success+message or fail+message.
 ---------------------------------------
 ## Simple FIX engine
