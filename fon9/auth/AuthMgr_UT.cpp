@@ -15,7 +15,7 @@
 static const char                kInnSyncInFileName[] = "AuthSynIn.f9syn";
 static const char                kInnSyncOutFileName[] = "AuthSynOut.f9syn";
 static const char                kDbfFileName[] = "AuthDbf.f9dbf";
-static const fon9::TimeInterval  kSyncInterval{fon9::TimeInterval_Millisecond(10)};
+static const fon9::TimeInterval  kSyncInterval{fon9::TimeInterval_Millisecond(1)};
 
 void RemoveTestFiles() {
    remove(kInnSyncInFileName);
@@ -23,7 +23,7 @@ void RemoveTestFiles() {
    remove(kDbfFileName);
 }
 
-void TestInitStart(fon9::Framework& fon9sys, std::string innSyncOutFileName, std::string innSyncInFileName) {
+void StartFramework(fon9::Framework& fon9sys, std::string innSyncOutFileName, std::string innSyncInFileName) {
    // fon9sys.Initialize(argc, argv);
    fon9sys.Root_.reset(new fon9::seed::MaTree{"Service"});
    fon9sys.Syncer_.reset(new fon9::InnSyncerFile(fon9::InnSyncerFile::CreateArgs(
@@ -33,9 +33,17 @@ void TestInitStart(fon9::Framework& fon9sys, std::string innSyncOutFileName, std
    fon9::InnDbfSP maAuthStorage{new fon9::InnDbf(maAuthDbfName, fon9sys.Syncer_)};
    maAuthStorage->Open(kDbfFileName);
    fon9sys.MaAuth_ = fon9::auth::AuthMgr::Plant(fon9sys.Root_, maAuthStorage, maAuthDbfName.ToString());
-   fon9sys.Start();
+
+   //--- fon9sys.Start(); ---
+   fon9::GetDefaultThreadPool();
+   fon9::GetDefaultTimerThread();
+   fon9sys.MaAuth_->Storage_->LoadAll();
+   //fon9sys.Syncer_->StartSync();
+   // ↑ fon9sys.Syncer_->StartSync(); 若在 fon9::auth::PolicyAclAgent::Plant() 之前就執行了同步,
+   // 則 PoAcl 測試會失敗!
 
    fon9::auth::PolicyAclAgent::Plant(*fon9sys.MaAuth_, "PoAcl");
+   fon9sys.Syncer_->StartSync();
 }
 
 //--------------------------------------------------------------------------//
@@ -139,19 +147,19 @@ struct SetRole : public fon9::seed::SeedSearcher {
 
 //--------------------------------------------------------------------------//
 
-void TestInitPoAcl(fon9::seed::Tree& root) {
-   struct PutFieldSearcher : public fon9::seed::PutFieldSearcher {
-      fon9_NON_COPY_NON_MOVE(PutFieldSearcher);
-      using base = fon9::seed::PutFieldSearcher;
-      using base::base;
-      void OnError(fon9::seed::OpResult res) override {
-         std::cout <<
-            fon9::RevPrintTo<std::string>("|path=", this->OrigPath_,
-                                          "|res=", res, ':', fon9::seed::GetOpResultMessage(res))
-            << "\r[ERROR]" << std::endl;
-         abort();
-      }
-   };
+struct PutFieldSearcher : public fon9::seed::PutFieldSearcher {
+   fon9_NON_COPY_NON_MOVE(PutFieldSearcher);
+   using base = fon9::seed::PutFieldSearcher;
+   using base::base;
+   void OnError(fon9::seed::OpResult res) override {
+      std::cout <<
+         fon9::RevPrintTo<std::string>("|path=", this->OrigPath_,
+                                       "|res=", res, ':', fon9::seed::GetOpResultMessage(res))
+         << "\r[ERROR]" << std::endl;
+      abort();
+   }
+};
+void TestPutPoAcl(fon9::seed::Tree& root) {
    StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/admin", "HomePath", "/"});
    StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test",  "HomePath", "/home/{UserId}"});
    StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'{UserId'",      "Rights", "x1"});
@@ -165,6 +173,19 @@ void TestInitPoAcl(fon9::seed::Tree& root) {
    StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'./{UserId}'",   "Rights", "xd4"});
    StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'./{UserId}/'",  "Rights", "xe5"});
    StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'./{UserId}/*'", "Rights", "xf6"});
+}
+void PutSyncDoneChecker(fon9::seed::Tree& root, fon9::StrView checkerXnn) {
+   StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test-sync-end",  "HomePath", "/home/{UserId}"});
+   StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test-sync-end/done", "Rights", checkerXnn});
+}
+bool IsSyncInDone(fon9::seed::Tree& root, fon9::StrView checkerXnn) {
+   bool isSyncInDone = false;
+   fon9::seed::GetGridView(root, "/MaAuth/PoAcl/test-sync-end",
+                           fon9::seed::GridViewRequest{fon9::seed::TextBegin()}, 0,
+                           [&isSyncInDone, checkerXnn](fon9::seed::GridViewResult& res) {
+      isSyncInDone = (res.GridView_ == checkerXnn.ToString("done" kSPL));
+   });
+   return isSyncInDone;
 }
 
 void CheckGridView(fon9::seed::Tree& root, const char* path, const char* gvExpect) {
@@ -181,7 +202,11 @@ void CheckGridView(fon9::seed::Tree& root, const char* path, const char* gvExpec
 }
 
 void CheckPoAcl(fon9::seed::Tree& root) {
-   CheckGridView(root, "/MaAuth/PoAcl", "admin" kSPL "/" kROWSPL "test" kSPL "/home/{UserId}");
+   CheckGridView(root, "/MaAuth/PoAcl",
+                 "admin" kSPL "/" kROWSPL
+                 "test" kSPL "/home/{UserId}" kROWSPL
+                 "test-sync-end" kSPL "/home/{UserId}"
+                  );
    CheckGridView(root, "/MaAuth/PoAcl/test",
                  "./{UserId}"   kSPL "xd4" kROWSPL
                  "./{UserId}/"  kSPL "xe5" kROWSPL
@@ -208,31 +233,38 @@ void CheckInitGridViewAll(fon9::seed::Tree& root) {
 void TestInit() {
    RemoveTestFiles();
    fon9::Framework fon9sys;
-   TestInitStart(fon9sys, kInnSyncOutFileName, kInnSyncInFileName);
+   StartFramework(fon9sys, kInnSyncOutFileName, kInnSyncInFileName);
 
    std::cout << "[TEST ] PoAcl";
-   TestInitPoAcl(*fon9sys.Root_);
+   TestPutPoAcl(*fon9sys.Root_);
    std::cout << "\r[OK   ]" << std::endl;
 
    std::cout << "[TEST ] SetRole";
    StartSeedSearch(*fon9sys.Root_, new SetRole);
    std::cout << "\r[OK   ]" << std::endl;
 
+   PutSyncDoneChecker(*fon9sys.Root_, "x0");
    CheckInitGridViewAll(*fon9sys.Root_);
    fon9sys.Dispose();
 }
 void TestReload(void(*fnCheckGridView)(fon9::seed::Tree& root)) {
    std::cout << "After reload:\n";
    fon9::Framework fon9sys;
-   TestInitStart(fon9sys, kInnSyncOutFileName, kInnSyncInFileName);
+   StartFramework(fon9sys, kInnSyncOutFileName, kInnSyncInFileName);
    fnCheckGridView(*fon9sys.Root_);
 }
-void TestSync(void(*fnCheckGridView)(fon9::seed::Tree& root)) {
+void TestSync(void(*fnCheckGridView)(fon9::seed::Tree& root), fon9::StrView checkerXnn) {
    remove(kDbfFileName);
-   std::cout << "After sync:\n";
+   std::cout << "After sync:";
    fon9::Framework fon9sys;
-   TestInitStart(fon9sys, kInnSyncInFileName, kInnSyncOutFileName); // syncIn, syncOut 反向.
+   StartFramework(fon9sys, kInnSyncInFileName, kInnSyncOutFileName); // syncIn, syncOut 反向.
    std::this_thread::sleep_for(fon9::TimeInterval(kSyncInterval * 10).ToDuration());
+   // 必須同步完畢, 如果還沒同步完畢, 則 fnCheckGridView() 會失敗!!
+   while(!IsSyncInDone(*fon9sys.Root_, checkerXnn)) {
+      std::cout << "Waitting.";
+      std::this_thread::sleep_for(std::chrono::milliseconds{500});
+   }
+   std::cout << std::endl;
    fnCheckGridView(*fon9sys.Root_);
 }
 
@@ -254,11 +286,10 @@ void CheckRemovedGridViewAll(fon9::seed::Tree& root) {
    CheckGridView(root, "/MaAuth/RoleMgr/dealer01", kRemovedGridViewRoleMgr_dealer01);
    CheckPoAcl(root);
 }
-
 void TestRemove() {
    std::cout << "Removed:\n";
    fon9::Framework fon9sys;
-   TestInitStart(fon9sys, kInnSyncOutFileName, kInnSyncInFileName);
+   StartFramework(fon9sys, kInnSyncOutFileName, kInnSyncInFileName);
    auto nullRemoveHandler = [](const fon9::seed::PodRemoveResult& res) {
       if (res.OpResult_ < fon9::seed::OpResult::no_error) {
          std::cout
@@ -271,6 +302,7 @@ void TestRemove() {
    fon9::seed::RemoveSeed(*fon9sys.Root_, "/MaAuth/RoleMgr/admin/PoOrder", nullRemoveHandler);
    fon9::seed::RemoveSeed(*fon9sys.Root_, "/MaAuth/RoleMgr/trader",        nullRemoveHandler);
    fon9::seed::RemoveSeed(*fon9sys.Root_, "/MaAuth/RoleMgr/dealer01",      nullRemoveHandler);
+   PutSyncDoneChecker(*fon9sys.Root_, "xd");
    CheckRemovedGridViewAll(*fon9sys.Root_);
 }
 
@@ -285,7 +317,7 @@ void TestAclExists(const fon9::seed::AccessList& acl, fon9::StrView path) {
 void TestPoAclGetPolicy() {
    std::cout << "[TEST ] PolicyAclAgent.GetPolicy";
    fon9::Framework fon9sys;
-   TestInitStart(fon9sys, kInnSyncOutFileName, kInnSyncInFileName);
+   StartFramework(fon9sys, kInnSyncOutFileName, kInnSyncInFileName);
    fon9::auth::AuthResult authr{fon9sys.MaAuth_};
    authr.AuthzId_.assign("fonwin");
    authr.RoleId_.assign("test");
@@ -327,11 +359,11 @@ int main(int argc, char** argv) {
    //--------------------------------------------------------------------------//
    TestInit();
    TestReload(&CheckInitGridViewAll);
-   TestSync(&CheckInitGridViewAll);
+   TestSync(&CheckInitGridViewAll, "x0");
 
    TestRemove();
    TestReload(&CheckRemovedGridViewAll);
-   TestSync(&CheckRemovedGridViewAll);
+   TestSync(&CheckRemovedGridViewAll, "xd");
 
    //--------------------------------------------------------------------------//
    utinfo.PrintSplitter();
