@@ -156,7 +156,7 @@ void TicketRunnerRemove::OnAfterRemove(const PodRemoveResult& res) {
    TicketLogResult("SeedOp.Remove", *this, res.OpResult_, nullptr);
 }
 //--------------------------------------------------------------------------//
-TicketRunnerGridView::TicketRunnerGridView(SeedVisitor& visitor, StrView seed, int16_t reqMaxRowCount, StrView startKey, StrView tabName)
+TicketRunnerGridView::TicketRunnerGridView(SeedVisitor& visitor, StrView seed, ReqMaxRowCountT reqMaxRowCount, StrView startKey, StrView tabName)
    : base{visitor, seed}
    , StartKeyBuf_{startKey}
    , StartKey_{startKey}
@@ -170,7 +170,7 @@ void TicketRunnerGridView::Continue() {
    this->StartKeyBuf_ = this->LastKey_;
    this->StartKey_ = ToStrView(this->StartKeyBuf_);
    if (this->ReqMaxRowCount_ < 0)
-      this->ReqMaxRowCount_ = -this->ReqMaxRowCount_;
+      this->ReqMaxRowCount_ = static_cast<ReqMaxRowCountT>(-this->ReqMaxRowCount_);
 }
 void TicketRunnerGridView::OnFoundTree(TreeOp& opTree) {
    GridViewRequest req{this->StartKey_};
@@ -180,7 +180,7 @@ void TicketRunnerGridView::OnFoundTree(TreeOp& opTree) {
       req.Offset_ = this->ReqMaxRowCount_;
       if (!IsTextEnd(this->StartKey_))
          ++req.Offset_;
-      req.MaxRowCount_ = unsigned_cast(-this->ReqMaxRowCount_);
+      req.MaxRowCount_ = unsigned_cast(static_cast<ReqMaxRowCountT>(-this->ReqMaxRowCount_));
    }
    // 如果有要求 RowCount (int16_t, uint16_t), 則 BufferSize 不限制.
    // this->ReqMaxRowCount_ 最多 37K, req.MaxRowCount_ 最多 64K.

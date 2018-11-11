@@ -206,13 +206,14 @@ class fon9_API TicketRunnerGridView : public TicketRunnerTree {
    CharVector  LastKey_; // for Continue();
    void OnGridViewOp(GridViewResult& res);
 public:
+   using ReqMaxRowCountT = int16_t;
    /// - 若 < 0 則表示:
    ///   從 StartKey_ 往前 n-1(因為要包含 StartKey_) 步之後, 取得 n 筆.
    ///   所以如果 ReqMaxRowCount_ == -1, 其實與 ReqMaxRowCount_ == 1 結果相同.
    ///   如果超過 container.begin(), 則取出的資料可能會超過 StartKey_;
-   int16_t     ReqMaxRowCount_;
+   ReqMaxRowCountT   ReqMaxRowCount_;
 
-   TicketRunnerGridView(SeedVisitor& visitor, StrView seed, int16_t reqMaxRowCount, StrView startKey, StrView tabName);
+   TicketRunnerGridView(SeedVisitor& visitor, StrView seed, ReqMaxRowCountT reqMaxRowCount, StrView startKey, StrView tabName);
    void OnFoundTree(TreeOp& opTree) override;
    /// 接續上次最後的 key 繼續查詢.
    void Continue();
