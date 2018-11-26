@@ -131,6 +131,7 @@
     <ClInclude Include="..\..\..\fon9\File.hpp" />
     <ClInclude Include="..\..\..\fon9\FileAppender.hpp" />
     <ClInclude Include="..\..\..\fon9\FilePath.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\Symb.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\Framework.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\IoFactory.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\IoManager.hpp" />
@@ -254,6 +255,7 @@
     <ClInclude Include="..\..\..\fon9\sys\FileWin32.hpp" />
     <ClInclude Include="..\..\..\fon9\sys\OnWindowsMainExit.hpp" />
     <ClInclude Include="..\..\..\fon9\TestTools.hpp" />
+    <ClInclude Include="..\..\..\fon9\TestTools_MemUsed.hpp" />
     <ClInclude Include="..\..\..\fon9\ThreadController.hpp" />
     <ClInclude Include="..\..\..\fon9\ThreadId.hpp" />
     <ClInclude Include="..\..\..\fon9\DefaultThreadPool.hpp" />
@@ -330,6 +332,7 @@
     <ClCompile Include="..\..\..\fon9\File.cpp" />
     <ClCompile Include="..\..\..\fon9\FileAppender.cpp" />
     <ClCompile Include="..\..\..\fon9\FilePath.cpp" />
+    <ClCompile Include="..\..\..\fon9\fmkt\Symb.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\Framework.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\IoFactory.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\IoFactoryDgram.cpp" />

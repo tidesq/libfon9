@@ -150,6 +150,12 @@
     <Filter Include="Source Files\web">
       <UniqueIdentifier>{e3920260-e31f-4599-9e20-53816d652f0f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\fmkt">
+      <UniqueIdentifier>{5d5a0354-1520-471b-95bc-a7dc83f56aa0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\fmkt">
+      <UniqueIdentifier>{202e014f-704a-4b4f-b50c-5d40bfe60f79}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\sys\Config.h">
@@ -770,6 +776,12 @@
     <ClInclude Include="..\..\..\fon9\io\FdrSocketClient.hpp">
       <Filter>Header Files\io\_fdr</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\TestTools_MemUsed.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\Symb.hpp">
+      <Filter>Header Files\fmkt</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1212,6 +1224,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\framework\IoFactoryDgram.cpp">
       <Filter>Source Files\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\Symb.cpp">
+      <Filter>Source Files\fmkt</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

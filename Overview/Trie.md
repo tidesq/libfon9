@@ -4,7 +4,7 @@
 ## [Trie wiki](https://zh.wikipedia.org/wiki/Trie)
 ---------------------------------------
 ## 適合使用的地方
-* 資料大部分為有序時，與 `std::map` 對比 `fon9::Trie` 有很高的效率，甚至比 `std::unordered_map` 的記憶體用量還小!
+* 資料大部分為有序時，與 `std::map` 比較起來， `fon9::Trie` 有更高的效率，甚至比 `std::unordered_map` 的記憶體用量還小!
 * 但是當 **資料很亂(無序)** ，`fon9::Trie` 會用掉大量記憶體! 且效率不佳! 因此 **完全沒有實用價值!!**
   * trie 還有很多的變種(例如:結合 hash table)，真的要用到時再來研究吧!
 * 所以您必須先了解資料，然後再選用適合的MAP: `std::map`, `std::unordered_map`, `fon9::Trie`...

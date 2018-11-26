@@ -210,8 +210,9 @@
          // 使用首個 tab, 並載入 gridview.
          setCurrTabIdx(tabSel);
          // 根據 flags 設定 UI 元件.
-         showElement(document.getElementById('btnAddNewRow'), (layout.flags & 0x01) && hasWriteAccess());
-         showElement(document.getElementById('btnDeleteRow'), (layout.flags & 0x02) && hasWriteAccess());
+         showElement(document.getElementById('btnAddNewRow'), (layout.flags & 0x01) && hasWriteAccess()); // TreeFlag::Addable = 0x01
+         showElement(document.getElementById('btnDeleteRow'), (layout.flags & 0x02) && hasWriteAccess()); // TreeFlag::Removable = 0x02
+         // unordered: no GridView // TreeFlag::Unordered = 0x10
       }
       function renderGridView(args, path, res, errmsg) {
          if (path != currPath || errmsg)

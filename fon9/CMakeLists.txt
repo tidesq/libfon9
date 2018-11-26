@@ -144,6 +144,8 @@ set(fon9src
  framework/IoFactoryTcpClient.cpp
  framework/IoFactoryTcpServer.cpp
  framework/IoFactoryDgram.cpp
+
+ fmkt/Symb.cpp
 )
 add_library(fon9_s STATIC ${fon9src})
 target_link_libraries(fon9_s pthread rt dl)
@@ -250,3 +252,7 @@ target_link_libraries(Crypto_UT fon9_s)
 
 add_executable(AuthMgr_UT auth/AuthMgr_UT.cpp)
 target_link_libraries(AuthMgr_UT fon9_s)
+
+# unit tests: fmkt
+add_executable(Symb_UT fmkt/Symb_UT.cpp)
+target_link_libraries(Symb_UT fon9_s)

@@ -36,6 +36,12 @@ protected:
    Compare  Cmp_;
 
    template <class I, class KeyT>
+   static I upper_i(I first, I last, const KeyT& key, const Compare& cmp) {
+      return std::upper_bound(first, last, key, [&cmp](const KeyT& k, const value_type& v) -> bool {
+         return cmp(k, v);
+      });
+   }
+   template <class I, class KeyT>
    static I lower_i(I first, I last, const KeyT& key, const Compare& cmp) {
       return std::lower_bound(first, last, key, [&cmp](const value_type& v, const KeyT& k) -> bool {
          return cmp(v, k);
@@ -181,6 +187,11 @@ public:
    template <class KeyT>
    const_iterator lower_bound(const KeyT& key) const { return lower_i(this->begin(), this->end(), key, this->Cmp_); }
 
+   template <class KeyT>
+   iterator       upper_bound(const KeyT& key) { return upper_i(this->begin(), this->end(), key, this->Cmp_); }
+   template <class KeyT>
+   const_iterator upper_bound(const KeyT& key) const { return upper_i(this->begin(), this->end(), key, this->Cmp_); }
+
    template <class RMap>
    bool is_equal(const RMap& rhs) const {
       if (this->size() != rhs.size())
@@ -261,6 +272,10 @@ public:
       if (ifind != this->end())
          return *ifind;
       return *this->insert(typename base::value_type{K{key}, mapped_type{}}).first;
+   }
+
+   std::pair<typename base::iterator, bool> emplace(const K& key, const V& value) {
+      return this->insert(typename base::value_type{key, value});
    }
 };
 

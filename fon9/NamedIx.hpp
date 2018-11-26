@@ -39,8 +39,10 @@ public:
    /// \retval true  設定 index 成功.
    /// \retval false 設定 index 失敗: index只能設定一次.
    bool SetIndex(size_t index) {
-      if (this->Index_ >= 0)
+      if (this->Index_ >= 0) {
+         assert(this->Index_ == static_cast<int>(index));
          return false;
+      }
       this->Index_ = static_cast<int>(index);
       return true;
    }

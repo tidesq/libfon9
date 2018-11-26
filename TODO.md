@@ -19,11 +19,16 @@ libfon9 TODO list
 ## 系統管理工具
 
 
-* FileDevice
-
-
 * web.seed: Search key.
 * Unordered: 需要時增加要顯示的 key?
+
+* SymbolId/SymbolTable/SymbolTree
+  * fon9::Trie / std::unordered / std::map
+  * SymbolId: Id, SettleYYYYMM, StrikePrice...
+  * Symbol(Multi legs?)
+
+
+* FileDevice
 
 
 * 設定檔備份機制:
@@ -56,6 +61,8 @@ libfon9 TODO list
       * [Ctrl-Del]:  Delete row
       * [Shift-Del]: Cut row
       * ????:  Move to prev tree. (使用 Browser History API)
+      * [Alt +]: Add an unordered row
+      * [Alt -]: Remove an unordered row
     * 滑鼠操作:
       * double click: Start edit, or [@KeyColumn: Move to sapling].
       * 路徑列: 切換路徑 or 輸入路徑

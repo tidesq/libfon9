@@ -106,6 +106,7 @@ public:
    /// 必須在建構前就先定義好欄位,
    /// Tab 運行中不允許增減欄位.
    /// 若有 DyMem 欄位, 建構時會調整 field 的 offset.
+   /// 如果 keyfld 是存放在此 tab 裡面的 DyMem 欄位, 則必須在此提供, 用來計算 DyBlobCount_, DyMemSize_;
    Tab(const Named& named, Fields&& fields, LayoutSP saplingLayout = LayoutSP{}, TabFlag flags = TabFlag{}, Field* keyfld = nullptr);
    Tab(const Named& named, Fields&& fields, TabFlag flags, Field* keyfld = nullptr)
       : Tab(named, std::move(fields), LayoutSP{}, flags, keyfld) {

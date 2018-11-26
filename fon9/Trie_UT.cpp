@@ -4,15 +4,11 @@
 #include "fon9/CharAry.hpp"
 #include "fon9/StrTo.hpp"
 #include "fon9/TestTools.hpp"
+#include "fon9/TestTools_MemUsed.hpp"
 
 #include <map>
 #include <unordered_map>
-
-#ifdef fon9_WINDOWS
-fon9_BEFORE_INCLUDE_STD;
-#include <psapi.h> // for memory usage.
-fon9_AFTER_INCLUDE_STD;
-#endif
+#include "fon9/SortedVector.hpp"
 
 //--------------------------------------------------------------------------//
 
@@ -83,6 +79,21 @@ std::ostream& operator<<(std::ostream& os, fon9::StrView strv) {
 }
 std::ostream& operator<<(std::ostream& os, const StdKey& key) {
    return os << fon9::ToStrView(key).ToString();
+}
+
+//--------------------------------------------------------------------------//
+
+struct SortedVector : public fon9::SortedVector<StdKey, std::string> {
+   iterator emplace(StdKey key, std::string value) {
+      return this->insert(value_type{std::move(key),std::move(value)}).first;
+   }
+};
+
+std::string GetKey(const SortedVector::iterator& i) {
+   return ToStrView(i->first).ToString();
+}
+std::string& GetValue(const SortedVector::iterator& i) {
+   return i->second;
 }
 
 //--------------------------------------------------------------------------//
@@ -195,35 +206,6 @@ struct AuxTest {
       std::cout << "\r[OK   ]" << std::endl;
    }
 
-   static uint64_t GetMemUsed() {
-   #ifdef fon9_WINDOWS
-      PROCESS_MEMORY_COUNTERS_EX pmc;
-      GetProcessMemoryInfo(GetCurrentProcess(), reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&pmc), sizeof(pmc));
-      return pmc.PrivateUsage / 1024;
-   #else
-      struct Aux {
-         static uint64_t parseLine(char* line) {
-            // This assumes that a digit will be found and the line ends in " Kb".
-            const char* p = line;
-            while (*p <'0' || *p > '9')
-               ++p;
-            return fon9::NaiveStrToUInt(fon9::StrView{p, line + strlen(line)});
-         }
-         static uint64_t getValue() { //Note: this value is in KB!
-            FILE* file = fopen("/proc/self/status", "r");
-            char line[128];
-            while (fgets(line, 128, file) != NULL) {
-               if (memcmp(line, "VmSize:", 7) == 0)
-                  return parseLine(line);
-            }
-            fclose(file);
-            return 0;
-         }
-      };
-      return Aux::getValue();
-   #endif
-   }
-
    static key_type MakeKey(char(&key)[5], uint64_t i) {
       for (int L = sizeof(key); L > 0;) {
          key[--L] = fon9::Seq2Alpha(static_cast<uint8_t>(i % fon9::kSeq2AlphaSize));
@@ -324,43 +306,45 @@ int main(int argc, char** argv) {
    fon9::AutoPrintTestInfo utinfo{"Trie"};
 
    using AuxTrie = AuxTest<StrTrie>;
-   StrTrie trie;
-   std::cout << "[TEST ] count=" << trie.size() << "|empty=" << trie.empty();
-   AuxTrie::CheckEmpty(trie);
-
-   AuxTrie::InitTest(trie);
-   std::cout << "[INIT ] count=" << trie.size() << "|empty=" << trie.empty();
-   for (StrTrie::value_type& v : trie)
-      std::cout << '|' << v.key() << "=" << v.value();
-   std::cout << std::endl;
-   
-   // 用 std map, 驗證 test case 是否正確.
    using AuxStd = AuxTest<StdMap>;
-   AuxStd::TestFind();
-   AuxStd::TestLowerBound();
-   AuxStd::TestUpperBound();
+   if (argc < 2) {
+      StrTrie trie;
+      std::cout << "[TEST ] count=" << trie.size() << "|empty=" << trie.empty();
+      AuxTrie::CheckEmpty(trie);
 
-   AuxTrie::TestFind();
-   AuxTrie::TestLowerBound();
-   AuxTrie::TestUpperBound();
-   TestFindTail();
+      AuxTrie::InitTest(trie);
+      std::cout << "[INIT ] count=" << trie.size() << "|empty=" << trie.empty();
+      for (StrTrie::value_type& v : trie)
+         std::cout << '|' << v.key() << "=" << v.value();
+      std::cout << std::endl;
 
-   std::cout << "Erasing all...\n";
-   StrTrie::iterator i = trie.begin();
-   while (!trie.empty())
-      i = trie.erase(i);
-   std::cout << "[TEST ] count=" << trie.size() << "|empty=" << trie.empty();
-   AuxTrie::CheckEmpty(trie);
+      // 用 std map, 驗證 test case 是否正確.
+      AuxStd::TestFind();
+      AuxStd::TestLowerBound();
+      AuxStd::TestUpperBound();
 
-   AuxTrie::InitTest(trie);
-   while (!trie.empty()) {
-      i = trie.end();
-      trie.erase(--i);
+      AuxTrie::TestFind();
+      AuxTrie::TestLowerBound();
+      AuxTrie::TestUpperBound();
+      TestFindTail();
+
+      std::cout << "Erasing all...\n";
+      StrTrie::iterator i = trie.begin();
+      while (!trie.empty())
+         i = trie.erase(i);
+      std::cout << "[TEST ] count=" << trie.size() << "|empty=" << trie.empty();
+      AuxTrie::CheckEmpty(trie);
+
+      AuxTrie::InitTest(trie);
+      while (!trie.empty()) {
+         i = trie.end();
+         trie.erase(--i);
+      }
+      std::cout << "[TEST ] count=" << trie.size() << "|empty=" << trie.empty();
+      AuxTrie::CheckEmpty(trie);
+
+      utinfo.PrintSplitter();
    }
-   std::cout << "[TEST ] count=" << trie.size() << "|empty=" << trie.empty();
-   AuxTrie::CheckEmpty(trie);
-
-   utinfo.PrintSplitter();
    const char* iname = (argc >= 2 ? argv[1] : nullptr);
    if (iname == nullptr || strcmp(iname, "map") == 0)
       AuxStd::Benchmark("std::map");
@@ -372,4 +356,34 @@ int main(int argc, char** argv) {
    using AuxUno = AuxTest<StdUno>;
    if (iname == nullptr || strcmp(iname, "hash") == 0)
       AuxUno::Benchmark("std::unordered_map");
+
+   // 在 Linux(Ubuntu 16.04.3) + gcc(5.4.0 20160609); 
+   // ===== std::map / sequence =====
+   // emplace:    : 0.867709394 secs / 1,000,000 times = 867.709394000 ns
+   // find:       : 0.567231606 secs / 1,000,000 times = 567.231606000 ns
+   // lower_bound:: 0.557699670 secs / 1,000,000 times = 557.699670000 ns
+   // upper_bound:: 0.540888584 secs / 1,000,000 times = 540.888584000 ns
+   // clear:      : 0.054685135 secs / 1,000,000 times =  54.685135000 ns
+   // ----- random -----
+   // emplace:    : 0.601261180 secs / 1,000,000 times = 601.261180000 ns
+   // find:       : 0.576601145 secs / 1,000,000 times = 576.601145000 ns
+   // lower_bound:: 0.562178143 secs / 1,000,000 times = 562.178143000 ns
+   // upper_bound:: 0.555208289 secs / 1,000,000 times = 555.208289000 ns
+   // clear:      : 0.133885606 secs / 1,000,000 times = 133.885606000 ns
+   // 
+   // ===== SortedVector / sequence =====
+   // emplace:    : 0.398940040 secs / 1,000,000 times = 398.940040000 ns
+   // find:       : 0.559192173 secs / 1,000,000 times = 559.192173000 ns
+   // lower_bound:: 0.529487171 secs / 1,000,000 times = 529.487171000 ns
+   // upper_bound:: 0.539333506 secs / 1,000,000 times = 539.333506000 ns
+   // clear:      : 0.004536069 secs / 1,000,000 times =   4.536069000 ns
+   // ----- random -----
+   // emplace:: 2,114.961430451 secs / 1,000,000 times =   2.114961430 ms
+   // find:       : 1.040423612 secs / 1,000,000 times =1040.423612    ns
+   // lower_bound:: 0.999334112 secs / 1,000,000 times = 999.334112000 ns
+   // upper_bound:: 0.932749620 secs / 1,000,000 times = 932.749620000 ns
+   // clear:      : 0.004885941 secs / 1,000,000 times =   4.885941000 ns
+   //using AuxSortedVector = AuxTest<SortedVector>;
+   //if (iname == nullptr || strcmp(iname, "svect") == 0)
+   //   AuxSortedVector::Benchmark("SortedVector");
 }
