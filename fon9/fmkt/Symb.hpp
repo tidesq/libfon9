@@ -36,10 +36,6 @@ constexpr fon9::fmkt::SymbMarket  SymbMarket_TwEmg = static_cast<fon9::fmkt::Sym
 ///   - 成交價量.
 class Symb : public SymbData, public intrusive_ref_counter<Symb> {
    fon9_NON_COPY_NON_MOVE(Symb);
-   // 使用 LayoutDy 動態建立所需的資料.
-   // using SymbDataSP = std::unique_ptr<SymbData>;
-   // using ExDatas = std::vector<SymbDataSP>;
-   // ExDatas  ExDatas_;
 public:
    SymbMarket        Market_{SymbMarket_Unknown};
    const CharVector  SymbId_;
@@ -48,6 +44,18 @@ public:
    }
 };
 using SymbSP = intrusive_ptr<Symb>;
+
+// \ingroup fmkt
+// 使用 LayoutDy 動態建立所需的資料.
+//class SymbDy : public Symb {
+//   fon9_NON_COPY_NON_MOVE(SymbDy);
+//   using base = Symb;
+//   using SymbDataSP = std::unique_ptr<SymbData>;
+//   using ExDatas = std::vector<SymbDataSP>;
+//   ExDatas  ExDatas_;
+//public:
+//   using base::base;
+//};
 
 //--------------------------------------------------------------------------//
 
@@ -94,7 +102,7 @@ inline Symb& GetSymbRef(const SymbTrieMap::value_type& v) {
 /// \ingroup fmkt
 /// - 根據 Symb_UT.cpp 的測試結果, std::unordered_map 比 std::map、fon9::Trie
 ///   更適合用來處理「全市場」的「商品資料表」, 因為資料筆數較多, 且商品Id散亂(不適合使用Trie)。
-/// - 但是如果是「個別帳戶」的「商品庫存」(個別的資料筆數較少,但帳戶可能很多),
+/// - 但是如果是「個別帳戶」的「商品庫存」(個別的資料筆數較少, 但帳戶可能很多),
 ///   則仍需其他驗證, 才能決定用哪種容器: 「帳戶庫存表」應考慮使用較少記憶體的容器。
 //using SymbMap = SymbHashMap;
 using SymbMap = SymbTrieMap;

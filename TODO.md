@@ -20,8 +20,6 @@ libfon9 TODO list
 
 
 * web.seed: Search key.
-* Unordered: 需要時增加要顯示的 key?
-
 * SymbolId/SymbolTable/SymbolTree
   * fon9::Trie / std::unordered / std::map
   * SymbolId: Id, SettleYYYYMM, StrikePrice...

@@ -104,6 +104,9 @@ seedWindow.onFieldChanged = function(path, key, tabName, fieldValues) {
     cmd += fieldValues;
   webSocket.send(cmd + ' ' + mergePathKeyTab(path, key, tabName));
 }
+seedWindow.onQueryRow = function(path, key, tabName) {
+  webSocket.send('ps ' + mergePathKeyTab(path, key, tabName));
+}
 seedWindow.onDeleteRow = function(path, key) {
   webSocket.send('rs ' + mergePathKeyTab(path, key, ''));
 }
@@ -167,6 +170,8 @@ function onWebSocketMessage(msg) {
     if (msg[1]=='g' && msg[2]=='v') // "gv[,args] path" gridview
       seedWindow.renderGridView(args, path, msg.substring(pln+1), errmsg);
     else if (msg[1]=='s' && msg[2]=='s') // "ss[,fieldName=newValue] path/key^tab" + \n" + "fields"
+      seedWindow.updateRow(args, path, msg.substring(pln+1), errmsg);
+    else if (msg[1]=='p' && msg[2]=='s') // "ps path/key^tab" + \n" + "fields"
       seedWindow.updateRow(args, path, msg.substring(pln+1), errmsg);
   }
 }

@@ -107,6 +107,8 @@
                &#65293;</button>
             <button id="btnLoadEditForApply" type="button" class="seed" onclick="loadEditForApply();" title="Modify for applying">
                &#128221;</button>
+            <button id="btnAddWatchRow" type="button" class="seed" onclick="addWatchRow();">⤽</button>
+            <button id="btnDelWatchRow" type="button" class="seed" onclick="delWatchRow();">⤼</button>
          </div>
       </div>
       <textarea id="clipboard" style="display:none"></textarea>
@@ -137,6 +139,13 @@
       let emitFieldChanged = function (key, fieldValues) {
          if (onFieldChanged)
             onFieldChanged(currPath, key, getCurrTabName(), fieldValues);
+      }
+      /// 當想要查詢 row(指定 key) 時觸發 onQueryRow(currPath, key, tabName);
+      /// 然後透過 updateRow() 告知結果.
+      var onQueryRow;
+      let emitQueryRow = function (key) {
+         if (onQueryRow)
+            onQueryRow(currPath, key, getCurrTabName());
       }
       /// 當想要刪除 row 時觸發 onDeleteRow(currPath, key);
       /// 然後透過 seedRemoved() 告知結果.
@@ -213,6 +222,10 @@
          showElement(document.getElementById('btnAddNewRow'), (layout.flags & 0x01) && hasWriteAccess()); // TreeFlag::Addable = 0x01
          showElement(document.getElementById('btnDeleteRow'), (layout.flags & 0x02) && hasWriteAccess()); // TreeFlag::Removable = 0x02
          // unordered: no GridView // TreeFlag::Unordered = 0x10
+         let isUnordered = (layout.flags & 0x10);
+         showElement(document.getElementById('btnAddWatchRow'), isUnordered);
+         showElement(document.getElementById('btnDelWatchRow'), isUnordered);
+         gview.setFirstCellFocus();
       }
       function renderGridView(args, path, res, errmsg) {
          if (path != currPath || errmsg)
@@ -426,26 +439,43 @@
          }
          return true;
       }
+      let promptAddRow = function (info) {
+         let currKey = gview.getKeyText(gview.selectedCell);
+         let key = prompt(info, currKey);
+         if (!key)
+            return undefined;
+         let row = gview.searchRow(key);
+         if (!row) {
+            row = gview.addBodyRow(key, -1);
+            row.cells[0].classList.add('gvUpdatingCell');
+         }
+         gview.setCellFocus(row.rowIndex, 0);
+         return key;
+      }
       // 增加一筆 row.
       let addNewRow = function (fieldValues) {
          if (isElementHidden(document.getElementById('btnAddNewRow')))
             return;
          if (!fieldValues)
             fieldValues = '';
-         let currKey = gview.getKeyText(gview.selectedCell);
-         let key = prompt("在 " + getTitleOrName(layout.tabs[currTabIdx])
+         let key = promptAddRow("在 " + getTitleOrName(layout.tabs[currTabIdx])
                           + " 新增一筆資料\n" /*+ fieldValues 需要顯示加入的欄位嗎? */ + "\n請輸入要新增的「"
-                          + getTitleOrName(layout.key) + "」"
-                         , currKey);
-         if (!key || key == currKey)
-            return;
-         let row = gview.searchRow(key);
-         if (!row) {
-            row = gview.addBodyRow(key, -1);
-            row.cells[0].classList.add('gvUpdatingCell');
+                          + getTitleOrName(layout.key) + "」");
+         if (key)
             emitFieldChanged(key, fieldValues);
-         }
-         gview.setCellFocus(row.rowIndex, 0);
+      }
+      let addWatchRow = function () {
+         let key = promptAddRow("在 " + getTitleOrName(layout.tabs[currTabIdx])
+                          + " 查詢資料\n請輸入要查詢的「"
+                          + getTitleOrName(layout.key) + "」");
+         if (key)
+            emitQueryRow(key);
+      }
+      let delWatchRow = function (cell) {
+         if (!cell)
+            cell = gview.selectedCell;
+         if (cell)
+            gview.removeRow(cell.parentNode);
       }
       // 移除 row, 若 !cell (btnDeleteRow.onclick 事件) 則使用 gview.selectedCell
       let deleteRow = function (cell) {
@@ -721,6 +751,16 @@
          if (ev.keyCode == 8) {  // Backspace: 回到上一層.
             emitPathChange(prevPath);
             return false;
+         }
+         if (ev.altKey) {
+            if (ev.keyCode == 107 || ev.keyCode == 187) { // '+' add watch or search.
+               addWatchRow();
+               return false;
+            }
+            if (ev.keyCode == 109 || ev.keyCode == 189) { // '-'
+               delWatchRow(cell);
+               return false;
+            }
          }
          return true;
       }
