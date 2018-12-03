@@ -131,6 +131,9 @@
     <ClInclude Include="..\..\..\fon9\File.hpp" />
     <ClInclude Include="..\..\..\fon9\FileAppender.hpp" />
     <ClInclude Include="..\..\..\fon9\FilePath.hpp" />
+    <ClInclude Include="..\..\..\fon9\fix\FixBase.hpp" />
+    <ClInclude Include="..\..\..\fon9\fix\FixBuilder.hpp" />
+    <ClInclude Include="..\..\..\fon9\fix\FixParser.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\Symb.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\Framework.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\IoFactory.hpp" />
@@ -285,6 +288,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\fon9\buffer\README.md" />
+    <None Include="..\..\..\fon9\fix\README.md" />
     <None Include="..\..\..\fon9\io\README.md" />
     <None Include="..\..\..\fon9\seed\README.md" />
     <None Include="..\..\..\fon9\web\HttpStatic.cfg" />
@@ -332,6 +336,10 @@
     <ClCompile Include="..\..\..\fon9\File.cpp" />
     <ClCompile Include="..\..\..\fon9\FileAppender.cpp" />
     <ClCompile Include="..\..\..\fon9\FilePath.cpp" />
+    <ClCompile Include="..\..\..\fon9\fix\FixBase.cpp" />
+    <ClCompile Include="..\..\..\fon9\fix\FixBuilder.cpp" />
+    <ClCompile Include="..\..\..\fon9\fix\FixCompID.cpp" />
+    <ClCompile Include="..\..\..\fon9\fix\FixParser.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\Symb.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\Framework.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\IoFactory.cpp" />

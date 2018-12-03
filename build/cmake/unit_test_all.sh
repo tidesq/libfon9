@@ -68,6 +68,10 @@ $OUTPUT_DIR/Tree_UT
 $OUTPUT_DIR/Crypto_UT
 $OUTPUT_DIR/AuthMgr_UT
 
+# unit tests: fmkt / fix
+$OUTPUT_DIR/Symb_UT
+$OUTPUT_DIR/FixParser_UT
+
 { set +x; } 2>/dev/null
 echo '#####################################################'
 echo '#                 All tests passed!                 #'

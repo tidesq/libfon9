@@ -239,10 +239,11 @@ inline StrView StrFetchNoTrim(StrView& src, char chDelim) {
 }
 
 /// \ingroup AlNum
-/// - 透過 fnSplitter 找到要分割的位置.
+/// - 透過 `const char* fnSplitter(const char* pbeg, const char* pend);` 找到要分割的位置.
 /// - 然後傳回分割位置前的字串(移除前後空白)
 /// - src.begin() 移動到分割位置+1(沒有移除空白)
 /// - 如果沒找到分割位置, 則傳回: 移除前後空白的src, src 移到 end() 的位置.
+/// - 返回後判斷是否有找到分割位置: (retval.end() < src.begin() && isSplitter(*(src.begin()-1)))
 template <class FnSplitter>
 StrView StrFetchTrim(StrView& src, FnSplitter fnSplitter) {
    struct TrimAux {

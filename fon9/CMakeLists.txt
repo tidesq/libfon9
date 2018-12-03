@@ -146,6 +146,11 @@ set(fon9src
  framework/IoFactoryDgram.cpp
 
  fmkt/Symb.cpp
+
+ fix/FixBase.cpp
+ fix/FixCompID.cpp
+ fix/FixParser.cpp
+ fix/FixBuilder.cpp
 )
 add_library(fon9_s STATIC ${fon9src})
 target_link_libraries(fon9_s pthread rt dl)
@@ -256,3 +261,7 @@ target_link_libraries(AuthMgr_UT fon9_s)
 # unit tests: fmkt
 add_executable(Symb_UT fmkt/Symb_UT.cpp)
 target_link_libraries(Symb_UT fon9_s)
+
+# unit tests: fix
+add_executable(FixParser_UT fix/FixParser_UT.cpp)
+target_link_libraries(FixParser_UT fon9_s)

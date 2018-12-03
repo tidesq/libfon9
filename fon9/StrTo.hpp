@@ -473,5 +473,45 @@ auto StrTo(StrView* str, T null) -> decltype(StrTo(*str, null, static_cast<const
    return null;
 }
 
+namespace impl {
+template <typename NumT, size_t Width>
+struct AuxPic9StrTo {
+   using next = AuxPic9StrTo<NumT, Width - 1>;
+   constexpr static NumT RStrTo(const char* str) noexcept {
+      return static_cast<NumT>((*str - '0') + next::RStrTo(str - 1) * 10);
+   }
+};
+template <typename NumT>
+struct AuxPic9StrTo<NumT, 1> {
+   constexpr static NumT RStrTo(const char* str) noexcept {
+      return static_cast<NumT>(*str - '0');
+   }
+};
+} // namespace impl
+  
+/// \ingroup AlNum
+/// 固定寬度的數字字串轉整數輸出.
+/// 不驗證字串內容是否為數字, 所以如果有非數字字元, 則輸出結果無法預期!
+/// 例: `Pic9StrTo<3,int>(str);`
+template <unsigned Width, typename IntT>
+inline IntT Pic9StrTo(const char* str) {
+   static_assert(Width > 0, "Pic9StrTo() Width must > 0.");
+   return impl::AuxPic9StrTo<IntT, Width>::RStrTo(str + Width - 1);
+}
+
+/// \ingroup AlNum
+/// 固定寬度的數字字串轉有號整數輸出.
+/// 不驗證字串內容是否為數字, 所以如果有非數字字元, 則輸出結果無法預期!
+/// - *str == '-' 為負數, 其餘為正數;
+/// - Width 包含符號字元, 所以 Width 必定 > 1.
+/// - 例: `SPic9StrTo<3,int>(str);`
+template <unsigned Width, typename IntT>
+inline IntT SPic9StrTo(const char* str) {
+   static_assert(Width > 1, "SPic9StrTo() Width must > 1.");
+   static_assert(std::is_signed<IntT>::value, "SPic9StrTo(), IntT 必須是有正負的整數型別");
+   auto res = Pic9StrTo<Width - 1, IntT>(str + 1);
+   return (*str == '-' ? static_cast<IntT>(-res) : res);
+}
+
 } // namespace fon9
 #endif//__fon9_StrTo_hpp__

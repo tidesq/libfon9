@@ -244,5 +244,28 @@ constexpr bool IsEnumContainsAny(enum_t a, enum_t b) { \
 #define fon9_kCSTR_CELLSPL "\x01"
 #define fon9_kCSTR_ROWSPL  "\n"
 
+/// \ingroup Misc
+/// 從 src 複製 sz bytes 到 dst, 並返回 dst + sz; 方便接續複製其他內容.
+static inline byte* PutFwd(byte* dst, const void* src, size_t sz) {
+   return reinterpret_cast<byte*>(memcpy(dst, src, sz)) + sz;
+}
+static inline byte* PutFwd(byte* dst, const void* src, const void* srcEnd) {
+   return PutFwd(dst, src, static_cast<size_t>(reinterpret_cast<const byte*>(srcEnd) - reinterpret_cast<const byte*>(src)));
+}
+template <size_t arysz>
+static inline byte* PutFwd(byte* dst, const char(&chary)[arysz]) {
+   return putmem(dst, chary, arysz - (chary[arysz - 1] == 0));
+}
+template <size_t arysz>
+static inline byte* PutFwd(byte* dst, char(&chary)[arysz]) {
+   static_assert(arysz <= 0, "Not support char[], Only support const char[].");
+   return dst;
+}
+template <class StrT>
+static inline auto PutFwd(byte* dst, const StrT& src)
+-> decltype(PutFwd(dst, &*src.begin(), src.size())) {
+   return PutFwd(dst, &*src.begin(), src.size());
+}
+
 } // namespace
 #endif//__fon9_Utility_hpp__

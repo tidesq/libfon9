@@ -156,6 +156,12 @@
     <Filter Include="Source Files\fmkt">
       <UniqueIdentifier>{202e014f-704a-4b4f-b50c-5d40bfe60f79}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\fix">
+      <UniqueIdentifier>{daa2c47a-3ba9-45b6-b71f-d6a4c220cc9e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\fix">
+      <UniqueIdentifier>{523df68f-60c9-415d-9bba-8ce4c3614abc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\sys\Config.h">
@@ -782,6 +788,15 @@
     <ClInclude Include="..\..\..\fon9\fmkt\Symb.hpp">
       <Filter>Header Files\fmkt</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fix\FixBase.hpp">
+      <Filter>Header Files\fix</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fix\FixParser.hpp">
+      <Filter>Header Files\fix</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fix\FixBuilder.hpp">
+      <Filter>Header Files\fix</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -799,6 +814,9 @@
     </None>
     <None Include="..\..\..\fon9\web\HttpStatic.cfg">
       <Filter>Header Files\web</Filter>
+    </None>
+    <None Include="..\..\..\fon9\fix\README.md">
+      <Filter>Header Files\fix</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -1227,6 +1245,18 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\fmkt\Symb.cpp">
       <Filter>Source Files\fmkt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fix\FixBase.cpp">
+      <Filter>Source Files\fix</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fix\FixCompID.cpp">
+      <Filter>Source Files\fix</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fix\FixParser.cpp">
+      <Filter>Source Files\fix</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fix\FixBuilder.cpp">
+      <Filter>Source Files\fix</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

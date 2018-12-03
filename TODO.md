@@ -16,17 +16,15 @@ libfon9 TODO list
 * 資料同步機制: 清除「Deleted 紀錄」的時機。
   * InnSyncFileList: 同步匯入檔, 可能包含來源 HostId, 定時掃描全部的來源檔.
 ---------------------------------------
-## 系統管理工具
-
-
-* web.seed: Search key.
+## Financial market
 * SymbolId/SymbolTable/SymbolTree
   * fon9::Trie / std::unordered / std::map
   * SymbolId: Id, SettleYYYYMM, StrikePrice...
   * Symbol(Multi legs?)
-
-
-* FileDevice
+* Simple FIX engine
+---------------------------------------
+## 系統管理工具
+* web.seed: Search key.
 
 
 * 設定檔備份機制:
@@ -71,6 +69,7 @@ libfon9 TODO list
 
 ---------------------------------------
 ## 通訊基礎建設
+* FileDevice
 * IoManager/SessionFactory/DeviceFactory
   * 提供 IoManager 的使用說明.
   * ip白名單、黑名單?
@@ -82,5 +81,3 @@ libfon9 TODO list
 * TLS
   * https://github.com/facebookincubator/fizz
   * Device.DeviceCommand() 傳回值: success+message or fail+message.
----------------------------------------
-## Simple FIX engine
