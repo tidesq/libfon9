@@ -131,9 +131,13 @@
     <ClInclude Include="..\..\..\fon9\File.hpp" />
     <ClInclude Include="..\..\..\fon9\FileAppender.hpp" />
     <ClInclude Include="..\..\..\fon9\FilePath.hpp" />
+    <ClInclude Include="..\..\..\fon9\FileRevRead.hpp" />
     <ClInclude Include="..\..\..\fon9\fix\FixBase.hpp" />
     <ClInclude Include="..\..\..\fon9\fix\FixBuilder.hpp" />
+    <ClInclude Include="..\..\..\fon9\fix\FixCompID.hpp" />
     <ClInclude Include="..\..\..\fon9\fix\FixParser.hpp" />
+    <ClInclude Include="..\..\..\fon9\fix\FixRecorder.hpp" />
+    <ClInclude Include="..\..\..\fon9\fix\FixRecorder_Searcher.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\Symb.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\Framework.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\IoFactory.hpp" />
@@ -336,10 +340,13 @@
     <ClCompile Include="..\..\..\fon9\File.cpp" />
     <ClCompile Include="..\..\..\fon9\FileAppender.cpp" />
     <ClCompile Include="..\..\..\fon9\FilePath.cpp" />
+    <ClCompile Include="..\..\..\fon9\FileRevRead.cpp" />
     <ClCompile Include="..\..\..\fon9\fix\FixBase.cpp" />
     <ClCompile Include="..\..\..\fon9\fix\FixBuilder.cpp" />
     <ClCompile Include="..\..\..\fon9\fix\FixCompID.cpp" />
     <ClCompile Include="..\..\..\fon9\fix\FixParser.cpp" />
+    <ClCompile Include="..\..\..\fon9\fix\FixRecorder.cpp" />
+    <ClCompile Include="..\..\..\fon9\fix\FixRecorder_Searcher.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\Symb.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\Framework.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\IoFactory.cpp" />

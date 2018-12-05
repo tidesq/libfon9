@@ -11,8 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{7F32B4E6-A1E2-4F22-8EA1-7B5C959F546A}</ProjectGuid>
-    <RootNamespace>FixParser_UT</RootNamespace>
+    <ProjectGuid>{E676CDF6-8D69-412E-9ED4-C424E1753113}</ProjectGuid>
+    <RootNamespace>FileRevRead_UT</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -55,7 +55,6 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\..\..\..\fon9</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_DEBUG</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -66,7 +65,6 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\..\..\..\fon9</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -74,7 +72,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\fon9\fix\FixParser_UT.cpp" />
+    <ClCompile Include="..\..\..\fon9\FileRevRead_UT.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\libfon9\libfon9.vcxproj">

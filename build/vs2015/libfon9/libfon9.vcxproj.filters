@@ -797,6 +797,18 @@
     <ClInclude Include="..\..\..\fon9\fix\FixBuilder.hpp">
       <Filter>Header Files\fix</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fix\FixCompID.hpp">
+      <Filter>Header Files\fix</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fix\FixRecorder.hpp">
+      <Filter>Header Files\fix</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fix\FixRecorder_Searcher.hpp">
+      <Filter>Header Files\fix</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\FileRevRead.hpp">
+      <Filter>Header Files\_base\_File</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1257,6 +1269,15 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\fix\FixBuilder.cpp">
       <Filter>Source Files\fix</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fix\FixRecorder.cpp">
+      <Filter>Source Files\fix</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fix\FixRecorder_Searcher.cpp">
+      <Filter>Source Files\fix</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\FileRevRead.cpp">
+      <Filter>Source Files\_base\_File</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

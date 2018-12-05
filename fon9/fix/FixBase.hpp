@@ -56,16 +56,16 @@ namespace fon9 { namespace fix {
          f9fix_STRTAG(BeginString)     \
          "="                           \
          verValue                      \
-         f9fix_STRTAG(BodyLength)
+         f9fix_SPLTAGEQ(BodyLength)
 
 #define f9fix_BEGIN_HEADER_V44   f9fix_BEGIN_HEADER("FIX.4.4")
 #define f9fix_BEGIN_HEADER_V42   f9fix_BEGIN_HEADER("FIX.4.2")
 
 /// \ingroup fix
 /// 建立 "\x01" "35=" msgType 的 FIX 欄位字串.
-/// - 範例: `f9fix_STRMSGTYPE(NewOrderSingle)` 結果為 "|35=D"
+/// - 範例: `f9fix_SPLMSGTYPEEQ(NewOrderSingle)` 結果為 "|35=D"
 /// - 必須要先定義 \#`define f9fix_kMSGTYPE_NewOrderSingle "D"` 才會正確
-#define f9fix_STRMSGTYPE(msgType)  \
+#define f9fix_SPLMSGTYPEEQ(msgType)  \
          f9fix_SPLTAGEQ(MsgType)   \
          f9fix_kMSGTYPE_##msgType
 

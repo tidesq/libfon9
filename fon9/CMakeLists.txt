@@ -42,6 +42,7 @@ set(fon9src
  LogFile.cpp
  FdrNotify.cpp
  ConfigFileBinder.cpp
+ FileRevRead.cpp
 
  InnFile.cpp
  InnSyncer.cpp
@@ -151,6 +152,8 @@ set(fon9src
  fix/FixCompID.cpp
  fix/FixParser.cpp
  fix/FixBuilder.cpp
+ fix/FixRecorder.cpp
+ fix/FixRecorder_Searcher.cpp
 )
 add_library(fon9_s STATIC ${fon9src})
 target_link_libraries(fon9_s pthread rt dl)
@@ -237,6 +240,9 @@ target_link_libraries(InnFile_UT fon9_s)
 add_executable(InnDbf_UT InnDbf_UT.cpp)
 target_link_libraries(InnDbf_UT fon9_s)
 
+add_executable(FileRevRead_UT FileRevRead_UT.cpp)
+target_link_libraries(FileRevRead_UT fon9_s)
+
 # unit tests: io
 add_executable(Socket_UT io/Socket_UT.cpp)
 target_link_libraries(Socket_UT fon9_s)
@@ -265,3 +271,6 @@ target_link_libraries(Symb_UT fon9_s)
 # unit tests: fix
 add_executable(FixParser_UT fix/FixParser_UT.cpp)
 target_link_libraries(FixParser_UT fon9_s)
+
+add_executable(FixRecorder_UT fix/FixRecorder_UT.cpp)
+target_link_libraries(FixRecorder_UT fon9_s)

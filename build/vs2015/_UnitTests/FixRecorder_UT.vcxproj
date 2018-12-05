@@ -11,8 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{7F32B4E6-A1E2-4F22-8EA1-7B5C959F546A}</ProjectGuid>
-    <RootNamespace>FixParser_UT</RootNamespace>
+    <ProjectGuid>{80DD7E82-9FE4-4079-9407-654F3ABC8165}</ProjectGuid>
+    <RootNamespace>FixRecorder_UT</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -74,7 +74,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\fon9\fix\FixParser_UT.cpp" />
+    <ClCompile Include="..\..\..\fon9\fix\FixRecorder_UT.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\libfon9\libfon9.vcxproj">

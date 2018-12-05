@@ -494,5 +494,11 @@ StrT StrReplaceImpl(StrView src, const StrView oldStr, const StrView newStr) {
 fon9_API std::string StdStrReplace(StrView src, const StrView oldStr, const StrView newStr);
 fon9_API CharVector CharVectorReplace(StrView src, const StrView oldStr, const StrView newStr);
 
+#ifndef fon9_POSIX
+#define fon9_MEMRCHR
+fon9_API const void* memrchr(const void* s, int c, size_t n);
+fon9_API const void* memrmem(const void* v, size_t size, const void *pat, size_t patSize);
+#endif
+
 } // namespace fon9
 #endif//__fon9_StrTools_hpp__

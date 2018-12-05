@@ -233,12 +233,7 @@ void IoManager::UpdateDeviceStateLocked(io::Device& dev, const io::StateUpdatedA
       const BufferNode* bnode = rbuf.cfront();
       char* pmsg = static_cast<char*>(item->DeviceSt_.alloc(kDateTimeStrWidth + CalcDataSize(bnode)));
       ToStrRev(pmsg += kDateTimeStrWidth, UtcNow());
-      while (bnode) {
-         auto datsz = bnode->GetDataSize();
-         memcpy(pmsg, bnode->GetDataBegin(), datsz);
-         pmsg += datsz;
-         bnode = bnode->GetNext();
-      }
+      pmsg = static_cast<char*>(CopyNodeList(pmsg, bnode));
       *(pmsg - 1) = 0; // for back '\n' => '\0';
       item->DeviceSt_.resize(item->DeviceSt_.size() - 1); // remove back '\n'
       if (e.State_ == io::State::Opening)

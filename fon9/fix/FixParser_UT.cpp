@@ -85,7 +85,7 @@ int main(int argc, char** args) {
    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
 
-   fon9::AutoPrintTestInfo utinfo{"Symb"};
+   fon9::AutoPrintTestInfo utinfo{"FixParser/FixBuilder"};
    fon9::GetDefaultTimerThread();
    std::this_thread::sleep_for(std::chrono::milliseconds{10});
 

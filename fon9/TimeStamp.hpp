@@ -212,8 +212,7 @@ inline char* ToStrRev_Date_Time_us(char* pout, TimeStamp ts) {
 template <class RevBuffer>
 void RevPut_Date_Time_us(RevBuffer& rbuf, TimeStamp ts) {
    char* pout = rbuf.AllocPrefix(kDateTimeStrWidth + 1);
-   pout = ToStrRev_Date_Time_us(pout, ts);
-   rbuf.SetPrefixUsed(pout);
+   rbuf.SetPrefixUsed(ToStrRev_Date_Time_us(pout, ts));
 }
 
 /// \ingroup AlNum
@@ -223,6 +222,17 @@ fon9_API char* ToStrRev_FIX(char* pout, TimeStamp ts);
 /// \ingroup AlNum
 /// 輸出時間的 YYYYMMDD-HH:MM:SS.sss 字串 (FIX時間格式,包含ms).
 fon9_API char* ToStrRev_FIXMS(char* pout, TimeStamp ts);
+
+template <class RevBuffer>
+inline void RevPut_TimeFIXMS(RevBuffer& rbuf, TimeStamp ts) {
+   char* pout = rbuf.AllocPrefix(kDateTimeStrWidth_FIXMS);
+   rbuf.SetPrefixUsed(ToStrRev_FIXMS(pout, ts));
+}
+template <class RevBuffer>
+inline void RevPut_TimeFIX(RevBuffer& rbuf, TimeStamp ts) {
+   char* pout = rbuf.AllocPrefix(kDateTimeStrWidth_FIX);
+   rbuf.SetPrefixUsed(ToStrRev_FIX(pout, ts));
+}
 
 //--------------------------------------------------------------------------//
 

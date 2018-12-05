@@ -417,11 +417,6 @@ int main(int argc, char** argv) {
 
    TestInnDbf();
 
-   bool isKeepTestFiles = false;
-   for (int L = 1; L < argc; ++L) {
-      if (strcmp(argv[L], "--keep") == 0)
-         isKeepTestFiles = true;
-   }
-   if (!isKeepTestFiles)
+   if (!fon9::IsKeepTestFiles(argc, argv))
       RemoveTestFiles();
 }

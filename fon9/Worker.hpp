@@ -202,6 +202,9 @@ public:
       ContentLocker ctx{this->Controller_};
       fnWorkContent(ctx);
    }
+   ContentLocker Lock() {
+      return ContentLocker{this->Controller_};
+   }
 };
 fon9_WARN_POP;
 

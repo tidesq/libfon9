@@ -70,6 +70,9 @@ protected:
    const TimeChecker& GetRotateTimeChecker() const {
       return this->RotateTimeChecker_;
    }
+   File& GetStorage() {
+      return this->File_;
+   }
 
 public:
    using Result = File::Result;

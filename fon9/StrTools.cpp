@@ -333,4 +333,38 @@ fon9_API CharVector CharVectorReplace(StrView src, const StrView oldStr, const S
    return StrReplaceImpl<CharVector>(src, oldStr, newStr);
 }
 
+#ifdef fon9_MEMRCHR
+fon9_API const void* memrchr(const void* s, int c, size_t n) {
+   if (fon9_LIKELY(n != 0)) {
+      const unsigned char* cp = reinterpret_cast<const unsigned char *>(s) + n;
+      do {
+         if (*(--cp) == static_cast<unsigned char>(c))
+            return cp;
+      } while (--n > 0);
+   }
+   return nullptr;
+}
+fon9_API const void* memrmem(const void* v, size_t size, const void *pat, size_t patSize) {
+   assert(v != nullptr);
+   assert(pat != nullptr);
+   if (size < patSize)
+      return nullptr;
+   if (patSize == 0)
+      return v;
+
+   const char* p = reinterpret_cast<const char*>(v) + size - patSize;
+   do {
+      if (fon9_UNLIKELY(*p == *reinterpret_cast<const char*>(pat))) {
+         for (size_t L = 1; L < patSize; ++L) {
+            if (p[L] != reinterpret_cast<const char*>(pat)[L])
+               goto __CHECK_PREV;
+         }
+         return p;
+      }
+   __CHECK_PREV:;
+   } while (v != p--);
+   return nullptr;
+}
+#endif
+
 } // namespace fon9

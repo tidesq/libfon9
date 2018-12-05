@@ -30,12 +30,12 @@ void CompIDs::Initialize(const StrView& senderCompID, const StrView& senderSubID
                          const StrView& targetCompID, const StrView& targetSubID) {
    this->Sender_.Initialize(senderCompID, senderSubID);
    this->Target_.Initialize(targetCompID, targetSubID);
-   size_t rsz = this->Sender_.CalcHeaderSize(f9fix_STRTAG(SenderCompID), f9fix_STRTAG(SenderSubID))
-              + this->Target_.CalcHeaderSize(f9fix_STRTAG(TargetCompID), f9fix_STRTAG(TargetSubID));
+   size_t rsz = this->Sender_.CalcHeaderSize(f9fix_SPLTAGEQ(SenderCompID), f9fix_SPLTAGEQ(SenderSubID))
+              + this->Target_.CalcHeaderSize(f9fix_SPLTAGEQ(TargetCompID), f9fix_SPLTAGEQ(TargetSubID));
    this->Header_.clear();
    if (byte* hdr = reinterpret_cast<byte*>(this->Header_.alloc(rsz))) {
-      hdr = this->Sender_.PutHeader(hdr, f9fix_STRTAG(SenderCompID), f9fix_STRTAG(SenderSubID));
-      this->Target_.PutHeader(hdr, f9fix_STRTAG(TargetCompID), f9fix_STRTAG(TargetSubID));
+      hdr = this->Sender_.PutHeader(hdr, f9fix_SPLTAGEQ(SenderCompID), f9fix_SPLTAGEQ(SenderSubID));
+      this->Target_.PutHeader(hdr, f9fix_SPLTAGEQ(TargetCompID), f9fix_SPLTAGEQ(TargetSubID));
    }
 }
 

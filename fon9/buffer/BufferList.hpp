@@ -53,5 +53,31 @@ inline StrT BufferTo(const BufferNode* front) {
 /// 如果 dst.back() 足夠存放 src 則直接複製到 dst.back(), 否則在 dst 後面增加一個節點存放 src.
 fon9_API void AppendToBuffer(BufferList& dst, const void* src, size_t size);
 
+/// \ingroup Buffer
+/// 將 node list 的內容複製到 dst, 返回 dst 的尾端.
+inline void* CopyNodeList(void* dst, const BufferNode* node) {
+   while(node) {
+      auto sz = node->GetDataSize();
+      memcpy(dst, node->GetDataBegin(), sz);
+      dst = reinterpret_cast<char*>(dst) + sz;
+      node = node->GetNext();
+   }
+   return dst;
+}
+
+template <class RevBuffer>
+inline void RevPrint(RevBuffer& rbuf, const BufferNode* node) {
+   if (auto  sz = CalcDataSize(node)) {
+      char* pout = rbuf.AllocPrefix(sz) - sz;
+      rbuf.SetPrefixUsed(pout);
+      CopyNodeList(pout, node);
+   }
+}
+
+template <class RevBuffer>
+inline void RevPrint(RevBuffer& rbuf, const BufferList& buf) {
+   RevPrint(rbuf, buf.cfront());
+}
+
 } // namespaces
 #endif//__fon9_buffer_BufferList_hpp__

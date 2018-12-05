@@ -456,15 +456,7 @@ void InnDbf::WriteSync(const UpdateRequest& req, const BufferNode* node) {
    if (!this->Syncer_ || static_cast<InnDbfRoomNote>(req.Room_->RoomKey_.GetNote()) != InnDbfRoomNote::NeedsSync)
       return;
    RevBufferList  rbuf{static_cast<BufferNodeSize>(req.Table_->TableName_.size() + 64 + this->SyncHandlerName_.size())};
-   if (const size_t bufsz = CalcDataSize(node)) {
-      char* pout = rbuf.AllocPrefix(bufsz) - bufsz;
-      rbuf.SetPrefixUsed(pout);
-      do {
-         const size_t datsz = node->GetDataSize();
-         memcpy(pout, node->GetDataBegin(), datsz);
-         pout += datsz;
-      } while ((node = node->GetNext()) != nullptr);
-   }
+   RevPrint(rbuf, node);
    ToBitv(rbuf, req.Table_->TableName_);
    ToBitv(rbuf, req.Room_->RoomKey_.GetPendingRoomType());
    this->Syncer_->WriteSync(*this, std::move(rbuf));

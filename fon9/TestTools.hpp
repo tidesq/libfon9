@@ -135,5 +135,15 @@ inline void CheckTestResult(const char* testItem, const char* fileLn, bool ok) {
 #define fon9_CheckTestResult(testItem, ok) \
    fon9::CheckTestResult(testItem, __FILE__ ":" fon9_CTXTOCSTR(__LINE__), (ok))
 
+//--------------------------------------------------------------------------//
+
+static inline bool IsKeepTestFiles(int argc, char** argv) {
+   for (int L = 1; L < argc; ++L) {
+      if (strcmp(argv[L], "--keep") == 0)
+         return true;
+   }
+   return false;
+}
+
 } // namespace
 #endif//__fon9_TestTools_hpp__
