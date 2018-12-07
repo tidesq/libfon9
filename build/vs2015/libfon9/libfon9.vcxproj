@@ -136,6 +136,7 @@
     <ClInclude Include="..\..\..\fon9\fix\FixBuilder.hpp" />
     <ClInclude Include="..\..\..\fon9\fix\FixCompID.hpp" />
     <ClInclude Include="..\..\..\fon9\fix\FixParser.hpp" />
+    <ClInclude Include="..\..\..\fon9\fix\FixFeeder.hpp" />
     <ClInclude Include="..\..\..\fon9\fix\FixRecorder.hpp" />
     <ClInclude Include="..\..\..\fon9\fix\FixRecorder_Searcher.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\Symb.hpp" />
@@ -345,6 +346,7 @@
     <ClCompile Include="..\..\..\fon9\fix\FixBuilder.cpp" />
     <ClCompile Include="..\..\..\fon9\fix\FixCompID.cpp" />
     <ClCompile Include="..\..\..\fon9\fix\FixParser.cpp" />
+    <ClCompile Include="..\..\..\fon9\fix\FixFeeder.cpp" />
     <ClCompile Include="..\..\..\fon9\fix\FixRecorder.cpp" />
     <ClCompile Include="..\..\..\fon9\fix\FixRecorder_Searcher.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\Symb.cpp" />

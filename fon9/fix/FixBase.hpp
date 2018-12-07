@@ -90,6 +90,11 @@ enum : uint32_t {
    kFixTailWidth = static_cast<uint32_t>(sizeof("|10=xxx|") - 1),
    kFixMinHeaderWidth = static_cast<uint32_t>(sizeof("8=FIX.4.4|9=xxx|") - 1),
    kFixMinMessageWidth = kFixMinHeaderWidth + kFixTailWidth,
+
+   /// 為了安全, 設定一個可忍受的最大長度, 超過此長度則視為無效的 FIX 訊息.
+   /// 在 FixParser::Verify() 處理 bodyLength > kFixMaxBodyLength 時,
+   /// 返回 FixParser::EOverFixMaxBodyLength
+   kFixMaxBodyLength = 1024 * 1024,
 };
 
 } } // namespaces

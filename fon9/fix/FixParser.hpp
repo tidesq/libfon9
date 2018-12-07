@@ -75,6 +75,8 @@ public:
       EDupField = -3,
       /// 錯誤的 RawData or RawDataLength
       ERawData = -4,
+      /// 當資料大小超過 kFixMaxBodyLength 則視為錯誤.
+      EOverFixMaxBodyLength = -5,
       /// check sum 錯誤, 可從 GetExpectSize() 取得此筆訊息長度.
       ECheckSum = -10,
       /// 資料長度不足, 無法解析.

@@ -809,6 +809,9 @@
     <ClInclude Include="..\..\..\fon9\FileRevRead.hpp">
       <Filter>Header Files\_base\_File</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fix\FixFeeder.hpp">
+      <Filter>Header Files\fix</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1278,6 +1281,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\FileRevRead.cpp">
       <Filter>Source Files\_base\_File</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fix\FixFeeder.cpp">
+      <Filter>Source Files\fix</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

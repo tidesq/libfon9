@@ -70,7 +70,7 @@ FixParser::Result FixParser::Verify(StrView& fixmsg, VerifyItem vitem) {
    if (msgsz < expsz) {
       fixmsg.SetBegin(pbeg);
       this->ExpectSize_ = static_cast<ExpectSize>(expsz);
-      return NeedsMore;
+      return bodyLength > kFixMaxBodyLength ? EOverFixMaxBodyLength : NeedsMore;
    }
    if (IsEnumContains(vitem, VerifyCheckSum)) {
       //  |10=xxx
