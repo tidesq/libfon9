@@ -11,8 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{F7E48C0F-E5D0-4B5D-B52F-C7BD31C0D87A}</ProjectGuid>
-    <RootNamespace>Symb_UT</RootNamespace>
+    <ProjectGuid>{96A6FBF7-F87F-4340-8ECA-B32978CD1632}</ProjectGuid>
+    <RootNamespace>FixSender</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -74,15 +74,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\fon9\fix\FixSender_UT.cpp" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\libfon9\libfon9.vcxproj">
       <Project>{6b9031a7-02e1-4171-8ca5-9f780be21806}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\..\fon9\fmkt\Symb_UT.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\fon9\fmkt\Symb.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

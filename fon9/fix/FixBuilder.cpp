@@ -6,7 +6,7 @@ namespace fon9 { namespace fix {
 
 BufferList FixBuilder::Final(const StrView& beginHeader) {
    assert(this->CheckSumPos_ != nullptr);
-   size_t bodyLength = CalcDataSize(this->Buffer_.cfront()) - kFixTailWidth;
+   const size_t bodyLength = CalcDataSize(this->Buffer_.cfront()) - kFixTailWidth;
    RevPrint(this->Buffer_, beginHeader, bodyLength);
 
    char* const psum = this->CheckSumPos_;
@@ -23,7 +23,7 @@ BufferList FixBuilder::Final(const StrView& beginHeader) {
          cks = static_cast<byte>(cks + *pbeg);
    }
 
-   this->PutCheckSum(psum, cks);
+   this->PutCheckSumField(psum, cks);
    return this->Buffer_.MoveOut();
 }
 

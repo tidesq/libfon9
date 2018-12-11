@@ -15,7 +15,7 @@ void BuildTestMessage(f9fix::FixBuilder& fixb, fon9::StrView headerCompIds, unsi
    fon9::RevPrint(fixb.GetBuffer(), f9fix_SPLTAGEQ(Text), "FixRecorderTest #", n);
    fon9::RevPut_TimeFIXMS(fixb.GetBuffer(), fon9::UtcNow()); // SendingTime.
    fon9::RevPrint(fixb.GetBuffer(), f9fix_SPLTAGEQ(SendingTime));
-   fon9::RevPrint(fixb.GetBuffer(), f9fix_SPLMSGTYPEEQ(NewOrderSingle), headerCompIds);
+   fon9::RevPrint(fixb.GetBuffer(), f9fix_SPLFLDMSGTYPE(NewOrderSingle), headerCompIds);
 }
 void TestFixRecorder(f9fix::FixRecorder& fixr, const unsigned kTimes) {
    for (unsigned L = 0; L < kTimes; ++L) {
@@ -137,16 +137,6 @@ int main(int argc, char** argv) {
 
    // 結束前刪除測試檔.
    fixr.reset();
-   if (!fon9::IsKeepTestFiles(argc, argv)) {
-      count = 100;
-      // FixRecorder 使用 AsyncFileAppender, 所以可能仍有部分訊息尚未完全寫入(尚未關檔).
-      // 因此 remove() 可能失敗, 所以在此使用 while(remove()) 直到成功.
-      while (remove(fixrFileName) != 0) {
-         if (--count <= 0) {
-            perror("Remove test file error:");
-            return 3;
-         }
-         std::this_thread::sleep_for(std::chrono::milliseconds{10});
-      }
-   }
+   if (!fon9::IsKeepTestFiles(argc, argv))
+      fon9::WaitRemoveFile(fixrFileName);
 }

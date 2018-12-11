@@ -79,5 +79,20 @@ inline void RevPrint(RevBuffer& rbuf, const BufferList& buf) {
    RevPrint(rbuf, buf.cfront());
 }
 
+template <class FwdBuffer>
+inline void FwdPrint(FwdBuffer& fbuf, const BufferNode* node) {
+   if (auto  sz = CalcDataSize(node)) {
+      char* pout = fbuf.AllocSuffix(sz);
+      fbuf.SetSuffixUsed(pout + sz);
+      CopyNodeList(pout, node);
+   }
+}
+
+template <class FwdBuffer>
+inline void FwdPrint(FwdBuffer& fbuf, const BufferList& buf) {
+   FwdPrint(fbuf, buf.cfront());
+}
+
+
 } // namespaces
 #endif//__fon9_buffer_BufferList_hpp__

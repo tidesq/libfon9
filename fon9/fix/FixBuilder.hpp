@@ -22,7 +22,7 @@ namespace fon9 { namespace fix {
 ///   FixBuilder  fbuf;
 ///   ...先填入交易所需欄位...
 ///   RevPrint(fbuf.GetBuffer(),
-///        f9fix_SPLMSGTYPEEQ(MsgType)   "A"   // 直接使用 "|35=" "A" 常數字串合併, 所以中間不用加「,」分隔參數
+///        f9fix_SPLFLDMSGTYPE(MsgType)   "A"   // 直接使用 "|35=" "A" 常數字串合併, 所以中間不用加「,」分隔參數
 ///        f9fix_SPLTAGEQ(MsgSeqNum),   789,  // "34=", 789(數字)
 ///        f9fix_SPLTAGEQ(TargetCompID) "Client"
 ///        f9fix_SPLTAGEQ(SenderCompID) "Server");
@@ -67,7 +67,7 @@ public:
    BufferList Final(const StrView& beginHeader);
 
    /// 填入 CheckSum: "|10=xxx|"  xxx=CheckSum(cks).
-   static void PutCheckSum(char psum[kFixTailWidth], byte cks) {
+   static void PutCheckSumField(char psum[kFixTailWidth], byte cks) {
       static_assert(kFixTailWidth == 8 && f9fix_kTAG_CheckSum == 10, "FIX CheckSum.Tag# || TailSize error.");
       psum[0] = f9fix_kCHAR_SPL;
       psum[1] = '1';

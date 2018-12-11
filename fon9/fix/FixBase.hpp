@@ -63,16 +63,17 @@ namespace fon9 { namespace fix {
 
 /// \ingroup fix
 /// 建立 "\x01" "35=" msgType 的 FIX 欄位字串.
-/// - 範例: `f9fix_SPLMSGTYPEEQ(NewOrderSingle)` 結果為 "|35=D"
+/// - 範例: `f9fix_SPLFLDMSGTYPE(NewOrderSingle)` 結果為 "|35=D"
 /// - 必須要先定義 \#`define f9fix_kMSGTYPE_NewOrderSingle "D"` 才會正確
-#define f9fix_SPLMSGTYPEEQ(msgType)  \
+#define f9fix_SPLFLDMSGTYPE(msgType)  \
          f9fix_SPLTAGEQ(MsgType)   \
          f9fix_kMSGTYPE_##msgType
 
 class fon9_API FixParser;
 class fon9_API FixBuilder;
-class fon9_API FixOutput;
-class fon9_API FixInput;
+class fon9_API FixConfig;
+class fon9_API FixSender;
+class fon9_API FixReceiver;
 
 class fon9_API FixManager;
 class fon9_API FixSession;

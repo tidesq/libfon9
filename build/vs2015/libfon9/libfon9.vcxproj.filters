@@ -812,6 +812,21 @@
     <ClInclude Include="..\..\..\fon9\fix\FixFeeder.hpp">
       <Filter>Header Files\fix</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fix\FixSender.hpp">
+      <Filter>Header Files\fix</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fix\FixAdminDef.hpp">
+      <Filter>Header Files\fix</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\buffer\FwdBuffer.hpp">
+      <Filter>Header Files\buffer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\FwdPrint.hpp">
+      <Filter>Header Files\_base\_AlNum / StrTools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fix\FixConfig.hpp">
+      <Filter>Header Files\fix</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1283,6 +1298,12 @@
       <Filter>Source Files\_base\_File</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\fix\FixFeeder.cpp">
+      <Filter>Source Files\fix</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fix\FixSender.cpp">
+      <Filter>Source Files\fix</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fix\FixConfig.cpp">
       <Filter>Source Files\fix</Filter>
     </ClCompile>
   </ItemGroup>

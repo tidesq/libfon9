@@ -15,7 +15,7 @@ void BuildTestMessage(f9fix::FixBuilder& fixb, fon9::StrView headerCompIds, unsi
    fon9::RevPrint(fixb.GetBuffer(), f9fix_SPLTAGEQ(Text), "FixFeederTest #", n);
    fon9::RevPut_TimeFIXMS(fixb.GetBuffer(), fon9::UtcNow()); // SendingTime.
    fon9::RevPrint(fixb.GetBuffer(), f9fix_SPLTAGEQ(SendingTime));
-   fon9::RevPrint(fixb.GetBuffer(), f9fix_SPLMSGTYPEEQ(NewOrderSingle), headerCompIds);
+   fon9::RevPrint(fixb.GetBuffer(), f9fix_SPLFLDMSGTYPE(NewOrderSingle), headerCompIds);
 }
 void TestFixFeeder() {
    f9fix::CompIDs compIds{"SenderCoId", "SenderSubId", "TargetCoId", "TargetSubId"};

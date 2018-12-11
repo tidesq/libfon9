@@ -11,6 +11,7 @@ fon9_BEFORE_INCLUDE_STD;
 #include <iostream>
 #include <iomanip>
 #include <chrono>
+#include <thread>
 fon9_AFTER_INCLUDE_STD;
 
 namespace fon9 {
@@ -143,6 +144,20 @@ static inline bool IsKeepTestFiles(int argc, char** argv) {
          return true;
    }
    return false;
+}
+static inline bool WaitRemoveFile(const char* fileName) {
+   unsigned count = 100;
+   // 可能使用 AsyncFileAppender, 所以可能仍有部分訊息尚未完全寫入(尚未關檔).
+   // 因此 remove() 可能失敗, 所以在此使用 while(remove()) 直到成功.
+   while (remove(fileName) != 0) {
+      if (--count <= 0) {
+         std::cout << "FileName=" << fileName;
+         perror("|Remove test file error:");
+         return false;
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds{10});
+   }
+   return true;
 }
 
 } // namespace

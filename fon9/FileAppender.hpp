@@ -73,6 +73,9 @@ protected:
    File& GetStorage() {
       return this->File_;
    }
+   const File& GetStorage() const {
+      return this->File_;
+   }
 
 public:
    using Result = File::Result;

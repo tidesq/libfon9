@@ -16,7 +16,7 @@ fon9_WARN_DISABLE_PADDING;
 ///   - 包含此 Session 的 CompIDs
 ///   - 包含 BeginHeader: "8=FIX.n.m|9="
 ///   - 包含預期的下一個序號: GetNextSendSeq(), GetNextRecvSeq()
-///     - 並配合「收(FixInput), 送(FixOutput)」管理序號.
+///     - 並配合「收(FixReceiver), 送(FixSender)」管理序號.
 /// - 所有收送訊息都依序記錄在此.
 /// - 可取出之前送出的訊息(一般用於回報回補).
 /// - 存檔格式:
@@ -54,7 +54,7 @@ public:
 
    /// "8=FIX.n.m|9="
    const CharVector  BeginHeader_;
-   /// 僅供 FixInput, FixOutput 使用.
+   /// 僅供 FixReceiver, FixSender 使用.
    const CompIDs     CompIDs_;
 
    enum {
@@ -122,7 +122,7 @@ public:
 
    /// 寫入即將要送出的訊息, 並設定 this->NextSendSeq_;
    /// lineMessage 必須為一行完整的訊息: "S " + timestamp + ' ' + FIX Message + '\n';
-   /// 請參考 FixOutput::Send()
+   /// 請參考 FixSender::Send()
    void WriteBeforeSend(Locker& lk, RevBufferList&& lineMessage, FixSeqNum nextSendSeq) {
       this->WriteBuffer(lk, std::move(lineMessage));
       this->NextSendSeq_ = nextSendSeq;

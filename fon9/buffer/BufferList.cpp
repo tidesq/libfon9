@@ -35,4 +35,17 @@ RevBufferList::RevBufferList(BufferNodeSize newAllocReserved, DcQueue&& extmsg)
    }
 }
 
+FwdBufferList::FwdBufferList(BufferNodeSize newAllocReserved, DcQueue&& extmsg)
+   : FwdBuffer()
+   , Builder_{newAllocReserved, dynamic_cast<DcQueueList*>(&extmsg)
+                                ? static_cast<DcQueueList*>(&extmsg)->MoveOut()
+                                : BufferList{}} {
+   if (!extmsg.empty()) {
+      size_t sz = extmsg.CalcSize();
+      char*  pbuf = this->AllocSuffix(sz);
+      this->SetSuffixUsed(pbuf + sz);
+      extmsg.Read(pbuf, sz);
+   }
+}
+
 } // namespaces

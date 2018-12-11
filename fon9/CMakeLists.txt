@@ -155,6 +155,8 @@ set(fon9src
  fix/FixRecorder.cpp
  fix/FixRecorder_Searcher.cpp
  fix/FixFeeder.cpp
+ fix/FixSender.cpp
+ fix/FixConfig.cpp
 )
 add_library(fon9_s STATIC ${fon9src})
 target_link_libraries(fon9_s pthread rt dl)
@@ -278,3 +280,6 @@ target_link_libraries(FixRecorder_UT fon9_s)
 
 add_executable(FixFeeder_UT fix/FixFeeder_UT.cpp)
 target_link_libraries(FixFeeder_UT fon9_s)
+
+add_executable(FixSender_UT fix/FixSender_UT.cpp)
+target_link_libraries(FixSender_UT fon9_s)

@@ -254,7 +254,7 @@ static inline byte* PutFwd(byte* dst, const void* src, const void* srcEnd) {
 }
 template <size_t arysz>
 static inline byte* PutFwd(byte* dst, const char(&chary)[arysz]) {
-   return putmem(dst, chary, arysz - (chary[arysz - 1] == 0));
+   return PutFwd(dst, chary, arysz - (chary[arysz - 1] == 0));
 }
 template <size_t arysz>
 static inline byte* PutFwd(byte* dst, char(&chary)[arysz]) {
