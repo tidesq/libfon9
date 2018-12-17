@@ -44,6 +44,9 @@ public:
    using base::base;
    virtual ~FixSender();
 
+   using base::BeginHeader_;
+   using base::CompIDs_;
+
    FixRecorder& GetFixRecorder() {
       return *static_cast<FixRecorder*>(this);
    }
@@ -93,7 +96,8 @@ public:
    /// 重送, 包含 beginSeqNo 及 endSeqNo.
    /// 如果 endSeqNo==0, 則表示暫停正常的傳送, 直到全部重送完畢.
    /// 同一時間僅能有一個 Replay() 呼叫.
-   /// \param fixConfig 藉由判斷 FixMsgTypeConfig::TTL_ 的有效時間決定是否要回補.
+   /// \param fixConfig 若 fixConfig.IsNoReplay_ 則直接轉呼叫 this->GapFill();
+   ///                  否則載入曾經送出的訊息時, 判斷 FixMsgTypeConfig::TTL_ 的有效時間決定是否要重送.
    void Replay(const FixConfig& fixConfig, FixSeqNum beginSeqNo, FixSeqNum endSeqNo);
    /// 當收到 ResendRequest 時, 不提供 Replay.
    void GapFill(FixSeqNum beginSeqNo, FixSeqNum endSeqNo);

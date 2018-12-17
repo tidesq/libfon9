@@ -18,12 +18,12 @@ enum class FixSeqSt {
    TooLow = 0x02,
 
    /// 不論序號是否符合規範, 訊息直接由 FixMsgHandler 處理.
-   All = TooHigh | TooLow,
+   AllowAnySeq = TooHigh | TooLow,
 
    /// 呼叫 FixMsgHandler 之前, 完全不寫任何記錄(即使序號符合規範).
    /// 如果 FixMsgTypeConfig::FixSeqAllow_ 設定了此旗標,
    /// 則在 FixMsgHandler 處理 FixSeqSt::Conform 通知時,
-   /// 應呼叫 `fixRecorder.WriteInputConform(args.OrigMsg_);` 才能正確處理接收序號.
+   /// 應呼叫 `fixRecorder.WriteInputConform(args.MsgStr_);` 才能正確處理接收序號.
    /// 一般而言只有 SequenceReset 才會用到.
    NoPreRecord = 0x10,
 };
@@ -37,13 +37,9 @@ inline FixSeqSt CompareFixSeqNum(FixSeqNum rxMsgSeqNum, FixSeqNum expectSeqNum) 
 fon9_WARN_DISABLE_PADDING;
 struct FixRecvEvArgs {
    fon9_NON_COPY_NON_MOVE(FixRecvEvArgs);
-   FixRecvEvArgs(FixSession& from, FixParser& fixParser, const StrView& msgStr)
-      : From_{from}
-      , Msg_(fixParser)
-      , MsgStr_{msgStr} {
+   FixRecvEvArgs(FixParser& fixParser)
+      : Msg_(fixParser) {
    }
-   /// FIX Message 的來源.
-   FixSession& From_;
    /// 已解析完畢的 FIX Message.
    FixParser&  Msg_;
    /// FIX Message.
@@ -53,6 +49,15 @@ struct FixRecvEvArgs {
    /// - FixSeqSt::TooHigh 如果序號高於預期, 且 FixMsgTypeConfig::FixSeqAllow_ 有設定 FixSeqSt::TooHigh
    /// - FixSeqSt::TooLow  如果序號高於預期, 且 FixMsgTypeConfig::FixSeqAllow_ 有設定 FixSeqSt::TooLow
    FixSeqSt    SeqSt_;
+
+   /// 在事件通知期間, Session_ 必定有效.
+   FixSession*    FixSession_;
+   /// 在事件通知期間, Sender_ 必定有效.
+   FixSender*     FixSender_;
+   /// 在事件通知期間, Receiver_ 必定有效.
+   FixReceiver*   FixReceiver_;
+   /// 在事件通知期間, Config_ 必定有效.
+   FixConfig*     FixConfig_;
 };
 using FixMsgHandler = std::function<void(const FixRecvEvArgs& rxarg)>;
 
@@ -81,7 +86,7 @@ struct FixMsgTypeConfig {
    }
 
    /// 當訊息不連續時, 是否可以呼叫 FixMsgHandler_.
-   /// - 當序號連續時, 呼叫前必定會先寫 fixRecorder.WriteInputConform(args.OrigMsg_);
+   /// - 當序號連續時, 呼叫前必定會先寫 fixRecorder.WriteInputConform(args.MsgStr_);
    /// - 不連續時, 則必須由 FixMsgHandler_ 自行記錄必要訊息.
    FixSeqSt          FixSeqAllow_{FixSeqSt::Conform};
    /// 當 FixReceiver 收到一筆可用訊息時, 透過這裡通知.
@@ -90,7 +95,6 @@ struct FixMsgTypeConfig {
    /// 根據原訊息的 MsgType 決定後續處理.
    FixRejectHandler  FixRejectHandler_;
 };
-fon9_WARN_POP;
 
 /// \ingroup fix
 /// FIX 執行環境設定.
@@ -137,7 +141,13 @@ public:
 
    /// 送出 Logout 之後, 多久要斷線.
    TimeInterval   TiLogoutPending_{TimeInterval_Second(10)};
+
+   /// 不論各 MsgType 設定的 TTL_, 使用此 FixConfig 的 Session, 一律不考慮 Replay.
+   /// 當有 Replay 的需求時(FixSender::Replay), 一律使用 FixSender::GapFill.
+   /// 例如: 券商與交易所之間的連線, 券商端斷線後重連, 可能全都不重送.
+   bool  IsNoReplay_{false};
 };
+fon9_WARN_POP;
 
 } } // namespaces
 #endif//__fon9_fix_FixConfig_hpp__

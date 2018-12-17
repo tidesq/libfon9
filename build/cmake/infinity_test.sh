@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# fon9/build/cmake/test_infinity.sh
+# fon9/build/cmake/infinity_test.sh
 #
 
 ulimit -c unlimited
@@ -10,5 +10,5 @@ set -e
 
 while true
 do
-  $1
+  $*
 done

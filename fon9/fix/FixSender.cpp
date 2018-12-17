@@ -219,6 +219,10 @@ struct FixSender::Replayer {
 fon9_WARN_POP;
 //--------------------------------------------------------------------------//
 void FixSender::Replay(const FixConfig& fixConfig, FixSeqNum beginSeqNo, FixSeqNum endSeqNo) {
+   if (fixConfig.IsNoReplay_) {
+      this->GapFill(beginSeqNo, endSeqNo);
+      return;
+   }
    if (endSeqNo == 0) {
       // 暫停 this->OnSendFixMessage(), 但仍需要寫入 Recorder.
       Locker locker{this->Lock()};

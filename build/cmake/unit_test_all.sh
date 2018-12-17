@@ -51,6 +51,7 @@ $OUTPUT_DIR/File_UT
 $OUTPUT_DIR/TimedFileName_UT
 $OUTPUT_DIR/InnFile_UT
 $OUTPUT_DIR/InnDbf_UT
+./t_FileRevRead.sh  t_FileRevRead.sh
 
 rm -rf ./logs
 rm -rf /tmp/*log
@@ -74,6 +75,7 @@ $OUTPUT_DIR/FixParser_UT
 $OUTPUT_DIR/FixRecorder_UT
 $OUTPUT_DIR/FixFeeder_UT
 $OUTPUT_DIR/FixSender_UT
+./t_FixReceiver.sh
 
 { set +x; } 2>/dev/null
 echo '#####################################################'
