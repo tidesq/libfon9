@@ -40,15 +40,17 @@ File::Result FixRecorder::Initialize(std::string fileName) {
 }
 
 void FixRecorder::WriteBuffer(Locker& lk, RevBufferList&& rbuf) {
-   if (fon9_UNLIKELY((this->IdxInfoSizeInterval_ += CalcDataSize(rbuf.cfront())) > kIdxInfoSizeInterval)) {
+   BufferList wbuf = rbuf.MoveOut();
+   if (fon9_UNLIKELY((this->IdxInfoSizeInterval_ += CalcDataSize(wbuf.cfront())) > kIdxInfoSizeInterval)) {
       this->IdxInfoSizeInterval_ = 0;
       RevPrint(rbuf, f9fix_kCSTR_HdrIdx
                f9fix_kCSTR_HdrNextSendSeq, this->NextSendSeq_,
                f9fix_kCSTR_HdrNextRecvSeq, this->NextRecvSeq_,
                '\n');
+      wbuf.push_back(rbuf.MoveOut());
    }
    WorkContentController* app = static_cast<WorkContentController*>(&WorkContentController::StaticCast(*lk));
-   app->AddWork(lk, rbuf.MoveOut());
+   app->AddWork(lk, std::move(wbuf));
 }
 void FixRecorder::WriteInputSeqReset(const StrView& fixmsg, FixSeqNum newSeqNo, bool isGapFill) {
    RevBufferList rbuf{static_cast<BufferNodeSize>(fixmsg.size() + 64)};
@@ -56,6 +58,15 @@ void FixRecorder::WriteInputSeqReset(const StrView& fixmsg, FixSeqNum newSeqNo, 
             f9fix_kCSTR_HdrRecv, UtcNow(), ' ', fixmsg, '\n',
             isGapFill ? StrView{f9fix_kCSTR_HdrIdx} : StrView{f9fix_kCSTR_HdrRst},
             f9fix_kCSTR_HdrNextRecvSeq, newSeqNo, '\n');
+   auto lk{this->Worker_.Lock()};
+   this->NextRecvSeq_ = newSeqNo;
+   this->WriteBuffer(lk, std::move(rbuf));
+}
+void FixRecorder::ForceResetRecvSeq(const StrView& info, FixSeqNum newSeqNo) {
+   RevBufferList rbuf{static_cast<BufferNodeSize>(info.size() + 64)};
+   RevPrint(rbuf,
+            f9fix_kCSTR_HdrInfo, UtcNow(), ' ', info, '\n',
+            f9fix_kCSTR_HdrRst f9fix_kCSTR_HdrNextRecvSeq, newSeqNo, '\n');
    auto lk{this->Worker_.Lock()};
    this->NextRecvSeq_ = newSeqNo;
    this->WriteBuffer(lk, std::move(rbuf));

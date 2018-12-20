@@ -10,7 +10,7 @@ FixParser::Result FixFeeder::OnFixMessageError(FixParser::Result res, StrView& f
    (void)fixmsgStream; (void)perr;
    return res;
 }
-FixParser::Result FixFeeder::OnFixMessageReceived(const StrView fixmsgStream) {
+FixParser::Result FixFeeder::OnFixStreamReceived(const StrView fixmsgStream) {
    StrView sp{fixmsgStream};
    while(!sp.empty()) {
       const char*       pbeg = sp.begin();
@@ -45,7 +45,7 @@ FixParser::Result FixFeeder::FeedBuffer(DcQueue& rxbuf) {
       const size_t szUsed = blk.second;
       if (this->RxBuf_.empty()) {
       __PARSE_BLK:
-         res = this->OnFixMessageReceived(StrView{reinterpret_cast<const char*>(blk.first), blk.second});
+         res = this->OnFixStreamReceived(StrView{reinterpret_cast<const char*>(blk.first), blk.second});
          if (res < FixParser::NeedsMore)
             return res;
       }
@@ -61,7 +61,7 @@ FixParser::Result FixFeeder::FeedBuffer(DcQueue& rxbuf) {
          if (this->RxBuf_.size() < expsz)
             break;
          assert(this->RxBuf_.size() == expsz);
-         res = this->OnFixMessageReceived(&this->RxBuf_);
+         res = this->OnFixStreamReceived(&this->RxBuf_);
          if (res < FixParser::NeedsMore)
             return res;
          blk.second -= sz;

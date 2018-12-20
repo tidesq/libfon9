@@ -22,7 +22,7 @@ namespace fon9 { namespace fix {
 ///   FixBuilder  fbuf;
 ///   ...先填入交易所需欄位...
 ///   RevPrint(fbuf.GetBuffer(),
-///        f9fix_SPLFLDMSGTYPE(MsgType)   "A"   // 直接使用 "|35=" "A" 常數字串合併, 所以中間不用加「,」分隔參數
+///        f9fix_SPLFLDMSGTYPE(MsgType) "A"   // 直接使用 "|35=" "A" 常數字串合併, 所以中間不用加「,」分隔參數
 ///        f9fix_SPLTAGEQ(MsgSeqNum),   789,  // "34=", 789(數字)
 ///        f9fix_SPLTAGEQ(TargetCompID) "Client"
 ///        f9fix_SPLTAGEQ(SenderCompID) "Server");

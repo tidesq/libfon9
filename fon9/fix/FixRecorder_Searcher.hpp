@@ -74,14 +74,13 @@ struct FixRecorder::LastSeqSearcher : public FileRevReadBuffer<kLastSeqSearcherB
    void ParseFixLine_MsgSeqNum_ToNextSeq(const char* pbeg, const char* pend, FixSeqNum& seqn);
 };
 
-struct FixRecorder::SentMessageSearcher : public FileRevRead, public FixRevSercher {
+struct FixRecorder::SentMessageSearcher : public RevReadSearcher<FileRevRead, FixRevSercher> {
    fon9_NON_COPY_NON_MOVE(SentMessageSearcher);
+   using base = RevReadSearcher<FileRevRead, FixRevSercher>;
    SentMessageSearcher(ReloadSent& reloader)
-      : FixRevSercher{reloader.FixParser_, kReloadSentBufferSize, sizeof(reloader.Buffer_) - kReloadSentBufferSize, reloader.Buffer_}
-   {
+      : base{reloader.FixParser_, kReloadSentBufferSize, sizeof(reloader.Buffer_) - kReloadSentBufferSize, reloader.Buffer_} {
       static_assert(sizeof(reloader.Buffer_) >= kReloadSentBufferSize + kControlMsgSeqNumMaxLength, "ReloadSent.Buffer_[] too small.");
    }
-   using base = FileRevRead;
    FixSeqNum   ExpectSeq_;
    char        Filler_[4];
    const char* PtrAtBefore_;
@@ -89,11 +88,11 @@ struct FixRecorder::SentMessageSearcher : public FileRevRead, public FixRevSerch
    StrView     FoundLine_;
    PosType     PosAtBefore_;
    PosType     PosAtAfter_;
-   using FixRevSercher::DataEnd_;
+   using base::FoundDataEnd_;
 
    File::Result Start(ReloadSent& reloader, FixSeqNum expectSeq, File& fd);
-   virtual LoopControl OnFileBlock(size_t rdsz) override;
-   virtual LoopControl OnFoundChar(char* pbeg, char* pend) override;
+   LoopControl OnFileBlock(size_t rdsz) override;
+   LoopControl OnFoundChar(char* pbeg, char* pend) override;
 
    void SetAtAfter(const char* p) {
       this->PtrAtAfter_ = p;

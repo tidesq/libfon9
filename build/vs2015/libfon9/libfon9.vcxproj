@@ -137,6 +137,7 @@
     <ClInclude Include="..\..\..\fon9\fix\FixAdminDef.hpp" />
     <ClInclude Include="..\..\..\fon9\fix\FixBase.hpp" />
     <ClInclude Include="..\..\..\fon9\fix\FixBuilder.hpp" />
+    <ClInclude Include="..\..\..\fon9\fix\FixBusinessReject.hpp" />
     <ClInclude Include="..\..\..\fon9\fix\FixCompID.hpp" />
     <ClInclude Include="..\..\..\fon9\fix\FixConfig.hpp" />
     <ClInclude Include="..\..\..\fon9\fix\FixParser.hpp" />
@@ -145,6 +146,9 @@
     <ClInclude Include="..\..\..\fon9\fix\FixRecorder.hpp" />
     <ClInclude Include="..\..\..\fon9\fix\FixRecorder_Searcher.hpp" />
     <ClInclude Include="..\..\..\fon9\fix\FixSender.hpp" />
+    <ClInclude Include="..\..\..\fon9\fix\FixSession.hpp" />
+    <ClInclude Include="..\..\..\fon9\fix\IoFixSender.hpp" />
+    <ClInclude Include="..\..\..\fon9\fix\IoFixSession.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\Symb.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\Framework.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\IoFactory.hpp" />
@@ -352,6 +356,7 @@
     <ClCompile Include="..\..\..\fon9\fix\FixAdminMsg.cpp" />
     <ClCompile Include="..\..\..\fon9\fix\FixBase.cpp" />
     <ClCompile Include="..\..\..\fon9\fix\FixBuilder.cpp" />
+    <ClCompile Include="..\..\..\fon9\fix\FixBusinessReject.cpp" />
     <ClCompile Include="..\..\..\fon9\fix\FixCompID.cpp" />
     <ClCompile Include="..\..\..\fon9\fix\FixConfig.cpp" />
     <ClCompile Include="..\..\..\fon9\fix\FixParser.cpp" />
@@ -360,6 +365,9 @@
     <ClCompile Include="..\..\..\fon9\fix\FixRecorder.cpp" />
     <ClCompile Include="..\..\..\fon9\fix\FixRecorder_Searcher.cpp" />
     <ClCompile Include="..\..\..\fon9\fix\FixSender.cpp" />
+    <ClCompile Include="..\..\..\fon9\fix\FixSession.cpp" />
+    <ClCompile Include="..\..\..\fon9\fix\IoFixSender.cpp" />
+    <ClCompile Include="..\..\..\fon9\fix\IoFixSession.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\Symb.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\Framework.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\IoFactory.cpp" />

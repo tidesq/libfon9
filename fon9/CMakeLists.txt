@@ -159,6 +159,10 @@ set(fon9src
  fix/FixReceiver.cpp
  fix/FixConfig.cpp
  fix/FixAdminMsg.cpp
+ fix/FixBusinessReject.cpp
+ fix/FixSession.cpp
+ fix/IoFixSession.cpp
+ fix/IoFixSender.cpp
 )
 add_library(fon9_s STATIC ${fon9src})
 target_link_libraries(fon9_s pthread rt dl)
@@ -288,3 +292,6 @@ target_link_libraries(FixSender_UT fon9_s)
 
 add_executable(FixReceiver_UT fix/FixReceiver_UT.cpp)
 target_link_libraries(FixReceiver_UT fon9_s)
+
+add_executable(IoFixSession_UT fix/IoFixSession_UT.cpp)
+target_link_libraries(IoFixSession_UT fon9_s)

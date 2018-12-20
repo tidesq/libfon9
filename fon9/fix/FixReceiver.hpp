@@ -42,14 +42,14 @@ class fon9_API FixReceiver {
    FixSeqNum   ResendRequestEndSeqNo_{0};
    FixSeqNum   LastGapSeqNo_{0};
 
-   void CheckMsgKeeper(const FixRecvEvArgs& args, FixSeqNum newSeqNo);
+   void CheckMsgKeeper(const FixRecvEvArgs& rxargs, FixSeqNum newSeqNo);
    void SendResendRequest(FixSender& fixSender, FixSeqNum beginSeqNo, FixSeqNum endSeqNo);
-   void OnMessageProcessed(const FixRecvEvArgs& args, FixSeqNum msgSeqNumProcessed) {
+   void OnMessageProcessed(const FixRecvEvArgs& rxargs, FixSeqNum msgSeqNumProcessed) {
       if (this->ResendRequestEndSeqNo_ > 0 && msgSeqNumProcessed == this->ResendRequestEndSeqNo_)
-         this->CheckMsgKeeper(args, msgSeqNumProcessed + 1);
+         this->CheckMsgKeeper(rxargs, msgSeqNumProcessed + 1);
    }
    /// 如果發現 CompID 不正確, 則呼叫 this->OnBadCompID();
-   FixTag CheckCompID(const FixRecvEvArgs& args, const StrView& msgType);
+   FixTag CheckCompID(const FixRecvEvArgs& rxargs, const StrView& msgType);
 
 protected:
    void ClearRecvKeeper();
@@ -57,28 +57,28 @@ protected:
    /// 收到的 MsgSeqNum 小於預期, 預設:
    /// - 如果有 PossDup: 寫 log(f9fix_kCSTR_HdrIgnoreRecv), 轉呼叫 OnRecvPossDup();
    /// - 如果沒 PossDup: OnLogoutRequired("58=MsgSeqNum too low...");
-   virtual void OnMsgSeqNumTooLow(const FixRecvEvArgs& args);
+   virtual void OnMsgSeqNumTooLow(const FixRecvEvArgs& rxargs);
    /// 收到的訊息小於預期且有設定 PossDup=Y, 預設: do nothing.
-   virtual void OnRecvPossDup(const FixRecvEvArgs& args);
+   virtual void OnRecvPossDup(const FixRecvEvArgs& rxargs);
    /// 當收到的訊息有問題, 必須送出 Logout(例如 OnMsgSeqNumTooLow()).
    /// 預設: this->FixSender_.Send(f9fix_SPLFLDMSGTYPE(Logout), std::move(fixb));
-   virtual void OnLogoutRequired(const FixRecvEvArgs& args, FixBuilder&& fixb);
+   virtual void OnLogoutRequired(const FixRecvEvArgs& rxargs, FixBuilder&& fixb);
 
    /// 找不到 FixMsgHandler, 預設呼叫: SendInvalidMsgType()
-   virtual void OnFixMsgHandlerNotFound(const FixRecvEvArgs& args, const StrView& msgType);
+   virtual void OnFixMsgHandlerNotFound(const FixRecvEvArgs& rxargs, const StrView& msgType);
    /// 回補完畢. 預設在 Recorder 寫一行 log, 清除 this->ResendRequestEndSeqNo_, this->LastGapSeqNo_;
    /// - 補齊後觸發事件, 讓 Session 進入 ApReady 狀態.
-   virtual void OnRecoverDone(const FixRecvEvArgs& args);
+   virtual void OnRecoverDone(const FixRecvEvArgs& rxargs);
    /// 當發現收到的 CompID 不正確.
    /// 預設送出 SessionReject: CompID Problem.
-   virtual void OnBadCompID(const FixRecvEvArgs& args, FixTag errTag, const StrView& msgType);
+   virtual void OnBadCompID(const FixRecvEvArgs& rxargs, FixTag errTag, const StrView& msgType);
 
 public:
    FixReceiver() = default;
    virtual ~FixReceiver();
 
-   /// args.SeqSt_ 會在呼叫 FixMsgHandler 之前填妥.
-   void Receive(FixRecvEvArgs& args);
+   /// rxargs.SeqSt_ 會在呼叫 FixMsgHandler 之前填妥.
+   void DispatchFixMessage(FixRecvEvArgs& rxargs);
 
    enum GapFlags {
       GapDontKeep = 0x00,
@@ -88,7 +88,7 @@ public:
       /// - `fixRecorder.Write(f9fix_kCSTR_HdrGapRecv, args.MsgStr_);`
       GapSkipRecord = 0x02,
    };
-   void OnMsgSeqNumNotExpected(const FixRecvEvArgs& args, GapFlags flags);
+   void OnMsgSeqNumNotExpected(const FixRecvEvArgs& rxargs, GapFlags flags);
 
    /// 設定:
    /// - MsgType = SequenceReset 的 FixMsgHandler = &FixReceiver::OnRecvSequenceReset;
@@ -96,7 +96,7 @@ public:
    static void InitFixConfig(FixConfig& fixcfg);
    /// 由於 SequenceReset-ResetMode 不理會 msgSeqNum 直接設定 newSeqNo.
    /// 所以 FixConfig 必須 FixSeqSt::AllowAnySeq;
-   static void OnRecvSequenceReset(const FixRecvEvArgs& args);
+   static void OnRecvSequenceReset(const FixRecvEvArgs& rxargs);
    /// 系統預設的 ResendRequest 訊息處理者.
    /// FixConfig 的設定:
    /// \code
@@ -105,9 +105,14 @@ public:
    ///   mcfg.FixSeqAllow_ = FixSeqSt::AllowAnySeq | FixSeqSt::NoPreRecord;
    ///   mcfg.FixMsgHandler_ = &OnRecvResendRequest;
    /// \endcode
-   static void OnRecvResendRequest(const FixRecvEvArgs& args);
+   static void OnRecvResendRequest(const FixRecvEvArgs& rxargs);
 };
 fon9_WARN_POP;
+
+inline void FixRecvEvArgs::ResetSeqSt() {
+   this->SeqSt_ = CompareFixSeqNum(this->Msg_.GetMsgSeqNum(),
+                                   this->FixSender_->GetFixRecorder().GetNextRecvSeq());
+}
 
 } } // namespaces
 #endif//__fon9_fix_FixReceiver_hpp__

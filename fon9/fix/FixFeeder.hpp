@@ -29,16 +29,17 @@ public:
       this->RxBuf_.clear();
    }
 
+protected:
    /// 解析後的訊息從 this->FixParser_ 取得.
    virtual void OnFixMessageParsed(StrView fixmsg) = 0;
 
-protected:
    /// 預設直接傳回 res.
    /// \retval <FixParser::NeedsMore  表示訊息有問題, 應該中斷連線.
    /// \retval >=FixParser::NeedsMore 已移除無效資料, 應該繼續解析.
    virtual FixParser::Result OnFixMessageError(FixParser::Result res, StrView& fixmsgStream, const char* perr);
 
-   FixParser::Result OnFixMessageReceived(StrView fixmsgStream);
+private:
+   FixParser::Result OnFixStreamReceived(StrView fixmsgStream);
 };
 
 } } // namespaces

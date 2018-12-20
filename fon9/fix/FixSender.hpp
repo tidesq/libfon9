@@ -38,7 +38,7 @@ protected:
    /// - 所以在 OnSendFixMessage() 之前不能解鎖!
    /// - 但事件接收者, 可自行解鎖: 例如: 已將 buf 放入傳送緩衝區, 但還有其他事情要做, 則可以先解鎖.
    /// - buf 可能包含 1..N 筆的訊息.
-   virtual void OnSendFixMessage(Locker&, BufferList buf) = 0;
+   virtual void OnSendFixMessage(const Locker&, BufferList buf) = 0;
 
 public:
    using base::base;

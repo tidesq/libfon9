@@ -44,22 +44,26 @@ struct FixRecvEvArgs {
    FixParser&  Msg_;
    /// FIX Message.
    StrView     MsgStr_;
+
    /// 在呼叫 FixMsgHandler 時, 這裡會提供:
    /// - FixSeqSt::Conform 序號符合規範
    /// - FixSeqSt::TooHigh 如果序號高於預期, 且 FixMsgTypeConfig::FixSeqAllow_ 有設定 FixSeqSt::TooHigh
    /// - FixSeqSt::TooLow  如果序號高於預期, 且 FixMsgTypeConfig::FixSeqAllow_ 有設定 FixSeqSt::TooLow
    FixSeqSt    SeqSt_;
 
+   // this->SeqSt_ = CompareFixSeqNum(this->Msg_.GetMsgSeqNum(), this->FixSender_->GetFixRecorder().GetNextRecvSeq());
+   void ResetSeqSt();
+
    /// 在事件通知期間, Session_ 必定有效.
-   FixSession*    FixSession_;
+   FixSession*       FixSession_;
    /// 在事件通知期間, Sender_ 必定有效.
-   FixSender*     FixSender_;
+   FixSender*        FixSender_;
    /// 在事件通知期間, Receiver_ 必定有效.
-   FixReceiver*   FixReceiver_;
+   FixReceiver*      FixReceiver_;
    /// 在事件通知期間, Config_ 必定有效.
-   FixConfig*     FixConfig_;
+   const FixConfig*  FixConfig_;
 };
-using FixMsgHandler = std::function<void(const FixRecvEvArgs& rxarg)>;
+using FixMsgHandler = std::function<void(const FixRecvEvArgs& rxargs)>;
 
 struct FixOrigArgs {
    fon9_NON_COPY_NON_MOVE(FixOrigArgs);
@@ -68,7 +72,7 @@ struct FixOrigArgs {
    FixOrigArgs(FixParser& msgpr, const StrView& msgStr) : Msg_(msgpr), MsgStr_{msgStr} {
    }
 };
-using FixRejectHandler = std::function<void(const FixRecvEvArgs& rxarg, const FixOrigArgs& orig)>;
+using FixRejectHandler = std::function<void(const FixRecvEvArgs& rxargs, const FixOrigArgs& orig)>;
 
 /// \ingroup fix
 struct FixMsgTypeConfig {

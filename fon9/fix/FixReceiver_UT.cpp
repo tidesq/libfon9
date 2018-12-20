@@ -46,15 +46,15 @@ int main(int argc, char** argv) {
    fixc.Fetch(f9fix_kMSGTYPE_ExecutionReport).FixMsgHandler_ = [](const f9fix::FixRecvEvArgs&) {};
    fixc.Fetch(f9fix_kMSGTYPE_NewOrderSingle).TTL_ = fon9::TimeInterval_Second(3);
    fixc.Fetch(f9fix_kMSGTYPE_NewOrderSingle).FixMsgHandler_ = [](const f9fix::FixRecvEvArgs&) {};
-   fixc.Fetch(f9fix_kMSGTYPE_TestRequest).FixMsgHandler_ = [](const f9fix::FixRecvEvArgs& args) {
-      f9fix::SendHeartbeat(*args.FixSender_, args.Msg_.GetField(f9fix_kTAG_TestReqID));
+   fixc.Fetch(f9fix_kMSGTYPE_TestRequest).FixMsgHandler_ = [](const f9fix::FixRecvEvArgs& rxargs) {
+      f9fix::SendHeartbeat(*rxargs.FixSender_, rxargs.Msg_.GetField(f9fix_kTAG_TestReqID));
    };
 
    struct FixTestOutput : public f9fix::FixSender {
       fon9_NON_COPY_NON_MOVE(FixTestOutput);
       FILE* outfd;
       using f9fix::FixSender::FixSender;
-      void OnSendFixMessage(Locker&, fon9::BufferList buf) override {
+      void OnSendFixMessage(const Locker&, fon9::BufferList buf) override {
          fprintf(outfd, "FIX-OUT:%s\n", fon9::BufferTo<std::string>(buf).c_str());
       }
    };
@@ -71,24 +71,24 @@ int main(int argc, char** argv) {
    char                 strbuf[f9fix::FixRecorder::kMaxFixMsgBufferSize];
    f9fix::FixReceiver   fixr;
    f9fix::FixParser     fixParser;
-   f9fix::FixRecvEvArgs recvArgs{fixParser};
-   recvArgs.FixSession_  = nullptr;
-   recvArgs.FixSender_   = fixo.get();
-   recvArgs.FixReceiver_ = &fixr;
-   recvArgs.FixConfig_   = &fixc;
+   f9fix::FixRecvEvArgs rxargs{fixParser};
+   rxargs.FixSession_  = nullptr;
+   rxargs.FixSender_   = fixo.get();
+   rxargs.FixReceiver_ = &fixr;
+   rxargs.FixConfig_   = &fixc;
 
    while (fgets(strbuf, sizeof(strbuf), infd)) {
-      recvArgs.MsgStr_ = fon9::StrView_cstr(strbuf);
-      fon9::StrTrim(&recvArgs.MsgStr_);
-      if (recvArgs.MsgStr_.empty()
-       || recvArgs.MsgStr_.Get1st() == '#')
+      rxargs.MsgStr_ = fon9::StrView_cstr(strbuf);
+      fon9::StrTrim(&rxargs.MsgStr_);
+      if (rxargs.MsgStr_.empty()
+       || rxargs.MsgStr_.Get1st() == '#')
          continue;
-      fon9::StrView  fixmsg{recvArgs.MsgStr_};
+      fon9::StrView  fixmsg{rxargs.MsgStr_};
       auto           pres = fixParser.Parse(fixmsg);
       if (pres > f9fix::FixParser::NeedsMore)
-         fixr.Receive(recvArgs);
+         fixr.DispatchFixMessage(rxargs);
       else
-         fixo->GetFixRecorder().Write(f9fix_kCSTR_HdrError, recvArgs.MsgStr_, "\n"
+         fixo->GetFixRecorder().Write(f9fix_kCSTR_HdrError, rxargs.MsgStr_, "\n"
                                       f9fix_kCSTR_HdrError "ParseError:|err=", pres);
    }
    return 0;

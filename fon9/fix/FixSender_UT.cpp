@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
       f9fix::FixFeeder* FixFeeder_{nullptr};
       f9fix::FixParser  FixParser_;
       f9fix::FixSeqNum  ExpectedSendSeqNum_{0};
-      void OnSendFixMessage(Locker&, fon9::BufferList buf) override {
+      void OnSendFixMessage(const Locker&, fon9::BufferList buf) override {
          if (this->FixFeeder_) {
             fon9::DcQueueList dcq{std::move(buf)};
             auto res = this->FixFeeder_->FeedBuffer(dcq);

@@ -833,6 +833,18 @@
     <ClInclude Include="..\..\..\fon9\fix\FixAdminMsg.hpp">
       <Filter>Header Files\fix</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fix\FixSession.hpp">
+      <Filter>Header Files\fix</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fix\FixBusinessReject.hpp">
+      <Filter>Header Files\fix</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fix\IoFixSession.hpp">
+      <Filter>Header Files\fix</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fix\IoFixSender.hpp">
+      <Filter>Header Files\fix</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1316,6 +1328,18 @@
       <Filter>Source Files\fix</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\fix\FixAdminMsg.cpp">
+      <Filter>Source Files\fix</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fix\FixSession.cpp">
+      <Filter>Source Files\fix</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fix\FixBusinessReject.cpp">
+      <Filter>Source Files\fix</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fix\IoFixSession.cpp">
+      <Filter>Source Files\fix</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fix\IoFixSender.cpp">
       <Filter>Source Files\fix</Filter>
     </ClCompile>
   </ItemGroup>

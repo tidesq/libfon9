@@ -30,19 +30,19 @@ int main(int argc, char** args) {
    if (!OpenFile("Input  file: ", fdin, args[1], fon9::FileMode::Read))
       return 3;
    fon9_MSC_WARN_DISABLE_NO_PUSH(4820 4355);
-   struct RevReader : public fon9::FileRevReadBuffer<1024*4>, public fon9::FileRevSearch {
+   struct RevReader : public fon9::RevReadSearcher<fon9::FileRevReadBuffer<1024*4>, fon9::FileRevSearch> {
       fon9_NON_COPY_NON_MOVE(RevReader);
+      using base = fon9::RevReadSearcher<fon9::FileRevReadBuffer<1024 * 4>, fon9::FileRevSearch>;
+      RevReader() = default;
 
       unsigned long  LineCount_{0};
       fon9::File     FdOut_;
 
-      RevReader() : fon9::FileRevSearch(kBlockSize, kMaxMessageBufferSize, BlockBuffer_) {
-      }
       virtual fon9::LoopControl OnFileBlock(size_t rdsz) override {
          if (this->RevSearchBlock(this->GetBlockPos(), '\n', rdsz) == fon9::LoopControl::Break)
             return fon9::LoopControl::Break;
-         if (this->GetBlockPos() == 0 && this->BlockBuffer_ != this->DataEnd_)
-            this->AppendLine(this->BlockBuffer_, this->DataEnd_);
+         if (this->GetBlockPos() == 0 && this->LastRemainSize_ > 0)
+            this->AppendLine(this->BlockBuffer_, this->LastRemainSize_);
          return fon9::LoopControl::Continue;
       }
       virtual fon9::LoopControl OnFoundChar(char* pbeg, char* pend) override {
@@ -50,11 +50,11 @@ int main(int argc, char** args) {
          if (pbeg == pend && this->LineCount_ == 0)
             ++this->LineCount_;
          else
-            this->AppendLine(pbeg, pend);
+            this->AppendLine(pbeg, static_cast<size_t>(pend - pbeg));
          return fon9::LoopControl::Continue;
       }
-      void AppendLine(char* pbeg, char* pend) {
-         this->FdOut_.Append(pbeg, static_cast<size_t>(pend - pbeg));
+      void AppendLine(char* pbeg, size_t lnsz) {
+         this->FdOut_.Append(pbeg, lnsz);
          this->FdOut_.Append("\n", 1);
          ++this->LineCount_;
       }

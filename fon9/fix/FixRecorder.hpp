@@ -96,6 +96,7 @@ public:
 
    /// 將 rbuf 寫入, 若已累積超過 kIdxInfoSizeInterval,
    /// 則寫入一條索引訊息: "\x02" "IDX:S=NextSendSeq|R=NextRecvSeq\n".
+   /// 返回前 lk 可能已被解鎖!
    void WriteBuffer(Locker& lk, RevBufferList&& rbuf);
 
    #define f9fix_kCSTR_HdrInfo        "i "
@@ -120,12 +121,13 @@ public:
       this->WriteBuffer(lk, std::move(rbuf));
    }
 
-   /// 寫入即將要送出的訊息, 並設定 this->NextSendSeq_;
+   /// 送出後, 設定 this->NextSendSeq_, 並寫入送出的訊息;
    /// lineMessage 必須為一行完整的訊息: "S " + timestamp + ' ' + FIX Message + '\n';
    /// 請參考 FixSender::Send()
-   void WriteBeforeSend(Locker& lk, RevBufferList&& lineMessage, FixSeqNum nextSendSeq) {
-      this->WriteBuffer(lk, std::move(lineMessage));
+   /// 返回前 lk 可能已被解鎖!
+   void WriteAfterSend(Locker& lk, RevBufferList&& lineMessage, FixSeqNum nextSendSeq) {
       this->NextSendSeq_ = nextSendSeq;
+      this->WriteBuffer(lk, std::move(lineMessage));
    }
 
    /// 寫入依正常順序收到的 FIX Message.
@@ -134,12 +136,14 @@ public:
       RevBufferList rbuf{static_cast<BufferNodeSize>(fixmsg.size() + 64)};
       RevPrint(rbuf, f9fix_kCSTR_HdrRecv, UtcNow(), ' ', fixmsg, '\n');
       auto  lk{this->Worker_.Lock()};
-      this->WriteBuffer(lk, std::move(rbuf));
       ++this->NextRecvSeq_;
+      this->WriteBuffer(lk, std::move(rbuf));
    }
    void WriteInputSeqReset(const StrView& fixmsg, FixSeqNum newSeqNo, bool isGapFill);
+   void ForceResetRecvSeq(const StrView& info, FixSeqNum newSeqNo);
 
    /// 寫入 buf, 前後都不加料.
+   /// 返回前 lk 可能已被解鎖!
    void Append(Locker& lk, BufferList&& buf) {
       this->IdxInfoSizeInterval_ += CalcDataSize(buf.cfront());
       WorkContentController* app = static_cast<WorkContentController*>(&WorkContentController::StaticCast(*lk));
@@ -152,8 +156,8 @@ public:
       fon9_NON_COPY_NON_MOVE(ReloadSent);
       PosType     CurBufferPos_;
       StrView     CurMsg_;
-      char        Buffer_[kReloadSentBufferSize + 128];
-      const char* DataEnd_;
+      char        Buffer_[kReloadSentBufferSize + 1024]; // +n = 單一 FIX Message 可能的最大長度.
+      const char* FoundDataEnd_;
       friend struct SentMessageSearcher;
       bool InitStart(FixRecorder& fixRecorder, FixSeqNum seqFrom);
 

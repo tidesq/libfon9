@@ -10,12 +10,12 @@
 namespace f9fix = fon9::fix;
 
 //--------------------------------------------------------------------------//
-void BuildTestMessage(f9fix::FixBuilder& fixb, fon9::StrView headerCompIds, unsigned n) {
+void BuildTestMessage(f9fix::FixBuilder& fixb, fon9::StrView headerCompIds, unsigned seqNum) {
    #define f9fix_kMSGTYPE_NewOrderSingle  "D"
-   fon9::RevPrint(fixb.GetBuffer(), f9fix_SPLTAGEQ(Text), "FixFeederTest #", n);
+   fon9::RevPrint(fixb.GetBuffer(), f9fix_SPLTAGEQ(Text), "FixFeederTest #", seqNum);
    fon9::RevPut_TimeFIXMS(fixb.GetBuffer(), fon9::UtcNow()); // SendingTime.
    fon9::RevPrint(fixb.GetBuffer(), f9fix_SPLTAGEQ(SendingTime));
-   fon9::RevPrint(fixb.GetBuffer(), f9fix_SPLFLDMSGTYPE(NewOrderSingle), headerCompIds);
+   fon9::RevPrint(fixb.GetBuffer(), f9fix_SPLFLDMSGTYPE(NewOrderSingle) f9fix_SPLTAGEQ(MsgSeqNum), seqNum, headerCompIds);
 }
 void TestFixFeeder() {
    f9fix::CompIDs compIds{"SenderCoId", "SenderSubId", "TargetCoId", "TargetSubId"};
@@ -24,7 +24,6 @@ void TestFixFeeder() {
       ++L;
       f9fix::FixBuilder fixb;
       BuildTestMessage(fixb, fon9::ToStrView(compIds.Header_), L);
-      fon9::RevPrint(fixb.GetBuffer(), f9fix_SPLTAGEQ(MsgSeqNum), L);
       fon9::BufferAppendTo(fixb.Final(f9fix_BEGIN_HEADER_V42), fixStream);
    }
 

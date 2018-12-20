@@ -96,10 +96,6 @@ const char* FixRecorder::FixRevSercher::ParseFixLine_MsgSeqNum(const char* pbeg,
 //--------------------------------------------------------------------------//
 LoopControl FixRecorder::LastSeqSearcher::OnFileBlock(size_t rdsz) {
    return this->RevSearchBlock(this->GetBlockPos(), '\n', rdsz);
-   //不用理會檔頭第一行訊息, 因為該訊息為 FixRecorder 的開始資訊. 不是 FIX Message.
-   //if (this->GetBlockPos() == 0)
-   //   CheckLine(this->GetBlockBuffer(), this->DataEnd_);
-   //return true;
 }
 void FixRecorder::LastSeqSearcher::ParseFixLine_MsgSeqNum_ToNextSeq(const char* pbeg, const char* pend, FixSeqNum& seqn) {
    if (this->ParseFixLine_MsgSeqNum(pbeg, pend, seqn))
@@ -162,10 +158,6 @@ LoopControl FixRecorder::SentMessageSearcher::OnFileBlock(size_t rdsz) {
                if (msgSeqNum == this->ExpectSeq_) {
                __FOUND_LINE:
                   this->FoundLine_.Reset(pbeg, lnNext);
-                  if (this->DataEnd_ > this->BlockBufferPtr_ + this->BlockSize_)
-                     // 因為 FileRevSearch::RevSearchBlock() 會:「把剩下沒處理的資料,放到緩衝區尾端. 下次讀入 block 之後接續處理.」
-                     // 所以如果有找到, 則超過 this->BlockBufferPtr_ + this->BlockSize_ 的資料時無效的!
-                     this->DataEnd_ = this->BlockBufferPtr_ + this->BlockSize_;
                   goto __RETURN_BREAK_READ_LOOP;
                }
                // 此行的 msgSeqNum < ExpectSeq: 繼續往後找.
@@ -178,8 +170,8 @@ LoopControl FixRecorder::SentMessageSearcher::OnFileBlock(size_t rdsz) {
    if (this->PtrAtAfter_ == nullptr)
       return LoopControl::Continue;
 __RETURN_BREAK_READ_LOOP:
-   if (this->DataEnd_ < pend)
-      this->DataEnd_ = const_cast<char*>(pend);
+   if (this->FoundDataEnd_ < pend)
+      this->FoundDataEnd_ = const_cast<char*>(pend);
    return LoopControl::Break;
 }
 LoopControl FixRecorder::SentMessageSearcher::OnFoundChar(char* pbeg, char* pend) {
@@ -227,7 +219,7 @@ StrView FixRecorder::ReloadSent::Start(FixRecorder& fixRecorder, FixSeqNum seqFr
    File::Result         res = searcher.Start(*this, seqFrom, fixRecorder.GetStorage());
    if (!res)
       return StrView{};
-   this->DataEnd_ = searcher.DataEnd_;
+   this->FoundDataEnd_ = searcher.FoundDataEnd_;
    if (fon9_LIKELY(!searcher.FoundLine_.empty())) {
       this->CurBufferPos_ = searcher.GetBlockPos();
       this->CurMsg_ = searcher.FoundLine_;
@@ -277,7 +269,7 @@ StrView FixRecorder::ReloadSent::FindNext(FixRecorder& fixRecorder) {
    if (this->CurMsg_.begin() == nullptr)
       return this->CurMsg_;
    const char* pbeg = this->CurMsg_.end();
-   size_t      remainSize = static_cast<size_t>(this->DataEnd_ - pbeg);
+   size_t      remainSize = static_cast<size_t>(this->FoundDataEnd_ - pbeg);
    assert(remainSize <= kReloadSentBufferSize);
    for (;;) {
       if (remainSize > 0) {
@@ -297,18 +289,18 @@ StrView FixRecorder::ReloadSent::FindNext(FixRecorder& fixRecorder) {
                if ((pbeg = SkipTimestamp(pbeg, pend)) != nullptr)
                   return this->CurMsg_ = StrView{pbeg, pend};
             }
-            remainSize = static_cast<size_t>(this->DataEnd_ - (pbeg = pend + 1));
+            remainSize = static_cast<size_t>(this->FoundDataEnd_ - (pbeg = pend + 1));
          }
       }
       // 載入下一個區塊.
       fixRecorder.WaitFlushed();
-      this->CurBufferPos_ += static_cast<size_t>(this->DataEnd_ - this->Buffer_);
+      this->CurBufferPos_ += static_cast<size_t>(this->FoundDataEnd_ - this->Buffer_);
       File::Result res = fixRecorder.GetStorage().Read(this->CurBufferPos_, this->Buffer_ + remainSize, kReloadSentBufferSize / 2);
       if (!res)
          return this->CurMsg_ = nullptr;
       this->CurBufferPos_ -= remainSize;
       pbeg = this->Buffer_;
-      this->DataEnd_ = this->Buffer_ + (remainSize += res.GetResult());
+      this->FoundDataEnd_ = this->Buffer_ + (remainSize += res.GetResult());
       if (res.GetResult() == 0)
          return this->CurMsg_ = StrView{pbeg, pbeg};
    }
@@ -320,7 +312,7 @@ bool FixRecorder::ReloadSent::IsErrOrEOF(FixRecorder& fixRecorder, FixRecorder::
    File::Result res = fixRecorder.GetStorage().GetFileSize();
    if (!res)
       return true;
-   return (this->CurBufferPos_ + (this->DataEnd_ - this->Buffer_)) >= res.GetResult();
+   return (this->CurBufferPos_ + (this->FoundDataEnd_ - this->Buffer_)) >= res.GetResult();
 }
 
 } } // namespaces

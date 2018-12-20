@@ -18,17 +18,18 @@ void FixSender::Send(Locker&        locker,
    // CompIDs
    RevBuffer& msgRBuf = fixmsgBuilder.GetBuffer();
    RevPrint(msgRBuf, this->CompIDs_.Header_);
+   // SendingTime.
+   TimeStamp now = this->LastSentTime_ = UtcNow();
+   RevPut_TimeFIXMS(msgRBuf, now);
+   RevPrint(msgRBuf, f9fix_SPLTAGEQ(SendingTime));
 
+   // MsgType: ** ALWAYS THIRD FIELD IN MESSAGE. (Always unencrypted) **
    // 底下的欄位順序不可改變, 因為 Replayer::Rebuild() 依賴此順序重建要 replay 的訊息.
-   // BeginString|9=BodyLength|SendingTime|MsgType|MsgSeqNum
-   //               \____________________/ 這些是 replay 會改變的內容.
+   // BeginString|9=BodyLength|35=MsgType|34=MsgSeqNum|52=SendingTime
+   //               \________/                            \_ replay時插入額外欄位.
    //
    FixSeqNum msgSeqNum = this->GetNextSendSeq(locker);
    RevPrint(msgRBuf, fldMsgType, f9fix_SPLTAGEQ(MsgSeqNum), msgSeqNum);
-   // SendingTime.
-   TimeStamp now = this->LastSentTime_ = UtcNow();
-   RevPut_TimeFIXMS(msgRBuf, fon9::UtcNow());
-   RevPrint(msgRBuf, f9fix_SPLTAGEQ(SendingTime));
 
    // 產出 FIX Message.
    BufferList  fixmsg{fixmsgBuilder.Final(ToStrView(this->BeginHeader_))};
@@ -42,12 +43,12 @@ void FixSender::Send(Locker&        locker,
    else
       RevPrint(rlog, f9fix_kCSTR_HdrRst f9fix_kCSTR_HdrNextSendSeq, nextSeqNum, '\n');
    RevPrint(rlog, f9fix_kCSTR_HdrSend, now, ' ', fixmsg, '\n');
-   this->WriteBeforeSend(locker, std::move(rlog), nextSeqNum);
    // 送出訊息.
-   if(fon9_LIKELY(!this->IsReplayingAll_))
+   if (fon9_LIKELY(!this->IsReplayingAll_))
       this->OnSendFixMessage(locker, std::move(fixmsg));
    else
       DcQueueList{std::move(fixmsg)}.PopConsumed(fixmsgSize);
+   this->WriteAfterSend(locker, std::move(rlog), nextSeqNum);
 }
 
 void FixSender::ResetNextSendSeq(FixSeqNum nextSeqNum) {
@@ -56,7 +57,7 @@ void FixSender::ResetNextSendSeq(FixSeqNum nextSeqNum) {
    Locker        locker{this->Lock()};
    RevBufferList rlog{128};
    RevPrint(rlog, f9fix_kCSTR_HdrRst f9fix_kCSTR_HdrNextSendSeq, nextSeqNum, '\n');
-   this->WriteBeforeSend(locker, std::move(rlog), nextSeqNum);
+   this->WriteAfterSend(locker, std::move(rlog), nextSeqNum);
 }
 void FixSender::SequenceReset(FixSeqNum newSeqNo) {
    FixBuilder msgSequenceReset;
@@ -73,18 +74,19 @@ void FixSender::SequenceReset(FixSeqNum newSeqNo) {
 //    - 是否需要 Sequence Reset-GapFill?
 //    - 是否已到所要求的最後一筆?
 // - SendingTime 的位置:
-//   然後將 "SendingTime" 改成: "PossDupFlag=Y|SendingTime=now|OrigSendTime"
-//   "|52=" => "|43=Y|52=now|122="
-//    \__/      \____ReFlds_____/  直接替換即可, 其餘訊息完全不須變動, 只需重算 BodyLength 及 CheckSum.
+//   然後將 "SendingTime" 改成: "SendingTime=now|PossDupFlag=Y|OrigSendTime"
+//   "|52=" "XXX" => "|52=" "now|43=Y|122=" "XXX"
+//           ^^^             \__ReFlds___/  直接插入即可, 其餘訊息完全不須變動, 只需重算 BodyLength 及 CheckSum.
 //
 fon9_WARN_DISABLE_PADDING;
 struct FixSender::Replayer {
    fon9_NON_COPY_NON_MOVE(Replayer);
 
-   #define REFLDS_HEAD_CSTR   f9fix_SPLTAGEQ(PossDupFlag) "Y" f9fix_SPLTAGEQ(SendingTime)
-   #define REFLDS_CSTR        REFLDS_HEAD_CSTR "yyyymmdd-hh:mm:ss.nnn" f9fix_SPLTAGEQ(OrigSendingTime)
+   #define REFLDS_kCSTR_TIME  "yyyymmdd-hh:mm:ss.nnn"
+   #define REFLDS_kCSTR       REFLDS_kCSTR_TIME f9fix_SPLTAGEQ(PossDupFlag) "Y" f9fix_SPLTAGEQ(OrigSendingTime)
+   static_assert(sizeof(REFLDS_kCSTR_TIME) - 1 == kDateTimeStrWidth_FIXMS, "error #define REFLDS_kCSTR_TIME");
    enum {
-      kReFldsWidth = sizeof(REFLDS_CSTR) - 1
+      kReFldsWidth = sizeof(REFLDS_kCSTR) - 1
    };
    char              ReFlds_[kReFldsWidth];
    StrView           CurMsg_;
@@ -99,22 +101,29 @@ struct FixSender::Replayer {
       , FixConfig_(fixConfig)
       , BeginSeqNo_{beginSeqNo}
       , EndSeqNo_{endSeqNo} {
-      memcpy(this->ReFlds_, REFLDS_CSTR, kReFldsWidth);
-      ToStrRev_FIXMS(ReFlds_ + sizeof(REFLDS_HEAD_CSTR) - 1 + kDateTimeStrWidth_FIXMS, UtcNow());
+      memcpy(this->ReFlds_ + kDateTimeStrWidth_FIXMS, REFLDS_kCSTR + kDateTimeStrWidth_FIXMS, kReFldsWidth - kDateTimeStrWidth_FIXMS);
+      ToStrRev_FIXMS(ReFlds_ + kDateTimeStrWidth_FIXMS, UtcNow());
    }
-   #undef REFLDS_CSTR
-   #undef REFLDS_HEAD_CSTR
+   #undef REFLDS_kCSTR_TIME
+   #undef REFLDS_kCSTR
 
-   bool Rebuild(const FixParser::FixField* fldSendingTime, FwdBufferList& logbuf) {
-      const char* const pendCurMsg = this->CurMsg_.end();
+   bool Rebuild(const FixParser::FixField* fldMsgType, const FixParser::FixField* fldSendingTime, FwdBufferList& logbuf) {
+      const char* const pfldMsgType = fldMsgType->Value_.begin() - (sizeof(f9fix_SPLTAGEQ(MsgType)) - 1);
       const char*       pvalSendingTime = fldSendingTime->Value_.begin();
+      // 依照規定 MsgType 為第3個欄位, 此判斷必定為 true, 但避免因 Recorder 的內容損毀而 crash, 所以仍加上判斷.
+      assert(pfldMsgType < pvalSendingTime);
+      if (fon9_UNLIKELY(pfldMsgType >= pvalSendingTime))
+         return false;
+
+      const char* const pendCurMsg = this->CurMsg_.end();
       byte* const       pbegNode = reinterpret_cast<byte*>(logbuf.AllocSuffix(this->CurMsg_.size() + kReFldsWidth));
       byte*             pout = pbegNode;
       pout = PutFwd(pout, this->FixRecorder_.BeginHeader_.begin(), this->FixRecorder_.BeginHeader_.size());
 
       NumOutBuf    numbuf;
-      const size_t bodyLength = static_cast<size_t>(pendCurMsg - pvalSendingTime - kFixTailWidth + kReFldsWidth);
+      const size_t bodyLength = static_cast<size_t>(pendCurMsg - pfldMsgType - kFixTailWidth + kReFldsWidth);
       pout = PutFwd(pout, ToStrRev(numbuf.end(), bodyLength), numbuf.end());
+      pout = PutFwd(pout, pfldMsgType, fldSendingTime->Value_.begin());
       pout = PutFwd(pout, this->ReFlds_, kReFldsWidth);
       pout = PutFwd(pout, pvalSendingTime, pendCurMsg - kFixTailWidth);
       // 重算 CheckSum.
@@ -132,13 +141,17 @@ struct FixSender::Replayer {
    }
    void SeqReset(bool isGapFill, FixSeqNum oldSeqNo, FixSeqNum newSeqNo, FwdBufferList& logbuf) {
       FixBuilder  msgSequenceReset;
+      auto&       rbuf = msgSequenceReset.GetBuffer();
       if (isGapFill)
-         RevPrint(msgSequenceReset.GetBuffer(), f9fix_SPLTAGEQ(GapFillFlag) "Y");
-      RevPrint(msgSequenceReset.GetBuffer(), f9fix_SPLTAGEQ(NewSeqNo), newSeqNo);
+         RevPrint(rbuf, f9fix_SPLTAGEQ(GapFillFlag) "Y");
+      RevPrint(rbuf, f9fix_SPLTAGEQ(NewSeqNo), newSeqNo);
       // ----- header -----
-      RevPrint(msgSequenceReset.GetBuffer(), this->FixRecorder_.CompIDs_.Header_);
-      RevPrint(msgSequenceReset.GetBuffer(), f9fix_SPLFLDMSGTYPE(SequenceReset) f9fix_SPLTAGEQ(MsgSeqNum), oldSeqNo);
-      RevPutMem(msgSequenceReset.GetBuffer(), this->ReFlds_, kReFldsWidth - (sizeof(f9fix_SPLTAGEQ(OrigSendingTime)) - 1));
+      RevPrint(rbuf, this->FixRecorder_.CompIDs_.Header_);
+      RevPutMem(rbuf, this->ReFlds_, kDateTimeStrWidth_FIXMS);
+      RevPrint(rbuf, f9fix_SPLTAGEQ(SendingTime));
+      RevPutMem(rbuf, this->ReFlds_, kDateTimeStrWidth_FIXMS);
+      RevPrint(rbuf, f9fix_SPLTAGEQ(PossDupFlag) "Y" f9fix_SPLTAGEQ(OrigSendingTime));
+      RevPrint(rbuf, f9fix_SPLFLDMSGTYPE(SequenceReset) f9fix_SPLTAGEQ(MsgSeqNum), oldSeqNo);
 
       BufferList  buf{msgSequenceReset.Final(ToStrView(this->FixRecorder_.BeginHeader_))};
       FwdPrint(this->SendBuf_, buf);
@@ -174,7 +187,7 @@ struct FixSender::Replayer {
                   if (isReplayRequired) {
                      if (this->BeginSeqNo_ < curSeqNo)
                         this->GapFill(this->BeginSeqNo_, curSeqNo, logbuf);
-                     if (this->Rebuild(fldSendingTime, logbuf))
+                     if (this->Rebuild(fldMsgType, fldSendingTime, logbuf))
                         this->BeginSeqNo_ = curSeqNo + 1;
                   }
                }
@@ -270,8 +283,8 @@ void FixSender::GapFill(FixSeqNum beginSeqNo, FixSeqNum endSeqNo) {
       this->Append(locker, logbuf.MoveOut());
       return;
    }
-   this->Append(locker, logbuf.MoveOut());
    this->OnSendFixMessage(locker, replayer.SendBuf_.MoveOut());
+   this->Append(locker, logbuf.MoveOut());
 }
 
 } } // namespaces

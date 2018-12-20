@@ -10,32 +10,30 @@
 namespace f9fix = fon9::fix;
 
 //--------------------------------------------------------------------------//
-void BuildTestMessage(f9fix::FixBuilder& fixb, fon9::StrView headerCompIds, unsigned n) {
+void BuildTestMessage(f9fix::FixBuilder& fixb, fon9::StrView headerCompIds, unsigned testn, f9fix::FixSeqNum seqNum) {
    #define f9fix_kMSGTYPE_NewOrderSingle  "D"
-   fon9::RevPrint(fixb.GetBuffer(), f9fix_SPLTAGEQ(Text), "FixRecorderTest #", n);
+   fon9::RevPrint(fixb.GetBuffer(), f9fix_SPLTAGEQ(Text), "FixRecorderTest #", testn);
    fon9::RevPut_TimeFIXMS(fixb.GetBuffer(), fon9::UtcNow()); // SendingTime.
    fon9::RevPrint(fixb.GetBuffer(), f9fix_SPLTAGEQ(SendingTime));
-   fon9::RevPrint(fixb.GetBuffer(), f9fix_SPLFLDMSGTYPE(NewOrderSingle), headerCompIds);
+   fon9::RevPrint(fixb.GetBuffer(), f9fix_SPLFLDMSGTYPE(NewOrderSingle) f9fix_SPLTAGEQ(MsgSeqNum), seqNum, headerCompIds);
 }
 void TestFixRecorder(f9fix::FixRecorder& fixr, const unsigned kTimes) {
    for (unsigned L = 0; L < kTimes; ++L) {
       f9fix::FixBuilder fixb;
       // Test: record recv message.
-      BuildTestMessage(fixb, ToStrView(fixr.CompIDs_.Header_), L + 1);
-      fon9::RevPrint(fixb.GetBuffer(), f9fix_SPLTAGEQ(MsgSeqNum), fixr.GetNextRecvSeq());
+      BuildTestMessage(fixb, ToStrView(fixr.CompIDs_.Header_), L + 1, fixr.GetNextRecvSeq());
       fixr.WriteInputConform(fon9::ToStrView(fon9::BufferTo<std::string>(fixb.Final(ToStrView(fixr.BeginHeader_)))));
 
       // Test: record send message.
       fixb.Restart();
-      BuildTestMessage(fixb, ToStrView(fixr.CompIDs_.Header_), L + 1);
       auto lk{fixr.Lock()};
       auto seq = fixr.GetNextSendSeq(lk);
-      fon9::RevPrint(fixb.GetBuffer(), f9fix_SPLTAGEQ(MsgSeqNum), seq);
+      BuildTestMessage(fixb, ToStrView(fixr.CompIDs_.Header_), L + 1, seq);
       fon9::BufferList     sbuf = fixb.Final(ToStrView(fixr.BeginHeader_));
       fon9::RevBufferList  rbuf{1024};
       fon9::RevPrint(rbuf, f9fix_kCSTR_HdrSend, fon9::UtcNow(), ' ', sbuf, '\n');
-      fixr.WriteBeforeSend(lk, std::move(rbuf), ++seq);
       // send(sbuf);
+      fixr.WriteAfterSend(lk, std::move(rbuf), ++seq);
       // unlock;
    }
 }
@@ -111,8 +109,7 @@ int main(int argc, char** argv) {
    // Test: 檔案已存在, NextSendSeq, NextRecvSeq 是否正確.
    // 再寫入一筆 recv, 讓 NextRecvSeq != NextSendSeq
    f9fix::FixBuilder fixb;
-   BuildTestMessage(fixb, ToStrView(fixr->CompIDs_.Header_), kTimes + 1);
-   fon9::RevPrint(fixb.GetBuffer(), f9fix_SPLTAGEQ(MsgSeqNum), fixr->GetNextRecvSeq());
+   BuildTestMessage(fixb, ToStrView(fixr->CompIDs_.Header_), kTimes + 1, fixr->GetNextRecvSeq());
    fixr->WriteInputConform(fon9::ToStrView(fon9::BufferTo<std::string>(fixb.Final(ToStrView(fixr->BeginHeader_)))));
    fixr->WaitFlushed();
    fixr.reset(new f9fix::FixRecorder(f9fix_BEGIN_HEADER_V42, f9fix::CompIDs{compIds}));

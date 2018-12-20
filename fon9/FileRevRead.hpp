@@ -37,6 +37,11 @@ public:
       return this->BlockPos_;
    }
 
+protected:
+   /// 預設: return fd.Read(fpos, blockBuffer, rdsz);
+   /// 您可以 override, 並在 fd.Read() 前後執行額外工作.
+   virtual File::Result OnFileRead(File& fd, File::PosType fpos, void* blockBuffer, size_t rdsz);
+
 private:
    File::PosType BlockPos_;
    virtual LoopControl OnFileBlock(size_t rdsz) = 0;
@@ -69,8 +74,14 @@ public:
 class fon9_API FileRevSearch {
    fon9_NON_COPY_NON_MOVE(FileRevSearch);
 protected:
-   /// 檔尾 or 上次找到的指定字元位置.
-   char* DataEnd_{nullptr};
+   /// RevSearchBlock() 之後, 該次的區塊資料結束位置.
+   char*    PayloadEnd_{nullptr};
+   /// RevSearchBlock() 之後, BlockBuffer 前方剩餘資料量:
+   /// - 沒找到指定字元: RevSearchBlock() 返回 Continue;
+   /// - RevSearchBlock() 返回 Break = 尚未尋找的資料量: pfind - this->BlockBufferPtr_;
+   size_t   LastRemainSize_{0};
+   /// OnFoundChar(pfind, pend) 返回 Break 時的 pend;
+   char*    FoundDataEnd_{nullptr};
 
    /// 找到指定的字元時的通知.
    /// - *pbeg == 要求尋找的的字元.
@@ -110,6 +121,28 @@ public:
    ///
    /// \retval LoopControl::Break   OnFoundChar() 傳回 LoopControl::Break, 中斷搜尋.
    LoopControl RevSearchBlock(File::PosType fpos, char ch, size_t rdsz);
+   /// 在呼叫 fd.Read() 之前, 您必須先執行 MoveRemainBuffer();
+   /// 將上次 RevSearchBlock() 未用到的資料移到 block 尾端繼續使用.
+   /// 返回前:
+   /// - 將 BufferBlock[0..this->LastRemainSize_] 複製到 BufferBlock[this->BlockSize_..]
+   /// - this->LastRemainSize_ = 0;
+   /// - 重算下次讀取 this->BlockSize_ 之後的 this->PayloadEnd_;
+   void MoveRemainBuffer();
+};
+
+template <class RevReaderT, class RevSearcherT>
+struct RevReadSearcher : public RevReaderT, public RevSearcherT {
+   fon9_NON_COPY_NON_MOVE(RevReadSearcher);
+   using RevSearcherT::RevSearcherT;
+   fon9_MSC_WARN_DISABLE(4355); // 'this': used in base member initializer list
+   RevReadSearcher() : RevSearcherT(RevReaderT::kBlockSize, RevReaderT::kMaxMessageBufferSize, this->BlockBuffer_) {
+   }
+   fon9_MSC_WARN_POP;
+
+   File::Result OnFileRead(File& fd, File::PosType fpos, void* blockBuffer, size_t rdsz) override {
+      this->MoveRemainBuffer();
+      return RevReaderT::OnFileRead(fd, fpos, blockBuffer, rdsz);
+   }
 };
 
 } // namespace

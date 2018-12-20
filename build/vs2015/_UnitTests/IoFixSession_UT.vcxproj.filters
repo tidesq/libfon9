@@ -11,7 +11,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\fon9\FileRevRead_UT.cpp">
+    <ClCompile Include="..\..\..\fon9\fix\IoFixSession_UT.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

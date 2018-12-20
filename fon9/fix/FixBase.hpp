@@ -74,10 +74,7 @@ class fon9_API FixBuilder;
 class fon9_API FixConfig;
 class fon9_API FixSender;
 class fon9_API FixReceiver;
-
-class fon9_API FixManager;
 class fon9_API FixSession;
-using FixSessionSP = intrusive_ptr<FixSession>;
 
 using FixSeqNum = uint32_t;
 using FixTag = uint32_t;
