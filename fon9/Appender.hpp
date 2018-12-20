@@ -51,27 +51,27 @@ protected:
       fon9_NON_COPY_NON_MOVE(WorkContentController);
       WorkContentController() = default;
 
-      void Dispose(Locker& lk) {
+      void Dispose(Locker&& lk) {
          if (lk->SetToDisposing())
-            Appender::StaticCast(*this).MakeCallNow(lk);
+            Appender::StaticCast(*this).MakeCallNow(std::move(lk));
       }
-      void MakeCallForWork(Locker& lk) {
-         Appender::StaticCast(*this).MakeCallForWork(lk);
+      void MakeCallForWork(Locker&& lk) {
+         Appender::StaticCast(*this).MakeCallForWork(std::move(lk));
       }
-      void AddWork(Locker& lk, BufferNode* vnode) {
+      void AddWork(Locker&& lk, BufferNode* vnode) {
          assert(vnode != nullptr);
          lk->QueuingBuffer_.push_back(vnode);
-         this->MakeCallForWork(lk);
+         this->MakeCallForWork(std::move(lk));
       }
-      void AddWork(Locker& lk, BufferList&& buf) {
+      void AddWork(Locker&& lk, BufferList&& buf) {
          lk->QueuingBuffer_.push_back(std::move(buf));
-         this->MakeCallForWork(lk);
+         this->MakeCallForWork(std::move(lk));
       }
-      void AddWork(Locker& lk, const void* buf, size_t size) {
+      void AddWork(Locker&& lk, const void* buf, size_t size) {
          AppendToBuffer(lk->QueuingBuffer_, buf, size);
-         this->MakeCallForWork(lk);
+         this->MakeCallForWork(std::move(lk));
       }
-      WorkerState TakeCall(Locker& lk);
+      WorkerState TakeCall(Locker&& lk);
    };
    using Worker = fon9::Worker<WorkContentController>;
    using WorkContentLocker = Worker::ContentLocker;
@@ -87,19 +87,19 @@ protected:
    /// 在 Append() 把資料放入 buffer 之後, 返回前呼叫此處.
    /// 預設: if (lk->SetToRinging()) this->MakeCallNow(lk);
    /// 您可以覆寫, 並自行決定: 是否要呼叫、何時要呼叫 MakeCallNow();
-   virtual void MakeCallForWork(WorkContentLocker& lk);
+   virtual void MakeCallForWork(WorkContentLocker&& lk);
 
    /// (1) 非同步模式: add Worker to ThreadPool(after lk.unlock());
    /// (2) 同步模式:   立即呼叫 Worker::TakeCall(lk);
    /// 返回 false 表示 Appender 要下班了, 無法提供服務.
-   virtual bool MakeCallNow(WorkContentLocker& lk) = 0;
+   virtual bool MakeCallNow(WorkContentLocker&& lk) = 0;
 
    /// 由衍生者實現 Append(buffer);
    virtual void ConsumeAppendBuffer(DcQueueList& buffer) = 0;
 
    /// \retval true  必定已將資料寫完, 且 locker 仍在 lock() 狀態.
    /// \retval false 無法執行: 可能正在解構? this thread in Working thread?
-   bool WaitFlushed(WorkContentLocker& locker);
+   bool WaitFlushed(WorkContentLocker&& locker);
 
    /// \retval true
    ///   強制呼叫 MakeCallNow(); 並在 ConsumeAppendBuffer(); 之後返回.
@@ -107,9 +107,9 @@ protected:
    /// \retval false 底下情況會立即返回:
    ///   - this thread is in ConsumeAppendBuffer();
    ///   - MakeCallNow() == false;
-   bool WaitConsumed(WorkContentLocker& locker);
+   bool WaitConsumed(WorkContentLocker&& locker);
 
-   bool WaitNodeConsumed(WorkContentLocker& locker, BufferList& buf);
+   bool WaitNodeConsumed(WorkContentLocker&& locker, BufferList& buf);
 
 public:
    void Append(BufferList&& outbuf) {

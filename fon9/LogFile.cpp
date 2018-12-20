@@ -13,7 +13,7 @@ void LogFileAppender::DisposeAsync() {
    base::DisposeAsync();
    this->Timer_.StopAndWait();
 }
-void LogFileAppender::MakeCallForWork(WorkContentLocker& lk) {
+void LogFileAppender::MakeCallForWork(WorkContentLocker&& lk) {
    // Queue 多少資料時才需要 base::MakeCallForWork()?
    // - 先了解 base::MakeCallForWork() 的動作:
    //   - base::MakeCallForWork() => 如果現在為 Sleeping, 則設定 Ringing 成功 => MakeCallNow()
@@ -27,17 +27,17 @@ void LogFileAppender::MakeCallForWork(WorkContentLocker& lk) {
    // - 所以取值原則是: 讓冷系統不要觸發 {通知作業}，但讓資料累積快速的熱系統，不要佔用太多記憶體。
    const size_t FlushNodeCount_ = 20 * 1000; // 如果1個 node 256B, 則會在大約 5M 的時候觸發 {通知作業}
    if ((FlushNodeCount_ > 0 && lk->GetQueuingNodeCount() > FlushNodeCount_) || this->IsHighWaterLevel(lk))
-      base::MakeCallForWork(lk);
+      base::MakeCallForWork(std::move(lk));
 }
 void LogFileAppender::EmitOnTimer(TimerEntry* timer, TimeStamp /*now*/) {
    LogFileAppender& rthis = ContainerOf(*static_cast<Timer*>(timer), &LogFileAppender::Timer_);
-   bool isTimerRequired = true;
-   rthis.Worker_.GetWorkContent([&rthis, &isTimerRequired](WorkContentLocker& lk) {
+   {
+      WorkContentLocker lk{rthis.Worker_.Lock()};
       if (lk->GetQueuingNodeCount() > 0)
-         isTimerRequired = rthis.MakeCallNow(lk);
-   });
-   if (isTimerRequired)
-      rthis.StartFlushTimer();
+         if (!rthis.MakeCallNow(std::move(lk)))
+            return;
+   }
+   rthis.StartFlushTimer();
 }
 
 //--------------------------------------------------------------------------//

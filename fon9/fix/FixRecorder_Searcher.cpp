@@ -305,10 +305,10 @@ StrView FixRecorder::ReloadSent::FindNext(FixRecorder& fixRecorder) {
          return this->CurMsg_ = StrView{pbeg, pbeg};
    }
 }
-bool FixRecorder::ReloadSent::IsErrOrEOF(FixRecorder& fixRecorder, FixRecorder::Locker& locker) const {
+bool FixRecorder::ReloadSent::IsErrOrEOF(FixRecorder& fixRecorder, FixRecorder::Locker&& locker) const {
    if (this->CurMsg_.empty())
       return true;
-   fixRecorder.WaitFlushed(locker);
+   fixRecorder.WaitFlushed(std::move(locker));
    File::Result res = fixRecorder.GetStorage().GetFileSize();
    if (!res)
       return true;

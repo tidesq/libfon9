@@ -98,7 +98,7 @@ public:
 ///      void AddWork(Locker& lk, ...);
 ///
 ///      // 取出並處理工作內容.
-///      fon9::WorkerState TakeCall(Locker& lk) {
+///      fon9::WorkerState TakeCall(Locker&& lk) {
 ///         取出工作.
 ///         lk.unlock();
 ///         處理工作.
@@ -133,23 +133,20 @@ public:
    /// 進入結束狀態，之後都不會再呼叫 Notify.
    template <class... ArgsT>
    void Dispose(ArgsT&&... args) {
-      ContentLocker ctx{this->Controller_};
-      this->Controller_.Dispose(ctx, std::forward<ArgsT>(args)...);
+      this->Controller_.Dispose(ContentLocker{this->Controller_}, std::forward<ArgsT>(args)...);
    }
 
    template <class... ArgsT>
    void AddWork(ArgsT&&... args) {
-      ContentLocker ctx{this->Controller_};
-      this->Controller_.AddWork(ctx, std::forward<ArgsT>(args)...);
+      this->Controller_.AddWork(ContentLocker{this->Controller_}, std::forward<ArgsT>(args)...);
    }
 
    /// 如果現在是 Sleeping or Ringing or Disposing 狀態, 則會進入工作狀態.
    /// 可在任意 thread 呼叫, 但最多只會有其中一個進入工作階段，執行 WorkContentController::TakeCall()。
    WorkerState TakeCall() {
-      ContentLocker ctx{this->Controller_};
-      return this->TakeCallLocked(ctx);
+      return this->TakeCallLocked(ContentLocker{this->Controller_});
    }
-   WorkerState TakeCallLocked(ContentLocker& ctx) {
+   WorkerState TakeCallLocked(ContentLocker&& ctx) {
       WorkerState res = ctx->GetWorkerState();
       switch (res) {
       default:
@@ -168,7 +165,8 @@ public:
 
       ctx->SetTakingCallThreadId();
       do {
-         res = this->Controller_.TakeCall(ctx);
+         res = this->Controller_.TakeCall(std::move(ctx));
+         assert(ctx.owns_lock());
          WorkerState cur = ctx->GetWorkerState();
          if (cur >= WorkerState::Disposed) {
             ctx->ClrTakingCallThreadId();
@@ -189,18 +187,11 @@ public:
    template <class... ArgsT>
    WorkerState TakeNap(ArgsT&&... args) {
       ContentLocker ctx{this->Controller_};
-      WorkerState   res = this->TakeCallLocked(ctx);
+      WorkerState   res = this->TakeCallLocked(std::move(ctx));
       if (res >= WorkerState::Disposed)
          return res;
-      this->Controller_.TakeNap(ctx, std::forward<ArgsT>(args)...);
-      return this->TakeCallLocked(ctx);
-   }
-
-   /// FnWorkContent(ContentLocker&);
-   template <class FnWorkContent>
-   void GetWorkContent(FnWorkContent fnWorkContent) {
-      ContentLocker ctx{this->Controller_};
-      fnWorkContent(ctx);
+      this->Controller_.TakeNap(std::move(ctx), std::forward<ArgsT>(args)...);
+      return this->TakeCallLocked(std::move(ctx));
    }
    ContentLocker Lock() {
       return ContentLocker{this->Controller_};

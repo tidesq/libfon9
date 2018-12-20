@@ -64,7 +64,7 @@ protected:
    /// 預設: 不論 fd 是否有開檔成功, 一律 std::swap(this->File_, fd); 並返回 &this->File_;
    virtual File* OnFileRotate(File& fd, File::Result openResult);
    /// 預設為同步模式: 立即呼叫 TakeCall(); 並返回 true.
-   virtual bool MakeCallNow(WorkContentLocker& lk) override;
+   virtual bool MakeCallNow(WorkContentLocker&& lk) override;
    virtual void ConsumeAppendBuffer(DcQueueList& buffer) override;
 
    const TimeChecker& GetRotateTimeChecker() const {
@@ -124,14 +124,15 @@ protected:
    /// 停止 Async: 把狀態設為 WorkerState::Disposing;
    virtual void DisposeAsync();
 
+   /// 返回前 lk 可能已經 unlock().
    /// \retval true  則把需求丟到 DefaultThreadPool 去處理.
    /// \retval false 現在狀態無法進行非同步要求(下班了? 正在結構?).
-   virtual bool MakeCallNow(WorkContentLocker& lk) override;
+   virtual bool MakeCallNow(WorkContentLocker&& lk) override;
    /// - 如果 IsHighWaterLevel() => WaitConsumed() 等候水位降低.
    /// - 否則透過底層處理: 若現在狀態 == WorkerState::Sleeping, 則呼叫 MakeCallNow();
-   virtual void MakeCallForWork(WorkContentLocker& lk) override;
+   virtual void MakeCallForWork(WorkContentLocker&& lk) override;
 
-   bool IsHighWaterLevel(WorkContentLocker& lk) {
+   bool IsHighWaterLevel(const WorkContentLocker& lk) {
       return (this->HighWaterLevelNodeCount_ > 0 && lk->GetTotalNodeCount() >= this->HighWaterLevelNodeCount_);
    }
 

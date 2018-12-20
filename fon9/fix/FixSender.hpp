@@ -26,7 +26,7 @@ class fon9_API FixSender : protected FixRecorder {
    bool       IsReplayingAll_{false};
    TimeStamp  LastSentTime_;
    struct Replayer;
-   void Send(Locker&        locker,
+   void Send(Locker&&       locker,
              StrView        fldMsgType,
              FixBuilder&&   fixmsgBuilder,
              FixSeqNum      nextSeqNum,
@@ -71,14 +71,13 @@ public:
    void Send(const StrView& fldMsgType,
              FixBuilder&&   fixmsgBuilder,
              RevBufferList* fixmsgDupOut = nullptr) {
-      Locker locker{this->Lock()};
-      this->Send(locker, fldMsgType, std::move(fixmsgBuilder), 0, fixmsgDupOut);
+      this->Send(this->Lock(), fldMsgType, std::move(fixmsgBuilder), 0, fixmsgDupOut);
    }
-   void Send(Locker&        locker,
+   void Send(Locker&&       locker,
              const StrView& fldMsgType,
              FixBuilder&&   fixmsgBuilder,
              RevBufferList* fixmsgDupOut = nullptr) {
-      this->Send(locker, fldMsgType, std::move(fixmsgBuilder), 0, fixmsgDupOut);
+      this->Send(std::move(locker), fldMsgType, std::move(fixmsgBuilder), 0, fixmsgDupOut);
    }
 
    /// 重設下一個輸出序號.

@@ -169,7 +169,7 @@ public:
    DnWorkController() = default;
    using DnWorkerBase = Worker<DnWorkController>;
 
-   void Dispose(Locker& ctx) {
+   void Dispose(Locker&& ctx) {
       // 程式即將結束? 不用處理 dn 解析了!
       ctx->SetWorkerState(WorkerState::Disposed);
       auto reqs{std::move(ctx->DnRequests_)};
@@ -178,7 +178,7 @@ public:
       ctx.lock();
    }
 
-   fon9::WorkerState TakeCall(Locker& ctx) {
+   fon9::WorkerState TakeCall(Locker&& ctx) {
       DnRequest&  req = ctx->DnRequests_[0];
       this->DnParser_.Reset(req.DomainName_, req.DefaultPortNo_);
       this->DnResult_.Clear();
@@ -189,7 +189,7 @@ public:
 
          ctx.lock();
          if (ctx->GetWorkerState() >= WorkerState::Disposing) {
-            this->Dispose(ctx);
+            this->Dispose(std::move(ctx));
             return WorkerState::Disposed;
          }
          if (isDone) {
@@ -207,7 +207,7 @@ public:
       return ctx->DnRequests_.empty() ? WorkerState::Sleeping : WorkerState::Working;
    }
 
-   void AddWork(Locker& lk, DnQueryReqId& id, std::string&& dn, SocketAddress::port_t defaultPortNo, FnOnSocketAddressList&& fnOnReady) {
+   void AddWork(Locker&& lk, DnQueryReqId& id, std::string&& dn, SocketAddress::port_t defaultPortNo, FnOnSocketAddressList&& fnOnReady) {
       id = lk->FrontId_ + lk->DnRequests_.size();
       lk->DnRequests_.emplace_back(std::move(dn), defaultPortNo, std::move(fnOnReady));
       if (lk->SetToRinging()) {
@@ -223,27 +223,24 @@ struct DnWorker : public DnWorkController::DnWorkerBase {
 
    void Cancel(DnQueryReqId id) {
       if (id > 0)
-         this->GetWorkContent([&](ContentLocker& ctx) {
-            this->Cancel(ctx, id);
-         });
+         this->Cancel(this->Lock(), id);
    }
    void CancelAndWait(DnQueryReqId* id) {
       if (id && *id > 0) {
-         this->GetWorkContent([&](ContentLocker& ctx) {
-            this->Cancel(ctx, *id);
-            if (ctx->InTakingCallThread())
-               return;
-            while (ctx->EmittingId_ == *id && ctx->FrontId_ <= *id) {
-               ctx.unlock();
-               std::this_thread::yield();
-               ctx.lock();
-            }
-         });
+         ContentLocker ctx{this->Lock()};
+         this->Cancel(ctx, *id);
+         if (ctx->InTakingCallThread())
+            return;
+         while (ctx->EmittingId_ == *id && ctx->FrontId_ <= *id) {
+            ctx.unlock();
+            std::this_thread::yield();
+            ctx.lock();
+         }
          *id = 0;
       }
    }
 public:
-   void Cancel(ContentLocker& ctx, DnQueryReqId id) {
+   void Cancel(const ContentLocker& ctx, DnQueryReqId id) {
       size_t dnIndex = id - ctx->FrontId_;
       if (dnIndex < ctx->DnRequests_.size())
          ctx->DnRequests_[dnIndex] = DnRequest{};

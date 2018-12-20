@@ -10,7 +10,7 @@ namespace fon9 { namespace fix {
 
 FixSender::~FixSender() {
 }
-void FixSender::Send(Locker&        locker,
+void FixSender::Send(Locker&&       locker,
                      StrView        fldMsgType,
                      FixBuilder&&   fixmsgBuilder,
                      FixSeqNum      nextSeqNum,
@@ -48,22 +48,20 @@ void FixSender::Send(Locker&        locker,
       this->OnSendFixMessage(locker, std::move(fixmsg));
    else
       DcQueueList{std::move(fixmsg)}.PopConsumed(fixmsgSize);
-   this->WriteAfterSend(locker, std::move(rlog), nextSeqNum);
+   this->WriteAfterSend(std::move(locker), std::move(rlog), nextSeqNum);
 }
 
 void FixSender::ResetNextSendSeq(FixSeqNum nextSeqNum) {
    if (nextSeqNum <= 0)
       return;
-   Locker        locker{this->Lock()};
    RevBufferList rlog{128};
    RevPrint(rlog, f9fix_kCSTR_HdrRst f9fix_kCSTR_HdrNextSendSeq, nextSeqNum, '\n');
-   this->WriteAfterSend(locker, std::move(rlog), nextSeqNum);
+   this->WriteAfterSend(this->Lock(), std::move(rlog), nextSeqNum);
 }
 void FixSender::SequenceReset(FixSeqNum newSeqNo) {
    FixBuilder msgSequenceReset;
    RevPrint(msgSequenceReset.GetBuffer(), f9fix_SPLTAGEQ(NewSeqNo), newSeqNo);
-   Locker     locker{this->Lock()};
-   this->Send(locker, f9fix_SPLFLDMSGTYPE(SequenceReset), std::move(msgSequenceReset), newSeqNo, nullptr);
+   this->Send(this->Lock(), f9fix_SPLFLDMSGTYPE(SequenceReset), std::move(msgSequenceReset), newSeqNo, nullptr);
 }
 
 //--------------------------------------------------------------------------//
@@ -205,8 +203,9 @@ struct FixSender::Replayer {
          this->Reload(reloader, logbuf);
          FixRecorder::Locker locker{this->FixRecorder_.Lock()};
          if (this->EndSeqNo_ == 0) { // 檢查是否還有沒載入的資料.
-            if (!reloader.IsErrOrEOF(this->FixRecorder_, locker))
+            if (!reloader.IsErrOrEOF(this->FixRecorder_, std::move(locker)))
                continue;
+            assert(locker.owns_lock());
             FixSeqNum nextSendSeq = this->FixRecorder_.GetNextSendSeq(locker);
             if (this->BeginSeqNo_ != nextSendSeq) {
                // 已經檢查過 IsErrOrEOF() => 確定已經讀到檔尾.
@@ -252,10 +251,10 @@ void FixSender::Replay(const FixConfig& fixConfig, FixSeqNum beginSeqNo, FixSeqN
 
    Replayer  replayer{this->GetFixRecorder(), &fixConfig, beginSeqNo, endSeqNo};
    Locker    locker{replayer.Run(logbuf)};
-   this->Append(locker, logbuf.MoveOut());
    if (endSeqNo == 0)
       this->IsReplayingAll_ = false;
    this->OnSendFixMessage(locker, replayer.SendBuf_.MoveOut());
+   this->Append(std::move(locker), logbuf.MoveOut());
 }
 void FixSender::GapFill(FixSeqNum beginSeqNo, FixSeqNum endSeqNo) {
    FwdBufferList  logbuf{1024};
@@ -280,11 +279,11 @@ void FixSender::GapFill(FixSeqNum beginSeqNo, FixSeqNum endSeqNo) {
       replayer.GapFill(beginSeqNo, endSeqNo + 1, logbuf);
    else {
       FwdPrint(logbuf, f9fix_kCSTR_HdrError "beginSeqNo >= endSeqNo\n");
-      this->Append(locker, logbuf.MoveOut());
+      this->Append(std::move(locker), logbuf.MoveOut());
       return;
    }
    this->OnSendFixMessage(locker, replayer.SendBuf_.MoveOut());
-   this->Append(locker, logbuf.MoveOut());
+   this->Append(std::move(locker), logbuf.MoveOut());
 }
 
 } } // namespaces

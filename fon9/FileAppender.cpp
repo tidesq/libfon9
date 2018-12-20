@@ -107,8 +107,8 @@ void FileAppender::CheckRotateTime(TimeStamp tm) {
       NodeCheckRotateTime::AddNode(*this, tm);
 }
 
-bool FileAppender::MakeCallNow(WorkContentLocker& lk) {
-   this->Worker_.TakeCallLocked(lk);
+bool FileAppender::MakeCallNow(WorkContentLocker&& lk) {
+   this->Worker_.TakeCallLocked(std::move(lk));
    return true;
 }
 void FileAppender::ConsumeAppendBuffer(DcQueueList& buffer) {
@@ -151,7 +151,7 @@ AsyncFileAppender::~AsyncFileAppender() {
 void AsyncFileAppender::DisposeAsync() {
    this->Worker_.Dispose();
 }
-bool AsyncFileAppender::MakeCallNow(WorkContentLocker& lk) {
+bool AsyncFileAppender::MakeCallNow(WorkContentLocker&& lk) {
    if (!lk->SetToAsyncTaking())
       return true;
    lk.unlock();
@@ -179,20 +179,19 @@ bool AsyncFileAppender::MakeCallNow(WorkContentLocker& lk) {
    // 並使用 intrusive_ptr<> pthis 傳遞, 這樣才能確保當要求的 task 沒有執行時, this 仍會正常死亡!
 
    GetDefaultThreadPool().EmplaceMessage([pthis]() {
-      pthis->Worker_.GetWorkContent([&pthis](WorkContentLocker& lk2) {
-         lk2->SetAsyncTaken();
-         pthis->Worker_.TakeCallLocked(lk2);
-      });
+      WorkContentLocker lk2{pthis->Worker_.Lock()};
+      lk2->SetAsyncTaken();
+      pthis->Worker_.TakeCallLocked(std::move(lk2));
    });
    return true;
 }
-void AsyncFileAppender::MakeCallForWork(WorkContentLocker& lk) {
+void AsyncFileAppender::MakeCallForWork(WorkContentLocker&& lk) {
    if (!this->IsHighWaterLevel(lk)) {
-      base::MakeCallForWork(lk);
+      base::MakeCallForWork(std::move(lk));
       return;
    }
    do {
-      if (!this->WaitConsumed(lk))
+      if (!this->WaitConsumed(std::move(lk)))
          return;
    } while (this->IsHighWaterLevel(lk));
 }

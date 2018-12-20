@@ -31,7 +31,7 @@ struct WorkContentBase : public fon9::WorkContentBase {
          ++this->CountAddWorkAtWorking_;
       return false;
    }
-   fon9::WorkerState TakeCall(std::unique_lock<std::mutex>& lk) {
+   fon9::WorkerState TakeCall(std::unique_lock<std::mutex>&& lk) {
       ++this->CountTakeCall_;
       std::thread::id curThreadId = std::this_thread::get_id();
       if (this->LastRunningThreadId_ != curThreadId) {
@@ -74,8 +74,8 @@ struct WorkContentController : public fon9::MustLock<WorkContentBase> {
    fon9_NON_COPY_NON_MOVE(WorkContentController);
    WorkContentController() = default;
 
-   fon9::WorkerState TakeCall(Locker& lk) {
-      return lk->TakeCall(lk);
+   fon9::WorkerState TakeCall(Locker&& lk) {
+      return lk->TakeCall(std::move(lk));
    }
 };
 fon9_WARN_POP;
@@ -111,15 +111,15 @@ void TestWorkerInThreadPool() {
       fon9_NON_COPY_NON_MOVE(WorkContent);
       WorkContent() = default;
 
-      void TakeNap(Locker& lk) {
+      void TakeNap(Locker&& lk) {
          if (lk->GetWorkerState() < fon9::WorkerState::Disposing)
             this->Waiter_.Wait(lk);
       }
-      void Dispose(Locker& lk) {
+      void Dispose(Locker&& lk) {
          if (lk->SetToDisposing())
             this->Waiter_.NotifyAll(lk);
       }
-      void AddWork(Locker& lk, WorkMessageType task) {
+      void AddWork(Locker&& lk, WorkMessageType task) {
          if (lk->AddWork(task))
             this->Waiter_.NotifyOne(lk);
       }
@@ -136,9 +136,8 @@ void TestWorkerInThreadPool() {
    }
    WorkMessageType messageSum = ExecuteAddTask(worker);
    fon9::JoinThreads(workThreads);
-   worker.GetWorkContent([&messageSum](Worker::ContentLocker& ctx) {
-      ctx->CheckResult("in thread pool", messageSum);
-   });
+   Worker::ContentLocker ctx{worker.Lock()};
+   ctx->CheckResult("in thread pool", messageSum);
 }
 
 //--------------------------------------------------------------------------//
@@ -166,18 +165,18 @@ struct WorkerInMessageQueue {
       WorkerService& WorkerService_;
       WorkContent(WorkerService& workService) : WorkerService_(workService) {
       }
-      void Notify(Locker& lk) {
+      void Notify(Locker&& lk) {
          lk.unlock();
          Worker& worker = Worker::StaticCast(*this);
          this->WorkerService_.EmplaceMessage(&worker);
       }
-      void Dispose(Locker& lk) {
+      void Dispose(Locker&& lk) {
          if (lk->SetToDisposing())
-            this->Notify(lk);
+            this->Notify(std::move(lk));
       }
-      void AddWork(Locker& lk, WorkMessageType task) {
+      void AddWork(Locker&& lk, WorkMessageType task) {
          if (lk->AddWork(task))
-            this->Notify(lk);
+            this->Notify(std::move(lk));
       }
    };
 };
@@ -199,17 +198,17 @@ void TestWorkerInMessageQueue() {
    workerService.WaitForEndNow();
 
    size_t remainMessageSize;
-   worker.GetWorkContent([&remainMessageSize](Worker::ContentLocker& ctx) {
+   {
+      Worker::ContentLocker ctx{worker.Lock()};
       remainMessageSize = ctx->Messages_.size();
-   });
+   }
 
    WorkerHandler  remainMessageHandler{workerService};
    workerService.WaitForEndNow(remainMessageHandler);
 
    std::cout << "RemainMessageSize.WhenWorkerServiceDone=" << remainMessageSize << std::endl;
-   worker.GetWorkContent([&messageSum](Worker::ContentLocker& ctx) {
-      ctx->CheckResult("in WorkerService(MessageQueue)", messageSum);
-   });
+   Worker::ContentLocker ctx{worker.Lock()};
+   ctx->CheckResult("in WorkerService(MessageQueue)", messageSum);
 }
 
 //--------------------------------------------------------------------------//

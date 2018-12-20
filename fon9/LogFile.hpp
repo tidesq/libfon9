@@ -53,7 +53,7 @@ protected:
    virtual void DisposeAsync() override;
 
    /// 資料節點數量 > m 個, 才會呼叫 this->MakeCallNow(lk); 否則 do nothing.
-   virtual void MakeCallForWork(WorkContentLocker&) override;
+   virtual void MakeCallForWork(WorkContentLocker&&) override;
 
 public:
    void SetFlushInterval(TimeInterval ti) {

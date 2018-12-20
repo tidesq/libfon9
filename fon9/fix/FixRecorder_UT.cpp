@@ -33,7 +33,7 @@ void TestFixRecorder(f9fix::FixRecorder& fixr, const unsigned kTimes) {
       fon9::RevBufferList  rbuf{1024};
       fon9::RevPrint(rbuf, f9fix_kCSTR_HdrSend, fon9::UtcNow(), ' ', sbuf, '\n');
       // send(sbuf);
-      fixr.WriteAfterSend(lk, std::move(rbuf), ++seq);
+      fixr.WriteAfterSend(std::move(lk), std::move(rbuf), ++seq);
       // unlock;
    }
 }
