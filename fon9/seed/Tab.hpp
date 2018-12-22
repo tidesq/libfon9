@@ -31,6 +31,9 @@ enum TabFlag {
    /// 則表示由各個 Seed 自行決定是否支援 OnSeedCommand();
    NoSeedCommand = 0x20,
 
+   /// 一般純資料, 例如: 商品基本資料.
+   NoSapling_NoSeedCommand_Writable = NoSapling | NoSeedCommand | Writable,
+
    /// 需使用「套用」方式處理資料異動。
    /// - 修改中的資料會放在另一個 mtable.
    /// - 有 Write 權限者可以編修套用前的 mtable.

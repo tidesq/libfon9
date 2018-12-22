@@ -36,6 +36,7 @@ libfon9 TODO list
 * WebUI
   * hide column(field)
   * 根據欄位 typeid 決定 cell text align.
+  * Unordered tree: disable btnReload, or btnReload=Reload watching rows?
   * Column:
     * resize:
       * maybe use <colgroup> & <col> & {resize:horizontal}

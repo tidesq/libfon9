@@ -236,7 +236,8 @@ struct PluginsMgr::PluginsTree : public Tree {
          res = cfgbinder.OpenRead(&logHeader, cfgfn.ToString());
          if (res.empty()) {
             res = this->ParseConfigStr(&cfgbinder.GetConfigStr());
-            if (0);// TODO: 載入成功, 備份設定檔.
+            // 載入成功, 備份設定檔.
+            BackupConfig(&logHeader, cfgfn, cfgbinder.GetLastModifyTime(), cfgbinder.GetConfigStr());
          }
       });
       return res;

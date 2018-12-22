@@ -149,7 +149,13 @@
     <ClInclude Include="..\..\..\fon9\fix\FixSession.hpp" />
     <ClInclude Include="..\..\..\fon9\fix\IoFixSender.hpp" />
     <ClInclude Include="..\..\..\fon9\fix\IoFixSession.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\FmktTypes.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\Symb.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbDy.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbIn.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbRef.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbTree.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\FmktTypes.h" />
     <ClInclude Include="..\..\..\fon9\framework\Framework.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\IoFactory.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\IoManager.hpp" />
@@ -369,6 +375,10 @@
     <ClCompile Include="..\..\..\fon9\fix\IoFixSender.cpp" />
     <ClCompile Include="..\..\..\fon9\fix\IoFixSession.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\Symb.cpp" />
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbDy.cpp" />
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbIn.cpp" />
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbRef.cpp" />
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbTree.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\Framework.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\IoFactory.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\IoFactoryDgram.cpp" />

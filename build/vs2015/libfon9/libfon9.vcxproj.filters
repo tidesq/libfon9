@@ -845,6 +845,24 @@
     <ClInclude Include="..\..\..\fon9\fix\IoFixSender.hpp">
       <Filter>Header Files\fix</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbDy.hpp">
+      <Filter>Header Files\fmkt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbTree.hpp">
+      <Filter>Header Files\fmkt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\FmktTypes.h">
+      <Filter>Header Files\fmkt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbRef.hpp">
+      <Filter>Header Files\fmkt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\FmktTypes.hpp">
+      <Filter>Header Files\fmkt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbIn.hpp">
+      <Filter>Header Files\fmkt</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -866,9 +884,6 @@
     <None Include="..\..\..\fon9\fix\README.md">
       <Filter>Header Files\fix</Filter>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="..\..\..\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\fon9\DecBase.cpp">
@@ -1342,5 +1357,20 @@
     <ClCompile Include="..\..\..\fon9\fix\IoFixSender.cpp">
       <Filter>Source Files\fix</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbDy.cpp">
+      <Filter>Source Files\fmkt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbTree.cpp">
+      <Filter>Source Files\fmkt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbRef.cpp">
+      <Filter>Source Files\fmkt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbIn.cpp">
+      <Filter>Source Files\fmkt</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\..\CMakeLists.txt" />
   </ItemGroup>
 </Project>

@@ -32,7 +32,7 @@ int main(int argc, char** args) {
    fon9_MSC_WARN_DISABLE_NO_PUSH(4820 4355);
    struct RevReader : public fon9::RevReadSearcher<fon9::FileRevReadBuffer<1024*4>, fon9::FileRevSearch> {
       fon9_NON_COPY_NON_MOVE(RevReader);
-      using base = fon9::RevReadSearcher<fon9::FileRevReadBuffer<1024 * 4>, fon9::FileRevSearch>;
+      // using base = fon9::RevReadSearcher<fon9::FileRevReadBuffer<1024 * 4>, fon9::FileRevSearch>;
       RevReader() = default;
 
       unsigned long  LineCount_{0};

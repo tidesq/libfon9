@@ -2,13 +2,20 @@
 // \author fonwinz@gmail.com
 #ifndef __fon9_fmkt_Symb_hpp__
 #define __fon9_fmkt_Symb_hpp__
+#include "fon9/fmkt/FmktTypes.h"
 #include "fon9/CharVector.hpp"
 #include "fon9/intrusive_ref_counter.hpp"
 #include "fon9/Trie.hpp"
+#include "fon9/seed/Tab.hpp"
+
 #include <unordered_map>
 
 namespace fon9 { namespace fmkt {
 
+/// \ingroup fmkt
+/// 為了讓 SymbTree::PodOp 裡面的 seed::SimpleRawRd{*symbdata} 可以正確運作,
+/// SymbData 的衍生者, 必須將 「SymbData 基底」放在第一位,
+/// 請參考 class Symb; class SymbRef;
 class fon9_API SymbData {
    fon9_NON_COPY_NON_MOVE(SymbData);
 public:
@@ -17,45 +24,35 @@ public:
 };
 
 /// \ingroup fmkt
-/// 這裡沒有將所有可能的 market 都定義出來,
-/// 僅提供範例, 若有其他擴充可使用:
-/// `constexpr fon9::fmkt::SymbMarket  SymbMarket_Fx = static_cast<fon9::fmkt::SymbMarket>('f');`
-enum SymbMarket : char {
-   SymbMarket_Unknown = '\0',
-   SymbMarket_TwSEC = 'T',
-   SymbMarket_TwOTC = 'O',
-   SymbMarket_TwFex = 'F',
-};
-constexpr fon9::fmkt::SymbMarket  SymbMarket_TwEmg = static_cast<fon9::fmkt::SymbMarket>('E'); 
-
-/// \ingroup fmkt
 /// 可擴充的商品資料.
 /// - 配合 seed::LayoutDy 或 LayoutN 機制擴充, 例如:
 ///   - 參考價.
 ///   - 買賣報價(量).
 ///   - 成交價量.
-class Symb : public SymbData, public intrusive_ref_counter<Symb> {
+class fon9_API Symb : public SymbData, public intrusive_ref_counter<Symb> {
    fon9_NON_COPY_NON_MOVE(Symb);
 public:
-   SymbMarket        Market_{SymbMarket_Unknown};
+   /// 一張的單位數(股數)
+   uint32_t ShUnit_{0};
+   /// 台灣期交所的流程群組代碼.
+   uint16_t FlowGroup_{0};
+   /// 交易市場.
+   f9fmkt_TradingMarket TradingMarket_{f9fmkt_TradingMarket_Unknown};
+   char                 Filler5_____[5];
+
+   /// 系統自訂的商品Id, 不一定等於交易所的商品Id.
+   /// 交易送出、行情解析時, 再依自訂規則轉換.
    const CharVector  SymbId_;
 
-   Symb(const StrView& id) : SymbId_{id} {
+   Symb(const StrView& symbid) : SymbId_{symbid} {
    }
+
+   virtual SymbData* GetSymbData(int tabid);
+   virtual SymbData* FetchSymbData(int tabid);
+
+   static seed::Fields MakeFields();
 };
 using SymbSP = intrusive_ptr<Symb>;
-
-// \ingroup fmkt
-// 使用 LayoutDy 動態建立所需的資料.
-//class SymbDy : public Symb {
-//   fon9_NON_COPY_NON_MOVE(SymbDy);
-//   using base = Symb;
-//   using SymbDataSP = std::unique_ptr<SymbData>;
-//   using ExDatas = std::vector<SymbDataSP>;
-//   ExDatas  ExDatas_;
-//public:
-//   using base::base;
-//};
 
 //--------------------------------------------------------------------------//
 
@@ -63,7 +60,7 @@ using SymbHashMap = std::unordered_map<StrView, SymbSP>;
 inline StrView GetSymbId(const std::pair<StrView, SymbSP>& v) {
    return v.first;
 }
-inline Symb& GetSymbRef(const std::pair<StrView, SymbSP>& v) {
+inline Symb& GetSymbValue(const std::pair<StrView, SymbSP>& v) {
    return *v.second;
 }
 
@@ -93,7 +90,7 @@ using SymbTrieMap = Trie<TrieSymbKey, SymbSP>;
 inline StrView GetSymbId(const SymbTrieMap::value_type& v) {
    return ToStrView(v.value()->SymbId_);
 }
-inline Symb& GetSymbRef(const SymbTrieMap::value_type& v) {
+inline Symb& GetSymbValue(const SymbTrieMap::value_type& v) {
    return *v.value();
 }
 

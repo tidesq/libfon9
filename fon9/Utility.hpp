@@ -160,6 +160,7 @@ template <class Base, class Derived>
 constexpr Base* CastToBasePointer(Derived* p, Base*) {
    return p;
 }
+
 /// \ingroup Misc
 /// 計算 data member pointer 在 Base 的 offset.
 /// 有可能為負值, 例:
@@ -178,6 +179,12 @@ inline int32_t DataMemberOffset(MemberT Derived::*pDataMember) {
    //   - reinterpret_cast<uintptr_t>(static_cast<Base*>(reinterpret_cast<Derived*>(0x1000)))
    //   );
 }
+
+/// \ingroup Misc
+// 避免使用 offsetof() 時, gcc 的善意提醒: offsetof within non-standard-layout type ‘...’ is undefined
+#define fon9_OffsetOf(Type, Member_) \
+   static_cast<size_t>(reinterpret_cast<intptr_t>(&(reinterpret_cast<Type*>(0x10000)->Member_)) \
+                      - static_cast<intptr_t>(0x10000))
 
 /// \ingroup Misc
 /// 直接就地建構. 避免 DBG_NEW 的影響.

@@ -147,6 +147,8 @@ set(fon9src
  framework/IoFactoryDgram.cpp
 
  fmkt/Symb.cpp
+ fmkt/SymbDy.cpp
+ fmkt/SymbTree.cpp
 
  fix/FixBase.cpp
  fix/FixCompID.cpp

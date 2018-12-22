@@ -15,12 +15,6 @@
 namespace fon9 { namespace seed {
 
 /// \ingroup seed
-// 避免使用 offsetof() 時, gcc 的善意提醒: offsetof within non-standard-layout type ‘...’ is undefined
-#define fon9_OffsetOf(DerivedRaw, Member_) \
-   static_cast<size_t>(reinterpret_cast<intptr_t>(&(reinterpret_cast<DerivedRaw*>(0x10000)->Member_)) \
-                      - static_cast<intptr_t>(0x10000))
-
-/// \ingroup seed
 /// 計算: 透過 CastToRawPointer() 存取 Member_ 的偏移位置.
 #define fon9_OffsetOfRawPointer(DerivedRaw, Member_) \
  ( static_cast<int32_t>(fon9_OffsetOf(DerivedRaw, Member_)) \
