@@ -127,6 +127,7 @@ function onWebSocketMessage(msg) {
   if (msg.substring(0,2) == "e=") { // 失敗訊息: "e=..." + "\n" + "...";
     errmsg = msg.substring(2, pln);
     msg = msg.substring(pln + 1);
+    pln = msg.indexOf("\n");
   }
   if (msg[0] == '\x01') { // SeedCommand: '\x01' + 'command' + '\x01' + path + '\n' + result
     seedWindow.seedCommandResult(msg.substring(1), errmsg);
@@ -179,7 +180,7 @@ function onWebSocketMessage(msg) {
 let signonFrame = document.getElementById('signonFrame');
 let signonWindow = signonFrame.contentWindow;
 function addInfo(head, msg, isErr = '') {
-  console.log(msg);
+  console.log(head, msg);
   // let str;
   // if (isErr === 'err')
   //   str = '<p style="color:red">';

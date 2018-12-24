@@ -3,6 +3,7 @@
 #include "fon9/fmkt/SymbTree.hpp"
 #include "fon9/seed/PodOp.hpp"
 #include "fon9/seed/RawWr.hpp"
+#include "fon9/RevPrint.hpp"
 
 namespace fon9 { namespace fmkt {
 
@@ -40,22 +41,46 @@ class SymbTree::TreeOp : public seed::TreeOp {
 public:
    TreeOp(SymbTree& tree) : base(tree) {
    }
-#if 0 // 若使用 unordered_map 則不支援 GridView;
    void GridView(const seed::GridViewRequest& req, seed::FnGridViewOp fnCallback) override {
       seed::GridViewResult res{this->Tree_, req.Tab_};
       {
          SymbMap::Locker lockedMap{static_cast<SymbTree*>(&this->Tree_)->SymbMap_};
+      #if 0 // 不是 unordered_map 則可以使用一般的 GridView.
          seed::MakeGridView(*lockedMap, seed::GetIteratorForGv(*lockedMap, req.OrigKey_),
-                            req, res, &MakeRowView);
-      } // unlock.
+                               req, res, &MakeRowView);
+      #else // 若使用 unordered_map 則 req.OrigKey_ = "key list";
+         if (req.OrigKey_.Get1st() != seed::GridViewResult::kCellSplitter)
+            res.OpResult_ = seed::OpResult::not_supported_grid_view;
+         else {
+            res.ContainerSize_ = lockedMap->size();
+            StrView        keys{req.OrigKey_.begin() + 1, req.OrigKey_.end()};
+            RevBufferList  rbuf{256};
+            for (;;) {
+               const char* pkey = static_cast<const char*>(memrchr(keys.begin(), seed::GridViewResult::kCellSplitter, keys.size()));
+               StrView     key{pkey ? (pkey + 1) : keys.begin(), keys.end()};
+               auto        ifind = seed::GetIteratorForPod(*lockedMap, key);
+               if (ifind == lockedMap->end())
+                  RevPrint(rbuf, key);
+               else
+                  MakeRowView(ifind,  res.Tab_, rbuf);
+               if (pkey == nullptr)
+                  break;
+               keys.SetEnd(pkey);
+               RevPrint(rbuf, seed::GridViewResult::kRowSplitter);
+            }
+            res.GridView_ = BufferTo<std::string>(rbuf.MoveOut());
+         }
+      #endif
+      } // unlock map.
       fnCallback(res);
    }
    static void MakeRowView(iterator ivalue, seed::Tab* tab, RevBuffer& rbuf) {
-      if (tab)
-         FieldsCellRevPrint(tab->Fields_, seed::SimpleRawRd{GetSymbValue(*ivalue)}, rbuf, seed::GridViewResult::kCellSplitter);
+      if (tab) {
+         if (auto dat = GetSymbValue(*ivalue).GetSymbData(tab->GetIndex()))
+            FieldsCellRevPrint(tab->Fields_, seed::SimpleRawRd{*dat}, rbuf, seed::GridViewResult::kCellSplitter);
+      }
       RevPrint(rbuf, GetSymbId(*ivalue));
    }
-#endif
 
    void OnPodOp(const StrView& strKeyText, SymbSP&& symb, seed::FnPodOp&& fnCallback) {
       if (symb) {

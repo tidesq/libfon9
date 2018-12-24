@@ -128,6 +128,8 @@
       /// 然後透過 renderGridView() 告知結果.
       var onLoadGridView;
       let emitLoadGridView = function (startkey, count) {
+         if (layout.flags & 0x10) // unordered: startkey = keylist = 現在 gview 全部的 keys.
+            startkey = gview.getKeyList();
          if (!keySelected && gview.selectedCell)
             keySelected = gview.getKeyText(gview.selectedCell);
          if (onLoadGridView)
@@ -228,10 +230,12 @@
          gview.setFirstCellFocus();
       }
       function renderGridView(args, path, res, errmsg) {
-         if (path != currPath || errmsg)
+         if (path != currPath || parseTabIdx(args) != currTabIdx)
             return;
-         if (parseTabIdx(args) != currTabIdx)
+         if (errmsg) { // focus 移到 gview, 讓 gview.onkeydown 可以運作.
+            gview.setFirstCellFocus();
             return;
+         }
          submitId = undefined;
          document.getElementById("btnSubmit").disabled = true;
          let lines = res.split('\n');
@@ -464,6 +468,11 @@
          if (key)
             emitFieldChanged(key, fieldValues);
       }
+      // 移除 row, 若 !cell (btnDeleteRow.onclick 事件) 則使用 gview.selectedCell
+      let deleteRow = function (cell) {
+         if (onDeleteRow && !isElementHidden(document.getElementById('btnDeleteRow')))
+            onDeleteRow(currPath, gview.getKeyText(cell ? cell : gview.selectedCell));
+      }
       let addWatchRow = function () {
          let key = promptAddRow("在 " + getTitleOrName(layout.tabs[currTabIdx])
                           + " 查詢資料\n請輸入要查詢的「"
@@ -476,11 +485,6 @@
             cell = gview.selectedCell;
          if (cell)
             gview.removeRow(cell.parentNode);
-      }
-      // 移除 row, 若 !cell (btnDeleteRow.onclick 事件) 則使用 gview.selectedCell
-      let deleteRow = function (cell) {
-         if (onDeleteRow && !isElementHidden(document.getElementById('btnDeleteRow')))
-            onDeleteRow(currPath, gview.getKeyText(cell ? cell : gview.selectedCell));
       }
    </script>
 

@@ -36,7 +36,6 @@ libfon9 TODO list
 * WebUI
   * hide column(field)
   * 根據欄位 typeid 決定 cell text align.
-  * Unordered tree: disable btnReload, or btnReload=Reload watching rows?
   * Column:
     * resize:
       * maybe use <colgroup> & <col> & {resize:horizontal}
@@ -58,8 +57,8 @@ libfon9 TODO list
       * [Ctrl-Del]:  Delete row
       * [Shift-Del]: Cut row
       * ????:  Move to prev tree. (使用 Browser History API)
-      * [Alt +]: Add an unordered row
-      * [Alt -]: Remove an unordered row
+      * [Alt +]: Add an unordered row for watching. or reload a row.
+      * [Alt -]: Remove a watching unordered row.
     * 滑鼠操作:
       * double click: Start edit, or [@KeyColumn: Move to sapling].
       * 路徑列: 切換路徑 or 輸入路徑

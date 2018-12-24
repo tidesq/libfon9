@@ -348,6 +348,18 @@ class GridView {
       let rowsBody = this.gvTable.tBodies[0].rows;
       return(rowsBody.length <= 0 ? undefined : rowsBody[rowsBody.length-1].cells[0].textContent);
    }
+   /** 取得 key list, 每個(包含第一個) key 之前插入 spl 分隔.
+    *  若沒有任何 key, 則傳回 '';
+    */
+   getKeyList(spl = '\x01') {
+      let rowsBody = this.gvTable.tBodies[0].rows;
+      let count = rowsBody.length;
+      let retval = '';
+      for (let i = 0; i < count; ++i) {
+         retval += spl + rowsBody[i].cells[0].textContent;
+      }
+      return retval;
+   }
    /** 將第一個 cell 設定為 focus.
     *  如果沒有 body, 只有 head, 則會將 gvTable 設為 focus, 因為這樣才能收到 keydown 事件.
     */

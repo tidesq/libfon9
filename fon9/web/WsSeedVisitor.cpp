@@ -255,7 +255,7 @@ io::RecvBufferSize WsSeedVisitor::OnWebSocketMessage() {
          // SeedCommand 回覆: fon9_kCSTR_CELLSPL + "command" + fon9_kCSTR_CELLSPL + "seedName"
          // 因為 command 可能會有 '/', ' ' 之類的字元, 所以用 fon9_kCSTR_CELLSPL 分隔比較保險.
          // 因為 command 指令可能為任意字串(無控制字元), 無法保證不跟一般指令(pl, gv...)重複,
-         // 所以使用 fon9_kCSTR_CELLSPL 開頭當作雨衣般指令的區別.
+         // 所以使用 fon9_kCSTR_CELLSPL 開頭當作與一般指令的區別.
          *bmbuf = chSpl = *fon9_kCSTR_CELLSPL;
       }
       else {

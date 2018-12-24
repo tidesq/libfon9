@@ -148,6 +148,8 @@ set(fon9src
 
  fmkt/Symb.cpp
  fmkt/SymbDy.cpp
+ fmkt/SymbIn.cpp
+ fmkt/SymbRef.cpp
  fmkt/SymbTree.cpp
 
  fix/FixBase.cpp
