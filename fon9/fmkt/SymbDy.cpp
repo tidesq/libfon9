@@ -2,6 +2,8 @@
 // \author fonwinz@gmail.com
 #include "fon9/fmkt/SymbDy.hpp"
 #include "fon9/fmkt/SymbRef.hpp"
+#include "fon9/fmkt/SymbBS.hpp"
+#include "fon9/fmkt/SymbDeal.hpp"
 #include "fon9/seed/FieldMaker.hpp"
 #include "fon9/seed/Plugins.hpp"
 
@@ -49,6 +51,8 @@ static bool SymbMap_Start(seed::PluginsHolder& holder, StrView args) {
    if (holder.Root_->Add(new fon9::seed::NamedSapling(dy, std::move(symbMapName)))) {
       // 使用 SymbRef 驗證 SymbDy 機制.
       dy->AddSymbDataTab(new SymbRefTabDy(Named{"Ref"}));
+      dy->AddSymbDataTab(new SymbBSTabDy(Named{"BS"}));
+      dy->AddSymbDataTab(new SymbDealTabDy(Named{"Deal"}));
    }
    return true;
 }

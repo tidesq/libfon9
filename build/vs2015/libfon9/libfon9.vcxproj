@@ -151,6 +151,8 @@
     <ClInclude Include="..\..\..\fon9\fix\IoFixSession.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\FmktTypes.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\Symb.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbBS.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbDeal.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbDy.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbIn.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbRef.hpp" />
@@ -375,6 +377,8 @@
     <ClCompile Include="..\..\..\fon9\fix\IoFixSender.cpp" />
     <ClCompile Include="..\..\..\fon9\fix\IoFixSession.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\Symb.cpp" />
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbBS.cpp" />
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbDeal.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\SymbDy.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\SymbIn.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\SymbRef.cpp" />

@@ -12,11 +12,16 @@ namespace fon9 { namespace fmkt {
 class fon9_API SymbRef : public SymbData {
    fon9_NON_COPY_NON_MOVE(SymbRef);
 public:
-   SymbRef() = default;
+   struct Data {
+      Pri   PriRef_{};
+      Pri   PriUpLmt_{};
+      Pri   PriDnLmt_{};
+   };
+   Data  Data_;
 
-   Pri   PriRef_;
-   Pri   PriUpLmt_;
-   Pri   PriDnLmt_;
+   SymbRef(const Data& rhs) : Data_(rhs) {
+   }
+   SymbRef() = default;
 
    static seed::Fields MakeFields();
 };

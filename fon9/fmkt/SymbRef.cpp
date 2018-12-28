@@ -7,9 +7,9 @@ namespace fon9 { namespace fmkt {
 
 seed::Fields SymbRef::MakeFields() {
    seed::Fields flds;
-   flds.Add(fon9_MakeField(Named{"PriRef"},   SymbRef, PriRef_));
-   flds.Add(fon9_MakeField(Named{"PriUpLmt"}, SymbRef, PriUpLmt_));
-   flds.Add(fon9_MakeField(Named{"PriDnLmt"}, SymbRef, PriDnLmt_));
+   flds.Add(fon9_MakeField(Named{"PriRef"},   SymbRef, Data_.PriRef_));
+   flds.Add(fon9_MakeField(Named{"PriUpLmt"}, SymbRef, Data_.PriUpLmt_));
+   flds.Add(fon9_MakeField(Named{"PriDnLmt"}, SymbRef, Data_.PriDnLmt_));
    return flds;
 }
 

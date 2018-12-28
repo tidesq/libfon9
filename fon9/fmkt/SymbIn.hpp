@@ -4,6 +4,8 @@
 #define __fon9_fmkt_SymbIn_hpp__
 #include "fon9/fmkt/SymbTree.hpp"
 #include "fon9/fmkt/SymbRef.hpp"
+#include "fon9/fmkt/SymbBS.hpp"
+#include "fon9/fmkt/SymbDeal.hpp"
 
 namespace fon9 { namespace fmkt {
 
@@ -19,6 +21,8 @@ class SymbIn : public Symb {
    using base = Symb;
 public:
    SymbRef  Ref_;
+   SymbBS   BS_;
+   SymbDeal Deal_;
 
    using base::base;
 

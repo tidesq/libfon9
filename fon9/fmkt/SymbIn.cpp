@@ -9,6 +9,8 @@ namespace fon9 { namespace fmkt {
 static const int32_t kSymbInOffset[]{
    0,
    fon9_OffsetOf(SymbIn, Ref_),
+   fon9_OffsetOf(SymbIn, BS_),
+   fon9_OffsetOf(SymbIn, Deal_),
 };
 static inline SymbData* GetSymbInData(SymbIn* pthis, int tabid) {
    return static_cast<size_t>(tabid) < numofele(kSymbInOffset)
@@ -38,8 +40,10 @@ static bool SymbMap_Start(seed::PluginsHolder& holder, StrView args) {
    std::string    symbMapName = args.empty() ? "SymbIn" : args.ToString();
    seed::LayoutSP layout{new seed::LayoutN(fon9_MakeField(Named{"Id"}, Symb, SymbId_),
       seed::TreeFlag::AddableRemovable | seed::TreeFlag::Unordered,
-      seed::TabSP{new seed::Tab{Named{"Base"}, Symb::MakeFields(),    seed::TabFlag::NoSapling_NoSeedCommand_Writable}},
-      seed::TabSP{new seed::Tab{Named{"Ref"},  SymbRef::MakeFields(), seed::TabFlag::NoSapling_NoSeedCommand_Writable}}
+      seed::TabSP{new seed::Tab{Named{"Base"}, Symb::MakeFields(),     seed::TabFlag::NoSapling_NoSeedCommand_Writable}},
+      seed::TabSP{new seed::Tab{Named{"Ref"},  SymbRef::MakeFields(),  seed::TabFlag::NoSapling_NoSeedCommand_Writable}},
+      seed::TabSP{new seed::Tab{Named{"BS"},   SymbBS::MakeFields(),   seed::TabFlag::NoSapling_NoSeedCommand_Writable}},
+      seed::TabSP{new seed::Tab{Named{"Deal"}, SymbDeal::MakeFields(), seed::TabFlag::NoSapling_NoSeedCommand_Writable}}
       )};
    holder.Root_->Add(new fon9::seed::NamedSapling(new SymbInTree{std::move(layout)}, std::move(symbMapName)));
    return true;
