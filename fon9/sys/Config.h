@@ -125,6 +125,14 @@ extern "C" {
    /// 例如: `fon9_CTXTOCSTR(EnumValue1)` 只會得到 "EnumValue1".
    #define fon9_CTXTOCSTR(x)    fon9_TOCSTR(x)
 
+   #if defined(_MSC_VER)
+      #define fon9_PACK(n)      __pragma(pack(push,1))
+      #define fon9_PACK_POP     __pragma(pack(pop))
+   #else
+      #define fon9_PACK(n)      _Pragma("pack(push,1)")
+      #define fon9_PACK_POP     _Pragma("pack(pop)")
+   #endif
+
 #ifdef __cplusplus
 }//extern "C"
 #endif

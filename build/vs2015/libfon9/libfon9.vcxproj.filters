@@ -869,6 +869,9 @@
     <ClInclude Include="..\..\..\fon9\fmkt\SymbDeal.hpp">
       <Filter>Header Files\fmkt</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\PackBcd.hpp">
+      <Filter>Header Files\_base\_AlNum / StrTools</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />

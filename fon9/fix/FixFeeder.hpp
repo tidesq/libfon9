@@ -8,7 +8,7 @@
 namespace fon9 { namespace fix {
 
 /// \ingroup fix
-// 從 Device 收到的資料, 因為不保證每次可收足完整訊息,
+/// 從 Device 收到的資料, 因為不保證每次可收足完整訊息,
 /// 所以透過餵食的方式提供給 FixFeeder, 透過這裡擷取出一筆一筆的 FIX Message.
 class fon9_API FixFeeder {
    fon9_NON_COPY_NON_MOVE(FixFeeder);

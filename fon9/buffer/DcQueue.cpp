@@ -19,4 +19,23 @@ size_t DcQueue::DcQueueReadMore(byte* buf, size_t sz) {
    return rdsz;
 }
 
+size_t DcQueue::PopUnknownChar(char ch) {
+   size_t removedBytes = 0;
+   for (;;) {
+      auto  blk = this->PeekCurrBlock();
+      if (blk.first == nullptr)
+         break;
+      const byte* pch = reinterpret_cast<const byte*>(memchr(blk.first, ch, blk.second));
+      if (fon9_LIKELY(pch)) {
+         const size_t sz = static_cast<size_t>(pch - blk.first);
+         removedBytes += sz;
+         this->PopConsumed(sz);
+         break;
+      }
+      this->PopConsumed(blk.second);
+      removedBytes += blk.second;
+   }
+   return removedBytes;
+}
+
 } // namespace

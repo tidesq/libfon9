@@ -35,6 +35,7 @@ $OUTPUT_DIR/ToStr_UT
 $OUTPUT_DIR/TimeStamp_UT
 $OUTPUT_DIR/RevPrint_UT
 $OUTPUT_DIR/CharVector_UT
+$OUTPUT_DIR/PackBcd_UT
 
 # unit tests: Thread Tools
 $OUTPUT_DIR/ThreadController_UT

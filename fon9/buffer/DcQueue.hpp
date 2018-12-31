@@ -116,6 +116,10 @@ public:
    /// 資料輸出失敗, 清除全部的內容.
    virtual void ConsumeErr(const ErrC& errc) = 0;
 
+   /// 移除 ch 之前的字元.
+   /// \return 移除的 bytes 數.
+   size_t PopUnknownChar(char ch);
+
    /// 將資料複製到 buf 並移除, 最多複製 sz bytes, 傳回實際複製的資料量.
    size_t Read(void* buf, const size_t sz) {
       const size_t blkszCurr = this->GetCurrBlockSize();

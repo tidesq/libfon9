@@ -215,6 +215,9 @@ target_link_libraries(RevPrint_UT fon9_s)
 add_executable(CharVector_UT CharVector_UT.cpp)
 target_link_libraries(CharVector_UT fon9_s)
 
+add_executable(PackBcd_UT PackBcd_UT.cpp)
+target_link_libraries(PackBcd_UT fon9_s)
+
 # unit tests: Bitv/Serialize/Deserialize
 add_executable(Bitv_UT Bitv_UT.cpp)
 target_link_libraries(Bitv_UT fon9_s)
