@@ -872,6 +872,9 @@
     <ClInclude Include="..\..\..\fon9\PackBcd.hpp">
       <Filter>Header Files\_base\_AlNum / StrTools</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\PkCont.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1383,6 +1386,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\fmkt\SymbDeal.cpp">
       <Filter>Source Files\fmkt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\PkCont.cpp">
+      <Filter>Source Files\_base\_Tools / Utility</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

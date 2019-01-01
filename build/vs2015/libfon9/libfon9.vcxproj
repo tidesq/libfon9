@@ -217,6 +217,7 @@
     <ClInclude Include="..\..\..\fon9\Named.hpp" />
     <ClInclude Include="..\..\..\fon9\NamedIx.hpp" />
     <ClInclude Include="..\..\..\fon9\PackBcd.hpp" />
+    <ClInclude Include="..\..\..\fon9\PkCont.hpp" />
     <ClInclude Include="..\..\..\fon9\Random.hpp" />
     <ClInclude Include="..\..\..\fon9\RevFormat.hpp" />
     <ClInclude Include="..\..\..\fon9\RevPrint.hpp" />
@@ -432,6 +433,7 @@
     <ClCompile Include="..\..\..\fon9\LogFile.cpp" />
     <ClCompile Include="..\..\..\fon9\Outcome.cpp" />
     <ClCompile Include="..\..\..\fon9\Named.cpp" />
+    <ClCompile Include="..\..\..\fon9\PkCont.cpp" />
     <ClCompile Include="..\..\..\fon9\Random.cpp" />
     <ClCompile Include="..\..\..\fon9\RevFormat.cpp" />
     <ClCompile Include="..\..\..\fon9\CountDownLatch.cpp" />
