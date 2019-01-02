@@ -26,6 +26,19 @@ public:
 
    /// 衍生者必須傳回有效的 SymbSP;
    virtual SymbSP MakeSymb(const StrView& symbid) = 0;
+
+   SymbSP FetchSymb(const SymbMap::Locker& symbs, const StrView& symbid);
+   SymbSP FetchSymb(const StrView& symbid) {
+      return this->FetchSymb(this->SymbMap_.Lock(), symbid);
+   }
+
+   static SymbSP GetSymb(const SymbMap::Locker& symbs, const StrView& symbid) {
+      auto ifind = symbs->find(symbid);
+      return ifind == symbs->end() ? SymbSP{nullptr} : SymbSP{&GetSymbValue(*ifind)};
+   }
+   SymbSP GetSymb(const StrView& symbid) {
+      return this->GetSymb(this->SymbMap_.Lock(), symbid);
+   }
 };
 
 } } // namespaces

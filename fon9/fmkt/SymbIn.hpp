@@ -16,7 +16,7 @@ using SymbInTreeSP = intrusive_ptr<SymbInTree>;
 /// 所有商品資料直接機中在此:
 /// - 適用於: 追求速度(而非彈性)的系統.
 /// - 這裡僅是範例: 只包含 SymbRef
-class SymbIn : public Symb {
+class fon9_API SymbIn : public Symb {
    fon9_NON_COPY_NON_MOVE(SymbIn);
    using base = Symb;
 public:
@@ -30,7 +30,7 @@ public:
    SymbData* FetchSymbData(int tabid) override;
 };
 
-class SymbInTree : public SymbTree {
+class fon9_API SymbInTree : public SymbTree {
    fon9_NON_COPY_NON_MOVE(SymbInTree);
    using base = SymbTree;
 

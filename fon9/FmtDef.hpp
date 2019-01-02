@@ -117,6 +117,13 @@ struct fon9_API FmtDef {
 
    FmtDef() = default;
 
+   explicit FmtDef(WidthType w, WidthType p = static_cast<WidthType>(0), FmtFlag f = FmtFlag{})
+      : Flags_{p ? (f | FmtFlag::HasPrecision) : f}, Width_{w}, Precision_{p} {
+   }
+   explicit FmtDef(WidthType w, FmtFlag f)
+      : Flags_{f}, Width_{w}, Precision_{0} {
+   }
+
    /// 解析 width[.precision]
    void ParseWidth(const char* pcur, const char* pend);
 };

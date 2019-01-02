@@ -91,32 +91,16 @@ public:
          fnCallback(seed::PodOpResult{this->Tree_, seed::OpResult::not_found_key, strKeyText}, nullptr);
    }
    void Get(StrView strKeyText, seed::FnPodOp fnCallback) override {
-      SymbSP symb;
-      {
-         SymbMap::Locker lockedMap{static_cast<SymbTree*>(&this->Tree_)->SymbMap_};
-         auto            ifind = lockedMap->find(strKeyText);
-         if (ifind != lockedMap->end())
-            symb.reset(&GetSymbValue(*ifind));
-      } // unlock.
+      SymbSP symb = static_cast<SymbTree*>(&this->Tree_)->GetSymb(strKeyText);
       this->OnPodOp(strKeyText, std::move(symb), std::move(fnCallback));
    }
    void Add(StrView strKeyText, seed::FnPodOp fnCallback) override {
-      if (seed::IsTextBeginOrEnd(strKeyText)) {
+      if (seed::IsTextBeginOrEnd(strKeyText))
          fnCallback(seed::PodOpResult{this->Tree_, seed::OpResult::not_found_key, strKeyText}, nullptr);
-         return;
+      else {
+         SymbSP symb = static_cast<SymbTree*>(&this->Tree_)->FetchSymb(strKeyText);
+         this->OnPodOp(strKeyText, std::move(symb), std::move(fnCallback));
       }
-      SymbSP symb;
-      {
-         SymbMap::Locker lockedMap{static_cast<SymbTree*>(&this->Tree_)->SymbMap_};
-         auto            ifind = lockedMap->find(strKeyText);
-         if (ifind == lockedMap->end()) {
-            symb = static_cast<SymbTree*>(&this->Tree_)->MakeSymb(strKeyText);
-            ifind = lockedMap->emplace(ToStrView(symb->SymbId_), symb).first;
-         }
-         else
-            symb.reset(&GetSymbValue(*ifind));
-      } // unlock.
-      this->OnPodOp(strKeyText, std::move(symb), std::move(fnCallback));
    }
    void Remove(StrView strKeyText, seed::Tab* tab, seed::FnPodRemoved fnCallback) override {
       seed::PodRemoveResult res{this->Tree_, seed::OpResult::not_found_key, strKeyText, tab};
@@ -140,6 +124,14 @@ void SymbTree::OnTreeOp(seed::FnTreeOp fnCallback) {
 void SymbTree::OnParentSeedClear() {
    SymbMapImpl symbs{std::move(*this->SymbMap_.Lock())};
    // unlock 後, symbs 解構時, 自動清除.
+}
+SymbSP SymbTree::FetchSymb(const SymbMap::Locker& symbs, const StrView& symbid) {
+   auto ifind = symbs->find(symbid);
+   if (ifind != symbs->end())
+      return SymbSP{&GetSymbValue(*ifind)};
+   auto symb = this->MakeSymb(symbid);
+   symbs->insert(SymbMapImpl::value_type(ToStrView(symb->SymbId_), symb));
+   return symb;
 }
 
 } } // namespaces

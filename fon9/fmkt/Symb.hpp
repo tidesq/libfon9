@@ -63,6 +63,12 @@ inline StrView GetSymbId(const std::pair<StrView, SymbSP>& v) {
 inline Symb& GetSymbValue(const std::pair<StrView, SymbSP>& v) {
    return *v.second;
 }
+inline void ResetSymbValue(std::pair<StrView, SymbSP>& v, SymbSP symb) {
+   v.second = std::move(symb);
+}
+inline void ResetSymbValue(SymbHashMap::value_type& v, SymbSP symb) {
+   v.second = std::move(symb);
+}
 
 //--------------------------------------------------------------------------//
 
@@ -93,6 +99,9 @@ inline StrView GetSymbId(const SymbTrieMap::value_type& v) {
 inline Symb& GetSymbValue(const SymbTrieMap::value_type& v) {
    return *v.value();
 }
+inline void ResetSymbValue(SymbTrieMap::value_type& v, SymbSP symb) {
+   v.value() = std::move(symb);
+}
 
 //--------------------------------------------------------------------------//
 
@@ -101,8 +110,8 @@ inline Symb& GetSymbValue(const SymbTrieMap::value_type& v) {
 ///   更適合用來處理「全市場」的「商品資料表」, 因為資料筆數較多, 且商品Id散亂(不適合使用Trie)。
 /// - 但是如果是「個別帳戶」的「商品庫存」(個別的資料筆數較少, 但帳戶可能很多),
 ///   則仍需其他驗證, 才能決定用哪種容器: 「帳戶庫存表」應考慮使用較少記憶體的容器。
-//using SymbMap = SymbHashMap;
-using SymbMap = SymbTrieMap;
+using SymbMap = SymbHashMap;
+//using SymbMap = SymbTrieMap;
 
 } } // namespaces
 #endif//__fon9_fmkt_Symb_hpp__

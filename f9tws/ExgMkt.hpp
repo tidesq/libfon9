@@ -9,7 +9,7 @@
 #define __f9tws_ExgMkt_hpp__
 #include "f9tws/Config.h"
 #include "fon9/PackBcd.hpp"
-#include "fon9/DecBase.hpp"
+#include "fon9/fmkt/FmktTypes.hpp"
 #include "fon9/buffer/DcQueue.hpp"
 
 namespace f9tws {
@@ -19,6 +19,11 @@ namespace f9tws {
 fon9_PACK(1);
 
 using StkNo = char[6];
+constexpr fon9::StrView ToStrView(const StkNo stkno) {
+   return fon9::StrView{stkno, stkno[sizeof(StkNo) - 1] != ' ' ? sizeof(StkNo)
+                             : stkno[sizeof(StkNo) - 2] != ' ' ? sizeof(StkNo) - 1
+                             : sizeof(StkNo) - 2};
+}
 
 /// 每個封包的基本框架:
 /// - Esc: 1 byte = 27;
@@ -41,15 +46,34 @@ enum : size_t {
 };
 
 struct ExgMktPriQty {
-   fon9::PackBcd<6>  Pri_;
+   /// 小數2位.
+   fon9::PackBcd<6>  PriV2_;
    fon9::PackBcd<8>  Qty_;
+
+   void AssignTo(fon9::fmkt::PriQty& dst) const {
+      dst.Pri_.Assign<2>(fon9::PackBcdTo<fon9::fmkt::Qty>(this->PriV2_));
+      dst.Qty_ = fon9::PackBcdTo<fon9::fmkt::Qty>(this->Qty_);
+   }
 };
 static_assert(sizeof(ExgMktPriQty) == 7, "ExgMktPriQty 沒有 pack?");
 
+fon9_MSC_WARN_DISABLE(4201); // nonstandard extension used: nameless struct/union
+/// HHMMSSuuuuuu 後6位為 us.
+union TimeHHMMSSu6 {
+   fon9::PackBcd<12>    HHMMSSu6_;
+   fon9::PackBcd<6>     HHMMSS_;
+   struct {
+      fon9::PackBcd<2>  HH_;
+      fon9::PackBcd<2>  MM_;
+      fon9::PackBcd<2>  SS_;
+      fon9::PackBcd<6>  U6_;
+   };
+};
+fon9_MSC_WARN_POP;
+
 struct ExgMktFmt6v3 : public ExgMktHeader {
    StkNo             StkNo_;
-   /// HHMMSSuuuuuu 後6位為 us.
-   fon9::PackBcd<12> TimeHHMMSSu6_;
+   TimeHHMMSSu6      Time_;
    /// - Bit 7 成交
    ///   - 0︰無成交價、成交量，不傳送
    ///   - 1︰有成交價、成交量，而且傳送
