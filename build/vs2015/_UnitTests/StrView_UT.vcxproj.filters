@@ -17,6 +17,9 @@
     <ClCompile Include="..\..\..\fon9\StrView_UT.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\fon9\Assert.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\StrView.hpp">

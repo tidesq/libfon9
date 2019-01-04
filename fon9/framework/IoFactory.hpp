@@ -57,6 +57,8 @@ class fon9_API SessionFactory : public seed::NamedSeed {
    using base = seed::NamedSeed;
 public:
    using base::base;
+   SessionFactory(Named&& name) : base{std::move(name)} {
+   }
 
    virtual io::SessionSP CreateSession(IoManager& mgr, const IoConfigItem& cfg, std::string& errReason) = 0;
    virtual io::SessionServerSP CreateSessionServer(IoManager& mgr, const IoConfigItem& cfg, std::string& errReason) = 0;

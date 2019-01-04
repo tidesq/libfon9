@@ -13,6 +13,7 @@ namespace fon9 {
 /// - 即使同一個資訊源封包也可能亂序.
 /// - 若封包序號小於期望, 視為重複封包, 拋棄之.
 /// - 若封包序號不連續, 則等候一小段時間, 若仍沒收到連續封包, 則放棄等候.
+/// - 衍生者解構時應主動呼叫 Clear(); 因為可能正在處理 PkContOnTimer();
 class fon9_API PkContFeeder {
    fon9_NON_COPY_NON_MOVE(PkContFeeder);
 public:

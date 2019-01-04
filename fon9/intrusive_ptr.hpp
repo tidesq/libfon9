@@ -14,7 +14,7 @@
 //
 
 // fonwin:[ from boost 1.58
-#include <assert.h>
+#include "fon9/Assert.h"
 #define BOOST_SP_NO_SP_CONVERTIBLE
 #define BOOST_NOEXCEPT     noexcept
 #define BOOST_NO_CXX11_NULLPTR

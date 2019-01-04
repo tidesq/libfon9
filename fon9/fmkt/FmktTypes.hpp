@@ -1,4 +1,4 @@
-﻿// \file fon9/FmktTypes.hpp
+﻿// \file fon9/fmkt/FmktTypes.hpp
 // \author fonwinz@gmail.com
 #ifndef __fon9_fmkt_FmktTypes_hpp__
 #define __fon9_fmkt_FmktTypes_hpp__

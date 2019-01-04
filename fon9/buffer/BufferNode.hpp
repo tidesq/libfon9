@@ -155,8 +155,13 @@ inline size_t CalcDataSize(const BufferNode* front) {
 fon9_WARN_DISABLE_PADDING;
 /// \ingroup Buffer
 /// 在 Buffer 消費完此節點時, 會呼叫 OnBufferConsumed(); 然後才會移除&釋放此節點.
-/// 可用於自訂「資料消費之後」的行為.
-/// 用法範例可參考: BufferNodeWaiter, FileAppender::NodeReopen, FileAppender::NodeCheckRotateTime;
+/// - 可用於自訂「資料消費之後」的行為.
+/// - 用法範例可參考: BufferNodeWaiter, FileAppender::NodeReopen, FileAppender::NodeCheckRotateTime;
+/// - 如果是從 io::Device 呼叫 OnBufferConsumed():
+///   因此時正鎖定 SendBuffer & OpQueue,
+///   所以在這裡呼叫 SendBuffered() 或 OpQueue 會死結!
+///   因此若在 OnBufferConsumed() 有 Send 或 OpQueue操作,
+///   應移到其他 thread(e.g. GetDefaultThreadPool()) 處理.
 class fon9_API BufferNodeVirtual : public BufferNode {
    fon9_NON_COPY_NON_MOVE(BufferNodeVirtual);
    using base = BufferNode;

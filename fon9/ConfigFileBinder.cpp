@@ -27,7 +27,7 @@ static std::string CheckRW(StrView logErrHeader, StrView func, File::Result fres
    return errstr;
 }
 
-std::string ConfigFileBinder::OpenRead(StrView logErrHeader, std::string cfgfn) {
+std::string ConfigFileBinder::OpenRead(StrView logErrHeader, std::string cfgfn, bool isAutoBackup) {
    this->FileName_ = cfgfn;
    File fd;
    auto fres = fd.Open(std::move(cfgfn), FileMode::Read);
@@ -41,29 +41,34 @@ std::string ConfigFileBinder::OpenRead(StrView logErrHeader, std::string cfgfn) 
       return std::string{};
    fres = fd.Read(0, &*this->ConfigStr_.begin(), this->ConfigStr_.size());
    this->LastModifyTime_ = fd.GetLastModifyTime();
-   return CheckRW(logErrHeader, "Read", fres, this->ConfigStr_.size(), fd);
+   auto res = CheckRW(logErrHeader, "Read", fres, this->ConfigStr_.size(), fd);
+   if (isAutoBackup && res.empty()) // 載入成功, 備份設定檔.
+      BackupConfig(logErrHeader, *this);
+   return res;
 }
-std::string ConfigFileBinder::Write(StrView logErrHeader, std::string cfgstr) {
+std::string ConfigFileBinder::WriteConfig(StrView logErrHeader, std::string cfgstr, bool isAutoBackup) {
    if (this->ConfigStr_ == cfgstr)
       return std::string{};
    if (this->FileName_.empty()) {
       this->ConfigStr_ = std::move(cfgstr);
       return std::string{};
    }
+   if (isAutoBackup)
+      BackupConfig(logErrHeader, *this);
    File fd;
    auto fres = fd.Open(this->FileName_, FileMode::Write | FileMode::CreatePath | FileMode::Trunc);
    if (!fres)
       return MakeErr(logErrHeader, "Open", fres, fd);
-   std::string errmsg = WriteConfig(logErrHeader, cfgstr, fd);
+   std::string errmsg = fon9::WriteConfig(logErrHeader, cfgstr, fd);
    if (errmsg.empty()) {
       this->ConfigStr_ = std::move(cfgstr);
-      this->LastModifyTime_ = UtcNow();
+      this->LastModifyTime_ = fd.GetLastModifyTime();
    }
    return errmsg;
 }
 
 fon9_API std::string WriteConfig(StrView logErrHeader, const std::string& cfgstr, File& fd) {
-   auto fres = fd.Write(0, &*cfgstr.begin(), cfgstr.size());
+   auto fres = fd.Write(0, cfgstr.c_str(), cfgstr.size());
    return CheckRW(logErrHeader, "Write", fres, cfgstr.size(), fd);
 }
 

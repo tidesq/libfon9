@@ -1,4 +1,4 @@
-﻿// \file fon9/SymbBS.hpp
+﻿// \file fon9/fmkt/SymbBS.hpp
 // \author fonwinz@gmail.com
 #ifndef __fon9_fmkt_SymbBS_hpp__
 #define __fon9_fmkt_SymbBS_hpp__
@@ -19,11 +19,11 @@ public:
    };
    struct Data {
       /// 報價時間.
-      TimeStamp   Time_{TimeStamp::Null()};
+      TimeInterval   Time_{TimeInterval::Null()};
       /// 賣出價量列表, [0]=最佳賣出價量.
-      PriQty   Sells_[kBSCount];
+      PriQty         Sells_[kBSCount];
       /// 買進價量列表, [0]=最佳買進價量.
-      PriQty   Buys_[kBSCount];
+      PriQty         Buys_[kBSCount];
    };
    Data  Data_;
    

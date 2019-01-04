@@ -226,7 +226,7 @@ struct PluginsMgr::PluginsTree : public Tree {
       }
       RevPrintConfigFieldNames(rbuf, flds, &this->LayoutSP_->KeyField_->Name_);
       std::string logHeader = "PluginsMgr." + this->PluginsMgr_.Name_;
-      this->ConfigFileBinder_.Write(&logHeader, BufferTo<std::string>(rbuf.MoveOut()));
+      this->ConfigFileBinder_.WriteConfig(&logHeader, BufferTo<std::string>(rbuf.MoveOut()));
    }
    std::string BindConfigFile(StrView cfgfn) {
       std::string res;
@@ -234,11 +234,8 @@ struct PluginsMgr::PluginsTree : public Tree {
          std::string       logHeader = "PluginsMgr." + this->PluginsMgr_.Name_;
          ConfigFileBinder& cfgbinder = this->ConfigFileBinder_;
          res = cfgbinder.OpenRead(&logHeader, cfgfn.ToString());
-         if (res.empty()) {
+         if (res.empty())
             res = this->ParseConfigStr(&cfgbinder.GetConfigStr());
-            // 載入成功, 備份設定檔.
-            BackupConfig(&logHeader, cfgfn, cfgbinder.GetLastModifyTime(), cfgbinder.GetConfigStr());
-         }
       });
       return res;
    }

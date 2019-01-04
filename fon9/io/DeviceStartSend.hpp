@@ -16,7 +16,7 @@ inline bool IsAllowInplaceSend(DeviceOpLocker::ALocker& alocker) {
 /// 實際使用請參考 DeviceStartSend();
 /// 此為一次性物件, 不可重複使用.
 struct StartSendChecker : public DeviceOpLocker {
-   typedef bool (*FnOpImpl_IsSendBufferAlive)(Device& owner, SendBuffer& sbuf);
+   typedef SendBuffer* (*FnOpImpl_GetSendBuffer)(Device& owner, void* impl);
 
    bool IsLinkReady(Device& dev) {
       // 這裡呼叫 dev.OpImpl_GetState() 雖然不安全.
@@ -39,9 +39,9 @@ struct StartSendChecker : public DeviceOpLocker {
    BufferList& GetQueueForPush(SendBuffer& sbuf) {
       return sbuf.GetQueueForPush(*this->ALocker_);
    }
-   void AsyncSend(ObjHolderPtr<BufferList> pbuf, SendBuffer& sbuf, FnOpImpl_IsSendBufferAlive fnIsSendBufferAlive) {
-      this->ALocker_->AddAsyncTask(DeviceAsyncOp{[pbuf, &sbuf, fnIsSendBufferAlive](Device& dev) {
-         if (fnIsSendBufferAlive(dev, sbuf))
+   void AsyncSend(ObjHolderPtr<BufferList> pbuf, void* impl, FnOpImpl_GetSendBuffer fnGetSendBuffer) {
+      this->ALocker_->AddAsyncTask(DeviceAsyncOp{[pbuf, impl, fnGetSendBuffer](Device& dev) {
+         if (fnGetSendBuffer(dev, impl))
             dev.SendASAP(std::move(*pbuf));
          else
             BufferListConsumeErr(std::move(*pbuf), std::errc::operation_canceled);
@@ -87,7 +87,7 @@ struct SendAuxBuf {
 ///   // `BufferListConsumeErr(std::move(src), std::errc::no_link);`
 ///   void NoLink();
 ///
-///   SendBuffer& GetSendBuffer(DeviceT& dev);
+///   SendBuffer& GetSendBufferAtLocked(DeviceT& dev);
 ///
 ///   // 在 sc.IsAllowInplace() && sc.ToSendingAndUnlock(sbuf) 的情況下呼叫.
 ///   // [ASAP: 立即送] or [Buffered: 啟動 Writable 偵測, 在 Writable 時送].
@@ -122,7 +122,7 @@ Device::SendResult DeviceStartSend(DeviceT& dev, Aux& aux) {
    StartSendChecker sc;
    if (fon9_LIKELY(sc.IsLinkReady(dev))) {
       if (fon9_LIKELY(sc.IsAllowInplace())) {
-         auto&  sbuf = aux.GetSendBuffer(dev);
+         auto&  sbuf = aux.GetSendBufferAtLocked(dev);
          if (DcQueueList* toSend = sc.ToSendingAndUnlock(sbuf))
             return aux.StartToSend(sc, *toSend);
          aux.PushTo(sc.GetQueueForPush(sbuf));
@@ -156,25 +156,25 @@ public:
    Device::SendResult SendASAP(const void* src, size_t size) {
       if (size <= 0)
          return Device::SendResult{0};
-      typename DeviceBase::template SendAux<typename IoImpl::SendASAP_AuxMem>   aux{src, size};
+      typename DeviceBase::template SendAuxImpl<typename IoImpl::SendASAP_AuxMem>   aux{src, size};
       return DeviceStartSend(*this, aux);
    }
    Device::SendResult SendASAP(BufferList&& src) {
       if (src.empty())
          return Device::SendResult{0};
-      typename DeviceBase::template SendAux<typename IoImpl::SendASAP_AuxBuf>   aux{src};
+      typename DeviceBase::template SendAuxImpl<typename IoImpl::SendASAP_AuxBuf>   aux{src};
       return DeviceStartSend(*this, aux);
    }
    Device::SendResult SendBuffered(const void* src, size_t size) {
       if (size <= 0)
          return Device::SendResult{0};
-      typename DeviceBase::template SendAux<typename IoImpl::SendBuffered_AuxMem>   aux{src, size};
+      typename DeviceBase::template SendAuxImpl<typename IoImpl::SendBuffered_AuxMem>   aux{src, size};
       return DeviceStartSend(*this, aux);
    }
    Device::SendResult SendBuffered(BufferList&& src) {
       if (src.empty())
          return Device::SendResult{0};
-      typename DeviceBase::template SendAux<typename IoImpl::SendBuffered_AuxBuf>   aux{src};
+      typename DeviceBase::template SendAuxImpl<typename IoImpl::SendBuffered_AuxBuf>   aux{src};
       return DeviceStartSend(*this, aux);
    }
 };

@@ -40,8 +40,8 @@ public:
    void OnDevice_StateUpdated(Device& dev, const StateUpdatedArgs& e) override {
       this->UpdateDeviceState("OnDevice_StateUpdated", dev, e);
    }
-   void OnSession_StateUpdated(Device& dev, StrView stmsg) override {
-      fon9_LOG_INFO("OnSession_StateUpdated|dev=", ToPtr{&dev}, "|stmsg=", stmsg);
+   void OnSession_StateUpdated(Device& dev, StrView stmsg, LogLevel lv) override {
+      fon9_LOG(lv, "OnSession_StateUpdated|dev=", ToPtr{&dev}, "|stmsg=", stmsg);
    }
 };
 

@@ -154,6 +154,7 @@ set(fon9src
  fmkt/SymbRef.cpp
  fmkt/SymbBS.cpp
  fmkt/SymbDeal.cpp
+ fmkt/Trading.cpp
 
  fix/FixBase.cpp
  fix/FixCompID.cpp

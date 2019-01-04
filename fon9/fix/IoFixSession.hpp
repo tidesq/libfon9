@@ -34,7 +34,8 @@ public:
    IoFixManager() = default;
    virtual ~IoFixManager();
 
-   /// 如果 fixses 的角色是 Initiator, 則應在此呼叫 fixses.SendLogon();
+   /// 如果 fixses 的角色是 Initiator 則:
+   /// 應在此呼叫 fixses.SendLogon(); 或由 fixses 自行呼叫, 由 fixses 與 IoFixManager 的設計者自行協調.
    virtual void OnFixSessionConnected(IoFixSession& fixses) = 0;
    /// 斷線後歸還 fixSender.
    virtual void OnFixSessionDisconnected(IoFixSession& fixses, FixSenderSP&& fixSender) = 0;

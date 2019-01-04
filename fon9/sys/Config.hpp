@@ -37,7 +37,7 @@ fon9_BEFORE_INCLUDE_STD;
    #endif
 
    #include <type_traits>
-   #include <assert.h>
+   #include "fon9/Assert.h"
 fon9_AFTER_INCLUDE_STD;
 
 /// \ingroup fon9_MACRO

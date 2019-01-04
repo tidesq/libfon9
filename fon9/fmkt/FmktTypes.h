@@ -1,4 +1,4 @@
-﻿// \file fon9/FmktTypes.h
+﻿// \file fon9/fmkt/FmktTypes.h
 // \author fonwinz@gmail.com
 #ifndef __fon9_fmkt_FmktTypes_h__
 #define __fon9_fmkt_FmktTypes_h__

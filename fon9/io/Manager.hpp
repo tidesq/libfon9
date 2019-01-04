@@ -3,6 +3,7 @@
 #ifndef __fon9_io_Manager_hpp__
 #define __fon9_io_Manager_hpp__
 #include "fon9/io/IoBase.hpp"
+#include "fon9/Log.hpp"
 
 namespace fon9 { namespace io {
 
@@ -33,7 +34,7 @@ public:
    virtual void OnDevice_StateChanged(Device& dev, const StateChangedArgs& e) = 0;
    virtual void OnDevice_StateUpdated(Device& dev, const StateUpdatedArgs& e) = 0;
 
-   virtual void OnSession_StateUpdated(Device& dev, StrView stmsg) = 0;
+   virtual void OnSession_StateUpdated(Device& dev, StrView stmsg, LogLevel lv) = 0;
 };
 fon9_WARN_POP;
 

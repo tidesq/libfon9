@@ -31,6 +31,14 @@ public:
    virtual bool IsRecvBufferAlive() const = 0;
    virtual SendDirectResult SendDirect(BufferList&& txbuf) = 0;
 };
+
+/// \retval RecvBufferSize::AsyncRecvEvent
+///   必須使用 Device Async 操作接收事件.
+///   返回後會到 op thread 觸發 OnDevice_Recv() 事件.
+/// \retval RecvBufferSize::NoLink
+///   發現斷線, 或 e.RecvBuffer_ 已經無效.
+/// \retval 其他
+///   繼續等候接收事件.
 using FnOnDevice_RecvDirect = RecvBufferSize (*)(RecvDirectArgs& e);
 
 fon9_WARN_DISABLE_PADDING;
@@ -48,9 +56,12 @@ public:
    /// - 若此處為 nullptr 則使用 OnDevice_Recv() 處理收到的訊息.
    /// - 此時的 e.OpLocker_ 尚未建立 ALocker.
    /// - 根據傳回值決定後續動作.
-   /// - 收到資料後, 立即觸發此事件, 此時不保證 op queue 為空.
-   /// - 此事件適用於類似 web server 短連線:
-   ///   - 收到 request, 立即處理並回覆結果, 不會有其他 thread 呼叫 send.
+   /// - 收到資料後, 立即觸發此事件, 此時不保證 op queue 為空:
+   ///   也就是可能同時 device 正在送出 or 關閉 or 其他操作....
+   /// - 此事件適用於:
+   ///   - 單向行情接收: 例如接收交易所 multicast 行情.
+   ///   - 類似 web server 短連線: 收到 request, 立即處理並回覆結果,
+   ///     不會有其他 thread 呼叫 send.
    const FnOnDevice_RecvDirect   FnOnDevice_RecvDirect_;
 
    Session(FnOnDevice_RecvDirect fnOnDevice_RecvDirect = nullptr) : FnOnDevice_RecvDirect_{fnOnDevice_RecvDirect} {
@@ -103,7 +114,8 @@ public:
    /// \retval ==RecvBufferSize::CloseRecv   關閉接收端.
    virtual RecvBufferSize OnDevice_Recv(Device& dev, DcQueueList& rxbuf);
 
-   /// 在 LinkReady 時, 若有啟動 dev CommonTimer, 則透過此處通知 Session.
+   /// 在 LinkReady 之後, 若有啟動 dev CommonTimer: dev.CommonTimerRunAfter(ti),
+   /// 則透過此處通知 Session.
    /// 注意: 此時是在 timer thread, 並不是 op safe.
    /// 如果需要 op safe, 則必須自行使用 dev.OpQueue_ 來處理.
    virtual void OnDevice_CommonTimer(Device& dev, TimeStamp now);

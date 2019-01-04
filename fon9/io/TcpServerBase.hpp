@@ -12,7 +12,7 @@ namespace fon9 { namespace io {
 /// \ingroup io
 /// - 協助 DeviceAcceptedClientBase 完成:
 ///   - Device member function: `virtual bool IsSendBufferEmpty() const override;`
-/// - 協助完成 `DeviceImpl_DeviceStartSend<>` 所需要的 `struct SendAux`;
+/// - 協助完成 `DeviceImpl_DeviceStartSend<>` 所需要的 `struct SendAuxImpl`;
 template <class DeviceAcceptedClientBase>
 class DeviceAcceptedClientWithSend : public DeviceAcceptedClientBase {
    fon9_NON_COPY_NON_MOVE(DeviceAcceptedClientWithSend);
@@ -28,11 +28,11 @@ public:
    }
 
    template <class SendAuxBase>
-   struct SendAux : public SendAuxBase {
+   struct SendAuxImpl : public SendAuxBase {
       using SendAuxBase::SendAuxBase;
-      SendAux() = delete;
+      SendAuxImpl() = delete;
 
-      static SendBuffer& GetSendBuffer(DeviceAcceptedClientBase& dev) {
+      static SendBuffer& GetSendBufferAtLocked(DeviceAcceptedClientBase& dev) {
          return dev.GetSendBuffer();
       }
       void AsyncSend(DeviceAcceptedClientBase&, StartSendChecker& sc, ObjHolderPtr<BufferList>&& pbuf) {

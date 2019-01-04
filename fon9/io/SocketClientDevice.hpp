@@ -143,10 +143,14 @@ public:
    }
 
    static bool OpImpl_IsRecvBufferAlive(Device& dev, RecvBuffer& rbuf) {
-      return &(static_cast<SocketClientDeviceT*>(&dev)->ImplSP_->GetRecvBuffer()) == &rbuf;
+      if (auto impl = static_cast<SocketClientDeviceT*>(&dev)->ImplSP_.get())
+         return &(impl->GetRecvBuffer()) == &rbuf;
+      return false;
    }
-   static bool OpImpl_IsSendBufferAlive(Device& dev, SendBuffer& sbuf) {
-      return &(static_cast<SocketClientDeviceT*>(&dev)->ImplSP_->GetSendBuffer()) == &sbuf;
+   static SendBuffer* OpImpl_GetSendBuffer(Device& dev, void* impl) {
+      if (static_cast<ClientImpl*>(impl) == static_cast<SocketClientDeviceT*>(&dev)->ImplSP_.get())
+         return &(static_cast<ClientImpl*>(impl)->GetSendBuffer());
+      return nullptr;
    }
 
    virtual bool IsSendBufferEmpty() const override {
@@ -186,19 +190,21 @@ public:
    struct ContinueSendAux : public ClientImpl::ContinueSendAux {
       using ClientImpl::ContinueSendAux::ContinueSendAux;
       static bool IsSendBufferAlive(Device& dev, SendBuffer& sbuf) {
-         return SocketClientDeviceT::OpImpl_IsSendBufferAlive(*static_cast<SocketClientDeviceT*>(&dev), sbuf);
+         if (auto impl = static_cast<SocketClientDeviceT*>(&dev)->ImplSP_.get())
+            return &(impl->GetSendBuffer()) == &sbuf;
+         return false;
       }
    };
 
    template <class SendAuxBase>
-   struct SendAux : public SendAuxBase {
+   struct SendAuxImpl : public SendAuxBase {
       using SendAuxBase::SendAuxBase;
 
-      static SendBuffer& GetSendBuffer(SocketClientDeviceT& dev) {
+      static SendBuffer& GetSendBufferAtLocked(SocketClientDeviceT& dev) {
          return dev.ImplSP_->GetSendBuffer();
       }
       void AsyncSend(SocketClientDeviceT& dev, StartSendChecker& sc, ObjHolderPtr<BufferList>&& pbuf) {
-         sc.AsyncSend(std::move(pbuf), dev.ImplSP_->GetSendBuffer(), &OpImpl_IsSendBufferAlive);
+         sc.AsyncSend(std::move(pbuf), dev.ImplSP_.get(), &OpImpl_GetSendBuffer);
       }
    };
    fon9_MSC_WARN_POP;

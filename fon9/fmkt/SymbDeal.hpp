@@ -1,4 +1,4 @@
-﻿// \file fon9/SymbDeal.hpp
+﻿// \file fon9/fmkt/SymbDeal.hpp
 // \author fonwinz@gmail.com
 #ifndef __fon9_fmkt_SymbDeal_hpp__
 #define __fon9_fmkt_SymbDeal_hpp__
@@ -15,13 +15,13 @@ class fon9_API SymbDeal : public SymbData {
 public:
    struct Data {
       /// 成交時間.
-      TimeStamp   Time_{TimeStamp::Null()};
+      TimeInterval   Time_{TimeInterval::Null()};
       /// 單筆成交價量.
       /// this->Deal_.Qty_ 不一定等於 this->TotalQty_ - prev->TotalQty_;
       /// 因為行情資料可能有漏.
-      PriQty      Deal_{};
+      PriQty         Deal_{};
       /// 累計成交量.
-      Qty         TotalQty_{};
+      Qty            TotalQty_{};
    };
    Data  Data_;
 

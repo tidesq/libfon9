@@ -1,4 +1,4 @@
-﻿// \file fon9/SymbDy.hpp
+﻿// \file fon9/fmkt/SymbDy.hpp
 // \author fonwinz@gmail.com
 #ifndef __fon9_fmkt_SymbDy_hpp__
 #define __fon9_fmkt_SymbDy_hpp__

@@ -1,7 +1,8 @@
 ﻿// \file f9tws/ExgMkt_UT.cpp
 // \author fonwinz@gmail.com
 #define _CRT_SECURE_NO_WARNINGS
-#include "f9tws/ExgMkt.hpp"
+#include "f9tws/ExgMktFeeder.hpp"
+#include "f9tws/ExgMktFmt6.hpp"
 #include "fon9/fmkt/SymbIn.hpp"
 #include "fon9/RevPrint.hpp"
 #include "fon9/TestTools.hpp"
@@ -24,7 +25,8 @@ struct Feeder : public f9tws::ExgMktFeeder {
       memset(this->LastSeq_, 0, sizeof(this->LastSeq_));
       memset(this->SeqMisCount_, 0, sizeof(this->SeqMisCount_));
    }
-   void ExgMktOnReceived(const f9tws::ExgMktHeader& pk) override {
+   void ExgMktOnReceived(const f9tws::ExgMktHeader& pk, unsigned pksz) override {
+      (void)pksz;
       auto fmtNo = fon9::PackBcdTo<uint32_t>(pk.FmtNo_);
       ++this->FmtCount_[fmtNo];
 
@@ -71,9 +73,9 @@ struct Fmt6Parser : public Feeder, public fon9::fmkt::SymbTree {
    fon9::fmkt::SymbSP MakeSymb(const fon9::StrView& symbid) override {
       return new fon9::fmkt::SymbIn{symbid};
    }
-   void ExgMktOnReceived(const f9tws::ExgMktHeader& pk) override {
-      baseFeeder::ExgMktOnReceived(pk);
-      auto fmtNo = fon9::PackBcdTo<uint32_t>(pk.FmtNo_);
+   void ExgMktOnReceived(const f9tws::ExgMktHeader& pk, unsigned pksz) override {
+      baseFeeder::ExgMktOnReceived(pk, pksz);
+      auto fmtNo = pk.GetFmtNo();
       if (fmtNo != 6 && fmtNo != 17)
          return;
       const f9tws::ExgMktFmt6v3& fmt6 = *static_cast<const f9tws::ExgMktFmt6v3*>(&pk);
@@ -99,7 +101,7 @@ struct Fmt6Parser : public Feeder, public fon9::fmkt::SymbTree {
          pqs = AssignBS(symb.BS_.Data_.Sells_, pqs, (fmt6.ItemMask_ & 0x0e) >> 1);
       }
    }
-   const f9tws::ExgMktPriQty* AssignBS(fon9::fmkt::PriQty* dst, const f9tws::ExgMktPriQty* pqs, int count) {
+   static const f9tws::ExgMktPriQty* AssignBS(fon9::fmkt::PriQty* dst, const f9tws::ExgMktPriQty* pqs, int count) {
       if (count > fon9::fmkt::SymbBS::kBSCount)
          count = fon9::fmkt::SymbBS::kBSCount;
       for (int L = 0; L < count; ++L) {
@@ -231,11 +233,11 @@ int main(int argc, char* argv[]) {
             }
             fon9::RevPrint(rbuf,
                "SymbId=", symi->SymbId_, "\n"
-               "Last deal: ", *static_cast<const fon9::TimeInterval*>(&symi->Deal_.Data_.Time_), "\n"
+               "Last deal: ", symi->Deal_.Data_.Time_, "\n"
                "      Pri: ", symi->Deal_.Data_.Deal_.Pri_, fmtPri, "\n"
                "      Qty: ", symi->Deal_.Data_.Deal_.Qty_, fmtQty, "\n"
                " TotalQty: ", symi->Deal_.Data_.TotalQty_, fmtQty, "\n"
-               "Last Sells - Buys: ", *static_cast<const fon9::TimeInterval*>(&symi->BS_.Data_.Time_), "\n"
+               "Last Sells - Buys: ", symi->BS_.Data_.Time_, "\n"
                );
             std::cout << fon9::BufferTo<std::string>(rbuf.MoveOut()) << std::endl;
          }

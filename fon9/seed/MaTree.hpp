@@ -32,6 +32,8 @@ protected:
 
 public:
    using Named::Named;
+   NamedSeed(Named&& name) : base{name} {
+   }
    virtual ~NamedSeed();
 
    static Fields MakeDefaultFields();

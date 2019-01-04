@@ -15,10 +15,13 @@ IocpHandler::Result IocpHandler::IocpAttach(HANDLE handle) {
       return Result::kSuccess();
    return Result{GetSysErrC()};
 }
-//void IocpHandler::Post(LPOVERLAPPED lpOverlapped, DWORD dwNumberOfBytesTransferred) {
-//   if (!::PostQueuedCompletionStatus(this->IocpService_->CompletionPort_, dwNumberOfBytesTransferred, reinterpret_cast<ULONG_PTR>(this), lpOverlapped))
-//      this->OnIocp_Error(lpOverlapped, GetLastError());
-//}
+DWORD IocpHandler::Post(LPOVERLAPPED lpOverlapped, DWORD dwNumberOfBytesTransferred) {
+   if (::PostQueuedCompletionStatus(this->IocpService_->CompletionPort_->GetFD(), dwNumberOfBytesTransferred, reinterpret_cast<ULONG_PTR>(this), lpOverlapped))
+      return 0;
+   DWORD eno = GetLastError();
+   this->OnIocp_Error(lpOverlapped, eno);
+   return eno;
+}
 
 //--------------------------------------------------------------------------//
 

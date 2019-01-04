@@ -2,7 +2,7 @@
 /// \author fonwinz@gmail.com
 #ifndef __fon9_PackBcd_hpp__
 #define __fon9_PackBcd_hpp__
-#include "fon9/sys/Config.hpp"
+#include "fon9/DecBase.hpp"
 
 namespace fon9 {
 
@@ -72,6 +72,8 @@ using PackBcd = unsigned char[PackBcdWidthToSize(PackedWidth)];
 
 template <typename IntT, unsigned sz>
 inline IntT PackBcdTo(const unsigned char (&pbcd)[sz]) {
+   static_assert(static_cast<IntT>(DecDivisor<uint64_t, sz * 2>::Divisor - 1) == DecDivisor<uint64_t, sz * 2>::Divisor - 1,
+                 "The result may be overflow.");
    return PackBcdTo<sz * 2, IntT>(pbcd);
 }
 

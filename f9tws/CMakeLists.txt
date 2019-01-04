@@ -1,5 +1,7 @@
 set(f9tws_src
- ExgMkt.cpp
+ ExgMktFeeder.cpp
+ ExgMktPlayer.cpp
+ TradingLineFix.cpp
 )
 add_library(f9tws_s STATIC ${f9tws_src})
 target_link_libraries(f9tws_s pthread rt dl)

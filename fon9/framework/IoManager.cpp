@@ -39,13 +39,13 @@ void IoManager::ParseIoServiceArgs(io::IoServiceArgs& iosvArgs) const {
    RevPutChar(rbuf, '\n');
    if (!ParseConfig(iosvArgs, &this->IoServiceCfgstr_, rbuf)) {
       // fon9_LOG_ERROR:
-      RevPrint(rbuf, "IoManager.CreateIoService|name=", this->Name_, "info=use default config");
+      RevPrint(rbuf, "IoManager.", this->Name_, ".CreateIoService|info=use default config");
       LogWrite(LogLevel::Error, std::move(rbuf));
    }
 }
 
 void IoManager::RaiseMakeIoServiceFatal(Result2 err) const {
-   std::string errmsg = RevPrintTo<std::string>("IoManager.MakeIoService|name=", this->Name_, "err=", err);
+   std::string errmsg = RevPrintTo<std::string>("IoManager.", this->Name_, ".MakeIoService|err=", err);
    fon9_LOG_FATAL(errmsg);
    Raise<std::runtime_error>(std::move(errmsg));
 }
@@ -193,7 +193,7 @@ void IoManager::OnDevice_Destructing(io::Device& dev) {
       delete item;
       // TODO: 如果 dev 是 AcceptedClient, 則更新 server st (accepted client 的剩餘數量)?
    }
-   fon9_LOG_TRACE("IoManager.OnDevice_Destructing|dev=", ToPtr(&dev));
+   fon9_LOG_TRACE("IoManager.", this->Name_, ".OnDevice_Destructing|dev=", ToPtr(&dev));
 }
 void IoManager::OnDevice_Accepted(io::DeviceServer& server, io::DeviceAcceptedClient& client) {
    DeviceRun* cliItem = new DeviceRun; // 在 OnDevice_Destructing() 時刪除.
@@ -251,27 +251,27 @@ void IoManager::UpdateDeviceStateLocked(io::Device& dev, const io::StateUpdatedA
    }
    // fon9_LOG_TRACE:
    if (fon9_UNLIKELY(LogLevel::Trace >= LogLevel_)) {
-      RevPrint(rbuf, "IoManager.DeviceState|dev=", ToPtr(&dev));
+      RevPrint(rbuf, "IoManager.", this->Name_, ".DeviceState|dev=", ToPtr(&dev));
       LogWrite(LogLevel::Trace, std::move(rbuf));
    }
 }
-void IoManager::OnSession_StateUpdated(io::Device& dev, StrView stmsg) {
+void IoManager::OnSession_StateUpdated(io::Device& dev, StrView stmsg, LogLevel lv) {
    if (io::DeviceAcceptedClient* cli = dynamic_cast<io::DeviceAcceptedClient*>(&dev)) {
       auto clis = cli->Owner_->Lock();
-      this->UpdateSessionStateLocked(dev, stmsg);
+      this->UpdateSessionStateLocked(dev, stmsg, lv);
    }
    else {
       DeviceMap::Locker map{this->DeviceMap_};
-      this->UpdateSessionStateLocked(dev, stmsg);
+      this->UpdateSessionStateLocked(dev, stmsg, lv);
    }
 }
-void IoManager::UpdateSessionStateLocked(io::Device& dev, StrView stmsg) {
+void IoManager::UpdateSessionStateLocked(io::Device& dev, StrView stmsg, LogLevel lv) {
    if (auto item = this->FromManagerBookmark(dev)) {
       AssignStStr(item->SessionSt_, UtcNow(), stmsg);
       if (this->OwnerTree_)
          this->OwnerTree_->NotifyChanged(*item);
    }
-   fon9_LOG_INFO("IoManager.SessionState|dev=", ToPtr(&dev), "|st=", stmsg);
+   fon9_LOG(lv, "IoManager.", this->Name_, ".SessionState|dev=", ToPtr(&dev), "|st=", stmsg);
 }
 
 //--------------------------------------------------------------------------//
@@ -351,7 +351,8 @@ IoManager::Tree::Tree(IoManagerArgs& args)
    args.Result_.clear();
    if (args.CfgFileName_.empty())
       return;
-   args.Result_ = this->ConfigFileBinder_.OpenRead(ToStrView("IoManager." + args.Name_), args.CfgFileName_);
+   std::string logHeader = "IoManager." + args.Name_;
+   args.Result_ = this->ConfigFileBinder_.OpenRead(&logHeader, args.CfgFileName_);
    if (!args.Result_.empty())
       return;
    struct ToContainer : public seed::GridViewToContainer {
@@ -554,7 +555,7 @@ struct IoManager::Tree::TreeOp : public seed::TreeOp {
          RevBufferList rbuf{128};
          RevPutChar(rbuf, *fon9_kCSTR_ROWSPL);
          seed::RevPrintConfigFieldNames(rbuf, req.Tab_->Fields_, &this->Tree_.LayoutSP_->KeyField_->Name_);
-         static_cast<Tree*>(&this->Tree_)->ConfigFileBinder_.Write(
+         static_cast<Tree*>(&this->Tree_)->ConfigFileBinder_.WriteConfig(
             ToStrView("IoManager." + static_cast<Tree*>(&this->Tree_)->IoManager_->Name_),
             BufferTo<std::string>(rbuf.MoveOut()) + req.EditingGrid_.ToString());
       }
@@ -677,7 +678,9 @@ fon9_WARN_POP;
 //--------------------------------------------------------------------------//
 bool IoManager::DeviceRun::DisposeDevice(TimeStamp now, StrView cause) {
    if (this->Device_) {
-      this->Device_->SetManagerBookmark(0);
+      // 應該在 if (e.State_ == io::State::Disposing) 時清除 ManagerBookmark,
+      // 否則會造成 this leak.
+      // this->Device_->SetManagerBookmark(0);
       this->Device_->AsyncDispose(cause.ToString());
       return false;
    }

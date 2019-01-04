@@ -56,6 +56,7 @@ struct CharAry : public Comparable<CharAry<arysz, CharT>> {
    char* end() { return this->Chars_ + sizeof(this->Chars_); }
    
    char* data() { return this->Chars_; }
+   const char* data() const { return this->Chars_; }
 
    constexpr size_t size() const { return arysz; }
    constexpr size_t max_size() const { return arysz; }

@@ -40,8 +40,9 @@ protected:
       return this->IocpAttach(reinterpret_cast<HANDLE>(so));
    }
 
-   /// 如果 Post() 失敗, 則會立即呼叫 OnIocp_Error();
-   //void Post(LPOVERLAPPED lpOverlapped, DWORD dwNumberOfBytesTransferred);
+   /// \retval ==0 成功.
+   /// \retval !=0 Post() 失敗, 則會立即呼叫 OnIocp_Error(); 返回 GetLastError();
+   DWORD Post(LPOVERLAPPED lpOverlapped, DWORD dwNumberOfBytesTransferred);
 
 public:
    const IocpServiceSP  IocpService_;

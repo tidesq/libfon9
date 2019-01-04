@@ -1,4 +1,4 @@
-﻿// \file fon9/SymbRef.hpp
+﻿// \file fon9/fmkt/SymbRef.hpp
 // \author fonwinz@gmail.com
 #ifndef __fon9_fmkt_SymbRef_hpp__
 #define __fon9_fmkt_SymbRef_hpp__

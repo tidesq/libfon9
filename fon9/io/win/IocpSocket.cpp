@@ -39,7 +39,7 @@ bool IocpSocket::DropRecv() {
       bytesTransfered += rxBytes;
    }
    int eno = WSAGetLastError();
-   if (eno == WSAEWOULDBLOCK) {
+   if (eno == WSAEWOULDBLOCK || (eno == 0 && bytesTransfered > 0)) {
       this->ContinueRecv(RecvBufferSize::NoRecvEvent);
       return true;
    }
@@ -89,6 +89,11 @@ void IocpSocket::StartRecv(RecvBufferSize expectSize) {
       switch (int eno = WSAGetLastError()) {
       case WSA_IO_PENDING: // ERROR_IO_PENDING: 正常接收等候中.
          break;
+      case WSAEINVAL: // dgram + NoRecvEvent: 本來就預計不會有 Recv 事件.
+         if (expectSize == RecvBufferSize::NoRecvEvent) {
+            this->IocpSocketReleaseRef();
+            return;
+         }
       default: // 接收失敗, 不會產生 OnIocp_* 事件
          this->RecvBuffer_.Clear();
          this->OnIocp_Error(&this->RecvOverlapped_, static_cast<DWORD>(eno));
@@ -103,16 +108,21 @@ void IocpSocket::StartRecv(RecvBufferSize expectSize) {
 //--------------------------------------------------------------------------//
 
 Device::SendResult IocpSocket::SendAfterAddRef(DcQueueList& dcbuf) {
+   ZeroStruct(this->SendOverlapped_);
    WSABUF wbuf[64];
    DWORD  wcount = static_cast<DWORD>(dcbuf.PeekBlockVector(wbuf));
    if (fon9_UNLIKELY(wcount == 0)) {
-      wcount = 1;
-      wbuf[0].len = 0;
-      wbuf[0].buf = nullptr;
+      // 避免 WSASend() 真的送出 0 byte 的 socket 封包?
+      auto resPost = this->Post(&this->SendOverlapped_, 0);
+      if (resPost)
+         return GetSocketErrC(static_cast<int>(resPost));
+      return Device::SendResult{0};
+      // wcount = 1;
+      // wbuf[0].len = 0;
+      // wbuf[0].buf = nullptr;
    }
 
    DWORD  txBytes = 0, flags = 0;
-   ZeroStruct(this->SendOverlapped_);
    const int sres = this->SendTo_
       ? WSASendTo(this->Socket_.GetSocketHandle(), wbuf, wcount, &txBytes, flags, &this->SendTo_->Addr_, this->SendTo_->GetAddrLen(), &this->SendOverlapped_, nullptr)
       : WSASend(this->Socket_.GetSocketHandle(), wbuf, wcount, &txBytes, flags, &this->SendOverlapped_, nullptr);

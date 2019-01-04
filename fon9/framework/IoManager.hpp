@@ -168,10 +168,10 @@ private:
    void OnDevice_Destructing(io::Device& dev) override;
    void OnDevice_StateChanged(io::Device& dev, const io::StateChangedArgs& e) override;
    void OnDevice_StateUpdated(io::Device& dev, const io::StateUpdatedArgs& e) override;
-   void OnSession_StateUpdated(io::Device& dev, StrView stmsg) override;
+   void OnSession_StateUpdated(io::Device& dev, StrView stmsg, LogLevel lv) override;
    void UpdateDeviceState(io::Device& dev, const io::StateUpdatedArgs& e);
    void UpdateDeviceStateLocked(io::Device& dev, const io::StateUpdatedArgs& e);
-   void UpdateSessionStateLocked(io::Device& dev, StrView stmsg);
+   void UpdateSessionStateLocked(io::Device& dev, StrView stmsg, LogLevel lv);
 
    enum class DeviceOpenResult {
       NewDeviceCreated = 0,

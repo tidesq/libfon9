@@ -11,15 +11,30 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\f9tws\ExgMkt.cpp">
+    <ClCompile Include="..\..\..\f9tws\ExgMktFeeder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\f9tws\TradingLineFix.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\f9tws\ExgMktPlayer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\f9tws\ExgMkt.hpp">
+    <ClInclude Include="..\..\..\f9tws\ExgMktFeeder.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\f9tws\Config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9tws\TradingLineFix.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9tws\ExgMktFmt.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9tws\ExgMktFmt6.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

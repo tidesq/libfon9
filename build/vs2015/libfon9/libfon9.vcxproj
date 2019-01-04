@@ -77,6 +77,7 @@
     <ClInclude Include="..\..\..\fon9\Appender.hpp" />
     <ClInclude Include="..\..\..\fon9\AQueue.hpp" />
     <ClInclude Include="..\..\..\fon9\Archive.hpp" />
+    <ClInclude Include="..\..\..\fon9\Assert.h" />
     <ClInclude Include="..\..\..\fon9\auth\AuthBase.h" />
     <ClInclude Include="..\..\..\fon9\auth\AuthBase.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\AuthMgr.hpp" />
@@ -158,6 +159,7 @@
     <ClInclude Include="..\..\..\fon9\fmkt\SymbRef.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbTree.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\FmktTypes.h" />
+    <ClInclude Include="..\..\..\fon9\fmkt\Trading.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\Framework.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\IoFactory.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\IoManager.hpp" />
@@ -326,6 +328,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\fon9\Appender.cpp" />
+    <ClCompile Include="..\..\..\fon9\Assert.c" />
     <ClCompile Include="..\..\..\fon9\auth\AuthMgr.cpp" />
     <ClCompile Include="..\..\..\fon9\auth\PolicyAcl.cpp" />
     <ClCompile Include="..\..\..\fon9\auth\PolicyMaster.cpp" />
@@ -385,6 +388,7 @@
     <ClCompile Include="..\..\..\fon9\fmkt\SymbIn.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\SymbRef.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\SymbTree.cpp" />
+    <ClCompile Include="..\..\..\fon9\fmkt\Trading.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\Framework.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\IoFactory.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\IoFactoryDgram.cpp" />

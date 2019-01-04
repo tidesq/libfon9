@@ -59,7 +59,7 @@ __PK_RECEIVED:
          ++this->DroppedCount_;
          return;
       }
-      if (this->NextSeq_ == 0)
+      if (this->NextSeq_ == 0 || this->WaitInterval_.GetOrigValue() == 0)
          goto __PK_RECEIVED;
       bool isNeedsRunAfter = pks->empty();
       auto ires = pks->insert(PkRec{seq});
