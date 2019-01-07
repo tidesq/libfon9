@@ -122,7 +122,28 @@ RevBufferList TicketRunnerWrite::ParseSetValues(const SeedOpResult& res, const R
       if (fld == nullptr)
          RevPrint(rbuf, "fieldName=", fldName, "|err=field not found\n");
       else {
-         seed::OpResult r = fld->StrToCell(wr, StrNoTrimRemoveQuotes(val));
+         val = StrNoTrimRemoveQuotes(val);
+         // 把 Non-breaking space: 0xc2 0xa0 改成 ' ';
+         std::string nstr;
+         nstr.reserve(val.size());
+         auto iend = val.end();
+         for (auto i = val.begin(); i != iend; ++i) {
+            __CONTINUE_SAME_I:
+            if (fon9_UNLIKELY(*i == '\xc2')) {
+               if (++i == iend) {
+                  nstr.push_back('\xc2');
+                  break;
+               }
+               if (*i == '\xa0') {
+                  nstr.push_back(' ');
+                  continue;
+               }
+               nstr.push_back('\xc2');
+               goto __CONTINUE_SAME_I;
+            }
+            nstr.push_back(*i);
+         }
+         seed::OpResult r = fld->StrToCell(wr, &nstr);
          if (r != seed::OpResult::no_error)
             RevPrint(rbuf, "fieldName=", fldName, "|err=StrToCell():", r, ':', seed::GetOpResultMessage(r), '\n');
       }
