@@ -249,10 +249,29 @@ void IoManager::UpdateDeviceStateLocked(io::Device& dev, const io::StateUpdatedA
       if (this->OwnerTree_)
          this->OwnerTree_->NotifyChanged(*item);
    }
-   // fon9_LOG_TRACE:
-   if (fon9_UNLIKELY(LogLevel::Trace >= LogLevel_)) {
+   static const LogLevel lvs[] {
+      LogLevel::Trace, // Initializing,
+      LogLevel::Trace, // Initialized,
+      LogLevel::Warn,  // ConfigError,
+      LogLevel::Trace, // Opening,
+      LogLevel::Info,  // WaitingLinkIn,
+      LogLevel::Trace, // Linking,
+      LogLevel::Warn,  // LinkError,
+      LogLevel::Info,  // LinkReady,
+      LogLevel::Warn,  // LinkBroken,
+      LogLevel::Info,  // Listening,
+      LogLevel::Warn,  // ListenBroken,
+      LogLevel::Trace, // Lingering,
+      LogLevel::Trace, // Closing,
+      LogLevel::Info,  // Closed,
+      LogLevel::Info,  // Disposing,
+      LogLevel::Info,  // Destructing,
+   };
+   const LogLevel lv = static_cast<unsigned>(e.State_) < numofele(lvs)
+                     ? lvs[static_cast<unsigned>(e.State_)] : LogLevel::Fatal;
+   if (fon9_UNLIKELY(lv >= LogLevel_)) {
       RevPrint(rbuf, "IoManager.", this->Name_, ".DeviceState|dev=", ToPtr(&dev));
-      LogWrite(LogLevel::Trace, std::move(rbuf));
+      LogWrite(lv, std::move(rbuf));
    }
 }
 void IoManager::OnSession_StateUpdated(io::Device& dev, StrView stmsg, LogLevel lv) {
