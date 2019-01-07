@@ -223,6 +223,15 @@ fon9_API StrView SbrFetchInsideNoTrim(StrView& src, const StrBrArg& brArg) {
    return StrView{nullptr};
 }
 
+fon9_API bool SbrFetchTagValue(StrView& src, StrView& tag, StrView& value, char chFieldDelim, char chEqual, const StrBrArg& brArg) {
+   if (StrTrimHead(&src).empty())
+      return false;
+   value = SbrFetchNoTrim(src, chFieldDelim, brArg);
+   tag = StrSplit(value, chEqual);
+   StrTrimTail(&value);
+   return true;
+}
+
 //--------------------------------------------------------------------------//
 
 fon9_API void StrView_ToNormalizeStr(std::string& dst, StrView src) {
