@@ -14,6 +14,8 @@
 
 namespace fon9 {
 
+class fon9_API NamedIoManager;
+
 fon9_WARN_DISABLE_PADDING;
 struct IoManagerArgs {
    std::string Name_;
@@ -32,7 +34,7 @@ struct IoManagerArgs {
    DeviceFactoryParkSP  DeviceFactoryPark_;
 
    /// 提供 IoManager 建構結果, 例如: 提供 ConfigFileBinder_.OpenRead(...args.CfgFileName_); 的錯誤訊息.
-   std::string Result_;
+   mutable std::string Result_;
 };
 
 class fon9_API IoManager : public io::Manager {
@@ -59,6 +61,7 @@ class fon9_API IoManager : public io::Manager {
 #endif
 
 public:
+   NamedIoManager&            OwnerNode_;
    const std::string          Name_;
    const SessionFactoryParkSP SessionFactoryPark_;
    const DeviceFactoryParkSP  DeviceFactoryPark_;
@@ -91,20 +94,22 @@ public:
       void OnFactoryParkChanged();
    public:
       const IoManagerSP  IoManager_;
-      Tree(IoManagerArgs& args);
+      Tree(NamedIoManager& ownerNode, const IoManagerArgs& args);
       ~Tree();
       void OnTreeOp(seed::FnTreeOp fnCallback) override;
       void OnTabTreeOp(seed::FnTreeOp fnCallback) override;
       void OnParentSeedClear() override;
    };
 
-   IoManager(Tree& ownerTree, const IoManagerArgs& args);
+   IoManager(NamedIoManager& ownerNode, Tree& ownerTree, const IoManagerArgs& args);
 
    /// 若 id 重複, 則返回 false, 表示失敗.
    /// 若 cfg.Enabled_ == EnabledYN::Yes 則會啟用該設定.
    /// - 若有 bind config file, 透過這裡加入設定, 不會觸發更新設定檔.
    ///   在透過 TreeOp 增刪改, 才會觸發寫入設定檔.
    bool AddConfig(StrView id, const IoConfigItem& cfg);
+
+   void OnSession_StateUpdated(io::Device& dev, StrView stmsg, LogLevel lv) override;
 
 private:
    Tree*       OwnerTree_;
@@ -168,7 +173,6 @@ private:
    void OnDevice_Destructing(io::Device& dev) override;
    void OnDevice_StateChanged(io::Device& dev, const io::StateChangedArgs& e) override;
    void OnDevice_StateUpdated(io::Device& dev, const io::StateUpdatedArgs& e) override;
-   void OnSession_StateUpdated(io::Device& dev, StrView stmsg, LogLevel lv) override;
    void UpdateDeviceState(io::Device& dev, const io::StateUpdatedArgs& e);
    void UpdateDeviceStateLocked(io::Device& dev, const io::StateUpdatedArgs& e);
    void UpdateSessionStateLocked(io::Device& dev, StrView stmsg, LogLevel lv);

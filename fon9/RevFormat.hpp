@@ -86,6 +86,24 @@ inline void RevFormat(RevBuffer& rbuf, StrView fmtstr) {
 
 //--------------------------------------------------------------------------//
 
+/// \ingroup AlNum
+/// 利用 RevFormat() 把 args 轉成 StrT.
+template <class StrT, class... ArgsT>
+inline StrT& RevFormatAppendTo(StrT& dst, StrView fmtstr, ArgsT&&... args) {
+   RevBufferList rbuf{256};
+   RevFormat(rbuf, fmtstr, std::forward<ArgsT>(args)...);
+   BufferAppendTo(rbuf.MoveOut(), dst);
+   return dst;
+}
+template <class StrT, class... ArgsT>
+inline StrT RevFormatTo(const StrView& fmtstr, ArgsT&&... args) {
+   StrT dst;
+   RevFormatAppendTo(dst, fmtstr, std::forward<ArgsT>(args)...);
+   return dst;
+}
+
+//--------------------------------------------------------------------------//
+
 class Fmt : public StopRevPrint {
    StrView FmtStr_;
 public:

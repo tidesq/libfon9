@@ -20,6 +20,9 @@
     <ClCompile Include="..\..\..\f9tws\ExgMktPlayer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\f9tws\TradingLineMgr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\f9tws\ExgMktFeeder.hpp">
@@ -35,6 +38,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\f9tws\ExgMktFmt6.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9tws\TradingLineMgr.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

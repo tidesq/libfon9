@@ -36,9 +36,11 @@ public:
 
    /// 如果 fixses 的角色是 Initiator 則:
    /// 應在此呼叫 fixses.SendLogon(); 或由 fixses 自行呼叫, 由 fixses 與 IoFixManager 的設計者自行協調.
-   virtual void OnFixSessionConnected(IoFixSession& fixses) = 0;
+   /// 預設: do nothing.
+   virtual void OnFixSessionConnected(IoFixSession& fixses);
    /// 斷線後歸還 fixSender.
-   virtual void OnFixSessionDisconnected(IoFixSession& fixses, FixSenderSP&& fixSender) = 0;
+   /// 預設: fixSender.reset();
+   virtual void OnFixSessionDisconnected(IoFixSession& fixses, FixSenderSP&& fixSender);
 
    /// 只有在 fixses 的角色是 Acceptor 時才會呼叫此處, 檢查登入要求.
    /// - 檢查登入訊息: CompIDs, RawData... 驗證使用者.
@@ -52,10 +54,12 @@ public:
    ///   - 等對方要求的 ResendRequest 結束.
    ///     - 若對方遲遲沒有 ResendRequest?
    ///     - 則在一段時間後送出 TestRequest 等對方的回覆.
-   virtual void OnRecvLogonRequest(FixRecvEvArgs& rxargs) = 0;
+   /// - 預設: do nothing.
+   virtual void OnRecvLogonRequest(FixRecvEvArgs& rxargs);
 
    /// 登入協商完成(包含 HbTest 確認雙方序號連續), 可進入「Ap層」作業.
-   virtual void OnFixSessionApReady(IoFixSession& fixses) = 0;
+   /// - 預設: 設定 OnSession_StateUpdated("ApReady");
+   virtual void OnFixSessionApReady(IoFixSession& fixses);
 };
 
 /// \ingroup fix

@@ -18,8 +18,9 @@ static void AssignStStr(CharVector& dst, TimeStamp now, StrView stmsg) {
 
 //--------------------------------------------------------------------------//
 
-IoManager::IoManager(Tree& ownerTree, const IoManagerArgs& args)
-   : Name_{args.Name_}
+IoManager::IoManager(NamedIoManager& ownerNode, Tree& ownerTree, const IoManagerArgs& args)
+   : OwnerNode_(ownerNode)
+   , Name_{args.Name_}
    , SessionFactoryPark_{args.SessionFactoryPark_ ? args.SessionFactoryPark_ : new SessionFactoryPark{"SessionFactoryPark"}}
    , DeviceFactoryPark_{args.DeviceFactoryPark_ ? args.DeviceFactoryPark_ : new DeviceFactoryPark{"DeviceFactoryPark"}}
    , OwnerTree_(&ownerTree)
@@ -230,6 +231,9 @@ void IoManager::UpdateDeviceStateLocked(io::Device& dev, const io::StateUpdatedA
             "|id={", e.DeviceId_, "}"
             "|info=", e.Info_, '\n');
    if (auto item = this->FromManagerBookmark(dev)) {
+      // dev 狀態改變時, ses 的狀態必定已經過期), 所以清除 SessionSt_;
+      // 這樣 ses 就 **不用考慮** 斷線後重設 ses 狀態.
+      item->SessionSt_.clear();
       const BufferNode* bnode = rbuf.cfront();
       char* pmsg = static_cast<char*>(item->DeviceSt_.alloc(kDateTimeStrWidth + CalcDataSize(bnode)));
       ToStrRev(pmsg += kDateTimeStrWidth, UtcNow());
@@ -357,10 +361,10 @@ void IoManager::Tree::OnParentSeedClear() {
 fon9_WARN_DISABLE_PADDING;
 fon9_MSC_WARN_DISABLE_NO_PUSH(4265 /* class has virtual functions, but destructor is not virtual. */
                               4355 /* 'this' : used in base member initializer list*/);
-IoManager::Tree::Tree(IoManagerArgs& args)
+IoManager::Tree::Tree(NamedIoManager& ownerNode, const IoManagerArgs& args)
    : base{MakeLayout()}
    , TabTreeOp_{new seed::TabTreeOp(*this->LayoutSP_->GetTab(kTabConfigIndex))}
-   , IoManager_{new IoManager{*this, args}} {
+   , IoManager_{new IoManager{ownerNode, *this, args}} {
    this->SubConnDev_ = IoManager_->DeviceFactoryPark_->Subscribe([this](DeviceFactory*, seed::ParkTree::EventType) {
       this->OnFactoryParkChanged();
    });

@@ -69,4 +69,9 @@ fon9_API StrView SysEnv_GetEnvValue(const MaTree& root, StrView envItemName, Str
    return StrView{nullptr};
 }
 
+std::string SysEnv_GetLogFileFmtPath(const MaTree& root, StrView sysEnvName) {
+   StrView val = SysEnv_GetEnvValue(root, fon9_kCSTR_SysEnvItem_LogFileFmt, sysEnvName);
+   return FilePath::AppendPathTail(ToStrView(FilePath::ExtractPathName(val)));
+}
+
 } } // namespaces

@@ -7,6 +7,22 @@ namespace fon9 { namespace fix {
 
 IoFixManager::~IoFixManager() {
 }
+void IoFixManager::OnFixSessionConnected(IoFixSession& fixses) {
+   (void)fixses;
+}
+void IoFixManager::OnFixSessionDisconnected(IoFixSession& fixses, FixSenderSP&& fixSender) {
+   (void)fixses;
+   fixSender.reset();
+}
+void IoFixManager::OnRecvLogonRequest(FixRecvEvArgs& rxargs) {
+   (void)rxargs;
+}
+void IoFixManager::OnFixSessionApReady(IoFixSession& fixses) {
+   if (io::Device* dev = fixses.GetDevice())
+      if (io::Manager* mgr = dev->Manager_.get())
+         mgr->OnSession_StateUpdated(*dev, "ApReady", fon9::LogLevel::Info);
+}
+
 void IoFixManager::OnLogonInitiate(IoFixSession& fixses, uint32_t heartBtInt, FixBuilder&& fixb, FixSenderSP fixout) {
    fixout->GetFixRecorder().Write(f9fix_kCSTR_HdrInfo, "OnLogon.Initiate:|from=", fixses.GetDeviceId());
    fixses.SendLogon(std::move(fixout), heartBtInt, std::move(fixb));

@@ -2,6 +2,7 @@
 /// \author fonwinz@gmail.com
 #ifndef __fon9_fmkt_Trading_hpp__
 #define __fon9_fmkt_Trading_hpp__
+#include "fon9/fmkt/FmktTypes.h"
 #include "fon9/Timer.hpp"
 
 namespace fon9 { namespace fmkt {
@@ -12,8 +13,14 @@ class fon9_API TradingLineManager;
 /// 下單要求基底.
 class fon9_API TradingRequest {
    fon9_NON_COPY_NON_MOVE(TradingRequest);
+protected:
+   f9fmkt_TradingRequestSt RequestSt_{f9fmkt_TradingRequestSt_Init};
+   byte                    pending______[7];
 public:
+   TradingRequest() = default;
    virtual ~TradingRequest();
+
+   virtual void SetState(f9fmkt_TradingRequestSt st, StrView cause) = 0;
 };
 
 /// \ingroup fmkt
@@ -68,6 +75,7 @@ class fon9_API TradingLineManager {
 public:
    using Locker = TradingLines::Locker;
 
+   TradingLineManager() = default;
    virtual ~TradingLineManager();
 
    /// 當 src 進入可下單狀態時的通知:
@@ -99,6 +107,15 @@ private:
       virtual void EmitOnTimer(TimeStamp now) override;
    };
    FlowControlTimer FlowControlTimer_;
+};
+
+/// \ingroup fmkt
+/// 每個 TradingCore 可以包含:「1 個 TradingLineManager」或「1 個 TradingLineGroupManager」.
+/// - TwSEC, TwOTC, TwEmg 各個 TradingMarket 一個 TradingCore.
+/// - 台灣期交所的「期貨、選擇權」各一個 TradingCore.
+class TradingCore {
+public:
+   virtual void SendRequest(TradingRequest& req) = 0;
 };
 fon9_WARN_POP;
 

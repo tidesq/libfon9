@@ -160,6 +160,7 @@
     <ClInclude Include="..\..\..\fon9\fmkt\SymbTree.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\FmktTypes.h" />
     <ClInclude Include="..\..\..\fon9\fmkt\Trading.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\TradingReqSt.h" />
     <ClInclude Include="..\..\..\fon9\framework\Framework.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\IoFactory.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\IoManager.hpp" />

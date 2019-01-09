@@ -77,6 +77,7 @@
     <ClCompile Include="..\..\..\f9tws\ExgMktFeeder.cpp" />
     <ClCompile Include="..\..\..\f9tws\ExgMktPlayer.cpp" />
     <ClCompile Include="..\..\..\f9tws\TradingLineFix.cpp" />
+    <ClCompile Include="..\..\..\f9tws\TradingLineMgr.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\f9tws\ExgMktFeeder.hpp" />
@@ -84,6 +85,7 @@
     <ClInclude Include="..\..\..\f9tws\ExgMktFmt.hpp" />
     <ClInclude Include="..\..\..\f9tws\ExgMktFmt6.hpp" />
     <ClInclude Include="..\..\..\f9tws\TradingLineFix.hpp" />
+    <ClInclude Include="..\..\..\f9tws\TradingLineMgr.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\f9tws\README.md" />

@@ -881,6 +881,9 @@
     <ClInclude Include="..\..\..\fon9\Assert.h">
       <Filter>Header Files\_base\_Tools / Utility</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\TradingReqSt.h">
+      <Filter>Header Files\fmkt</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />

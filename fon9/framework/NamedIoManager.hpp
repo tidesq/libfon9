@@ -6,12 +6,14 @@
 
 namespace fon9 {
 
+fon9_MSC_WARN_DISABLE(4355);// 'this' : used in base member initializer list
+
 class fon9_API NamedIoManager : public seed::NamedSapling {
    fon9_NON_COPY_NON_MOVE(NamedIoManager);
    using base = seed::NamedSapling;
 public:
-   NamedIoManager(IoManagerArgs& args)
-      : base(new IoManager::Tree{args}, args.Name_, args.CfgFileName_) {
+   NamedIoManager(const IoManagerArgs& args)
+      : base(new IoManager::Tree{*this, args}, args.Name_, args.CfgFileName_) {
       this->SetDescription(args.Result_);
    }
    ~NamedIoManager();
@@ -26,6 +28,8 @@ public:
       return nullptr;
    }
 };
+
+fon9_MSC_WARN_POP;
 
 } // namespaces
 #endif//__fon9_framework_NamedIoManager_hpp__

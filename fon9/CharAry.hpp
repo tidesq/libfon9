@@ -37,6 +37,9 @@ struct CharAry : public Comparable<CharAry<arysz, CharT>> {
       else
          memmove(this->Chars_, src.begin(), arysz);
    }
+   void Clear(char ch = 0) {
+      memset(this->Chars_, ch, arysz);
+   }
 
    /// 使用 ToStrView() 來比較.
    int Compare(const CharAry& rhs) const {

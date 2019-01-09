@@ -64,6 +64,8 @@ public:
    #define fon9_kCSTR_SysEnvItem_CommandLine  "CommandLine"   // Initialize() 時的參數: argv[0] + " " + argv[1]...
    #define fon9_kCSTR_SysEnvItem_ExecPath     "ExecPath"      // Initialize() 時的路徑.
    #define fon9_kCSTR_SysEnvItem_ProcessId    "ProcessId"
+   #define fon9_kCSTR_SysEnvItem_LogFileFmt   "LogFileFmt"
+
    /// 加入:
    /// - fon9_kCSTR_SysEnvItem_CommandLine: 程式啟動時的參數: argv[0] + " " + argv[1]...
    /// - fon9_kCSTR_SysEnvItem_ExecPath:    getcwd()
@@ -80,6 +82,10 @@ fon9_API StrView SysEnv_GetEnvValue(const MaTree& root,
 inline StrView SysEnv_GetConfigPath(const MaTree& root, StrView sysEnvName = StrView{fon9_kCSTR_SysEnv_DefaultName}) {
    return  SysEnv_GetEnvValue(root, fon9_kCSTR_SysEnvItem_ConfigPath, sysEnvName);
 }
+
+/// 從 root/SysEnv/LogFileFmt 取得 Log 的路徑.
+/// 若沒設定則使用 "./"
+fon9_API std::string SysEnv_GetLogFileFmtPath(const MaTree& root, StrView sysEnvName = StrView{fon9_kCSTR_SysEnv_DefaultName});
 
 } } // namespaces
 #endif//__fon9_seed_SysEnv_hpp__
