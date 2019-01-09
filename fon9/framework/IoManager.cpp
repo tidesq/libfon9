@@ -226,11 +226,21 @@ void IoManager::UpdateDeviceState(io::Device& dev, const io::StateUpdatedArgs& e
 }
 void IoManager::UpdateDeviceStateLocked(io::Device& dev, const io::StateUpdatedArgs& e) {
    RevBufferList rbuf{128};
-   RevPrint(rbuf,
-            "|st=", GetStateStr(e.State_),
-            "|id={", e.DeviceId_, "}"
-            "|info=", e.Info_, '\n');
-   if (auto item = this->FromManagerBookmark(dev)) {
+   DeviceRun*    item = this->FromManagerBookmark(dev);
+   RevPrint(rbuf, '\n');
+   if (e.State_ == io::State::Opening && item->IsDeviceItem()) {
+      RevPrint(rbuf, // "cfgig=Id|SessionName={SessionArgs}|DeviceName={DeviceArgs}
+               "|cfgid=", static_cast<DeviceItem*>(item)->Id_,
+               '|', static_cast<DeviceItem*>(item)->Config_.SessionName_,
+               "={", static_cast<DeviceItem*>(item)->Config_.SessionArgs_, "}"
+               "|", static_cast<DeviceItem*>(item)->Config_.DeviceName_, 
+               "={", static_cast<DeviceItem*>(item)->Config_.DeviceArgs_, '}');
+   }
+   else {
+      RevPrint(rbuf, "|id={", e.DeviceId_, "}" "|info=", e.Info_);
+   }
+   RevPrint(rbuf, "|st=", GetStateStr(e.State_));
+   if (item) {
       // dev 狀態改變時, ses 的狀態必定已經過期), 所以清除 SessionSt_;
       // 這樣 ses 就 **不用考慮** 斷線後重設 ses 狀態.
       item->SessionSt_.clear();
@@ -257,7 +267,7 @@ void IoManager::UpdateDeviceStateLocked(io::Device& dev, const io::StateUpdatedA
       LogLevel::Trace, // Initializing,
       LogLevel::Trace, // Initialized,
       LogLevel::Warn,  // ConfigError,
-      LogLevel::Trace, // Opening,
+      LogLevel::Info,  // Opening,
       LogLevel::Info,  // WaitingLinkIn,
       LogLevel::Trace, // Linking,
       LogLevel::Warn,  // LinkError,
