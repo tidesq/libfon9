@@ -136,6 +136,7 @@
     <ClInclude Include="..\..\..\fon9\FileRevRead.hpp" />
     <ClInclude Include="..\..\..\fon9\fix\FixAdminMsg.hpp" />
     <ClInclude Include="..\..\..\fon9\fix\FixAdminDef.hpp" />
+    <ClInclude Include="..\..\..\fon9\fix\FixApDef.hpp" />
     <ClInclude Include="..\..\..\fon9\fix\FixBase.hpp" />
     <ClInclude Include="..\..\..\fon9\fix\FixBuilder.hpp" />
     <ClInclude Include="..\..\..\fon9\fix\FixBusinessReject.hpp" />

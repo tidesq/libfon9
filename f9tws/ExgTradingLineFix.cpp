@@ -1,6 +1,6 @@
-﻿// \file f9tws/TradingLineFix.cpp
+﻿// \file f9tws/ExgTradingLineFix.cpp
 // \author fonwinz@gmail.com
-#include "f9tws/TradingLineFix.hpp"
+#include "f9tws/ExgTradingLineFix.hpp"
 #include "fon9/fix/FixAdminDef.hpp"
 #include "fon9/FilePath.hpp"
 
@@ -11,7 +11,7 @@ constexpr uint32_t   kHeartBtInt = 10;
 
 //--------------------------------------------------------------------------//
 
-f9tws_API std::string TwsFixArgParser(TradingLineFixArgs& args, fon9::StrView cfg) {
+f9tws_API std::string TwsFixArgParser(ExgTradingLineFixArgs& args, fon9::StrView cfg) {
    /// cfg = "BrkId=|SocketId=|Pass=|Fc=每秒最多筆數" 每個欄位都必須提供.
    args.BrkId_.Clear(' ');
    args.SocketId_.Clear(' ');
@@ -47,7 +47,7 @@ f9tws_API std::string TwsFixArgParser(TradingLineFixArgs& args, fon9::StrView cf
 
 //--------------------------------------------------------------------------//
 
-static f9fix::CompIDs MakeCompIDs(const TradingLineFixArgs& args) {
+static f9fix::CompIDs MakeCompIDs(const ExgTradingLineFixArgs& args) {
    static_assert(f9fmkt_TradingMarket_TwSEC == 'T' && f9fmkt_TradingMarket_TwOTC == 'O',
                 "f9fmkt_TradingMarket_TwSEC == 'T' && f9fmkt_TradingMarket_TwOTC == 'O'");
    char  senderCompID[7];
@@ -58,7 +58,7 @@ static f9fix::CompIDs MakeCompIDs(const TradingLineFixArgs& args) {
             args.Market_ == f9fmkt_TradingMarket_TwSEC ? fon9::StrView{"XTAI"} : fon9::StrView{"ROCO"}, nullptr);
 }
 
-f9tws_API std::string MakeTradingLineFixSender(const TradingLineFixArgs& args, fon9::StrView recPath, f9fix::IoFixSenderSP& out) {
+f9tws_API std::string MakeExgTradingLineFixSender(const ExgTradingLineFixArgs& args, fon9::StrView recPath, f9fix::IoFixSenderSP& out) {
    /// - 上市 retval->Initialize(recPath + "FIX44_XTAI_BrkId_SocketId.log");
    /// - 上櫃 retval->Initialize(recPath + "FIX44_ROCO_BrkId_SocketId.log");
    f9fix::IoFixSenderSP fixSender{new f9fix::IoFixSender{f9fix_BEGIN_HEADER_V44, MakeCompIDs(args)}};
@@ -72,23 +72,23 @@ f9tws_API std::string MakeTradingLineFixSender(const TradingLineFixArgs& args, f
    fileName.append(".log");
    auto res = fixSender->GetFixRecorder().Initialize(fileName);
    if (res.IsError())
-      return fon9::RevPrintTo<std::string>("MakeTradingLineFixSender|fn=", fileName, '|', res);
+      return fon9::RevPrintTo<std::string>("MakeExgTradingLineFixSender|fn=", fileName, '|', res);
    out = std::move(fixSender);
    return std::string{};
 }
 
 //--------------------------------------------------------------------------//
 
-TradingLineFix::TradingLineFix(TradingLineFixMgr&        mgr,
-                               const f9fix::FixConfig&   fixcfg,
-                               const TradingLineFixArgs& lineargs,
-                               f9fix::IoFixSenderSP&&    fixSender)
+ExgTradingLineFix::ExgTradingLineFix(TradingLineFixMgr&           mgr,
+                                     const f9fix::FixConfig&      fixcfg,
+                                     const ExgTradingLineFixArgs& lineargs,
+                                     f9fix::IoFixSenderSP&&       fixSender)
    : base(mgr, fixcfg)
    , RawAppendNo_{static_cast<unsigned>(fon9::UtcNow().GetDecPart() / 1000)}
    , LineArgs_(lineargs)
    , FixSender_{std::move(fixSender)} {
 }
-void TradingLineFix::OnFixSessionConnected() {
+void ExgTradingLineFix::OnFixSessionConnected() {
    base::OnFixSessionConnected();
    this->FixSender_->OnFixSessionConnected(this->GetDevice());
    f9fix::FixBuilder fixb;
@@ -108,7 +108,7 @@ void TradingLineFix::OnFixSessionConnected() {
                   f9fix_SPLTAGEQ(RawData));
    this->SendLogon(this->FixSender_, kHeartBtInt, std::move(fixb));
 }
-f9fix::FixSenderSP TradingLineFix::OnFixSessionDisconnected(const fon9::StrView& info) {
+f9fix::FixSenderSP ExgTradingLineFix::OnFixSessionDisconnected(const fon9::StrView& info) {
    this->FixSender_->OnFixSessionDisconnected();
    return base::OnFixSessionDisconnected(info);
 }
