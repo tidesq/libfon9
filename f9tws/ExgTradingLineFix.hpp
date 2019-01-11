@@ -5,7 +5,7 @@
 // \author fonwinz@gmail.com
 #ifndef __f9tws_ExgTradingLineFix_hpp__
 #define __f9tws_ExgTradingLineFix_hpp__
-#include "f9tws/Config.h"
+#include "f9tws/ExgTypes.hpp"
 #include "fon9/fix/IoFixSession.hpp"
 #include "fon9/fix/IoFixSender.hpp"
 #include "fon9/fmkt/Trading.hpp"
@@ -23,7 +23,7 @@ using TradingLineFixMgr = f9fix::IoFixManager;
 
 fon9_WARN_DISABLE_PADDING;
 struct ExgTradingLineFixArgs {
-   fon9::CharAry<4>     BrkId_;
+   BrkId                BrkId_;
    fon9::CharAry<2>     SocketId_;
    uint16_t             PassCode_;
    /// 流量管制: 每秒最多筆數. 0=不限制.

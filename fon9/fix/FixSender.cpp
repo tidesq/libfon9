@@ -19,8 +19,8 @@ void FixSender::Send(Locker&&       locker,
    RevBuffer& msgRBuf = fixmsgBuilder.GetBuffer();
    RevPrint(msgRBuf, this->CompIDs_.Header_);
    // SendingTime.
-   TimeStamp now = this->LastSentTime_ = UtcNow();
-   RevPut_TimeFIXMS(msgRBuf, now);
+   fixmsgBuilder.PutUtcNow();
+   TimeStamp now = this->LastSentTime_ = fixmsgBuilder.GetUtcNow();
    RevPrint(msgRBuf, f9fix_SPLTAGEQ(SendingTime));
 
    // MsgType: ** ALWAYS THIRD FIELD IN MESSAGE. (Always unencrypted) **

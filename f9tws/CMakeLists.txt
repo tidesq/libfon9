@@ -2,6 +2,7 @@ set(f9tws_src
  ExgMktFeeder.cpp
  ExgMktPlayer.cpp
  ExgTradingLineFix.cpp
+ ExgTradingLineFixFactory.cpp
  ExgTradingLineMgr.cpp
 )
 add_library(f9tws_s STATIC ${f9tws_src})

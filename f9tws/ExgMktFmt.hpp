@@ -7,19 +7,12 @@
 // \author fonwinz@gmail.com
 #ifndef __f9tws_ExgMktFmt_hpp__
 #define __f9tws_ExgMktFmt_hpp__
-#include "f9tws/Config.h"
+#include "f9tws/ExgTypes.hpp"
 #include "fon9/PackBcd.hpp"
 #include "fon9/fmkt/FmktTypes.hpp"
 
 namespace f9tws {
 fon9_PACK(1);
-
-using StkNo = char[6];
-constexpr fon9::StrView ToStrView(const StkNo stkno) {
-   return fon9::StrView{stkno, stkno[sizeof(StkNo) - 1] != ' ' ? sizeof(StkNo)
-                             : stkno[sizeof(StkNo) - 2] != ' ' ? sizeof(StkNo) - 1
-                             : sizeof(StkNo) - 2};
-}
 
 /// 每個封包的基本框架:
 /// - Esc: 1 byte = 27;

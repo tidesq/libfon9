@@ -8,7 +8,6 @@ namespace fon { namespace fix {
 
 #define f9fix_kTAG_Account                     1
 #define f9fix_kTAG_Symbol                     55
-#define f9fix_kTAG_Side                       54
 #define f9fix_kTAG_TransactTime               60
 #define f9fix_kTAG_OrderQty                   38
 #define f9fix_kTAG_OrdType                    40 // Price Type.
@@ -25,6 +24,10 @@ namespace fon { namespace fix {
 #define f9fix_kTAG_LeavesQty                 151
 #define f9fix_kTAG_CumQty                     14
 #define f9fix_kTAG_AvgPx                       6
+
+#define f9fix_kTAG_Side                       54
+#define f9fix_kVAL_Side_Buy                  "1"
+#define f9fix_kVAL_Side_Sell                 "2"
 
 #define f9fix_kTAG_CxlRejResponseTo          434
 #define f9fix_kTAG_CxlRejReason              102

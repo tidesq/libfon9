@@ -2,7 +2,7 @@
 /// \author fonwinz@gmail.com
 #ifndef __fon9_fmkt_Trading_hpp__
 #define __fon9_fmkt_Trading_hpp__
-#include "fon9/fmkt/FmktTypes.h"
+#include "fon9/fmkt/FmktTypes.hpp"
 #include "fon9/Timer.hpp"
 
 namespace fon9 { namespace fmkt {
@@ -11,17 +11,18 @@ class fon9_API TradingLineManager;
 
 /// \ingroup fmkt
 /// 下單要求基底.
-class fon9_API TradingRequest {
+class fon9_API TradingRequest : public intrusive_ref_counter<TradingRequest> {
    fon9_NON_COPY_NON_MOVE(TradingRequest);
 protected:
    f9fmkt_TradingRequestSt RequestSt_{f9fmkt_TradingRequestSt_Init};
-   byte                    pending______[7];
+   byte                    pending______[3];
 public:
    TradingRequest() = default;
    virtual ~TradingRequest();
 
    virtual void SetState(f9fmkt_TradingRequestSt st, StrView cause) = 0;
 };
+using TradingRequestSP = intrusive_ptr<TradingRequest>;
 
 /// \ingroup fmkt
 /// 下單要求傳送的結果.

@@ -3,6 +3,7 @@
 #ifndef __fon9_CharAry_hpp__
 #define __fon9_CharAry_hpp__
 #include "fon9/StrView.hpp"
+#include <string.h>
 
 namespace fon9 {
 

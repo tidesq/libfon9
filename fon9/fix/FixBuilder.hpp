@@ -4,6 +4,7 @@
 #define __fon9_fix_FixBuilder_hpp__
 #include "fon9/fix/FixBase.hpp"
 #include "fon9/RevPrint.hpp"
+#include "fon9/TimeStamp.hpp"
 
 namespace fon9 { namespace fix {
 
@@ -32,7 +33,11 @@ class fon9_API FixBuilder {
    fon9_NON_COPYABLE(FixBuilder);
    RevBufferList  Buffer_{512};
    char*          CheckSumPos_;
+   const char*    TimeFIXMS_;
+   TimeStamp      Time_;
+
    void Start() {
+      this->TimeFIXMS_ = nullptr;
       this->CheckSumPos_ = this->Buffer_.AllocPrefix(kFixTailWidth);
       this->Buffer_.SetPrefixUsed(this->CheckSumPos_ -= kFixTailWidth);
    }
@@ -41,14 +46,27 @@ public:
       this->Start();
    }
    FixBuilder(bool isManualStart) {
-      if (isManualStart)
+      if (isManualStart) {
          this->CheckSumPos_ = nullptr;
+         this->TimeFIXMS_ = nullptr;
+      }
       else
          this->Start();
    }
-   FixBuilder(FixBuilder&& rhs) : Buffer_{std::move(rhs.Buffer_)}, CheckSumPos_{rhs.CheckSumPos_} {
-      rhs.CheckSumPos_ = nullptr;
-   }
+   
+   // FixBuilder 沒必要使用 move:
+   // - 因要做較多的事情, 效能較低.
+   // - 因參數使用 FixBuilder&& 即可表達語意.
+   // - 所以將「move 建構」及「move assign」移除.
+   //FixBuilder(FixBuilder&& rhs)
+   //   : Buffer_{std::move(rhs.Buffer_)}
+   //   , CheckSumPos_{rhs.CheckSumPos_}
+   //   , TimeFIXMS_{rhs.TimeFIXMS_}
+   //   , Time_{rhs.Time_} {
+   //   rhs.CheckSumPos_ = nullptr;
+   //   rhs.TimeFIXMS_ = nullptr;
+   //}
+   FixBuilder(FixBuilder&&) = delete;
    FixBuilder& operator=(FixBuilder&&) = delete;
 
    RevBuffer& GetBuffer() {
@@ -75,6 +93,15 @@ public:
       psum[3] = '=';
       Pic9ToStrRev<3>(psum + kFixTailWidth - 1, cks);
       psum[7] = f9fix_kCHAR_SPL;
+   }
+
+   /// 填入現在時間,
+   /// 如果一個FIX訊息有多個時間(e.g. TransactTime#60, SendingTime#52), 則直接使用相同時間.
+   /// 時間格式: RevPut_TimeFIXMS();
+   void PutUtcNow();
+   /// 取得上次呼叫 PutUtcNow() 的時間.
+   TimeStamp GetUtcNow() const {
+      return this->Time_;
    }
 };
 

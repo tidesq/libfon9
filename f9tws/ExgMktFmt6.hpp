@@ -45,6 +45,9 @@ struct ExgMktFmt6v3 : public ExgMktHeader {
    /// 根據 ItemMask_ 決定 PQs_[] 有多少元素及其內涵.
    ExgMktPriQty      PQs_[1];
 };
+static_assert(sizeof(ExgMktFmt6v3) == sizeof(ExgMktHeader) + sizeof(StkNo) + sizeof(TimeHHMMSSu6) + 3
+              + sizeof(ExgMktFmt6v3::TotalQty_) + +sizeof(ExgMktFmt6v3::PQs_),
+              "ExgMktFmt6v3 沒有 pack?");
 
 fon9_PACK_POP;
 } // namespaces

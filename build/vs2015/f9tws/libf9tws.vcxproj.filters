@@ -23,6 +23,9 @@
     <ClCompile Include="..\..\..\f9tws\ExgTradingLineFix.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\f9tws\ExgTradingLineFixFactory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\f9tws\ExgMktFeeder.hpp">
@@ -41,6 +44,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\f9tws\ExgTradingLineFix.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9tws\ExgTradingLineFixFactory.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9tws\ExgTypes.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
