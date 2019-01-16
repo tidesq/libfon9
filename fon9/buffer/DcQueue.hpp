@@ -227,5 +227,34 @@ auto DeviceOutputBlock(DcQueue&& buf, FnWriter fnWriter) -> decltype(fnWriter(nu
    }
 }
 
+/// 以行(特定字元)為單位, 從 DcQueue 取出資料.
+/// \code
+/// fon9::io::RecvBufferSize OnDevice_Recv(fon9::io::Device& dev, fon9::DcQueueList& rxbuf) override {
+///   while (const char* pln = this->LinePeeker_.PeekUntil(rxbuf, '\n')) {
+///      StrView ln{pln, this->LinePeeker_.LineSize_};
+///      ... 處理一行資料 ...
+///      this->LinePeeker_.PopConsumed(rxbuf);
+///   }
+///   // 若有需要考慮安全性: 對方一直沒有提供 chUntil, 則可能會耗盡記憶體.
+///   if (this->LinePeeker_.TmpBuf_.size() > 1024) {
+///      dev.AsyncDispose("Line too long.");
+///      return io::RecvBufferSize::CloseRecv;
+///   }
+///   return fon9::io::RecvBufferSize::Default;
+/// }
+/// \endcode
+struct fon9_API LinePeeker {
+   std::string TmpBuf_;
+   size_t      LineSize_{0}; // PeekUntil() 之後, 取得的連續資料長度, 包含 chUntil.
+
+   void Clear() {
+      this->TmpBuf_.clear();
+      this->LineSize_ = 0;
+   }
+
+   void PopConsumed(DcQueue& dcq);
+   const char* PeekUntil(DcQueue& dcq, char chUntil);
+};
+
 } // namespace
 #endif//__fon9_buffer_DcQueue_hpp__

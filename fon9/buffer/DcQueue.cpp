@@ -39,4 +39,35 @@ size_t DcQueue::PopUnknownChar(char ch) {
    return removedBytes;
 }
 
+//--------------------------------------------------------------------------//
+
+void LinePeeker::PopConsumed(DcQueue& dcq) {
+   assert(this->LineSize_ > 0);
+   if (this->TmpBuf_.empty())
+      dcq.PopConsumed(this->LineSize_);
+   else
+      this->TmpBuf_.clear();
+   this->LineSize_ = 0;
+}
+const char* LinePeeker::PeekUntil(DcQueue& dcq, char chUntil) {
+   for (;;) {
+      auto blk = dcq.PeekCurrBlock();
+      if (blk.first == nullptr)
+         return nullptr;
+      if (auto pfind = reinterpret_cast<const char*>(memchr(blk.first, chUntil, blk.second))) {
+         const size_t lnsz = static_cast<size_t>(pfind - reinterpret_cast<const char*>(blk.first) + 1);
+         if (this->TmpBuf_.empty()) {
+            this->LineSize_ = lnsz;
+            return reinterpret_cast<const char*>(blk.first);
+         }
+         this->TmpBuf_.append(reinterpret_cast<const char*>(blk.first), pfind + 1);
+         dcq.PopConsumed(lnsz);
+         this->LineSize_ = this->TmpBuf_.size();
+         return this->TmpBuf_.c_str();
+      }
+      this->TmpBuf_.append(reinterpret_cast<const char*>(blk.first), blk.second);
+      dcq.PopConsumed(blk.second);
+   }
+}
+
 } // namespace

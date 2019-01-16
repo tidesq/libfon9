@@ -52,6 +52,10 @@ public:
       this->Ac_ = std::move(cfg);
       this->SetCurrPathToHome();
    }
+   void ResetAclConfig(const AclConfig& cfg) {
+      this->Ac_ = cfg;
+      this->SetCurrPathToHome();
+   }
 
    /// - 正規化路徑, 並檢查訪問權限.
    /// - 正規化的前置路徑:

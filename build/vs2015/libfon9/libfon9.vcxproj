@@ -398,6 +398,7 @@
     <ClCompile Include="..\..\..\fon9\framework\IoFactoryTcpServer.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\IoManager.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\NamedIoManager.cpp" />
+    <ClCompile Include="..\..\..\fon9\framework\SeedImporter.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\SeedSession.cpp" />
     <ClCompile Include="..\..\..\fon9\HostId.cpp" />
     <ClCompile Include="..\..\..\fon9\InnFile.cpp" />

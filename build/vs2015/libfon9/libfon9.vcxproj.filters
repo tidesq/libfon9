@@ -1408,6 +1408,9 @@
     <ClCompile Include="..\..\..\fon9\Assert.c">
       <Filter>Source Files\_base\_Tools / Utility</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\fon9\framework\SeedImporter.cpp">
+      <Filter>Source Files\framework</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\..\CMakeLists.txt" />

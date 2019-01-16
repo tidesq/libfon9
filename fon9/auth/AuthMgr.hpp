@@ -42,6 +42,7 @@ struct fon9_API AuthResult : public RoleConfig {
    StrView GetUserId() const {
       return this->AuthzId_.empty() ? ToStrView(this->AuthcId_) : ToStrView(this->AuthzId_);
    }
+
    /// 若 this->AuthzId_.empty()  輸出: AuthcId_
    /// 若 !this->AuthzId_.empty() 輸出: AuthzId_ + "/" + AuthcId_
    void RevPrintUser(RevBuffer& rbuf) const;
@@ -49,6 +50,10 @@ struct fon9_API AuthResult : public RoleConfig {
    void RevPrintUFrom(RevBuffer& rbuf, StrView deviceId) const;
    /// 輸出: RevPrintUser() + "|" + deviceId;
    std::string MakeUFrom(StrView deviceId) const;
+
+   /// 登入成功後, 使用 AuthResult 的人必須自行決定是否需要更新 RoleConfig.
+   /// 因為有些登入只想要驗證 userid/pass 是否正確.
+   void UpdateRoleConfig();
 
    /// 若 policyName 在 this->PolicyKeys_ 找不到,
    /// 則應直接用 RoleId_ 當作該 policyName 的 PolicyId.

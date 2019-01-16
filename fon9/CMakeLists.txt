@@ -146,6 +146,7 @@ set(fon9src
  framework/IoFactoryTcpClient.cpp
  framework/IoFactoryTcpServer.cpp
  framework/IoFactoryDgram.cpp
+ framework/SeedImporter.cpp
 
  fmkt/Symb.cpp
  fmkt/SymbTree.cpp

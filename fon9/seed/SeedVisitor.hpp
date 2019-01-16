@@ -173,8 +173,10 @@ public:
    void OnLastStep(TreeOp& op, StrView keyText, Tab& tab) override;
    void OnLastSeedOp(const PodOpResult& resPod, PodOp* pod, Tab& tab) override;
 
-   /// 若有錯誤, 則傳回錯誤訊息, 例如: "fieldName=xxx|err=field not found\n";
-   /// 若有多個錯誤, 則會產生多行訊息.
+   /// - 使用 ',' 分隔 fieldName1=value1,fieldName2=value2
+   /// - 必要時 value 可以用引號框起來.
+   /// - 若有錯誤, 則傳回錯誤訊息, 例如: "fieldName=xxx|err=field not found\n";
+   ///   若有多個錯誤, 則會產生多行訊息, 最後行也有 '\n' 結尾.
    RevBufferList ParseSetValues(const SeedOpResult& res, const RawWr& wr);
 };
 

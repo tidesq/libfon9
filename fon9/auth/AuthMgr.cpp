@@ -6,6 +6,9 @@
 
 namespace fon9 { namespace auth {
 
+void AuthResult::UpdateRoleConfig() {
+   this->AuthMgr_->RoleMgr_->GetRole(ToStrView(this->RoleId_), *this);
+}
 StrView AuthResult::GetPolicyId(StrView policyName) const {
    auto ifind = this->PolicyKeys_.find(PolicyName::MakeRef(policyName));
    if (ifind == this->PolicyKeys_.end())

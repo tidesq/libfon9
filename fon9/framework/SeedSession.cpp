@@ -77,6 +77,7 @@ void SeedSession::OnAuthDone(auth::AuthR&& authr, const auth::AuthRequest& req) 
       st = State::AuthError;
    else {
       seed::AclConfig aclcfg;
+      this->Authr_.UpdateRoleConfig();
       if (!this->Authr_.AuthMgr_->GetPolicy<auth::PolicyAclAgent>(fon9_kCSTR_PolicyAclAgent_Name, this->Authr_, aclcfg)) {
          st = State::UserExit;
          msg = StrView{"AuthUser.GetPolicy." fon9_kCSTR_PolicyAclAgent_Name "|err=Not found."};
