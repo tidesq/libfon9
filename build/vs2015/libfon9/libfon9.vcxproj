@@ -186,6 +186,7 @@
     <ClInclude Include="..\..\..\fon9\io\FdrSocketClient.hpp" />
     <ClInclude Include="..\..\..\fon9\io\FdrTcpClient.hpp" />
     <ClInclude Include="..\..\..\fon9\io\FdrTcpServer.hpp" />
+    <ClInclude Include="..\..\..\fon9\io\FileIO.hpp" />
     <ClInclude Include="..\..\..\fon9\io\IoBase.hpp" />
     <ClInclude Include="..\..\..\fon9\io\DeviceRecvEvent.hpp" />
     <ClInclude Include="..\..\..\fon9\io\DeviceStartSend.hpp" />
@@ -394,6 +395,7 @@
     <ClCompile Include="..\..\..\fon9\framework\Framework.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\IoFactory.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\IoFactoryDgram.cpp" />
+    <ClCompile Include="..\..\..\fon9\framework\IoFactoryFileIO.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\IoFactoryTcpClient.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\IoFactoryTcpServer.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\IoManager.cpp" />
@@ -413,6 +415,7 @@
     <ClCompile Include="..\..\..\fon9\io\FdrSocketClient.cpp" />
     <ClCompile Include="..\..\..\fon9\io\FdrTcpClient.cpp" />
     <ClCompile Include="..\..\..\fon9\io\FdrTcpServer.cpp" />
+    <ClCompile Include="..\..\..\fon9\io\FileIO.cpp" />
     <ClCompile Include="..\..\..\fon9\io\IoBase.cpp" />
     <ClCompile Include="..\..\..\fon9\io\IoServiceArgs.cpp" />
     <ClCompile Include="..\..\..\fon9\io\Manager.cpp" />

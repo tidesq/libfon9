@@ -143,9 +143,9 @@ Device::SendResult DeviceStartSend(DeviceT& dev, Aux& aux) {
 /// \ingroup io
 /// 透過 IoImpl 及 DeviceBase 實作 SendASAP(), SendBuffer();
 /// 請參考:
-/// - IocpTcpClientDeviceBase
-/// - IocpTcpListener::AcceptedClient
-/// - FdrTcpClientDeviceBase
+/// - IocpTcpClient.cpp
+/// - IocpTcpServer.cpp: IocpTcpListener::AcceptedClient
+/// - FdrTcpClient.cpp
 template <class DeviceBase, class IoImpl>
 class DeviceImpl_DeviceStartSend : public DeviceBase {
    fon9_NON_COPY_NON_MOVE(DeviceImpl_DeviceStartSend);

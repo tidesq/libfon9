@@ -11,7 +11,7 @@ namespace fon9 { namespace io {
 
 /// \ingroup io
 /// - 協助 DeviceAcceptedClientBase 完成:
-///   - Device member function: `virtual bool IsSendBufferEmpty() const override;`
+///   - Device member function: `bool IsSendBufferEmpty() const override;`
 /// - 協助完成 `DeviceImpl_DeviceStartSend<>` 所需要的 `struct SendAuxImpl`;
 template <class DeviceAcceptedClientBase>
 class DeviceAcceptedClientWithSend : public DeviceAcceptedClientBase {

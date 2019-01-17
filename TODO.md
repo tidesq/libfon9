@@ -69,7 +69,6 @@ libfon9 TODO list
 
 ---------------------------------------
 ## 通訊基礎建設
-* FileDevice
 * IoManager/SessionFactory/DeviceFactory
   * 提供 IoManager 的使用說明.
   * ip白名單、黑名單?

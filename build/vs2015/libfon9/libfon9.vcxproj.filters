@@ -162,6 +162,12 @@
     <Filter Include="Source Files\fix">
       <UniqueIdentifier>{523df68f-60c9-415d-9bba-8ce4c3614abc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\io\more devs">
+      <UniqueIdentifier>{06d9f6c2-e1cc-4649-b05b-680b35e22fc8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\io\more devs">
+      <UniqueIdentifier>{d378f90c-b763-4a96-b413-d1e749181ead}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\sys\Config.h">
@@ -887,6 +893,9 @@
     <ClInclude Include="..\..\..\fon9\fix\FixApDef.hpp">
       <Filter>Header Files\fix</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\FileIO.hpp">
+      <Filter>Header Files\io\more devs</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1410,6 +1419,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\framework\SeedImporter.cpp">
       <Filter>Source Files\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\framework\IoFactoryFileIO.cpp">
+      <Filter>Source Files\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\io\FileIO.cpp">
+      <Filter>Source Files\io\more devs</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

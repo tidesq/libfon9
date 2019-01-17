@@ -16,9 +16,10 @@ fon9_WARN_DISABLE_PADDING;
 /// \code
 ///   // 必須是 copyable, 因為可能會到 alocker.AddAsyncTask() 裡面使用.
 ///   struct Aux {
-///      bool IsRecvBufferAlive(Device& dev, RecvBuffer& rbuf) const;
-///      void ContinueRecv(RecvBuffer& rbuf, RecvBufferSize expectSize, bool isEnableReadable) const;
+///      bool IsRecvBufferAlive(Device& dev, RecvBuffer& rbuf);
+///      void ContinueRecv(RecvBuffer& rbuf, RecvBufferSize expectSize, bool isReEnableReadable);
 ///      void DisableReadableEvent(RecvBuffer& rbuf);
+///      SendDirectResult SendDirect(RecvDirectArgs& e, BufferList&& txbuf);
 ///   };
 /// \endcode
 template <class Aux>

@@ -84,6 +84,7 @@ set(fon9src
  io/FdrTcpClient.cpp
  io/FdrTcpServer.cpp
  io/FdrDgram.cpp
+ io/FileIO.cpp
 
  web/HttpSession.cpp
  web/HttpParser.cpp
@@ -146,6 +147,7 @@ set(fon9src
  framework/IoFactoryTcpClient.cpp
  framework/IoFactoryTcpServer.cpp
  framework/IoFactoryDgram.cpp
+ framework/IoFactoryFileIO.cpp
  framework/SeedImporter.cpp
 
  fmkt/Symb.cpp

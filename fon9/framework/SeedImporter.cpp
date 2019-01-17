@@ -3,15 +3,16 @@
 /// - 僅適合匯入少量初始化資料, 不適合處理整批大量資料.
 ///   如果需要匯入整批大量資料(例: 客戶庫存, 全市場商品...), 建議使用專用匯入模組.
 ///
-/// - SeedImporter factory:
-///   - 參數設定: "Name=SeedImporter|AuthMgr=|AddTo="
-///   - 若沒提供 Name 則預設為 "SeedImporter"
-///   - AuthMgr= 透過哪個 auth mgr 取得 Acl.
-///   - AddTo= 或 SessionFactoryPark= 加入到哪個 session factory park.
-///   - IoMgr= 或 IoManager= 加入到哪個 IoManager 所參考的 session factory park.
+/// - SeedImporter factory plugin:
+///   - EntryName: SeedImporter
+///   - 參數設定 Args: "Name=SeedImporter|AuthMgr=|AddTo=..."
+///     - Name=    若沒提供 Name 則預設為 "SeedImporter"
+///     - AuthMgr= 透過哪個 auth mgr 取得 Acl.
+///     - AddTo=   或 SessionFactoryPark= 加入到哪個 session factory park.
+///     - IoMgr=   或 IoManager= 加入到哪個 IoManager 所參考的 session factory park.
 ///
 /// - SeedImporter session:
-///   - 參數設定: "Role=roleId|OutputTo=Dev"
+///   - 參數設定 SessionArgs: "Role=roleId|OutputTo=Dev"
 ///   - 連線後直接使用設定的 role 取得 Acl, 不用登入.
 ///   - 預設為 "OutputTo=Log": 當有錯誤時記錄到 log,
 ///     且不論成功或失敗都不會透過 Dev 回覆任何訊息.
@@ -199,8 +200,8 @@ struct SeedImporterFactory : public SessionFactory {
             return false;
          }
       }
-      args.Authr_.AuthcId_.assign(&this->Name_);
-      // args.Authr_.AuthzId_.assign(...);
+      args.Authr_.AuthzId_.assign(&this->Name_);
+      args.Authr_.AuthcId_.assign(roleId);
       this->AuthMgr_->RoleMgr_->GetRole(roleId, args.Authr_);
       if (!this->AuthMgr_->GetPolicy<auth::PolicyAclAgent>(fon9_kCSTR_PolicyAclAgent_Name, args.Authr_, args.Acl_)) {
          errReason = "AuthMgr.GetPolicy." fon9_kCSTR_PolicyAclAgent_Name "|err=Not found.";
