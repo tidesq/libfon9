@@ -68,11 +68,11 @@ public:
    void AsyncLingerClose(std::string cause) {
       this->OpQueue_.AddTask(DeviceAsyncOp(&Device::OpThr_LingerClose, std::move(cause)));
    }
-   void AsyncCheckSendEmpty(DeviceOpQueue::ALockerBase& alocker) {
+   void AsyncCheckLingerClose(DeviceOpQueue::ALockerBase& alocker) {
       if (fon9_UNLIKELY(this->OpImpl_GetState() == State::Lingering))
-         alocker.AddAsyncTask(DeviceAsyncOp(&Device::OpThr_CheckSendEmpty, std::string{}));
+         alocker.AddAsyncTask(DeviceAsyncOp(&Device::OpThr_CheckLingerClose, std::string{}));
    }
-   static void OpThr_CheckSendEmpty(Device& dev, std::string cause);
+   static void OpThr_CheckLingerClose(Device& dev, std::string cause);
 
    /// 到 OpThr_Dispose() 處理:
    /// - OpThr_Close(cause):

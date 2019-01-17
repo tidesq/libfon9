@@ -168,9 +168,12 @@ public:
       using SendAuxMem::SendAuxMem;
 
       Device::SendResult StartToSend(DeviceOpLocker&, DcQueueList& toSend) {
+         bool doNeedsNotify = toSend.empty();
          toSend.Append(this->Src_, this->Size_);
-         FdrSocket&  impl = ContainerOf(SendBuffer::StaticCast(toSend), &FdrSocket::SendBuffer_);
-         impl.StartSendInFdrThread();
+         if (doNeedsNotify) {
+            FdrSocket&  impl = ContainerOf(SendBuffer::StaticCast(toSend), &FdrSocket::SendBuffer_);
+            impl.StartSendInFdrThread();
+         }
          return Device::SendResult{0};
       }
    };
@@ -179,9 +182,12 @@ public:
       using SendAuxBuf::SendAuxBuf;
 
       Device::SendResult StartToSend(DeviceOpLocker&, DcQueueList& toSend) {
+         bool doNeedsNotify = toSend.empty();
          toSend.push_back(std::move(*this->Src_));
-         FdrSocket&  impl = ContainerOf(SendBuffer::StaticCast(toSend), &FdrSocket::SendBuffer_);
-         impl.StartSendInFdrThread();
+         if (doNeedsNotify) {
+            FdrSocket&  impl = ContainerOf(SendBuffer::StaticCast(toSend), &FdrSocket::SendBuffer_);
+            impl.StartSendInFdrThread();
+         }
          return Device::SendResult{0};
       }
    };

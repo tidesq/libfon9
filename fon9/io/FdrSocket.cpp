@@ -46,7 +46,7 @@ void FdrSocket::CheckSendQueueEmpty(DeviceOpLocker& sc) {
    auto& alocker = sc.GetALocker();
    alocker.Relock();
    if (fon9_LIKELY(!this->SendBuffer_.OpImpl_CheckSendQueue())) {
-      sc.GetDevice().AsyncCheckSendEmpty(alocker);
+      sc.GetDevice().AsyncCheckLingerClose(alocker);
       // 雖然返回後會 sc 就會死亡, 但是因為已經 Relock(),
       // 所以會有許多 call stack 的 local variables 也在 lock 的範圍內.
       // 會造成 unlock() 時 memory barrier 的負擔, 因此在這兒就先將 sc.Destroy(), 可以加快一些速度.

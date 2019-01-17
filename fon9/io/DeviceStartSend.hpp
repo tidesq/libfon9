@@ -101,7 +101,7 @@ struct SendAuxBuf {
 ///   //     - 直接送出(send, write).
 ///   //     - 若有剩餘資料, 則放入 toSend, 然後啟動 writable 偵測.
 ///   //     - 若無剩餘資料, 則應檢查 SendBuffer 是否有新資料:
-///   //       - 若 SendBuffer_.IsEmpty():  dev.AsyncCheckSendEmpty();
+///   //       - 若 SendBuffer_.IsEmpty():  dev.AsyncCheckLingerClose();
 ///   //       - 若 !SendBuffer_.IsEmpty(): StartSendInFdrThread();
 ///   // - Buffered:
 ///   //   - 將要送出的資料填入 toSend, 然後啟動 Writable 事件.
@@ -208,7 +208,7 @@ struct ContinueSendChecker : public DeviceOpLocker {
 ///      // - IOCP 使用 sbuf.OpImpl_ContinueSend(bytesTransfered_); 取出
 ///      // - Fdr  使用 sbuf.OpImpl_CheckSendQueue(); 取出
 ///      // - retval != nullptr 則表示還有要送的, 接下來: aux.ContinueToSend(&sc, retval);
-///      // - retval == nullptr 表示傳送緩衝已空, 接下來: dev.AsyncCheckSendEmpty(alocker);
+///      // - retval == nullptr 表示傳送緩衝已空, 接下來: dev.AsyncCheckLingerClose(alocker);
 ///      DcQueueList* GetContinueToSend(SendBuffer& sbuf) const;
 ///
 ///      // 在 AddAsyncTask(task) 之前, 取消 writable 偵測.
@@ -244,7 +244,7 @@ void DeviceContinueSend(DeviceT& dev, SendBuffer& sbuf, Aux& aux) {
       if (DcQueueList* toSend = aux.GetContinueToSend(sbuf))
          aux.ContinueToSend(sc, *toSend);
       else
-         dev.AsyncCheckSendEmpty(sc.GetALocker());
+         dev.AsyncCheckLingerClose(sc.GetALocker());
       return;
    }
 
@@ -260,7 +260,7 @@ void DeviceContinueSend(DeviceT& dev, SendBuffer& sbuf, Aux& aux) {
          if (DcQueueList* toSend = aux.GetContinueToSend(sbuf))
             aux.ContinueToSend(sc, *toSend);
          else
-            Device::OpThr_CheckSendEmpty(dev, std::string{});
+            Device::OpThr_CheckLingerClose(dev, std::string{});
       }
    }});
    fon9_WARN_POP;

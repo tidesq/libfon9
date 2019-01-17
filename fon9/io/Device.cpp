@@ -48,14 +48,14 @@ void Device::OpThr_Close(Device& dev, std::string cause) {
    if (dev.State_ < State::Closing)
       dev.OpImpl_Close(std::move(cause));
 }
-void Device::OpThr_CheckSendEmpty(Device& dev, std::string cause) {
+void Device::OpThr_CheckLingerClose(Device& dev, std::string cause) {
    if (dev.State_ == State::Lingering && dev.IsSendBufferEmpty())
       dev.OpImpl_Close(std::move(cause));
 }
 void Device::OpThr_LingerClose(Device& dev, std::string cause) {
    if (dev.State_ == State::LinkReady) {
       dev.OpImpl_SetState(State::Lingering, &cause);
-      OpThr_CheckSendEmpty(dev, std::move(cause));
+      OpThr_CheckLingerClose(dev, std::move(cause));
    }
    else {
       if (dev.State_ < State::Lingering)
