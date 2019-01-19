@@ -58,18 +58,23 @@ void FdrThreadEpoll::ThrRunImpl(const ServiceThreadArgs& args) {
    EpollEvents epEvents{16};
    EvHandlers  evHandlers{args.Capacity_};
    Fdr::fdr_t  epFdr = this->FdrEpoll_.GetFD();
-   const int   msTimeout = (IsBlockWait(args.HowWait_) ? -1 : 0);
+   const int   kEpollWaitMS = (IsBlockWait(args.HowWait_) ? -1 : 0);
    while (this->use_count() > 0) {
       // 再次進入 epoll_wait() 之前, 必須先將 Pending Removes, Updates 處理完,
       // 因為: 在 OnFdrEvent_Emit() 裡面關閉 readable, writable 偵測, 必須確實執行.
       // 避免: 當 Device 必須回到 op thread 觸發 OnDevice_Recv() 或 執行 send,
       //       如果沒有確實禁止 readable, writable, 則可能會發生非預期的結果.
+      int msWait = kEpollWaitMS;
       if (fon9_UNLIKELY(this->WakeupRequests_.load(std::memory_order_relaxed) != 0)) {
          this->ClearWakeup();
          this->ProcessPendings(epFdr, evHandlers);
+         // 如果在 ProcessPendings() 時有再增加 Wakeup,
+         // 則 epoll_wait() 應在偵測新進 ev 之後立即結束, 然後處理 ProcessPendings().
+         if (this->WakeupRequests_.load(std::memory_order_relaxed) != 0)
+            msWait = 0;
       }
       struct epoll_event* pEvBeg = &*epEvents.begin();
-      int epRes = epoll_wait(epFdr, pEvBeg, static_cast<int>(epEvents.size()), msTimeout);
+      int epRes = epoll_wait(epFdr, pEvBeg, static_cast<int>(epEvents.size()), msWait);
       if (fon9_LIKELY(epRes > 0)) {
          for (int L = 0; L < epRes; ++L, ++pEvBeg) {
             if (FdrEventHandler* hdr = static_cast<FdrEventHandler*>(pEvBeg->data.ptr)) {
