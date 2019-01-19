@@ -66,9 +66,7 @@ f9tws_API std::string MakeExgTradingLineFixSender(const ExgTradingLineFixArgs& a
    fileName += "FIX44_";
    fixSender->CompIDs_.Target_.CompID_.AppendTo(fileName); // "XTAI" or "ROCO"
    fileName.push_back('_');
-   fixSender->CompIDs_.Sender_.CompID_.AppendTo(fileName); // BrkId
-   fileName.push_back('_');
-   fileName.append(args.SocketId_.data(), args.SocketId_.size());
+   fixSender->CompIDs_.Sender_.CompID_.AppendTo(fileName); // ('T' or 'O') + BrkId + SocketId
    fileName.append(".log");
    auto res = fixSender->GetFixRecorder().Initialize(fileName);
    if (res.IsError())
