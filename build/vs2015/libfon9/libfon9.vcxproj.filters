@@ -896,6 +896,9 @@
     <ClInclude Include="..\..\..\fon9\io\FileIO.hpp">
       <Filter>Header Files\io\more devs</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\HistoryArray.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />

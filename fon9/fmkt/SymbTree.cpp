@@ -26,8 +26,10 @@ public:
       }
    }
    void BeginWrite(seed::Tab& tab, seed::FnWriteOp fnCallback) override {
-      if (auto dat = this->Symb_->FetchSymbData(tab.GetIndex()))
+      if (auto dat = this->Symb_->FetchSymbData(tab.GetIndex())) {
          this->BeginRW(tab, std::move(fnCallback), seed::SimpleRawWr{*dat});
+         static_cast<SymbTree*>(this->Sender_)->OnAfterPodOpWrite(*this->Symb_, tab);
+      }
       else {
          this->OpResult_ = seed::OpResult::not_found_seed;
          fnCallback(*this, nullptr);
@@ -117,6 +119,9 @@ public:
 };
 fon9_MSC_WARN_POP;
 
+void SymbTree::OnAfterPodOpWrite(Symb& symb, seed::Tab& tab) {
+   (void)symb; (void)tab;
+}
 void SymbTree::OnTreeOp(seed::FnTreeOp fnCallback) {
    TreeOp op{*this};
    fnCallback(seed::TreeOpResult{this, seed::OpResult::no_error}, &op);

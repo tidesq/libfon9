@@ -168,6 +168,7 @@
     <ClInclude Include="..\..\..\fon9\framework\NamedIoManager.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\SeedSession.hpp" />
     <ClInclude Include="..\..\..\fon9\FwdPrint.hpp" />
+    <ClInclude Include="..\..\..\fon9\HistoryArray.hpp" />
     <ClInclude Include="..\..\..\fon9\HostId.hpp" />
     <ClInclude Include="..\..\..\fon9\InnDbf.hpp" />
     <ClInclude Include="..\..\..\fon9\InnDbfTable.hpp" />

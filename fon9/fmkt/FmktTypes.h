@@ -98,4 +98,10 @@ enum f9fmkt_TradingRequestSt   fon9_ENUM_underlying(uint8_t) {
    f9fmkt_TradingRequestSt_Restated = 0xfc,
 };
 
+enum f9fmkt_Side fon9_ENUM_underlying(char) {
+   f9fmkt_Side_Unknown = 0,
+   f9fmkt_Side_Buy = 'B',
+   f9fmkt_Side_Sell = 'S',
+};
+
 #endif//__fon9_fmkt_FmktTypes_h__

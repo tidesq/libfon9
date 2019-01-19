@@ -23,6 +23,12 @@ public:
    using base::base;
    void OnTreeOp(seed::FnTreeOp fnCallback) override;
    void OnParentSeedClear() override;
+   
+   /// PodOp 操作資料異動後通知.
+   /// - 讓 SymbTree 的衍生者(實際應用者), 可以建立商品必要的關聯.
+   /// - 此時 SymbMap_ 沒有鎖.
+   /// - 預設: do nothing.
+   virtual void OnAfterPodOpWrite(Symb& symb, seed::Tab& tab);
 
    /// 衍生者必須傳回有效的 SymbSP;
    virtual SymbSP MakeSymb(const StrView& symbid) = 0;

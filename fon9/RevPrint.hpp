@@ -20,7 +20,7 @@ void RevPrint(RevBufferT& rbuf, StrView str, FmtDef fmt) {
    rbuf.SetPrefixUsed(pout);
 }
 
-template <class RevBuffer, size_t arysz> inline void RevPrint(RevBuffer& rbuf, const char (&chary)[arysz])             { return RevPrint(rbuf, StrView{chary}); }
+template <class RevBuffer, size_t arysz> inline void RevPrint(RevBuffer& rbuf, const char (&chary)[arysz])             { return RevPutMem(rbuf, chary, arysz - (chary[arysz - 1] == 0)); }
 template <class RevBuffer, size_t arysz> inline void RevPrint(RevBuffer& rbuf, const char (&chary)[arysz], FmtDef fmt) { return RevPrint(rbuf, StrView{chary}, fmt); }
 template <class RevBuffer, size_t arysz> inline void RevPrint(RevBuffer& rbuf, char (&cstr)[arysz])                    { return RevPrint(rbuf, StrView_eos_or_all(cstr)); }
 template <class RevBuffer, size_t arysz> inline void RevPrint(RevBuffer& rbuf, char (&cstr)[arysz], FmtDef fmt)        { return RevPrint(rbuf, StrView_eos_or_all(cstr), fmt); }

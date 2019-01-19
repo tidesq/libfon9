@@ -7,32 +7,23 @@
 
 namespace f9tws {
 
-struct BrkId : public fon9::CharAry<4> {
-   using base = fon9::CharAry<4>;
+struct StkNo : public fon9::CharAryF<6, char, ' '> {
+   using base = fon9::CharAryF<6, char, ' '>;
    using base::base;
-};
-constexpr fon9::StrView ToStrView(const BrkId& brkid) {
-   return fon9::StrView{brkid.Chars_, brkid.size()};
-}
-
-struct OrdNo : public fon9::CharAry<5> {
-   using base = fon9::CharAry<5>;
-   using base::base;
-};
-constexpr fon9::StrView ToStrView(const OrdNo& ordno) {
-   return fon9::StrView{ordno.Chars_, ordno.size()};
-}
-
-struct StkNo : public fon9::CharAry<6> {
-   using base = fon9::CharAry<6>;
-   using base::base;
+   StkNo() = default;
 };
 constexpr fon9::StrView ToStrView(const StkNo& stkno) {
    return fon9::StrView{stkno.Chars_,
-        stkno.Chars_[stkno.size() - 1] != ' ' ? stkno.size()
+      stkno.Chars_[stkno.size() - 1] != ' ' ? stkno.size()
       : stkno.Chars_[stkno.size() - 2] != ' ' ? stkno.size() - 1
       : stkno.size() - 2};
 }
+//--------------------------------------------------------------------------//
+using BrkId = fon9::CharAryF<4>;
+using OrdNo = fon9::CharAryF<5>;
+
+/// TSEC 的 ClOrdID 固定使用 12 bytes, 若不足要補空白.
+using ClOrdID = fon9::CharAryF<12, char, ' '>;
 
 } // namespaces
 #endif//__f9tws_ExgTypes_hpp__
