@@ -142,6 +142,7 @@ set(fon9src
  framework/Framework.cpp
  framework/SeedSession.cpp
  framework/IoManager.cpp
+ framework/IoManagerTree.cpp
  framework/NamedIoManager.cpp
  framework/IoFactory.cpp
  framework/IoFactoryTcpClient.cpp

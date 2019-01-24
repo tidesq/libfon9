@@ -213,9 +213,9 @@ e.g.
    SetConsoleOutputCP(CP_UTF8);
 #endif
 
-   fon9::io::ManagerSP mgr{new fon9::io::SimpleManager{}};
-   PingpongSP          ses{new PingpongSession{isUseDirectIO}};
-   fon9::io::DeviceSP  dev;
+   fon9::io::ManagerCSP mgr{new fon9::io::SimpleManager{}};
+   PingpongSP           ses{new PingpongSession{isUseDirectIO}};
+   fon9::io::DeviceSP   dev;
    switch (chMode) {
    case 'u':   dev.reset(new Dgram(iosv, ses, mgr)); break;
    case 'c':   dev.reset(new TcpClient(iosv, ses, mgr)); break;

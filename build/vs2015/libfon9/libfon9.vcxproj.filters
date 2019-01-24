@@ -752,7 +752,7 @@
     <ClInclude Include="..\..\..\fon9\ConfigFileBinder.hpp">
       <Filter>Header Files\_base\_File</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\framework\NamedIoManager.hpp">
+    <ClInclude Include="..\..\..\fon9\framework\IoManagerTree.hpp">
       <Filter>Header Files\framework</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\seed\ConfigGridView.hpp">
@@ -886,9 +886,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\Assert.h">
       <Filter>Header Files\_base\_Tools / Utility</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\fmkt\TradingReqSt.h">
-      <Filter>Header Files\fmkt</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\fix\FixApDef.hpp">
       <Filter>Header Files\fix</Filter>
@@ -1301,6 +1298,9 @@
       <Filter>Source Files\_base\_File</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\framework\NamedIoManager.cpp">
+      <Filter>Source Files\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\framework\IoManagerTree.cpp">
       <Filter>Source Files\framework</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\framework\IoFactory.cpp">

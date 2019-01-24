@@ -18,7 +18,7 @@ fon9_WARN_DISABLE_PADDING;
 /// - 與系統管理員互動.
 /// - 連線失敗、斷線: 定時重新開啟.
 ///
-class fon9_API Manager : public intrusive_ref_counter<Manager> {
+class fon9_API Manager {
    fon9_NON_COPY_NON_MOVE(Manager);
 public:
    Manager() = default;
@@ -35,7 +35,23 @@ public:
    virtual void OnDevice_StateUpdated(Device& dev, const StateUpdatedArgs& e) = 0;
 
    virtual void OnSession_StateUpdated(Device& dev, StrView stmsg, LogLevel lv) = 0;
+
+private:
+   virtual unsigned IoManagerAddRef() = 0;
+   virtual unsigned IoManagerRelease() = 0;
+   friend unsigned intrusive_ptr_add_ref(const Manager* p) { return const_cast<Manager*>(p)->IoManagerAddRef(); }
+   friend unsigned intrusive_ptr_release(const Manager* p) { return const_cast<Manager*>(p)->IoManagerRelease(); }
 };
+
+class fon9_API ManagerC : public Manager, public intrusive_ref_counter<ManagerC> {
+   fon9_NON_COPY_NON_MOVE(ManagerC);
+   using baseCounter = intrusive_ref_counter<ManagerC>;
+   unsigned IoManagerAddRef() override;
+   unsigned IoManagerRelease() override;
+public:
+   ManagerC() = default;
+};
+using ManagerCSP = intrusive_ptr<ManagerC>;
 fon9_WARN_POP;
 
 } } // namespaces

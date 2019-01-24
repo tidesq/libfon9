@@ -13,7 +13,7 @@ ExgTradingLineFixFactory::ExgTradingLineFixFactory(std::string fixLogPathFmt, Na
 }
 
 fon9::io::SessionSP ExgTradingLineFixFactory::CreateSession(fon9::IoManager& mgr, const fon9::IoConfigItem& cfg, std::string& errReason) {
-   f9tws::ExgTradingLineMgr* twsLineMgr = dynamic_cast<f9tws::ExgTradingLineMgr*>(&mgr.OwnerNode_);
+   f9tws::ExgTradingLineMgr* twsLineMgr = dynamic_cast<f9tws::ExgTradingLineMgr*>(&mgr);
    if (twsLineMgr == nullptr) {
       errReason = "IoManager must be f9tws::ExgTradingLineMgr";
       return fon9::io::SessionSP{};

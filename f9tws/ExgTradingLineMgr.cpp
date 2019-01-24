@@ -10,7 +10,7 @@ void ExgTradingLineMgr::OnFixSessionApReady(f9fix::IoFixSession& fixses) {
       this->OnTradingLineReady(*line);
    }
    else {
-      this->GetIoManager().OnSession_StateUpdated(*fixses.GetDevice(), "Unknown FIX.Ready", fon9::LogLevel::Error);
+      this->OnSession_StateUpdated(*fixses.GetDevice(), "Unknown FIX.Ready", fon9::LogLevel::Error);
    }
 }
 void ExgTradingLineMgr::OnFixSessionDisconnected(f9fix::IoFixSession& fixses, f9fix::FixSenderSP&& fixSender) {

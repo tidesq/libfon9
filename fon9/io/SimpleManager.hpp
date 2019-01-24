@@ -12,7 +12,7 @@ namespace fon9 { namespace io {
 /// 更好的管理員請使用 class IoManager(名稱未定);
 /// - 使用 fon9 log 機制記錄 Device 事件.
 /// - 當 Device 發生錯誤: 10秒後重新連線。
-class SimpleManager : public Manager {
+class SimpleManager : public ManagerC {
    fon9_NON_COPY_NON_MOVE(SimpleManager);
 
 public:

@@ -161,11 +161,10 @@
     <ClInclude Include="..\..\..\fon9\fmkt\SymbTree.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\FmktTypes.h" />
     <ClInclude Include="..\..\..\fon9\fmkt\Trading.hpp" />
-    <ClInclude Include="..\..\..\fon9\fmkt\TradingReqSt.h" />
     <ClInclude Include="..\..\..\fon9\framework\Framework.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\IoFactory.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\IoManager.hpp" />
-    <ClInclude Include="..\..\..\fon9\framework\NamedIoManager.hpp" />
+    <ClInclude Include="..\..\..\fon9\framework\IoManagerTree.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\SeedSession.hpp" />
     <ClInclude Include="..\..\..\fon9\FwdPrint.hpp" />
     <ClInclude Include="..\..\..\fon9\HistoryArray.hpp" />
@@ -400,6 +399,7 @@
     <ClCompile Include="..\..\..\fon9\framework\IoFactoryTcpClient.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\IoFactoryTcpServer.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\IoManager.cpp" />
+    <ClCompile Include="..\..\..\fon9\framework\IoManagerTree.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\NamedIoManager.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\SeedImporter.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\SeedSession.cpp" />

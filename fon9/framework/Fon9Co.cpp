@@ -11,7 +11,6 @@
 #include "fon9/CmdArgs.hpp"
 #include "fon9/Log.hpp"
 
-#include "fon9/framework/NamedIoManager.hpp"
 #include "fon9/web/HttpSession.hpp"
 #include "fon9/web/HttpHandlerStatic.hpp"
 #include "fon9/web/HttpDate.hpp"

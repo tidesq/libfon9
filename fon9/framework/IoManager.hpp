@@ -3,8 +3,6 @@
 #ifndef __fon9_framework_IoManager_hpp__
 #define __fon9_framework_IoManager_hpp__
 #include "fon9/framework/IoFactory.hpp"
-#include "fon9/ConfigFileBinder.hpp"
-#include "fon9/SchTask.hpp"
 
 #ifdef fon9_WINDOWS
 #include "fon9/io/win/IocpService.hpp"
@@ -13,8 +11,6 @@
 #endif
 
 namespace fon9 {
-
-class fon9_API NamedIoManager;
 
 fon9_WARN_DISABLE_PADDING;
 struct IoManagerArgs {
@@ -40,8 +36,20 @@ struct IoManagerArgs {
 class fon9_API IoManager : public io::Manager {
    fon9_NON_COPY_NON_MOVE(IoManager);
 
-   struct DeviceRun;
-   struct DeviceItem;
+public:
+   const std::string          Name_;
+   const SessionFactoryParkSP SessionFactoryPark_;
+   const DeviceFactoryParkSP  DeviceFactoryPark_;
+
+   IoManager(const IoManagerArgs& args);
+
+   /// 若 id 重複, 則返回 false, 表示失敗.
+   /// 若 cfg.Enabled_ == EnabledYN::Yes 則會啟用該設定.
+   /// - 若有 bind config file, 透過這裡加入設定, 不會觸發更新設定檔.
+   ///   在透過 TreeOp 增刪改, 才會觸發寫入設定檔.
+   bool AddConfig(StrView id, const IoConfigItem& cfg);
+
+   void OnSession_StateUpdated(io::Device& dev, StrView stmsg, LogLevel lv) override;
 
    /// 在首次有需要時(GetIocpService() or GetFdrService()), 才會將該 io service 建立起來.
 #ifdef __fon9_io_win_IocpService_hpp__
@@ -60,60 +68,9 @@ class fon9_API IoManager : public io::Manager {
       io::FdrServiceSP GetFdrService();
 #endif
 
-public:
-   NamedIoManager&            OwnerNode_;
-   const std::string          Name_;
-   const SessionFactoryParkSP SessionFactoryPark_;
-   const DeviceFactoryParkSP  DeviceFactoryPark_;
 
-   class Tree : public seed::Tree {
-      fon9_NON_COPY_NON_MOVE(Tree);
-      using base = seed::Tree;
-      struct TreeOp;
-      struct PodOp;
-      static seed::LayoutSP MakeLayout();
-      seed::TreeSP      TabTreeOp_; // for NeedsApply.
-      seed::SeedSubj    StatusSubj_;
-      ConfigFileBinder  ConfigFileBinder_;
-      SubConn           SubConnDev_;
-      SubConn           SubConnSes_;
-      friend class IoManager;
-      void NotifyChanged(DeviceItem&);
-      void NotifyChanged(DeviceRun&);
-
-      static void EmitOnTimer(TimerEntry* timer, TimeStamp now);
-      using Timer = DataMemberEmitOnTimer<&Tree::EmitOnTimer>;
-      Timer Timer_{GetDefaultTimerThread()};
-      enum class TimerFor {
-         Open,
-         CheckSch,
-      };
-      TimerFor TimerFor_;
-      // 啟動Timer: n秒後檢查: Open or Close devices.
-      void StartTimerForOpen();
-      void OnFactoryParkChanged();
-   public:
-      const IoManagerSP  IoManager_;
-      Tree(NamedIoManager& ownerNode, const IoManagerArgs& args);
-      ~Tree();
-      void OnTreeOp(seed::FnTreeOp fnCallback) override;
-      void OnTabTreeOp(seed::FnTreeOp fnCallback) override;
-      void OnParentSeedClear() override;
-   };
-
-   IoManager(NamedIoManager& ownerNode, Tree& ownerTree, const IoManagerArgs& args);
-
-   /// 若 id 重複, 則返回 false, 表示失敗.
-   /// 若 cfg.Enabled_ == EnabledYN::Yes 則會啟用該設定.
-   /// - 若有 bind config file, 透過這裡加入設定, 不會觸發更新設定檔.
-   ///   在透過 TreeOp 增刪改, 才會觸發寫入設定檔.
-   bool AddConfig(StrView id, const IoConfigItem& cfg);
-
-   void OnSession_StateUpdated(io::Device& dev, StrView stmsg, LogLevel lv) override;
-
-private:
-   Tree*       OwnerTree_;
-   std::string IoServiceCfgstr_;
+protected:
+   const std::string IoServiceCfgstr_;
 
    struct DeviceRun {
       io::DeviceSP   Device_;
@@ -187,11 +144,15 @@ private:
    };
    DeviceOpenResult CheckOpenDevice(DeviceItem& item);
    DeviceOpenResult CreateDevice(DeviceItem& item);
-   static seed::LayoutSP MakeAcceptedClientLayout();
-   static void MakeAcceptedClientTree(DeviceRun& serItem, io::DeviceListenerSP listener);
-   struct AcceptedTree;
 
-   static void Apply(const seed::Fields& flds, StrView src, DeviceMapImpl& curmap, DeviceMapImpl& oldmap);
+   static void AssignStStr(CharVector& dst, TimeStamp now, StrView stmsg);
+   virtual void NotifyChanged(DeviceItem&) = 0;
+   virtual void NotifyChanged(DeviceRun&) = 0;
+
+   struct AcceptedTree;
+   static seed::LayoutSP MakeAcceptedClientLayoutImpl();
+   static seed::LayoutSP GetAcceptedClientLayout();
+   static void MakeAcceptedClientTree(DeviceRun& serverItem, io::DeviceListenerSP listener);
 };
 fon9_WARN_POP;
 

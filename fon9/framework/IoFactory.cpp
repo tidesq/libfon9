@@ -1,7 +1,7 @@
 ﻿/// \file fon9/framework/IoFactory.cpp
 /// \author fonwinz@gmail.com
 #include "fon9/framework/IoFactory.hpp"
-#include "fon9/framework/NamedIoManager.hpp"
+#include "fon9/framework/IoManager.hpp"
 
 namespace fon9 {
 
@@ -22,7 +22,7 @@ bool IoFactoryConfigParser::Parse(seed::PluginsHolder& holder, StrView args) {
       if (tag == "Name")
          this->Name_ = value.ToString();
       else if (tag == "IoManager" || tag == "IoMgr") {
-         if (auto iomgr = NamedIoManager::GetIoManagerFrom(*holder.Root_, value)) {
+         if (auto iomgr = holder.Root_->GetSapling<IoManager>(value)) {
             if (!this->OnIoManager(holder, *iomgr))
                this->OnFail_AddFactory(tag, value);
          }

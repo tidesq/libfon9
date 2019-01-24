@@ -1,6 +1,6 @@
 ﻿/// \file fon9/framework/IoFactoryTcpServer.cpp
 /// \author fonwinz@gmail.com
-#include "fon9/framework/NamedIoManager.hpp"
+#include "fon9/framework/IoManager.hpp"
 
 #ifdef fon9_WINDOWS
 #include "fon9/io/win/IocpTcpServer.hpp"

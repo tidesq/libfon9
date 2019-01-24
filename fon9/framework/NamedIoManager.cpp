@@ -1,13 +1,10 @@
 ﻿/// \file fon9/framework/NamedIoManager.cpp
 /// \author fonwinz@gmail.com
-#include "fon9/framework/NamedIoManager.hpp"
+#include "fon9/framework/IoManagerTree.hpp"
 #include "fon9/seed/SysEnv.hpp"
 #include "fon9/seed/Plugins.hpp"
 
 namespace fon9 {
-
-NamedIoManager::~NamedIoManager() {
-}
 
 static bool NamedIoManager_Start(seed::PluginsHolder& holder, StrView args) {
    IoManagerArgs iomArgs;
@@ -22,7 +19,7 @@ static bool NamedIoManager_Start(seed::PluginsHolder& holder, StrView args) {
       else if (tag == "SessionFactoryPark" || tag == "SesFp")
          iomArgs.SessionFactoryPark_ = seed::FetchNamedPark<SessionFactoryPark>(*holder.Root_, fld);
       else if (tag == "IoService" || tag == "Svc")
-         iomArgs.IoServiceSrc_ = NamedIoManager::GetIoManagerFrom(*holder.Root_, fld);
+         iomArgs.IoServiceSrc_ = holder.Root_->GetSapling<IoManager>(fld);
       else if (tag == "IoServiceCfg" || tag == "SvcCfg") //"ThreadCount=2|Capacity=100"
          iomArgs.IoServiceCfgstr_ = SbrFetchInsideNoTrim(fld).ToString();
       else if (tag == "Config" || tag == "Cfg") {
@@ -31,10 +28,8 @@ static bool NamedIoManager_Start(seed::PluginsHolder& holder, StrView args) {
          iomArgs.CfgFileName_ = StrView_ToNormalizeStr(&cfgfn);
       }
    }
-   if (!iomArgs.Name_.empty()) {
-      if (holder.Root_->Add(new NamedIoManager{iomArgs}))
-         return true;
-   }
+   if (!iomArgs.Name_.empty() && IoManagerTree::Plant(*holder.Root_, iomArgs))
+      return true;
    holder.SetPluginsSt(fon9::LogLevel::Error, "Name=", iomArgs.Name_, "|err='Name' is dup or empty");
    return false;
 }

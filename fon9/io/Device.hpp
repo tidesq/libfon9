@@ -25,8 +25,10 @@ class fon9_API Device : public intrusive_ref_counter<Device> {
    
 public:
    const Style       Style_;
-   const SessionSP   Session_;
    const ManagerSP   Manager_;
+   // 有時 Session_ 會參考用到 Manager_,
+   // 所以 Session_ 必須比 Manager_ 先死, 因此必須放在 Manager_ 之後.
+   const SessionSP   Session_;
 
    /// - 建構者必須在建構完畢, 取得一個 DeviceSP 之後, 立即呼叫 Initialize();
    /// - 必須提供有效的 ses, 運行過程中不會再檢查 this->Session_ 是否有效.
@@ -34,8 +36,8 @@ public:
    Device(SessionSP ses, ManagerSP mgr, Style style, const DeviceOptions* optsDefault = nullptr)
       : State_{State::Initializing}
       , Style_{style}
-      , Session_{std::move(ses)}
       , Manager_{std::move(mgr)}
+      , Session_{std::move(ses)}
       , CommonTimer_{GetDefaultTimerThread()} {
       assert(this->Session_);
       if (optsDefault)

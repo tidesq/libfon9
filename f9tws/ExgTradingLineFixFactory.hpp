@@ -26,7 +26,7 @@ public:
    /// this->FixConfig_.Fetch(f9fix_kMSGTYPE_OrderCancelReject).FixMsgHandler_ = &OnFixCancelReject;
    ExgTradingLineFixFactory(std::string fixLogPathFmt, Named&& name);
 
-   /// mgr.OwnerNode_ 必須是 f9tws::ExgTradingLineMgr
+   /// mgr 必須是 f9tws::ExgTradingLineMgr
    fon9::io::SessionSP CreateSession(fon9::IoManager& mgr, const fon9::IoConfigItem& cfg, std::string& errReason) override;
    /// 不支援.
    fon9::io::SessionServerSP CreateSessionServer(fon9::IoManager& mgr, const fon9::IoConfigItem& cfg, std::string& errReason) override;
