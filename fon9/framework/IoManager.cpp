@@ -183,9 +183,8 @@ void IoManager::UpdateDeviceStateLocked(io::Device& dev, const io::StateUpdatedA
    RevBufferList rbuf{128};
    DeviceRun*    item = this->FromManagerBookmark(dev);
    RevPrint(rbuf, '\n');
-   if (e.State_ == io::State::Opening && item->IsDeviceItem()) {
-      RevPrint(rbuf, // "cfgig=Id|SessionName={SessionArgs}|DeviceName={DeviceArgs}
-               "|cfgid=", static_cast<DeviceItem*>(item)->Id_,
+   if (e.State_ == io::State::Opening && item && item->IsDeviceItem()) {
+      RevPrint(rbuf, // "SessionName={SessionArgs}|DeviceName={DeviceArgs}
                '|',  static_cast<DeviceItem*>(item)->Config_.SessionName_,
                "={", static_cast<DeviceItem*>(item)->Config_.SessionArgs_, "}"
                "|",  static_cast<DeviceItem*>(item)->Config_.DeviceName_, 
@@ -216,6 +215,8 @@ void IoManager::UpdateDeviceStateLocked(io::Device& dev, const io::StateUpdatedA
          // 保留 Bookmark, 等 OnDevice_Destructing() 事件時, 將 item 刪除.
       }
       this->NotifyChanged(*item);
+      if (item->IsDeviceItem())
+         RevPrint(rbuf, "|cfgid=", static_cast<DeviceItem*>(item)->Id_);
    }
    static const LogLevel lvs[] {
       LogLevel::Trace, // Initializing,
@@ -253,11 +254,20 @@ void IoManager::OnSession_StateUpdated(io::Device& dev, StrView stmsg, LogLevel 
    }
 }
 void IoManager::UpdateSessionStateLocked(io::Device& dev, StrView stmsg, LogLevel lv) {
-   if (auto item = this->FromManagerBookmark(dev)) {
+   auto item = this->FromManagerBookmark(dev);
+   if(item) {
       AssignStStr(item->SessionSt_, UtcNow(), stmsg);
       this->NotifyChanged(*item);
    }
-   fon9_LOG(lv, "IoManager.", this->Name_, ".SessionState|dev=", ToPtr(&dev), "|st=", stmsg);
+   if (fon9_UNLIKELY(lv >= fon9::LogLevel_)) {
+      fon9::RevBufferList rbuf{fon9::kLogBlockNodeSize};
+      fon9::RevPutChar(rbuf, '\n');
+      fon9::RevPrint(rbuf, "|st=", stmsg);
+      if (item && item->IsDeviceItem())
+         RevPrint(rbuf, "|cfgid=", static_cast<DeviceItem*>(item)->Id_);
+      fon9::RevPrint(rbuf, "IoManager.", this->Name_, ".SessionState|dev=", ToPtr(&dev));
+      fon9::LogWrite(lv, std::move(rbuf));
+   }
 }
 //--------------------------------------------------------------------------//
 fon9_WARN_DISABLE_PADDING;
