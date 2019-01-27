@@ -13,10 +13,19 @@ fon9_WARN_DISABLE_PADDING;
 fon9_MSC_WARN_DISABLE_NO_PUSH(4623); /* 'IocpSendASAP_AuxMem' : default constructor was implicitly defined as deleted */
 /// \ingroup io
 /// 使用 Overlapped I/O 建議 SNDBUF=0, 可以讓 WSASend(1024*1024*100) 更快返回.
+///
 /// | SNDBUF |      txBytes  | WSASend() elapsed(ms) |
 /// |-------:|--------------:|-----------------------|
 /// |  10240 | 1024*1024*100 | 57, 33, 30, 28...     |
 /// |      0 |             0 | 33,  3,  3,  3...     |
+///
+/// - Windows 與 Socket 相關的 Device, 因使用 Overlapped IO, 因此 SNDBUF 預設為 0
+///   - 因為不論是 SendASAP(), SendBuffered(), 都必定會先把要送的資料放到 send buffer.
+///   - 然後 WSASend() 可能會在返回前就觸發 IocpService 的 IocpDone(SendOverlapped) 事件.
+///   - 此時的 IocpDone(SendOverlapped) 事件, 因 send buffer 還在 lock, 所以無法立即處理.
+///   - 造成需要 "Async.DeviceContinueSend": DeviceStartSend.hpp: DeviceContinueSend(); 使得效率不佳.
+///   - 加上 SNDBUF=0 則會降低「WSASend()..unlock send buffer」之前就觸發「IocpDone(SendOverlapped)事件」的機率.
+///
 class fon9_API IocpSocket : public IocpHandler {
    fon9_NON_COPY_NON_MOVE(IocpSocket);
    bool DropRecv();

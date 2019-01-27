@@ -6,7 +6,13 @@
 namespace fon9 { namespace io {
 
 inline static void SetOptionsDefaultAfterZero(SocketOptions& opts) {
-   opts.SO_SNDBUF_ = opts.SO_RCVBUF_ = -1;
+#ifdef fon9_WINDOWS // Windows 使用 Overlapped IO 因此 SENDBUF 預設為 0;
+   // 請參考 "fon9/io/win/IocpSocket.hpp" 的說明.
+   opts.SO_SNDBUF_ = 0;
+#else
+   opts.SO_SNDBUF_ = -1;
+#endif
+   opts.SO_RCVBUF_ = -1;
    opts.TCP_NODELAY_ = 1;
 }
 
